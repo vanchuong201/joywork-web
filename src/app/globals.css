@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --brand: #FF7800;
+  --brand-foreground: #ffffff;
+  --secondary: #BFBFBF;
+  --secondary-foreground: #1a1a1a;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  --ring: #FF7800;
+  --card: #ffffff;
+  --input: #f9fafb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --secondary-foreground: #f3f4f6;
+    --card: #0f0f10;
+    --input: #111113;
+    --border: #1f2937;
+    --muted: #0f1115;
+    --muted-foreground: #9ca3af;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)];
+  }
+  a { @apply transition-colors duration-200; }
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--brand); }
+}
