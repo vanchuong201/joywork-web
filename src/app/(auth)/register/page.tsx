@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAuth } from "@/store/useAuth";
+import { useAuthStore } from "@/store/useAuth";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -20,7 +20,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const fetchMe = useAuth((s) => s.fetchMe);
+  const fetchMe = useAuthStore((s) => s.fetchMe);
   const {
     register,
     handleSubmit,

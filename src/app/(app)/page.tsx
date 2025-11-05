@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +9,8 @@ import EmptyState from "@/components/ui/empty-state";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CompanySearch from "@/components/feed/CompanySearch";
 import PostCard, { type PostCardData } from "@/components/feed/PostCard";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import useInView from "@/hooks/useInView";
 import { toast } from "sonner";
 
 type Post = PostCardData;
@@ -22,13 +23,27 @@ export default function FeedPage() {
   const pathname = usePathname();
   const type = sp.get("type") || undefined; // STORY | ANNOUNCEMENT | EVENT
   const companyId = sp.get("companyId") || undefined;
-  const { data, isLoading } = useQuery<{ posts: Post[]; pagination: any }>({
+  const { ref, inView } = useInView<HTMLDivElement>({ rootMargin: "300px" });
+  const pageSize = 6;
+  const query = useInfiniteQuery<{ posts: Post[]; pagination: { page: number; totalPages: number } }>({
     queryKey: ["feed", { type, companyId }],
-    queryFn: async () => {
-      const res = await api.get("/api/posts", { params: { limit: 5, type, companyId } });
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const res = await api.get("/api/posts", { params: { limit: pageSize, page: pageParam, type, companyId } });
       return res.data.data;
     },
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination || { page: 1, totalPages: 1 };
+      return page < totalPages ? page + 1 : undefined;
+    },
   });
+
+  // Auto-fetch next page when sentinel is visible
+  useEffect(() => {
+    if (inView && query.hasNextPage && !query.isFetchingNextPage) {
+      query.fetchNextPage();
+    }
+  }, [inView, query]);
   const setType = (val?: string) => {
     const next = new URLSearchParams(sp.toString());
     if (!val) next.delete("type");
@@ -53,10 +68,10 @@ export default function FeedPage() {
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Action failed"),
   });
 
-  const raw = data?.posts ?? [];
+  const allPosts = useMemo(() => (query.data?.pages ?? []).flatMap((p) => p.posts ?? []), [query.data]);
   const posts = tab === "trending"
-    ? [...raw].sort((a: any, b: any) => ((b as any)?._count?.likes ?? (b as any)?.likesCount ?? 0) - ((a as any)?._count?.likes ?? (a as any)?.likesCount ?? 0))
-    : raw;
+    ? [...allPosts].sort((a: any, b: any) => ((b as any)?._count?.likes ?? (b as any)?.likesCount ?? 0) - ((a as any)?._count?.likes ?? (a as any)?.likesCount ?? 0))
+    : allPosts;
 
   return (
     <div className="space-y-4">
@@ -95,7 +110,7 @@ export default function FeedPage() {
         ) : null}
       </div>
 
-      {isLoading ? (
+      {query.isLoading ? (
         <div className="space-y-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-40 rounded-lg" />
@@ -108,6 +123,23 @@ export default function FeedPage() {
               <PostCard post={p} onLike={() => like.mutate(p)} />
             </div>
           ))}
+          {/* Load more sentinel */}
+          {query.hasNextPage ? (
+            <div className="space-y-3">
+              <div ref={ref} className="h-4" />
+              {query.isFetchingNextPage ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <Skeleton key={i} className="h-40 rounded-lg" />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex justify-center">
+                  <Button variant="outline" onClick={() => query.fetchNextPage()}>Tải thêm</Button>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : (
         <EmptyState title="No posts" subtitle="Try switching type or follow companies" />
