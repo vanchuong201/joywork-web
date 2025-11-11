@@ -17,6 +17,7 @@ import { useAuthStore } from "@/store/useAuth";
 import Link from "next/link";
 import { useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const navIcons: Record<string, LucideIcon> = {
   "/": Home,
@@ -26,17 +27,16 @@ const navIcons: Record<string, LucideIcon> = {
   "/system": Settings,
 };
 
-function formatRole(role?: string) {
-  if (role === "ADMIN") return "Quản trị hệ thống";
-  return "Ứng viên";
-}
-
 export default function Header() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const initialized = useAuthStore((s) => s.initialized);
+  const loading = useAuthStore((s) => s.loading);
   const pathname = usePathname();
   const router = useRouter();
   const accountRef = useRef<HTMLDetailsElement>(null);
+
+  const isReady = initialized && !loading;
 
   const navItems = useMemo(() => {
     const items = [
@@ -73,25 +73,27 @@ export default function Header() {
           <span className="text-lg font-semibold">JoyWork</span>
         </Link>
         <nav className="ml-auto hidden items-center gap-2 md:flex">
-          {navItems.map((item) => {
-            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-            const Icon = navIcons[item.href] ?? Home;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors",
-                  active
-                    ? "bg-[var(--muted)] text-[var(--foreground)]"
-                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                )}
-              >
-                <Icon size={16} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+          {isReady
+            ? navItems.map((item) => {
+                const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                const Icon = navIcons[item.href] ?? Home;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors",
+                      active
+                        ? "bg-[var(--muted)] text-[var(--foreground)]"
+                        : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    )}
+                  >
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })
+            : Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-7 w-16" />)}
         </nav>
         <div className="ml-4 flex flex-1 items-center justify-end gap-3">
           <div className="relative w-full max-w-md">
@@ -101,13 +103,12 @@ export default function Header() {
             />
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" size={16} />
           </div>
-          {user ? (
+          {!isReady ? (
+            <Skeleton className="h-8 w-32" />
+          ) : user ? (
             <details ref={accountRef} className="relative">
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1 text-sm text-[var(--foreground)] hover:bg-[var(--muted)]">
-                <div className="flex flex-col leading-tight">
-                  <span className="font-medium">{user.name ?? user.email}</span>
-                  <span className="text-[11px] text-[var(--muted-foreground)]">{formatRole(user.role)}</span>
-                </div>
+                <span className="font-medium leading-tight">{user.name ?? user.email}</span>
                 <ChevronDown size={14} />
               </summary>
               <div className="absolute right-0 mt-2 w-48 rounded-md border border-[var(--border)] bg-[var(--card)] shadow-lg">

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/ui/empty-state";
+import CompanySearch from "@/components/feed/CompanySearch";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type Job = {
@@ -24,16 +25,18 @@ export default function JobsPage() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const companyId = sp.get("companyId") || undefined;
   const remote = sp.get("remote") === "true" ? true : undefined;
   const employmentType = sp.get("employmentType") || undefined;
   const experienceLevel = sp.get("experienceLevel") || undefined;
 
   const { data, isLoading } = useQuery<{ jobs: Job[]; pagination: any }>({
-    queryKey: ["jobs", { remote, employmentType, experienceLevel }],
+    queryKey: ["jobs", { remote, employmentType, experienceLevel, companyId }],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
         params: {
           limit: 10,
+          companyId,
           remote,
           employmentType,
           experienceLevel,
@@ -55,6 +58,18 @@ export default function JobsPage() {
       <section className="hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 lg:block">
         <h3 className="mb-3 text-sm font-semibold">Filters</h3>
         <div className="space-y-4 text-sm">
+          <div>
+            <div className="mb-2 font-medium">Company</div>
+            <CompanySearch value={companyId} onSelect={(id) => toggleParam("companyId", id)} />
+            {companyId ? (
+              <button
+                className="mt-1 text-xs text-[var(--brand)]"
+                onClick={() => toggleParam("companyId", undefined)}
+              >
+                Clear company
+              </button>
+            ) : null}
+          </div>
           <div>
             <div className="mb-2 font-medium">Work Type</div>
             <label className="flex items-center gap-2">
@@ -115,7 +130,18 @@ export default function JobsPage() {
         </div>
       </section>
       <section className="space-y-4">
-        <h1 className="text-xl font-semibold">Jobs</h1>
+        <div>
+          <h1 className="text-xl font-semibold">Jobs</h1>
+          {companyId ? (
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              Đang lọc theo doanh nghiệp:
+              {" "}
+              <span className="font-medium text-[var(--foreground)]">
+                {data?.jobs?.[0]?.company?.name ?? (isLoading ? "đang tải..." : "không có job phù hợp")}
+              </span>
+            </p>
+          ) : null}
+        </div>
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (

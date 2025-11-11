@@ -27,9 +27,11 @@ type AuthState = {
   user: AuthUser | null;
   loading: boolean;
   memberships: CompanyMembership[];
+  initialized: boolean;
   setUser: (u: AuthUser | null) => void;
   setLoading: (v: boolean) => void;
   setMemberships: (items: CompanyMembership[]) => void;
+  markInitialized: () => void;
   fetchMe: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -38,9 +40,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: false,
   memberships: [],
+  initialized: false,
   setUser: (u) => set({ user: u }),
   setLoading: (v) => set({ loading: v }),
   setMemberships: (items) => set({ memberships: items }),
+  markInitialized: () => set({ initialized: true, loading: false }),
   fetchMe: async () => {
     set({ loading: true });
     try {
@@ -68,7 +72,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (typeof window !== "undefined") localStorage.removeItem("accessToken");
       set({ user: null, memberships: [] });
     } finally {
-      set({ loading: false });
+      set({ loading: false, initialized: true });
     }
   },
   signOut: async () => {
@@ -78,7 +82,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // ignore
     }
     if (typeof window !== "undefined") localStorage.removeItem("accessToken");
-    set({ user: null, memberships: [] });
+    set({ user: null, memberships: [], initialized: true, loading: false });
   },
 }));
 

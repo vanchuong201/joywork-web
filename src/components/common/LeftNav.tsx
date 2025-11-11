@@ -15,12 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
-
-const roleLabels: Record<string, string> = {
-  OWNER: "Owner",
-  ADMIN: "Admin",
-  MEMBER: "Cộng tác viên",
-};
+import { Skeleton } from "@/components/ui/skeleton";
 
 type NavItem = {
   icon: LucideIcon;
@@ -87,10 +82,27 @@ export default function LeftNav() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const memberships = useAuthStore((s) => s.memberships);
+  const initialized = useAuthStore((s) => s.initialized);
+  const loading = useAuthStore((s) => s.loading);
+
+  const isReady = initialized && !loading;
+
+  if (!isReady) {
+    return (
+      <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">
+        <div className="flex h-full flex-col gap-4 p-4">
+          <Skeleton className="h-16 rounded-md" />
+          <Skeleton className="h-28 rounded-md" />
+          <Skeleton className="h-28 rounded-md" />
+          <Skeleton className="h-28 rounded-md" />
+        </div>
+      </aside>
+    );
+  }
 
   if (!user) {
     return (
-      <aside className="hidden w-60 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">
+      <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">
         <div className="p-4">
           <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--muted-foreground)]">
             <p className="font-medium text-[var(--foreground)]">Đăng nhập để cá nhân hóa trải nghiệm</p>
@@ -117,13 +129,11 @@ export default function LeftNav() {
     );
   }
 
-  const translatedRole = user.role === "ADMIN" ? "Quản trị hệ thống" : "Ứng viên";
-
   const companyItems: NavItem[] = memberships.map((membership) => ({
     icon: Building2,
     label: membership.company.name,
     href: `/companies/${membership.company.slug}`,
-    badge: roleLabels[membership.role] ?? membership.role,
+    badge: membership.role === "OWNER" || membership.role === "ADMIN" ? "Quản trị" : undefined,
   }));
 
   return (
@@ -134,7 +144,6 @@ export default function LeftNav() {
             <div className="h-9 w-9 rounded-full bg-[var(--brand)]/20" />
             <div className="text-sm">
               <div className="font-medium text-[var(--foreground)]">{user.name ?? user.email}</div>
-              <div className="text-[12px] text-[var(--muted-foreground)]">{translatedRole}</div>
             </div>
           </div>
         </div>

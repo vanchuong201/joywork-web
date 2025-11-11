@@ -9,11 +9,16 @@ import { useAuthStore } from "@/store/useAuth";
 
 export default function Providers({ children }: PropsWithChildren) {
   const fetchMe = useAuthStore((s) => s.fetchMe);
+  const markInitialized = useAuthStore((s) => s.markInitialized);
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem("accessToken")) {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem("accessToken");
+    if (token) {
       fetchMe();
+    } else {
+      markInitialized();
     }
-  }, [fetchMe]);
+  }, [fetchMe, markInitialized]);
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
       <ReactQueryProvider>
