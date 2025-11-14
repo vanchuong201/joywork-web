@@ -2,6 +2,83 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Heart } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PhotoProvider, PhotoView } from "react-photo-view";
+import "react-photo-view/dist/react-photo-view.css";
+
+type LikeButtonProps = {
+  liked: boolean;
+  likes: number;
+  onToggle?: () => void;
+};
+
+function LikeButton({ liked, likes, onToggle }: LikeButtonProps) {
+  const [isLiked, setIsLiked] = useState(liked);
+  const [count, setCount] = useState(likes);
+  const [isBusy, setBusy] = useState(false);
+  const heartRef = useRef<HTMLSpanElement | null>(null);
+  const prevLiked = useRef(liked);
+  const prevLikes = useRef(likes);
+
+  useEffect(() => {
+    if (prevLiked.current !== liked || prevLikes.current !== likes) {
+      prevLiked.current = liked;
+      prevLikes.current = likes;
+      setIsLiked(liked);
+      setCount(likes);
+    }
+  }, [liked, likes]);
+
+  useEffect(() => {
+    if (!isLiked) return;
+    const heartEl = heartRef.current;
+    if (!heartEl) return;
+    heartEl.classList.remove("animate-like-burst");
+    void heartEl.offsetWidth;
+    heartEl.classList.add("animate-like-burst");
+  }, [isLiked]);
+
+  const handleToggle = useCallback(() => {
+    if (!onToggle || isBusy) return;
+    const nextLiked = !isLiked;
+    setBusy(true);
+    setIsLiked(nextLiked);
+    setCount((prev) => Math.max(0, prev + (nextLiked ? 1 : -1)));
+    Promise.resolve(onToggle())
+      .catch(() => {
+        setIsLiked(isLiked);
+        setCount((prev) => Math.max(0, prev + (isLiked ? 1 : -1)));
+      })
+      .finally(() => setBusy(false));
+  }, [isLiked, isBusy, onToggle]);
+
+  const buttonLabel = isLiked ? "Đã thích" : "Thích";
+  const countLabel = count > 0 ? count.toLocaleString("vi-VN") : "";
+
+  return (
+    <Button
+      size="sm"
+      variant={isLiked ? "default" : "outline"}
+      className={isLiked ? "border-[#ff9fb1] bg-[#fff1f4] text-[#ff2d55]" : undefined}
+      onClick={handleToggle}
+      disabled={isBusy}
+      aria-pressed={isLiked}
+      aria-live="polite"
+    >
+      <span
+        ref={heartRef}
+        className={`mr-1 inline-flex h-5 w-5 items-center justify-center rounded-full transition-transform duration-200 ease-out ${
+          isLiked ? "text-[#ff2d55]" : "text-[#6b7280]"
+        }`}
+      >
+        <Heart className="h-4 w-4" fill={isLiked ? "#ff2d55" : "none"} />
+      </span>
+      {buttonLabel}
+      <span className="ml-1 font-medium tabular-nums">{countLabel}</span>
+    </Button>
+  );
+}
 
 type Company = { id: string; name: string; slug: string; slogan?: string; logoUrl?: string };
 export type PostCardData = {
@@ -18,64 +95,120 @@ export type PostCardData = {
 };
 
 function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) {
-  const imgs = images.slice(0, 5);
-  const extra = (images?.length ?? 0) - imgs.length;
-  if (imgs.length === 1) {
-    return (
-      <div className="mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)]">
+  const hiddenCount = Math.max(0, images.length - 4);
+  const primary = hiddenCount > 0 ? images.slice(0, 4) : images.slice(0, images.length);
+  const backup = images.slice(primary.length);
+
+  const renderSingle = (image: (typeof images)[number]) => (
+    <PhotoView key={image.id ?? image.url} src={image.url}>
+      <div className="mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imgs[0].url} alt="media" className="h-full w-full object-cover" />
+        <img
+          src={image.url}
+          alt="media"
+          className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+        />
       </div>
-    );
-  }
-  if (imgs.length === 2) {
-    return (
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {imgs.map((m) => (
-          <div key={m.id ?? m.url} className="aspect-video overflow-hidden rounded-md bg-[var(--muted)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={m.url} alt="media" className="h-full w-full object-cover" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (imgs.length === 3) {
-    return (
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <div className="col-span-2 row-span-2 aspect-[2/1] overflow-hidden rounded-md bg-[var(--muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imgs[0].url} alt="media" className="h-full w-full object-cover" />
-        </div>
-        {imgs.slice(1).map((m) => (
-          <div key={m.id ?? m.url} className="aspect-video overflow-hidden rounded-md bg-[var(--muted)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={m.url} alt="media" className="h-full w-full object-cover" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-  // 4 or 5+
-  return (
+    </PhotoView>
+  );
+
+  const renderPair = () => (
     <div className="mt-3 grid grid-cols-2 gap-2">
-      {imgs.slice(0, 4).map((m, idx) => (
-        <div key={m.id ?? m.url} className="relative aspect-video overflow-hidden rounded-md bg-[var(--muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={m.url} alt="media" className="h-full w-full object-cover" />
-          {idx === 3 && extra > 0 ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">
-              +{extra}
-            </div>
-          ) : null}
-        </div>
+      {primary.map((m) => (
+        <PhotoView key={m.id ?? m.url} src={m.url}>
+          <div className="aspect-video overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={m.url}
+              alt="media"
+              className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+            />
+          </div>
+        </PhotoView>
       ))}
     </div>
+  );
+
+  const renderTriple = () => (
+    <div className="mt-3 grid grid-cols-3 gap-2">
+      <PhotoView key={primary[0].id ?? primary[0].url} src={primary[0].url}>
+        <div className="col-span-2 row-span-2 aspect-[2/1] overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={primary[0].url}
+            alt="media"
+            className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+          />
+        </div>
+      </PhotoView>
+      {primary.slice(1).map((m) => (
+        <PhotoView key={m.id ?? m.url} src={m.url}>
+          <div className="aspect-video overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={m.url}
+              alt="media"
+              className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+            />
+          </div>
+        </PhotoView>
+      ))}
+    </div>
+  );
+
+  const renderQuad = () => (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      {primary.map((m, idx) => (
+        <PhotoView key={m.id ?? m.url} src={m.url}>
+          <div className="relative aspect-video overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={m.url}
+              alt="media"
+              className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+            />
+            {idx === primary.length - 1 && hiddenCount > 0 ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">
+                +{hiddenCount}
+              </div>
+            ) : null}
+          </div>
+        </PhotoView>
+      ))}
+    </div>
+  );
+
+  return (
+    <PhotoProvider maskOpacity={0.8}>
+      {primary.length === 1
+        ? renderSingle(primary[0]!)
+        : primary.length === 2
+        ? renderPair()
+        : primary.length === 3
+        ? renderTriple()
+        : renderQuad()}
+
+      {backup.map((m) => (
+        <PhotoView key={m.id ?? m.url} src={m.url}>
+          <div className="hidden" />
+        </PhotoView>
+      ))}
+    </PhotoProvider>
   );
 }
 
 export default function PostCard({ post, onLike }: { post: PostCardData; onLike?: (p: PostCardData) => void }) {
   const hasImages = (post.images?.length ?? 0) > 0;
+  const likeCount = post.likesCount ?? (post as any)?._count?.likes ?? 0;
+  const shareCount = post.sharesCount ?? (post as any)?._count?.shares ?? 0;
+  const footerInfo = useMemo(
+    () =>
+      [
+        likeCount > 0 ? `${likeCount.toLocaleString("vi-VN")} lượt thích` : null,
+        shareCount > 0 ? `${shareCount.toLocaleString("vi-VN")} lượt chia sẻ` : null,
+      ].filter(Boolean),
+    [likeCount, shareCount],
+  );
   return (
     <article className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-0 overflow-hidden">
       <div className="p-4">
@@ -94,10 +227,18 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
         {hasImages ? (
           <MediaGrid images={post.images!} />
         ) : post.coverUrl ? (
-          <div className="mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={post.coverUrl} alt="cover" className="h-full w-full object-cover" />
-          </div>
+          <PhotoProvider maskOpacity={0.8}>
+            <PhotoView src={post.coverUrl}>
+              <div className="mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.coverUrl}
+                  alt="cover"
+                  className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+                />
+              </div>
+            </PhotoView>
+          </PhotoProvider>
         ) : null}
         <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">{post.content}</p>
         {post.tags?.length ? (
@@ -111,24 +252,17 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
         ) : null}
       </div>
       <div className="flex items-center gap-2 border-t border-[var(--border)] p-3">
-        <Button size="sm" onClick={() => onLike?.(post)}>
-          {post.isLiked ? "Unlike" : "Like"}
-        </Button>
+        <LikeButton liked={Boolean(post.isLiked)} likes={likeCount} onToggle={onLike ? () => onLike(post) : undefined} />
         <Button size="sm" variant="outline">
           Save
         </Button>
         <Button size="sm" variant="outline">
           Share
         </Button>
-        <a className="ml-auto text-sm text-[var(--brand)]" href={`/companies/${post.company.slug}`}>
-          View company
-        </a>
+        {footerInfo.length ? (
+          <span className="ml-auto text-xs text-[var(--muted-foreground)]">{footerInfo.join(" · ")}</span>
+        ) : null}
       </div>
-      {(post.likesCount || post.sharesCount) ? (
-        <div className="border-t border-[var(--border)] px-3 py-2 text-xs text-[var(--muted-foreground)]">
-          {(post.likesCount ?? 0)} likes · {(post.sharesCount ?? 0)} shares
-        </div>
-      ) : null}
     </article>
   );
 }

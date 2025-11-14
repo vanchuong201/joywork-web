@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.pravatar.cc",
       },
+      {
+        protocol: "https",
+        hostname: "joywork-media.s3.ap-southeast-1.amazonaws.com",
+      },
     ],
   },
 };

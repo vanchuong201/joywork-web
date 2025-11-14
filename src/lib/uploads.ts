@@ -26,3 +26,13 @@ export async function deleteUploadedObject(key: string): Promise<void> {
   });
 }
 
+export async function uploadProfileAvatar(payload: {
+  fileName: string;
+  fileType: string;
+  fileData: string;
+  previousKey?: string;
+}): Promise<{ key: string; assetUrl: string }> {
+  const { data } = await api.post("/api/uploads/profile/avatar", payload);
+  return data.data as { key: string; assetUrl: string };
+}
+

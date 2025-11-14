@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import useInView from "@/hooks/useInView";
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
+import JobSaveButton from "@/components/jobs/JobSaveButton";
 
 type FavoriteItem = {
   id: string;
@@ -102,18 +103,17 @@ export default function SavedJobsPage() {
     <div className="space-y-4">
       {favorites.map((favorite) => (
         <Card key={favorite.id}>
-          <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">
-                {favorite.job.title}
-              </h2>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                {favorite.job.company.name}
-              </p>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold text-[var(--foreground)]">{favorite.job.title}</h2>
+              <p className="text-sm text-[var(--muted-foreground)]">{favorite.job.company.name}</p>
             </div>
-            <p className="text-xs uppercase text-[var(--muted-foreground)]">
-              Lưu ngày {new Date(favorite.createdAt).toLocaleDateString()}
-            </p>
+            <div className="flex flex-col items-start gap-2 sm:items-end">
+              <p className="text-xs uppercase text-[var(--muted-foreground)]">
+                Lưu ngày {new Date(favorite.createdAt).toLocaleDateString()}
+              </p>
+              <JobSaveButton jobId={favorite.jobId} showLabel />
+            </div>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-[var(--foreground)]">
             <p>

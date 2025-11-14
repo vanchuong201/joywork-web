@@ -4,7 +4,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Company = { id: string; name: string; slug: string };
 
@@ -24,14 +24,29 @@ export default function CompanySearch({ value, onSelect }: { value?: string; onS
     if (q.trim().length >= 2) refetch();
   }, [q, refetch]);
 
+  const displayLabel = useMemo(() => {
+    if (!value) return q;
+    const match = data?.companies?.find((c) => c.id === value);
+    return match ? match.name : q;
+  }, [data?.companies, q, value]);
+
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger asChild>
-        <div className="w-full">
-          <Input placeholder="Filter by company..." onChange={(e) => setQ(e.target.value)} onFocus={() => setOpen(true)} />
-        </div>
-      </Popover.Trigger>
-      <Popover.Content className="z-50 mt-2 w-[280px] rounded-md border border-[var(--border)] bg-[var(--card)] p-1 shadow-md">
+      <Popover.Anchor asChild>
+        <Input
+          placeholder="Filter by company..."
+          value={displayLabel}
+          onChange={(e) => {
+            setQ(e.target.value);
+            if (!open) setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+        />
+      </Popover.Anchor>
+      <Popover.Content
+        className="z-50 mt-2 w-[280px] rounded-md border border-[var(--border)] bg-[var(--card)] p-1 shadow-md"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <ul className="max-h-60 overflow-auto text-sm">
           {data?.companies?.length ? (
             data.companies.map((c) => (
@@ -40,6 +55,7 @@ export default function CompanySearch({ value, onSelect }: { value?: string; onS
                   className="w-full rounded-md px-2 py-1.5 text-left hover:bg-[var(--muted)]"
                   onClick={() => {
                     onSelect(c.id);
+                    setQ(c.name);
                     setOpen(false);
                   }}
                 >
@@ -55,6 +71,7 @@ export default function CompanySearch({ value, onSelect }: { value?: string; onS
               className="w-full rounded-md px-2 py-1.5 text-left text-[var(--brand)] hover:bg-[var(--muted)]"
               onClick={() => {
                 onSelect(undefined);
+                setQ("");
                 setOpen(false);
               }}
             >

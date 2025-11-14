@@ -1,11 +1,14 @@
 import CompanyManageButton from "@/components/company/CompanyManageButton";
 import CompanyStoryRenderer from "@/components/company/CompanyStoryRenderer";
+import CompanyProfileTabs from "@/components/company/CompanyProfileTabs";
+import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
+import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import EmptyState from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
 import Link from "next/link";
+import type { PostCardData } from "@/components/feed/PostCard";
 import { CompanyProfile } from "@/types/company";
 
 type CompanyResponse = {
@@ -14,17 +17,15 @@ type CompanyResponse = {
   };
 };
 
+type ActivityPost = PostCardData & { excerpt?: string | null };
+
 type PostsResponse = {
   data: {
-    posts: Array<{
-      id: string;
-      title: string;
-      content: string;
-      type: string;
-      publishedAt?: string | null;
-      createdAt: string;
-      images?: Array<{ id: string; url: string }>;
-    }>;
+    posts: ActivityPost[];
+    pagination?: {
+      page: number;
+      totalPages: number;
+    };
   };
 };
 
@@ -50,10 +51,12 @@ type JobsResponse = {
 
 export default async function CompanyProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
-  const { slug } = await params;
+  const [{ slug }, { tab: tabParam }] = await Promise.all([params, searchParams]);
   const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
   const companyRes = await fetch(`${baseURL}/api/companies/${slug}`, {
@@ -75,6 +78,7 @@ export default async function CompanyProfilePage({
   const companyPayload = (await companyRes.json()) as CompanyResponse;
   const company = companyPayload.data.company;
 
+  // NOTE: initial page is hydrated once; subsequent pages fetched client-side in CompanyActivityFeed
   const postsPromise = fetch(
     `${baseURL}/api/posts?companyId=${company.id}&page=1&limit=5`,
     { cache: "no-store", next: { revalidate: 0 } },
@@ -104,97 +108,67 @@ export default async function CompanyProfilePage({
     jobsPromise,
   ]);
 
+  const normalizedTab = ["overview", "activity", "jobs"].includes(tabParam ?? "") ? (tabParam as string) : "overview";
+
+  const overviewContent = (
+    <CompanyStoryRenderer blocks={company.profileStory} fallbackDescription={company.description} />
+  );
+
+  const activityContent = postsData.posts.length === 0 ? (
+    <EmptyState
+      title="Chưa có bài viết công khai"
+      subtitle="Khi doanh nghiệp đăng bài, nội dung sẽ hiển thị tại đây."
+    />
+  ) : (
+    <CompanyActivityFeed
+      posts={postsData.posts}
+      companyId={company.id}
+      totalPages={("pagination" in postsData ? postsData.pagination?.totalPages : undefined)}
+    />
+  );
+
+  const jobsContent = jobsData.jobs.length === 0 ? (
+    <EmptyState
+      title="Hiện chưa có job đang mở"
+      subtitle="Khi doanh nghiệp mở job mới, bạn sẽ thấy tại đây."
+    />
+  ) : (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {jobsData.jobs.map((job) => (
+        <Card key={job.id}>
+          <CardHeader className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
+              <span>
+                {job.remote ? "Remote" : job.location ?? "Không ghi rõ"} · {job.employmentType} · {job.experienceLevel}
+              </span>
+              <span>{formatDate(job.createdAt)}</span>
+            </div>
+            <Link
+              href={`/jobs/${job.id}`}
+              className="text-base font-semibold text-[var(--foreground)] hover:text-[var(--brand)]"
+            >
+              {job.title}
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-[var(--muted-foreground)]">
+            <p className="line-clamp-3 leading-relaxed">{createExcerpt(job.description, 260)}</p>
+            <div className="text-xs">
+              <p>Lương: {formatSalary(job.salaryMin, job.salaryMax, job.currency)}</p>
+              {job.applicationDeadline ? <p>Hạn nộp: {formatDate(job.applicationDeadline)}</p> : null}
+            </div>
+            <Button asChild size="sm">
+              <Link href={`/jobs/${job.id}`}>Xem chi tiết job</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
   return (
     <div className="mx-auto max-w-[1080px] space-y-6 p-4">
       <CompanyHero company={company} />
-
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-          <TabsTrigger value="activity">Hoạt động</TabsTrigger>
-          <TabsTrigger value="jobs">Việc làm</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <CompanyStoryRenderer blocks={company.profileStory} fallbackDescription={company.description} />
-        </TabsContent>
-
-        <TabsContent value="activity">
-          {postsData.posts.length === 0 ? (
-            <EmptyState
-              title="Chưa có bài viết công khai"
-              subtitle="Khi doanh nghiệp đăng bài, nội dung sẽ hiển thị tại đây."
-            />
-          ) : (
-            <div className="space-y-4">
-              {postsData.posts.map((post) => (
-                <Card key={post.id}>
-                  <CardContent className="space-y-3 pt-6">
-                    <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
-                      <span className="rounded-full bg-[var(--muted)] px-3 py-1 uppercase text-[var(--foreground)]">
-                        {post.type}
-                      </span>
-                      <span>{formatDate(post.publishedAt ?? post.createdAt)}</span>
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-base font-semibold text-[var(--foreground)]">{post.title}</h3>
-                      <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">
-                        {createExcerpt(post.content)}
-                      </p>
-                    </div>
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/posts/${post.id}`}>Đọc chi tiết</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="jobs">
-          {jobsData.jobs.length === 0 ? (
-            <EmptyState
-              title="Hiện chưa có job đang mở"
-              subtitle="Khi doanh nghiệp mở job mới, bạn sẽ thấy tại đây."
-            />
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {jobsData.jobs.map((job) => (
-                <Card key={job.id}>
-                  <CardHeader className="space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
-                      <span>
-                        {job.remote ? "Remote" : job.location ?? "Không ghi rõ"} · {job.employmentType} ·{" "}
-                        {job.experienceLevel}
-                      </span>
-                      <span>{formatDate(job.createdAt)}</span>
-                    </div>
-                    <Link
-                      href={`/jobs/${job.id}`}
-                      className="text-base font-semibold text-[var(--foreground)] hover:text-[var(--brand)]"
-                    >
-                      {job.title}
-                    </Link>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-[var(--muted-foreground)]">
-                    <p className="line-clamp-3 leading-relaxed">{createExcerpt(job.description, 260)}</p>
-                    <div className="text-xs">
-                      <p>Lương: {formatSalary(job.salaryMin, job.salaryMax, job.currency)}</p>
-                      {job.applicationDeadline ? (
-                        <p>Hạn nộp: {formatDate(job.applicationDeadline)}</p>
-                      ) : null}
-                    </div>
-                    <Button asChild size="sm">
-                      <Link href={`/jobs/${job.id}`}>Xem chi tiết job</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      <CompanyProfileTabs initialTab={normalizedTab} overview={overviewContent} activity={activityContent} jobs={jobsContent} />
     </div>
   );
 }
@@ -284,9 +258,12 @@ function CompanyActions({ company }: { company: CompanyProfile }) {
           </Link>
         </Button>
       ) : null}
-      <Button variant="outline" size="sm">
-        ❤️ Theo dõi{typeof company.stats?.followers === "number" ? ` (${company.stats.followers})` : ""}
-      </Button>
+      <CompanyFollowButton
+        companyId={company.id}
+        companySlug={company.slug}
+        initialFollowers={company.stats?.followers ?? 0}
+        showCount
+      />
       <Button variant="outline" size="sm">
         💬 Nhắn tin / Liên hệ
       </Button>

@@ -11,6 +11,7 @@ import {
   Heart,
   type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth";
@@ -87,6 +88,15 @@ export default function LeftNav() {
 
   const isReady = initialized && !loading;
 
+  const displayName = user?.name?.trim() || user?.email || "";
+  const initials =
+    displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "?";
+
   if (!isReady) {
     return (
       <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">
@@ -141,7 +151,19 @@ export default function LeftNav() {
       <nav className="flex h-full flex-col gap-6 p-4">
         <div className="rounded-md border border-[var(--border)] bg-[var(--background)] p-3">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-[var(--brand)]/20" />
+            {user.avatar ? (
+              <Image
+                src={user.avatar}
+                alt={displayName}
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold uppercase text-white">
+                {initials}
+              </div>
+            )}
             <div className="text-sm">
               <div className="font-medium text-[var(--foreground)]">{user.name ?? user.email}</div>
             </div>
