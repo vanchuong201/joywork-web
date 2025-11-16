@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,8 @@ import RichTextEditor from "@/components/ui/rich-text-editor";
 import DOMPurify from "dompurify";
 import TurndownService from "turndown";
 import { marked } from "marked";
+import { uploadCompanyLogo, uploadCompanyCover } from "@/lib/uploads";
+import Image from "next/image";
 
 const sizeOptions = ["STARTUP", "SMALL", "MEDIUM", "LARGE", "ENTERPRISE"] as const;
 
@@ -112,20 +114,9 @@ const schema = z.object({
       message: "Quy mô nhân sự phải là số",
     }),
   headcountNote: z.string().max(200, "Ghi chú tối đa 200 ký tự").optional().or(z.literal("")),
-  logoUrl: z
-    .string()
-    .optional()
-    .or(z.literal(""))
-    .refine((val) => !val || /^https?:\/\//i.test(val), {
-      message: "URL logo cần bắt đầu bằng http:// hoặc https://",
-    }),
-  coverUrl: z
-    .string()
-    .optional()
-    .or(z.literal(""))
-    .refine((val) => !val || /^https?:\/\//i.test(val), {
-      message: "URL cover cần bắt đầu bằng http:// hoặc https://",
-    }),
+  // logoUrl and coverUrl are set automatically via file upload, not user input
+  logoUrl: z.string().optional().or(z.literal("")),
+  coverUrl: z.string().optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -149,16 +140,43 @@ type CompanyProfileFormProps = {
   onSuccess?: () => void;
 };
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("Không thể đọc dữ liệu ảnh"));
+        return;
+      }
+      const commaIndex = result.indexOf(",");
+      const base64 = commaIndex >= 0 ? result.slice(commaIndex + 1) : result;
+      resolve(base64);
+    };
+    reader.onerror = () => reject(new Error("Không thể đọc tệp ảnh"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function CompanyProfileForm({
   companyId,
   initialData,
   onSuccess,
 }: CompanyProfileFormProps) {
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [logoKey, setLogoKey] = useState<string | null>(null);
+  const [coverKey, setCoverKey] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
   const {
     register,
     control,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -178,6 +196,9 @@ export default function CompanyProfileForm({
     },
   });
 
+  const logoUrl = watch("logoUrl");
+  const coverUrl = watch("coverUrl");
+
   useEffect(() => {
     reset({
       name: initialData.name,
@@ -193,7 +214,92 @@ export default function CompanyProfileForm({
       logoUrl: initialData.logoUrl ?? "",
       coverUrl: initialData.coverUrl ?? "",
     });
+    // Extract key from URL if it's an S3 URL
+    if (initialData.logoUrl) {
+      const match = initialData.logoUrl.match(/companies\/[^/]+\/logo\/[^/?]+/);
+      if (match) setLogoKey(match[0]);
+    }
+    if (initialData.coverUrl) {
+      const match = initialData.coverUrl.match(/companies\/[^/]+\/cover\/[^/?]+/);
+      if (match) setCoverKey(match[0]);
+    }
   }, [initialData, reset]);
+
+  const handleLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Ảnh vượt quá giới hạn 8MB.");
+      event.target.value = "";
+      return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Chỉ hỗ trợ JPG, PNG hoặc WEBP.");
+      event.target.value = "";
+      return;
+    }
+
+    setLogoUploading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const response = await uploadCompanyLogo({
+        companyId,
+        fileName: file.name,
+        fileType: file.type,
+        fileData: base64,
+        previousKey: logoKey ?? undefined,
+      });
+      setLogoKey(response.key);
+      setValue("logoUrl", response.assetUrl, { shouldDirty: true });
+      toast.success("Tải logo thành công");
+    } catch (error: any) {
+      const message = error instanceof Error ? error.message : "Tải logo thất bại, vui lòng thử lại.";
+      toast.error(message);
+    } finally {
+      setLogoUploading(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleCoverUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Ảnh vượt quá giới hạn 8MB.");
+      event.target.value = "";
+      return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Chỉ hỗ trợ JPG, PNG hoặc WEBP.");
+      event.target.value = "";
+      return;
+    }
+
+    setCoverUploading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const response = await uploadCompanyCover({
+        companyId,
+        fileName: file.name,
+        fileType: file.type,
+        fileData: base64,
+        previousKey: coverKey ?? undefined,
+      });
+      setCoverKey(response.key);
+      setValue("coverUrl", response.assetUrl, { shouldDirty: true });
+      toast.success("Tải ảnh cover thành công");
+    } catch (error: any) {
+      const message = error instanceof Error ? error.message : "Tải ảnh cover thất bại, vui lòng thử lại.";
+      toast.error(message);
+    } finally {
+      setCoverUploading(false);
+      event.target.value = "";
+    }
+  };
 
   const updateCompany = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -291,12 +397,124 @@ export default function CompanyProfileForm({
         </FormField>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <FormField label="Logo URL" error={errors.logoUrl?.message}>
-          <Input placeholder="https://..." {...register("logoUrl")} />
+      <div className="grid gap-6 md:grid-cols-2">
+        <FormField label="Logo" error={errors.logoUrl?.message}>
+          <div className="space-y-3">
+            {logoUrl ? (
+              <div className="relative inline-block">
+                <Image
+                  src={logoUrl}
+                  alt="Logo"
+                  width={120}
+                  height={120}
+                  className="h-[120px] w-[120px] rounded-lg border border-[var(--border)] object-cover"
+                />
+                {logoUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xs text-white">
+                    Đang tải...
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex h-[120px] w-[120px] items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--muted)] text-sm text-[var(--muted-foreground)]">
+                Chưa có logo
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={logoUploading}
+              >
+                {logoUrl ? "Đổi logo" : "Tải logo"}
+              </Button>
+              {logoUrl && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setValue("logoUrl", "", { shouldDirty: true });
+                    setLogoKey(null);
+                  }}
+                  disabled={logoUploading}
+                >
+                  Gỡ logo
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              Hỗ trợ JPG, PNG, WEBP (tối đa 8MB). Logo vuông, kích thước đề xuất 512x512px.
+            </p>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+          </div>
         </FormField>
-        <FormField label="Cover URL" error={errors.coverUrl?.message}>
-          <Input placeholder="https://..." {...register("coverUrl")} />
+        <FormField label="Ảnh cover" error={errors.coverUrl?.message}>
+          <div className="space-y-3">
+            {coverUrl ? (
+              <div className="relative">
+                <Image
+                  src={coverUrl}
+                  alt="Cover"
+                  width={400}
+                  height={200}
+                  className="h-48 w-full rounded-lg border border-[var(--border)] object-cover"
+                />
+                {coverUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xs text-white">
+                    Đang tải...
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex h-48 w-full items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--muted)] text-sm text-[var(--muted-foreground)]">
+                Chưa có ảnh cover
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={coverUploading}
+              >
+                {coverUrl ? "Đổi ảnh cover" : "Tải ảnh cover"}
+              </Button>
+              {coverUrl && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setValue("coverUrl", "", { shouldDirty: true });
+                    setCoverKey(null);
+                  }}
+                  disabled={coverUploading}
+                >
+                  Gỡ ảnh cover
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              Hỗ trợ JPG, PNG, WEBP (tối đa 8MB). Tỷ lệ đề xuất 16:9, kích thước tối thiểu 1200x675px.
+            </p>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleCoverUpload}
+            />
+          </div>
         </FormField>
       </div>
 

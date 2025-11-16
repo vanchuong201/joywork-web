@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth";
 import { useMemo, useState, useCallback, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +8,6 @@ import api from "@/lib/api";
 import EmptyState from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import CompanyPostComposer from "@/components/company/PostComposer";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,7 @@ import CompanyProfileForm from "@/components/company/CompanyProfileForm";
 import CompanyMetricsEditor from "@/components/company/CompanyMetricsEditor";
 import CompanyStoryEditor from "@/components/company/CompanyStoryEditor";
 import JobComposer from "@/components/company/JobComposer";
+import CompanyManageTabs from "@/components/company/CompanyManageTabs";
 import { toast } from "sonner";
 import { type CompanyMetric, type CompanyStoryBlock, type CompanyHighlight } from "@/types/company";
 
@@ -106,8 +106,14 @@ const POST_VISIBILITIES: PostVisibilityOption[] = ["PUBLIC", "PRIVATE"];
 
 export default function ManageCompanyPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = Array.isArray(params?.slug) ? params?.slug[0] : (params?.slug as string | undefined);
   const memberships = useAuthStore((s) => s.memberships);
+  
+  const tabParam = searchParams.get("tab");
+  const normalizedTab = ["overview", "stories", "jobs", "applications", "members"].includes(tabParam ?? "")
+    ? (tabParam as string)
+    : "overview";
 
   const membership = useMemo(
     () => memberships.find((m) => m.company.slug === slug),
@@ -442,16 +448,9 @@ export default function ManageCompanyPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-          <TabsTrigger value="stories">Stories</TabsTrigger>
-          <TabsTrigger value="jobs">Việc làm</TabsTrigger>
-          <TabsTrigger value="applications">Ứng tuyển</TabsTrigger>
-          <TabsTrigger value="members">Thành viên</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
+      <CompanyManageTabs
+        initialTab={normalizedTab}
+        overview={
           <div className="space-y-6">
             <Card>
               <CardHeader className="pb-2">
@@ -485,15 +484,14 @@ export default function ManageCompanyPage() {
             </Card>
 
             <CompanyMetricsEditor companyId={company.id} initialMetrics={company.metrics} />
-                <CompanyStoryEditor
-                  companyId={company.id}
-                  initialStory={company.profileStory}
-                  fallbackDescription={company.description}
-                />
+            <CompanyStoryEditor
+              companyId={company.id}
+              initialStory={company.profileStory}
+              fallbackDescription={company.description}
+            />
           </div>
-        </TabsContent>
-
-        <TabsContent value="stories">
+        }
+        stories={
           <div className="space-y-4">
             {companyId ? (
               <CompanyPostComposer companyId={companyId} onCreated={() => postsQuery.refetch()} />
@@ -664,9 +662,8 @@ export default function ManageCompanyPage() {
               )}
             />
           </div>
-        </TabsContent>
-
-        <TabsContent value="jobs">
+        }
+        jobs={
           <div className="space-y-4">
             {companyId ? (
               <JobComposer companyId={companyId} onCreated={() => jobsQuery.refetch()} />
@@ -735,9 +732,8 @@ export default function ManageCompanyPage() {
               )}
             />
           </div>
-        </TabsContent>
-
-        <TabsContent value="applications">
+        }
+        applications={
           <ItemList
             isLoading={applicationsQuery.isLoading}
             items={applicationsQuery.data}
@@ -756,9 +752,8 @@ export default function ManageCompanyPage() {
               </Card>
             )}
           />
-        </TabsContent>
-
-        <TabsContent value="members">
+        }
+        members={
           <Card>
             <CardContent className="divide-y divide-[var(--border)] p-0">
               {company.members.map((member) => (
@@ -772,8 +767,8 @@ export default function ManageCompanyPage() {
               ))}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        }
+      />
     </div>
   );
 }

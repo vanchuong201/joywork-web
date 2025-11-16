@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { createPresignedUpload, deleteUploadedObject } from "@/lib/uploads";
+import { deleteUploadedObject, uploadCompanyPostImage } from "@/lib/uploads";
 import api from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -14,17 +14,82 @@ const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-type MediaItem = {
+type MediaItemBase = {
   id: string;
   file: File;
   previewUrl: string;
   status: "uploading" | "uploaded" | "error";
-  key?: string;
-  url?: string;
-  width?: number;
-  height?: number;
   errorMessage?: string;
 };
+
+type MediaItem =
+  | (MediaItemBase & { status: "uploading" })
+  | (MediaItemBase & {
+      status: "uploaded";
+      key: string;
+      url: string;
+      width?: number;
+      height?: number;
+    })
+  | (MediaItemBase & { status: "error"; key?: string; url?: string });
+
+type UploadingPayload = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};
+
+type MediaAction =
+  | { type: "ADD"; payload: UploadingPayload }
+  | { type: "SUCCESS"; payload: { id: string; key: string; url: string; width?: number; height?: number } }
+  | { type: "ERROR"; payload: { id: string; message: string } }
+  | { type: "REMOVE"; payload: { id: string } }
+  | { type: "RESET" };
+
+function mediaReducer(state: MediaItem[], action: MediaAction): MediaItem[] {
+  switch (action.type) {
+    case "ADD":
+      return [
+        ...state,
+        {
+          id: action.payload.id,
+          file: action.payload.file,
+          previewUrl: action.payload.previewUrl,
+          status: "uploading",
+        },
+      ];
+    case "SUCCESS":
+      return state.map((item) =>
+        item.id === action.payload.id
+          ? {
+              ...item,
+              status: "uploaded",
+              key: action.payload.key,
+              url: action.payload.url,
+              width: action.payload.width,
+              height: action.payload.height,
+              errorMessage: undefined,
+            }
+          : item,
+      );
+    case "ERROR":
+      return state.map((item) =>
+        item.id === action.payload.id
+          ? {
+              ...item,
+              status: "error",
+              errorMessage: action.payload.message,
+            }
+          : item,
+      );
+    case "REMOVE":
+      return state.filter((item) => item.id !== action.payload.id);
+    case "RESET":
+      return [];
+    default:
+      return state;
+  }
+}
 
 type Props = {
   companyId: string;
@@ -40,18 +105,22 @@ async function getImageDimensions(src: string): Promise<{ width: number; height:
   });
 }
 
-async function uploadToPresigned(url: string, file: File) {
-  const response = await fetch(url, {
-    method: "PUT",
-    headers: {
-      "Content-Type": file.type,
-    },
-    body: file,
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("Không thể đọc dữ liệu ảnh"));
+        return;
+      }
+      const commaIndex = result.indexOf(",");
+      const base64 = commaIndex >= 0 ? result.slice(commaIndex + 1) : result;
+      resolve(base64);
+    };
+    reader.onerror = () => reject(new Error("Không thể đọc tệp ảnh"));
+    reader.readAsDataURL(file);
   });
-
-  if (!response.ok) {
-    throw new Error("Tải ảnh lên S3 thất bại");
-  }
 }
 
 export default function CompanyPostComposer({ companyId, onCreated }: Props) {
@@ -59,13 +128,14 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState<"STORY" | "ANNOUNCEMENT" | "EVENT">("STORY");
   const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [mediaItems, dispatch] = useReducer(mediaReducer, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
   const previewUrlsRef = useRef<Set<string>>(new Set());
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    mountedRef.current = true; // ensure true after StrictMode remount in dev
     return () => {
       mountedRef.current = false;
       previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
@@ -76,13 +146,17 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
   const pendingUploads = mediaItems.some((item) => item.status === "uploading");
   const hasErrorMedia = mediaItems.some((item) => item.status === "error");
 
+  function isUploaded(item: MediaItem): item is Extract<MediaItem, { status: "uploaded" }> {
+    return item.status === "uploaded";
+  }
+
   const createPost = useMutation({
     mutationFn: async () => {
       const images = mediaItems
-        .filter((item) => item.status === "uploaded" && item.key && item.url)
+        .filter(isUploaded)
         .map((item, index) => ({
-          key: item.key!,
-          url: item.url!,
+          key: item.key,
+          url: item.url,
           width: item.width,
           height: item.height,
           order: index,
@@ -105,13 +179,11 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
       setContent("");
       setPostType("STORY");
       setVisibility("PUBLIC");
-      setMediaItems((prev) => {
-        prev.forEach((item) => {
-          URL.revokeObjectURL(item.previewUrl);
-          previewUrlsRef.current.delete(item.previewUrl);
-        });
-        return [];
+      mediaItems.forEach((item) => {
+        URL.revokeObjectURL(item.previewUrl);
+        previewUrlsRef.current.delete(item.previewUrl);
       });
+      dispatch({ type: "RESET" });
       queryClient.invalidateQueries({ queryKey: ["company-posts", companyId] });
       queryClient.invalidateQueries({ queryKey: ["feed"] });
       onCreated?.();
@@ -147,43 +219,38 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
       const previewUrl = URL.createObjectURL(file);
       previewUrlsRef.current.add(previewUrl);
 
-      setMediaItems((prev) => [...prev, { id, file, previewUrl, status: "uploading" }]);
+      dispatch({ type: "ADD", payload: { id, file, previewUrl } });
 
       try {
-        const [{ width, height }, presign] = await Promise.all([
-          getImageDimensions(previewUrl),
-          createPresignedUpload(companyId, file),
-        ]);
-        await uploadToPresigned(presign.uploadUrl, file);
-        if (!mountedRef.current) return;
-        setMediaItems((prev) =>
-          prev.map((item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  status: "uploaded",
-                  key: presign.key,
-                  url: presign.assetUrl,
-                  width,
-                  height,
-                }
-              : item
-          )
+        const uploadResult = await fileToBase64(file).then((base64) =>
+          uploadCompanyPostImage({
+            companyId,
+            fileName: file.name,
+            fileType: file.type,
+            fileData: base64,
+          }),
         );
+        if (!mountedRef.current) return;
+        dispatch({
+          type: "SUCCESS",
+          payload: { id, key: uploadResult.key, url: uploadResult.assetUrl },
+        });
+        // Fetch dimensions in background (best-effort)
+        void getImageDimensions(previewUrl)
+          .then(({ width, height }) => {
+            if (!mountedRef.current) return;
+            dispatch({
+              type: "SUCCESS",
+              payload: { id, key: uploadResult.key, url: uploadResult.assetUrl, width, height },
+            });
+          })
+          .catch(() => {
+            // ignore dimension errors
+          });
       } catch (error: any) {
         const message = error instanceof Error ? error.message : "Tải ảnh thất bại";
         if (!mountedRef.current) return;
-        setMediaItems((prev) =>
-          prev.map((item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  status: "error",
-                  errorMessage: message,
-                }
-              : item
-          )
-        );
+        dispatch({ type: "ERROR", payload: { id, message } });
         toast.error(message);
       }
     }
@@ -192,10 +259,10 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
   const handleRemoveMedia = async (id: string) => {
     const target = mediaItems.find((item) => item.id === id);
     if (!target) return;
-    setMediaItems((prev) => prev.filter((item) => item.id !== id));
+    dispatch({ type: "REMOVE", payload: { id } });
     previewUrlsRef.current.delete(target.previewUrl);
     URL.revokeObjectURL(target.previewUrl);
-    if (target.key) {
+    if (target.status === "uploaded" && target.key) {
       try {
         await deleteUploadedObject(target.key);
       } catch (error) {
@@ -227,13 +294,11 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
     setContent("");
     setPostType("STORY");
     setVisibility("PUBLIC");
-    setMediaItems((prev) => {
-      prev.forEach((item) => {
-        previewUrlsRef.current.delete(item.previewUrl);
-        URL.revokeObjectURL(item.previewUrl);
-      });
-      return [];
+    mediaItems.forEach((item) => {
+      previewUrlsRef.current.delete(item.previewUrl);
+      URL.revokeObjectURL(item.previewUrl);
     });
+    dispatch({ type: "RESET" });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -355,9 +420,13 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                   >
                     ×
                   </button>
-                  {item.status !== "uploaded" ? (
+                  {item.status === "uploading" ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">
-                      {item.status === "uploading" ? "Đang tải..." : item.errorMessage ?? "Lỗi tải ảnh"}
+                      Đang tải...
+                    </div>
+                  ) : item.status === "error" ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 px-2 text-center text-xs text-white">
+                      {item.errorMessage ?? "Lỗi tải ảnh"}
                     </div>
                   ) : null}
                 </div>
