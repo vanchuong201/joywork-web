@@ -267,9 +267,6 @@ function CompanyActions({ company }: { company: CompanyProfile }) {
       <Button variant="outline" size="sm">
         💬 Nhắn tin / Liên hệ
       </Button>
-      <Button asChild variant="outline" size="sm">
-        <Link href={`/jobs?companyId=${company.id}`}>💼 Việc làm</Link>
-      </Button>
       <CompanyManageButton slug={company.slug} />
     </div>
   );

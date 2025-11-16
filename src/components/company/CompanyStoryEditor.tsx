@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { type CompanyStoryBlock } from "@/types/company";
+import CompanyStoryRenderer from "@/components/company/CompanyStoryRenderer";
 
 type EditableBlock = {
   _localId: string;
@@ -25,6 +26,7 @@ type EditableBlock = {
 type Props = {
   companyId: string;
   initialStory?: CompanyStoryBlock[] | null;
+  fallbackDescription?: string | null;
 };
 
 const BLOCK_TYPES: Array<{ value: CompanyStoryBlock["type"]; label: string }> = [
@@ -37,7 +39,71 @@ const BLOCK_TYPES: Array<{ value: CompanyStoryBlock["type"]; label: string }> = 
 
 const MAX_BLOCKS = 12;
 
-export default function CompanyStoryEditor({ companyId, initialStory }: Props) {
+const SAMPLE_STORY: CompanyStoryBlock[] = [
+  {
+    id: "intro",
+    type: "text",
+    title: "Hành trình của Skyline Media",
+    subtitle: "Từ một studio nhỏ đến đối tác chiến lược của các thương hiệu dẫn đầu",
+    body:
+      "Skyline Media khởi đầu năm 2018 với 5 thành viên đam mê sáng tạo. Sau 6 năm phát triển, chúng tôi đã đồng hành cùng hơn 120 doanh nghiệp trong các dự án truyền thông quy mô từ trong nước đến khu vực.\n\nChúng tôi tin rằng mỗi thương hiệu đều có câu chuyện riêng và nhiệm vụ của Skyline Media là kể lại câu chuyện đó bằng trải nghiệm chạm cảm xúc.",
+  },
+  {
+    id: "vision",
+    type: "list",
+    title: "Giá trị khác biệt mà Skyline Media mang đến",
+    items: [
+      "Chiến lược phát triển thương hiệu dựa trên dữ liệu và insight khách hàng.",
+      "Đội ngũ sáng tạo nội dung linh hoạt, hiểu rõ đặc thù từng ngành.",
+      "Hệ sinh thái dịch vụ khép kín: nghiên cứu, sản xuất, phân phối và đo lường.",
+    ],
+  },
+  {
+    id: "metrics",
+    type: "stats",
+    title: "Một vài con số biết nói",
+    subtitle: "Chúng tôi đặt mục tiêu tăng trưởng bền vững qua từng dự án",
+    stats: [
+      { label: "Đối tác doanh nghiệp", value: "+120" },
+      { label: "Chiến dịch triển khai", value: "450+" },
+      { label: "Tỉ lệ hài lòng", value: "97%" },
+      { label: "Quốc gia từng hợp tác", value: "6" },
+      { label: "Số lượng thành viên", value: "58" },
+    ],
+  },
+  {
+    id: "quote",
+    type: "quote",
+    title: "Thông điệp từ CEO",
+    quote: {
+      text:
+        "Chúng tôi không chỉ tạo ra nội dung đẹp mà còn tạo nên trải nghiệm khiến khách hàng nhớ đến thương hiệu lâu dài.",
+      author: "Lan Anh",
+      role: "Founder & CEO Skyline Media",
+    },
+  },
+  {
+    id: "media",
+    type: "media",
+    title: "Khoảnh khắc từ các dự án gần đây",
+    media: [
+      {
+        url: "https://picsum.photos/seed/skyline-media-story-1/1280/720",
+        caption: "Hậu trường chiến dịch ra mắt sản phẩm công nghệ 2025",
+      },
+      {
+        url: "https://picsum.photos/seed/skyline-media-story-2/1280/720",
+        caption: "Buổi workshop đồng sáng tạo cùng đối tác F&B",
+      },
+      {
+        url: "https://picsum.photos/seed/skyline-media-story-3/1280/720",
+        caption: "Đội ngũ Skyline Media trong chuyến teambuilding Đà Nẵng",
+      },
+    ],
+  },
+];
+
+export default function CompanyStoryEditor({ companyId, initialStory, fallbackDescription }: Props) {
   const [blocks, setBlocks] = useState<EditableBlock[]>(() => toEditableBlocks(initialStory));
   const [isDirty, setDirty] = useState(false);
 
@@ -115,12 +181,26 @@ export default function CompanyStoryEditor({ companyId, initialStory }: Props) {
 
   return (
     <Card>
-      <CardHeader className="space-y-2">
-        <div>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2">
           <h3 className="text-lg font-semibold text-[var(--foreground)]">Trình bày câu chuyện</h3>
           <p className="text-sm text-[var(--muted-foreground)]">
             Sắp xếp các khối nội dung để kể câu chuyện về tầm nhìn, văn hoá, hành trình của doanh nghiệp.
           </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setBlocks(toEditableBlocks(SAMPLE_STORY));
+              setDirty(true);
+              toast.info("Đã áp dụng dữ liệu mẫu. Hãy điều chỉnh nội dung và bấm “Lưu nội dung”.");
+            }}
+          >
+            Dùng dữ liệu mẫu
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -168,6 +248,18 @@ export default function CompanyStoryEditor({ companyId, initialStory }: Props) {
               {updateStory.isPending ? "Đang lưu..." : "Lưu nội dung"}
             </Button>
           </div>
+        </div>
+        <div className="space-y-3 rounded-lg border border-dashed border-[var(--border)] bg-[var(--background)]/40 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h4 className="text-sm font-medium text-[var(--foreground)]">Xem trước dành cho ứng viên</h4>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              Nội dung này hiển thị tại tab “Tổng quan” trên trang công ty.
+            </p>
+          </div>
+          <CompanyStoryRenderer
+            blocks={preparedBlocks.length ? preparedBlocks : undefined}
+            fallbackDescription={preparedBlocks.length ? undefined : fallbackDescription}
+          />
         </div>
       </CardContent>
     </Card>
@@ -389,7 +481,7 @@ function BlockBodyEditor({
                 onChange((current) => ({
                   ...current,
                   quote: {
-                    ...current.quote,
+                    ...(current.quote ?? { text: "" }),
                     text: event.target.value,
                   },
                 }))
@@ -405,8 +497,9 @@ function BlockBodyEditor({
                   onChange((current) => ({
                     ...current,
                     quote: {
-                      ...current.quote,
+                      text: current.quote?.text ?? "",
                       author: event.target.value,
+                      role: current.quote?.role ?? "",
                     },
                   }))
                 }
@@ -420,7 +513,8 @@ function BlockBodyEditor({
                   onChange((current) => ({
                     ...current,
                     quote: {
-                      ...current.quote,
+                      text: current.quote?.text ?? "",
+                      author: current.quote?.author ?? "",
                       role: event.target.value,
                     },
                   }))
@@ -594,7 +688,7 @@ function toEditableBlocks(blocks?: CompanyStoryBlock[] | null): EditableBlock[] 
     _localId: crypto.randomUUID(),
     type: block.type,
     title: block.title,
-    subtitle: block.subtitle,
+    subtitle: "subtitle" in block ? block.subtitle : undefined,
     body: block.type === "text" ? block.body ?? "" : undefined,
     items:
       block.type === "list"

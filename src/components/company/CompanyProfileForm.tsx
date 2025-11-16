@@ -1,17 +1,79 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import RichTextEditor from "@/components/ui/rich-text-editor";
+import DOMPurify from "dompurify";
+import TurndownService from "turndown";
+import { marked } from "marked";
 
 const sizeOptions = ["STARTUP", "SMALL", "MEDIUM", "LARGE", "ENTERPRISE"] as const;
+
+const turndown = new TurndownService({
+  headingStyle: "atx",
+  codeBlockStyle: "fenced",
+});
+
+const DESCRIPTION_SANITIZE_CONFIG = {
+  ALLOWED_TAGS: [
+    "p",
+    "strong",
+    "em",
+    "u",
+    "s",
+    "span",
+    "a",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+    "code",
+    "pre",
+    "h1",
+    "h2",
+    "h3",
+    "br",
+    "div",
+    "img",
+    "figure",
+    "figcaption",
+  ],
+  ALLOWED_ATTR: ["href", "target", "rel", "style", "class", "src", "alt", "title", "width", "height", "loading"],
+};
+
+function htmlToMarkdown(html?: string | null) {
+  if (!html) return "";
+  try {
+    return turndown.turndown(html);
+  } catch (error) {
+    console.warn("Failed to convert HTML to markdown", error);
+    return html;
+  }
+}
+
+function markdownToHtml(markdown?: string | null) {
+  if (!markdown) return "";
+  const html = marked.parse(markdown, { breaks: true });
+  return typeof html === "string" ? html : "";
+}
+
+function sanitizeDescription(markdown: string | undefined | null) {
+  if (!markdown) return "";
+  const rawHtml = markdownToHtml(markdown);
+  const sanitized = DOMPurify.sanitize(rawHtml, DESCRIPTION_SANITIZE_CONFIG);
+  const normalized = sanitized.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
+  if (!normalized || normalized === "<p></p>") {
+    return "";
+  }
+  return sanitized;
+}
 
 const schema = z.object({
   name: z.string().min(2, "Tên công ty cần ít nhất 2 ký tự"),
@@ -22,7 +84,7 @@ const schema = z.object({
     .or(z.literal("")),
   description: z
     .string()
-    .max(2000, "Mô tả tối đa 2000 ký tự")
+    .max(10000, "Mô tả tối đa 10.000 ký tự")
     .optional()
     .or(z.literal("")),
   website: z
@@ -94,6 +156,7 @@ export default function CompanyProfileForm({
 }: CompanyProfileFormProps) {
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isDirty, isSubmitting },
@@ -102,7 +165,7 @@ export default function CompanyProfileForm({
     defaultValues: {
       name: initialData.name,
       tagline: initialData.tagline ?? "",
-      description: initialData.description ?? "",
+      description: htmlToMarkdown(initialData.description),
       website: initialData.website ?? "",
       location: initialData.location ?? "",
       industry: initialData.industry ?? "",
@@ -119,7 +182,7 @@ export default function CompanyProfileForm({
     reset({
       name: initialData.name,
       tagline: initialData.tagline ?? "",
-      description: initialData.description ?? "",
+      description: htmlToMarkdown(initialData.description),
       website: initialData.website ?? "",
       location: initialData.location ?? "",
       industry: initialData.industry ?? "",
@@ -134,10 +197,11 @@ export default function CompanyProfileForm({
 
   const updateCompany = useMutation({
     mutationFn: async (values: FormValues) => {
+      const sanitizedDescription = sanitizeDescription(values.description);
       const payload = {
         name: values.name.trim(),
         tagline: values.tagline?.trim() || undefined,
-        description: values.description?.trim() || undefined,
+        description: sanitizedDescription || undefined,
         website: values.website?.trim() || undefined,
         location: values.location?.trim() || undefined,
         industry: values.industry?.trim() || undefined,
@@ -177,7 +241,17 @@ export default function CompanyProfileForm({
       </div>
 
       <FormField label="Giới thiệu" error={errors.description?.message}>
-        <Textarea placeholder="Mô tả ngắn về công ty..." rows={4} {...register("description")} />
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <RichTextEditor
+              value={field.value}
+              onChange={(content) => field.onChange(content)}
+              placeholder="Mô tả ngắn về công ty..."
+            />
+          )}
+        />
       </FormField>
 
       <div className="grid gap-4 md:grid-cols-2">

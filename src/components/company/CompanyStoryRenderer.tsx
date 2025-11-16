@@ -1,3 +1,5 @@
+ "use client";
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Image from "next/image";
 import { type CompanyStoryBlock } from "@/types/company";
@@ -9,8 +11,10 @@ type Props = {
 };
 
 export default function CompanyStoryRenderer({ blocks, fallbackDescription }: Props) {
+  const sanitizedFallback = fallbackDescription;
+
   if (!blocks?.length) {
-    if (!fallbackDescription) {
+    if (!sanitizedFallback) {
       return (
         <Card>
           <CardContent className="py-10 text-center text-sm text-[var(--muted-foreground)]">
@@ -25,8 +29,11 @@ export default function CompanyStoryRenderer({ blocks, fallbackDescription }: Pr
         <CardHeader>
           <h2 className="text-lg font-semibold text-[var(--foreground)]">Về doanh nghiệp</h2>
         </CardHeader>
-        <CardContent className="whitespace-pre-line text-sm leading-relaxed text-[var(--muted-foreground)]">
-          {fallbackDescription}
+        <CardContent className="text-sm leading-relaxed text-[var(--muted-foreground)]">
+          <div
+            className="space-y-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-[var(--foreground)] [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-[var(--foreground)] [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-[var(--foreground)] [&_strong]:text-[var(--foreground)] [&_a]:text-[var(--brand)] hover:[&_a]:text-[var(--brand)] [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-[var(--brand)] [&_blockquote]:bg-[var(--brand)]/5 [&_blockquote]:p-4 [&_code]:rounded [&_code]:bg-[var(--muted)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[var(--foreground)]"
+            dangerouslySetInnerHTML={{ __html: sanitizedFallback }}
+          />
         </CardContent>
       </Card>
     );
@@ -34,6 +41,19 @@ export default function CompanyStoryRenderer({ blocks, fallbackDescription }: Pr
 
   return (
     <div className="space-y-6">
+      {sanitizedFallback ? (
+        <Card>
+          <CardHeader>
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">Về doanh nghiệp</h2>
+          </CardHeader>
+          <CardContent className="text-sm leading-relaxed text-[var(--muted-foreground)]">
+            <div
+              className="space-y-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-[var(--foreground)] [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-[var(--foreground)] [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-[var(--foreground)] [&_strong]:text-[var(--foreground)] [&_a]:text-[var(--brand)] hover:[&_a]:text-[var(--brand)] [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-[var(--brand)] [&_blockquote]:bg-[var(--brand)]/5 [&_blockquote]:p-4 [&_code]:rounded [&_code]:bg-[var(--muted)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[var(--foreground)]"
+              dangerouslySetInnerHTML={{ __html: sanitizedFallback }}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
       {blocks.map((block, index) => {
         const key = block.id ?? `${block.type}-${index}`;
         switch (block.type) {

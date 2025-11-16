@@ -453,99 +453,43 @@ export default function ManageCompanyPage() {
 
         <TabsContent value="overview">
           <div className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-[1.5fr_minmax(0,1fr)]">
-              <Card>
-                <CardHeader className="pb-2">
-                  <h3 className="text-lg font-semibold text-[var(--foreground)]">Hồ sơ doanh nghiệp</h3>
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    Cập nhật thông tin giúp trang profile của bạn hấp dẫn và đồng nhất trên toàn hệ thống.
-                  </p>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <CompanyProfileForm
-                    companyId={company.id}
-                    initialData={{
-                      name: company.name,
-                      tagline: company.tagline ?? "",
-                      description: company.description ?? "",
-                      website: company.website ?? "",
-                      location: company.location ?? "",
-                      industry: company.industry ?? "",
-                      size: company.size ?? "",
-                      foundedYear: company.foundedYear ?? null,
-                      headcount: company.headcount ?? null,
-                      headcountNote: company.headcountNote ?? "",
-                      logoUrl: company.logoUrl ?? "",
-                      coverUrl: company.coverUrl ?? "",
-                    }}
-                    onSuccess={() => {
-                      void companyQuery.refetch();
-                    }}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden">
-                {company.coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={company.coverUrl} alt={company.name} className="h-36 w-full object-cover" />
-                ) : (
-                  <div className="flex h-36 items-center justify-center bg-[var(--muted)] text-sm text-[var(--muted-foreground)]">
-                    Thêm ảnh cover để trang công ty trông sống động hơn
-                  </div>
-                )}
-                <CardContent className="space-y-3 pt-4 text-sm text-[var(--muted-foreground)]">
-                  <div>
-                    <p className="font-medium text-[var(--foreground)]">{company.name}</p>
-                    <p>{company.tagline ?? "Chưa có tagline"}</p>
-                  </div>
-                  <div className="grid gap-2">
-                    <InfoRow label="Ngành" value={company.industry ?? "Chưa cập nhật"} />
-                    <InfoRow label="Địa điểm" value={company.location ?? "Chưa cập nhật"} />
-                    <InfoRow
-                      label="Quy mô"
-                      value={
-                        company.headcount
-                          ? `${company.headcount.toLocaleString("vi-VN")} nhân sự`
-                          : company.size ?? "Chưa cập nhật"
-                      }
-                    />
-                    {company.headcountNote ? (
-                      <InfoRow label="Ghi chú quy mô" value={company.headcountNote} />
-                    ) : null}
-                    <InfoRow
-                      label="Thành lập"
-                      value={company.foundedYear ? String(company.foundedYear) : "Chưa cập nhật"}
-                    />
-                    <InfoRow
-                      label="Website"
-                      value={
-                        company.website ? (
-                          <a
-                            href={company.website}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[var(--brand)] hover:underline"
-                          >
-                            {company.website}
-                          </a>
-                        ) : (
-                          "Chưa cập nhật"
-                        )
-                      }
-                    />
-                  </div>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/companies/${company.slug}`} target="_blank">
-                      Xem trang công ty
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader className="pb-2">
+                <h3 className="text-lg font-semibold text-[var(--foreground)]">Hồ sơ doanh nghiệp</h3>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  Cập nhật thông tin giúp trang profile của bạn hấp dẫn và đồng nhất trên toàn hệ thống.
+                </p>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <CompanyProfileForm
+                  companyId={company.id}
+                  initialData={{
+                    name: company.name,
+                    tagline: company.tagline ?? "",
+                    description: company.description ?? "",
+                    website: company.website ?? "",
+                    location: company.location ?? "",
+                    industry: company.industry ?? "",
+                    size: company.size ?? "",
+                    foundedYear: company.foundedYear ?? null,
+                    headcount: company.headcount ?? null,
+                    headcountNote: company.headcountNote ?? "",
+                    logoUrl: company.logoUrl ?? "",
+                    coverUrl: company.coverUrl ?? "",
+                  }}
+                  onSuccess={() => {
+                    void companyQuery.refetch();
+                  }}
+                />
+              </CardContent>
+            </Card>
 
             <CompanyMetricsEditor companyId={company.id} initialMetrics={company.metrics} />
-            <CompanyStoryEditor companyId={company.id} initialStory={company.profileStory} />
+                <CompanyStoryEditor
+                  companyId={company.id}
+                  initialStory={company.profileStory}
+                  fallbackDescription={company.description}
+                />
           </div>
         </TabsContent>
 
@@ -830,15 +774,6 @@ export default function ManageCompanyPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-3 text-xs">
-      <span className="font-medium text-[var(--foreground)]">{label}</span>
-      <span className="text-right text-[var(--muted-foreground)]">{value}</span>
     </div>
   );
 }
