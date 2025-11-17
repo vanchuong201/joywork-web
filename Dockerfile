@@ -3,6 +3,10 @@ FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
+# Accept build argument for API URL
+ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+
 # Install dependencies
 COPY package*.json ./
 RUN npm ci

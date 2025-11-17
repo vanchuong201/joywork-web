@@ -2,6 +2,8 @@ import Header from "@/components/common/Header";
 import LeftNav from "@/components/common/LeftNav";
 import RightRail from "@/components/common/RightRail";
 
+export const dynamic = 'force-dynamic';
+
 export default function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {

@@ -37,7 +37,6 @@ export default function RichTextEditor({
         hideToolbar={disabled}
         visibleDragbar={false}
         preview="edit"
-        readOnly={disabled}
         extraCommands={extraCommands}
         height={260}
       />

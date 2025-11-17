@@ -352,7 +352,7 @@ export default function CompanyProfileForm({
           name="description"
           render={({ field }) => (
             <RichTextEditor
-              value={field.value}
+              value={field.value || ""}
               onChange={(content) => field.onChange(content)}
               placeholder="Mô tả ngắn về công ty..."
             />
