@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/useAuth";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 
 type Props = {
   companyId: string;
@@ -31,6 +32,7 @@ export default function CompanyFollowButton({
   const followedCompanies = useAuthStore((state) => state.followedCompanies);
   const addFollowedCompany = useAuthStore((state) => state.addFollowedCompany);
   const removeFollowedCompany = useAuthStore((state) => state.removeFollowedCompany);
+  const { openPrompt } = useAuthPrompt();
 
   const isFollowing = useMemo(
     () => followedCompanies.some((entry) => entry.companyId === companyId),
@@ -47,7 +49,7 @@ export default function CompanyFollowButton({
   const handleAction = async () => {
     if (!initialized || loading) return;
     if (!user) {
-      router.push(`/login?redirect=/companies/${companySlug}`);
+      openPrompt("follow");
       return;
     }
 

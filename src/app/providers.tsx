@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { PropsWithChildren } from "react";
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/useAuth";
+import { AuthPromptProvider } from "@/contexts/AuthPromptContext";
 
 export default function Providers({ children }: PropsWithChildren) {
   const fetchMe = useAuthStore((s) => s.fetchMe);
@@ -22,8 +23,10 @@ export default function Providers({ children }: PropsWithChildren) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
       <ReactQueryProvider>
-        {children}
-        <Toaster richColors />
+        <AuthPromptProvider>
+          {children}
+          <Toaster richColors />
+        </AuthPromptProvider>
       </ReactQueryProvider>
     </ThemeProvider>
   );

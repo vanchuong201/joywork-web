@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import PostCard, { type PostCardData } from "@/components/feed/PostCard";
 import api from "@/lib/api";
 import useInView from "@/hooks/useInView";
+import { useAuthStore } from "@/store/useAuth";
+import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 
 type Props = {
   posts: PostCardData[];
@@ -119,12 +121,19 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
     },
   });
 
+  const user = useAuthStore((state) => state.user);
+  const { openPrompt } = useAuthPrompt();
+
   const handleLike = useCallback(
     (post: PostCardData) => {
+      if (!user) {
+        openPrompt("like");
+        return;
+      }
       if (mutation.isPending) return;
       mutation.mutate(post);
     },
-    [mutation],
+    [mutation, user, openPrompt],
   );
 
   return (

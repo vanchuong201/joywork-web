@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuth";
+import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 
 type JobSaveButtonProps = {
   jobId: string;
@@ -32,6 +33,7 @@ export default function JobSaveButton({
   const savedJobIds = useAuthStore((state) => state.savedJobIds);
   const addSavedJob = useAuthStore((state) => state.addSavedJob);
   const removeSavedJob = useAuthStore((state) => state.removeSavedJob);
+  const { openPrompt } = useAuthPrompt();
 
   const [isSubmitting, setSubmitting] = useState(false);
 
@@ -41,7 +43,7 @@ export default function JobSaveButton({
     if (!initialized || loading || isSubmitting) return;
 
     if (!user) {
-      router.push(`/login?redirect=/jobs/${jobId}`);
+      openPrompt("save-job");
       return;
     }
 

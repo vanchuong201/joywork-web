@@ -14,6 +14,8 @@ import PostCard, { type PostCardData } from "@/components/feed/PostCard";
 import { useEffect, useMemo, useState } from "react";
 import useInView from "@/hooks/useInView";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/useAuth";
+import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 
 type Post = PostCardData;
 
@@ -59,6 +61,8 @@ export default function FeedPage() {
     router.replace(`${pathname}?${next.toString()}`);
   };
   const qc = useQueryClient();
+  const user = useAuthStore((state) => state.user);
+  const { openPrompt } = useAuthPrompt();
   const like = useMutation({
     mutationFn: async (p: Post) => {
       if (p.isLiked) await api.delete(`/api/posts/${p.id}/like`);
@@ -69,6 +73,14 @@ export default function FeedPage() {
     },
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Action failed"),
   });
+
+  const handleLike = (p: Post) => {
+    if (!user) {
+      openPrompt("like");
+      return;
+    }
+    like.mutate(p);
+  };
 
   const allPosts = useMemo(() => (query.data?.pages ?? []).flatMap((p) => p.posts ?? []), [query.data]);
   const posts = tab === "trending"
@@ -122,7 +134,7 @@ export default function FeedPage() {
         <div className="space-y-6">
           {posts.map((p, idx) => (
             <div key={p.id} className={idx === 0 ? "md:scale-[1.02]" : undefined}>
-              <PostCard post={p} onLike={() => like.mutate(p)} />
+              <PostCard post={p} onLike={() => handleLike(p)} />
             </div>
           ))}
           {/* Load more sentinel */}

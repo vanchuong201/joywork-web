@@ -9,11 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { toast } from "sonner";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
+import { useAuthStore } from "@/store/useAuth";
+import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
   const qc = useQueryClient();
   const jobId = params?.id as string;
+  const user = useAuthStore((state) => state.user);
+  const { openPrompt } = useAuthPrompt();
 
   const { data, isLoading } = useQuery<{ job: any }>({
     queryKey: ["job", jobId],
@@ -34,6 +38,14 @@ export default function JobDetailPage() {
     },
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Failed to apply"),
   });
+
+  const handleApply = () => {
+    if (!user) {
+      openPrompt("apply");
+      return;
+    }
+    applyMutation.mutate();
+  };
 
   if (isLoading) return <div className="h-40 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--card)]" />;
 
@@ -112,7 +124,7 @@ export default function JobDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <JobSaveButton jobId={job.id} />
-            <Button onClick={() => applyMutation.mutate()} disabled={applyMutation.isPending}>
+            <Button onClick={handleApply} disabled={applyMutation.isPending}>
               {applyMutation.isPending ? "Đang gửi..." : "Ứng tuyển ngay"}
             </Button>
           </div>
