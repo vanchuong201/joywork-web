@@ -120,14 +120,21 @@ function LoginPageContent() {
             {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
           </Button>
         </form>
-        <div className="mt-6 text-center text-sm text-[var(--muted-foreground)]">
-          Chưa có tài khoản?{" "}
-          <a
-            className="text-[var(--brand)] underline-offset-2 hover:underline"
-            href={`/register${searchParams.get("redirect") ? `?redirect=${encodeURIComponent(searchParams.get("redirect")!)}` : ""}`}
-          >
-            Đăng ký ngay
-          </a>
+        <div className="mt-6 space-y-2 text-center text-sm text-[var(--muted-foreground)]">
+          <div>
+            Chưa có tài khoản?{" "}
+            <a
+              className="text-[var(--brand)] underline-offset-2 hover:underline"
+              href={`/register${searchParams.get("redirect") ? `?redirect=${encodeURIComponent(searchParams.get("redirect")!)}` : ""}`}
+            >
+              Đăng ký ngay
+            </a>
+          </div>
+          <div>
+            <a href="/forgot-password" className="text-[var(--brand)] underline-offset-2 hover:underline">
+              Quên mật khẩu?
+            </a>
+          </div>
         </div>
       </div>
     </div>

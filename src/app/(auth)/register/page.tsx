@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(2, "Tên cần ít nhất 2 ký tự"),
@@ -44,6 +45,7 @@ function RegisterPageContent() {
   const watchedEmail = watch("email");
   const watchedPhone = watch("phone");
   const watchedPassword = watch("password");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (serverError) {
@@ -133,14 +135,26 @@ function RegisterPageContent() {
             />
           </FormField>
           <FormField label="Mật khẩu" error={errors.password?.message}>
-            <Input
-              placeholder="Ít nhất 6 ký tự"
-              type="password"
-              autoComplete="new-password"
-              aria-invalid={Boolean(errors.password)}
-              className={cn(errors.password ? "border-red-500 focus-visible:ring-red-500" : undefined)}
-              {...register("password")}
-            />
+            <div className="relative">
+              <Input
+                placeholder="Ít nhất 6 ký tự"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                aria-invalid={Boolean(errors.password)}
+                className={cn(
+                  errors.password ? "border-red-500 focus-visible:ring-red-500" : undefined,
+                  "pr-10"
+                )}
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </FormField>
           {serverError ? <p className="text-sm text-red-500">{serverError}</p> : null}
           <Button className="w-full" disabled={isSubmitting}>
