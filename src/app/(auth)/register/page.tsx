@@ -19,7 +19,7 @@ const schema = z.object({
     .email("Vui lòng nhập email hợp lệ"),
   phone: z
     .string()
-    .regex(/^[0-9]{10,11}$/, "Số điện thoại phải gồm 10-11 chữ số")
+    .regex(/^[0-9]*$/, "Số điện thoại chỉ được chứa chữ số")
     .optional()
     .or(z.literal("")),
   password: z.string().min(6, "Mật khẩu cần ít nhất 6 ký tự"),
