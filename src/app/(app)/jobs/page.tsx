@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ type Job = {
   company: { id: string; name: string; slug: string };
 };
 
-export default function JobsPage() {
+function JobsPageContent() {
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -264,4 +264,23 @@ export default function JobsPage() {
   );
 }
 
+export default function JobsPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <Skeleton className="h-32 rounded-lg" />
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-32" />
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </div>
+    }>
+      <JobsPageContent />
+    </Suspense>
+  );
+}
 

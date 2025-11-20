@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth";
 import { useMemo, useState, useCallback, type ReactNode } from "react";
@@ -104,7 +105,7 @@ type PostVisibilityOption = "PUBLIC" | "PRIVATE";
 const POST_TYPES: PostTypeOption[] = ["STORY", "ANNOUNCEMENT", "EVENT"];
 const POST_VISIBILITIES: PostVisibilityOption[] = ["PUBLIC", "PRIVATE"];
 
-export default function ManageCompanyPage() {
+function ManageCompanyPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = Array.isArray(params?.slug) ? params?.slug[0] : (params?.slug as string | undefined);
@@ -828,4 +829,19 @@ function formatSalaryRange(min?: number | null, max?: number | null, currency?: 
   return `${formatter.format(max!)} ${unit}`;
 }
 
+export default function ManageCompanyPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <Skeleton className="h-32 rounded-lg" />
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-24 rounded-lg" />
+        </div>
+      </div>
+    }>
+      <ManageCompanyPageContent />
+    </Suspense>
+  );
+}
 

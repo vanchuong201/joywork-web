@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import api from "@/lib/api";
@@ -27,7 +27,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fetchMe = useAuthStore((s) => s.fetchMe);
@@ -213,4 +213,21 @@ function extractDetailedValidation(error: any): { field: string; message: string
   return null;
 }
 
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4">
+        <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6">
+          <div className="mb-6 text-center">
+            <div className="mx-auto mb-2 h-10 w-10 rounded-md bg-[var(--brand)]" />
+            <h1 className="text-xl font-semibold text-[var(--foreground)]">Tạo tài khoản JoyWork</h1>
+            <p className="text-sm text-[var(--muted-foreground)]">Đang tải...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <RegisterPageContent />
+    </Suspense>
+  );
+}
 
