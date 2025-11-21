@@ -6,6 +6,8 @@ import { Heart } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
+import { toast } from "sonner";
+import Link from "next/link";
 
 type LikeButtonProps = {
   liked: boolean;
@@ -201,6 +203,16 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
   const hasImages = (post.images?.length ?? 0) > 0;
   const likeCount = post.likesCount ?? (post as any)?._count?.likes ?? 0;
   const shareCount = post.sharesCount ?? (post as any)?._count?.shares ?? 0;
+  const handleShare = useCallback(async () => {
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const url = `${origin}/posts/${post.id}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Đã sao chép link bài viết");
+    } catch {
+      toast.error("Không thể sao chép link");
+    }
+  }, [post.id]);
   const footerInfo = useMemo(
     () =>
       [
@@ -223,7 +235,11 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             ) : null}
           </div>
         </div>
-        <h3 className="text-base font-semibold">{post.title}</h3>
+        <h3 className="text-base font-semibold">
+          <Link href={`/posts/${post.id}`} className="hover:underline">
+            {post.title}
+          </Link>
+        </h3>
         {hasImages ? (
           <MediaGrid images={post.images!} />
         ) : post.coverUrl ? (
@@ -256,7 +272,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
         <Button size="sm" variant="outline">
           Save
         </Button>
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="outline" onClick={handleShare}>
           Share
         </Button>
         {footerInfo.length ? (
