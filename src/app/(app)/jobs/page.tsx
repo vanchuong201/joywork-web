@@ -14,6 +14,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
 import { ChevronDown } from "lucide-react";
+import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 
 type Job = {
   id: string;
@@ -241,7 +242,13 @@ function JobsPageContent() {
             {data?.jobs?.map((j) => (
               <Card key={j.id}>
                 <CardHeader className="pb-2">
-                  <div className="text-sm text-[var(--muted-foreground)]">{j.company.name}</div>
+                  <div className="text-sm text-[var(--muted-foreground)]">
+                    <CompanyHoverCard companyId={j.company.id} slug={j.company.slug} companyName={j.company.name}>
+                      <Link href={`/companies/${j.company.slug}`} className="font-medium hover:underline">
+                        {j.company.name}
+                      </Link>
+                    </CompanyHoverCard>
+                  </div>
                   <div className="text-base font-semibold">{j.title}</div>
                 </CardHeader>
                 <CardContent className="space-y-3">

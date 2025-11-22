@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
 import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
+import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -67,9 +68,11 @@ export default function JobDetailPage() {
     <Card className="space-y-6">
       <CardHeader className="space-y-2">
         <div className="text-sm text-[var(--muted-foreground)]">
-          <Link href={`/companies/${job.company.slug}`} className="font-medium hover:text-[var(--brand)]">
-            {job.company.name}
-          </Link>
+          <CompanyHoverCard companyId={job.company.id} slug={job.company.slug} companyName={job.company.name}>
+            <Link href={`/companies/${job.company.slug}`} className="font-medium hover:text-[var(--brand)]">
+              {job.company.name}
+            </Link>
+          </CompanyHoverCard>
         </div>
         <h1 className="text-2xl font-semibold text-[var(--foreground)]">{job.title}</h1>
         <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">

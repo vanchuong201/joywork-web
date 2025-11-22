@@ -440,6 +440,11 @@ function ManageCompanyPageContent() {
           </div>
           <div className="text-right text-sm text-[var(--muted-foreground)]">
             <p>Quyền quản trị dành cho Owner & Admin.</p>
+            {company.id ? (
+              <Button asChild size="sm" variant="outline" className="mt-2">
+                <Link href={`/tickets?companyId=${company.id}`}>Xem ticket hỗ trợ</Link>
+              </Button>
+            ) : null}
           </div>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">

@@ -90,3 +90,15 @@ export type CompanyProfile = {
   } | null;
 };
 
+export type CompanySummary = {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl?: string | null;
+  tagline?: string | null;
+  location?: string | null;
+  followersCount: number;
+  jobsActive: number;
+  postsCount: number;
+};
+

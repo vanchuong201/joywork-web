@@ -2,12 +2,18 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart } from "lucide-react";
+import { Heart, BookmarkCheck, BookmarkPlus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { useAuthStore } from "@/store/useAuth";
+import { useAuthPrompt } from "@/contexts/AuthPromptContext";
+import { cn } from "@/lib/utils";
+import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 
 type LikeButtonProps = {
   liked: boolean;
@@ -93,6 +99,7 @@ export type PostCardData = {
   likesCount?: number | null;
   sharesCount?: number | null;
   isLiked?: boolean | null;
+  isSaved?: boolean | null;
   images?: { id?: string; url: string; width?: number | null; height?: number | null; order?: number }[] | null;
 };
 
@@ -203,6 +210,42 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
   const hasImages = (post.images?.length ?? 0) > 0;
   const likeCount = post.likesCount ?? (post as any)?._count?.likes ?? 0;
   const shareCount = post.sharesCount ?? (post as any)?._count?.shares ?? 0;
+  const user = useAuthStore((s) => s.user);
+  const { openPrompt } = useAuthPrompt();
+  const qc = useQueryClient();
+  const [isSaved, setIsSaved] = useState(Boolean(post.isSaved));
+  useEffect(() => {
+    setIsSaved(Boolean(post.isSaved));
+  }, [post.isSaved]);
+  const saveMutation = useMutation({
+    mutationFn: async (nextSaved: boolean) => {
+      if (nextSaved) {
+        await api.post(`/api/posts/${post.id}/favorite`);
+      } else {
+        await api.delete(`/api/posts/${post.id}/favorite`);
+      }
+    },
+    onSuccess: () => {
+      // Invalidate any list/detail caches
+      qc.invalidateQueries({ queryKey: ["feed"] });
+      qc.invalidateQueries({ queryKey: ["company-posts"] });
+      qc.invalidateQueries({ queryKey: ["post"] });
+      qc.invalidateQueries({ queryKey: ["saved-posts"] });
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Không thể lưu bài viết"),
+  });
+  const handleSave = useCallback(() => {
+    if (!user) {
+      openPrompt("save");
+      return;
+    }
+    if (saveMutation.isPending) return;
+    const nextSaved = !isSaved;
+    setIsSaved(nextSaved);
+    saveMutation.mutate(nextSaved, {
+      onError: () => setIsSaved(!nextSaved),
+    });
+  }, [user, openPrompt, saveMutation, isSaved]);
   const handleShare = useCallback(async () => {
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -227,9 +270,15 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
         <div className="mb-1 flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
           <div className="h-7 w-7 rounded-full bg-[var(--muted)]" />
           <div className="flex flex-col">
-            <a className="font-medium hover:text-[var(--foreground)]" href={`/companies/${post.company.slug}`}>
-              {post.company.name}
-            </a>
+            <CompanyHoverCard
+              companyId={post.company.id}
+              slug={post.company.slug}
+              companyName={post.company.name}
+            >
+              <Link className="font-medium hover:text-[var(--foreground)]" href={`/companies/${post.company.slug}`}>
+                {post.company.name}
+              </Link>
+            </CompanyHoverCard>
             {post.company.slogan ? (
               <span className="text-xs">{post.company.slogan}</span>
             ) : null}
@@ -269,8 +318,16 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       </div>
       <div className="flex items-center gap-2 border-t border-[var(--border)] p-3">
         <LikeButton liked={Boolean(post.isLiked)} likes={likeCount} onToggle={onLike ? () => onLike(post) : undefined} />
-        <Button size="sm" variant="outline">
-          Save
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleSave}
+          aria-pressed={isSaved}
+          disabled={saveMutation.isPending}
+          className={cn("gap-1", isSaved ? "border-[var(--brand)] text-[var(--brand)]" : undefined)}
+        >
+          {isSaved ? <BookmarkCheck className="h-4 w-4" /> : <BookmarkPlus className="h-4 w-4" />}
+          {isSaved ? "Đã lưu" : "Lưu bài"}
         </Button>
         <Button size="sm" variant="outline" onClick={handleShare}>
           Share

@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Bookmark,
   Heart,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -36,8 +37,9 @@ const primaryNav: NavItem[] = [
 const personalNav: NavItem[] = [
   { icon: UserRound, label: "Hồ sơ của tôi", href: "/profile" },
   { icon: ClipboardList, label: "Ứng tuyển của tôi", href: "/applications" },
-  { icon: Bookmark, label: "Việc đã lưu", href: "/saved-jobs" },
+  { icon: Bookmark, label: "Đã lưu", href: "/saved" },
   { icon: Heart, label: "Công ty theo dõi", href: "/following" },
+  { icon: LifeBuoy, label: "Ticket hỗ trợ", href: "/tickets" },
 ];
 
 function NavSection({ title, items, pathname }: { title: string; items: NavItem[]; pathname: string }) {
