@@ -268,7 +268,18 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
     <article className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-0 overflow-hidden">
       <div className="p-4">
         <div className="mb-1 flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
-          <div className="h-7 w-7 rounded-full bg-[var(--muted)]" />
+          {post.company.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={post.company.logoUrl}
+              alt={post.company.name}
+              className="h-7 w-7 rounded-full object-cover border border-[var(--border)]"
+            />
+          ) : (
+            <div className="h-7 w-7 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold text-[var(--muted-foreground)]">
+              {post.company.name.slice(0, 1)}
+            </div>
+          )}
           <div className="flex flex-col">
             <CompanyHoverCard
               companyId={post.company.id}
