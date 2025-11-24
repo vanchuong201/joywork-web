@@ -287,7 +287,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
               companyName={post.company.name}
             >
               <Link className="font-medium hover:text-[var(--foreground)]" href={`/companies/${post.company.slug}`}>
-                {post.company.name}
+              {post.company.name}
               </Link>
             </CompanyHoverCard>
             {post.company.slogan ? (

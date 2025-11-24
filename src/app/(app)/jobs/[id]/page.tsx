@@ -69,9 +69,9 @@ export default function JobDetailPage() {
       <CardHeader className="space-y-2">
         <div className="text-sm text-[var(--muted-foreground)]">
           <CompanyHoverCard companyId={job.company.id} slug={job.company.slug} companyName={job.company.name}>
-            <Link href={`/companies/${job.company.slug}`} className="font-medium hover:text-[var(--brand)]">
-              {job.company.name}
-            </Link>
+          <Link href={`/companies/${job.company.slug}`} className="font-medium hover:text-[var(--brand)]">
+            {job.company.name}
+          </Link>
           </CompanyHoverCard>
         </div>
         <h1 className="text-2xl font-semibold text-[var(--foreground)]">{job.title}</h1>

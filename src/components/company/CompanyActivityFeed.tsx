@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import PostCard, { type PostCardData } from "@/components/feed/PostCard";
 import api from "@/lib/api";
@@ -18,15 +18,27 @@ type Props = {
 const PAGE_SIZE = 2;
 
 export default function CompanyActivityFeed({ posts, companyId, totalPages }: Props) {
-  const normalizedPosts =
-    posts?.map((post) => ({
-      ...post,
-      content: post.content ?? "",
-    })) ?? [];
+  const queryClient = useQueryClient();
+  const normalizedPosts = useMemo(
+    () =>
+      posts?.map((post) => ({
+        ...post,
+        content: post.content ?? "",
+      })) ?? [],
+    [posts]
+  );
 
   const previousState = useRef<PostCardData[] | null>(null);
   const [items, setItems] = useState<PostCardData[]>(normalizedPosts);
   const { ref, inView } = useInView<HTMLDivElement>({ rootMargin: "200px" });
+
+  // Reset query cache when companyId changes or component mounts with fresh data
+  useEffect(() => {
+    if (companyId && normalizedPosts.length > 0) {
+      // Remove stale cache to prevent corruption when navigating back
+      queryClient.removeQueries({ queryKey: ["company-posts", companyId] });
+    }
+  }, [companyId, queryClient]); // Only run when companyId changes
 
   const query = useInfiniteQuery({
     queryKey: ["company-posts", companyId],
@@ -42,20 +54,29 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
       return res.data.data as { posts: PostCardData[]; pagination: { page: number; totalPages: number } };
     },
     getNextPageParam: (lastPage) => {
-      const current = lastPage.pagination?.page ?? 1;
-      const totalPages = lastPage.pagination?.totalPages ?? current;
+      const current = lastPage?.pagination?.page ?? 1;
+      const totalPages = lastPage?.pagination?.totalPages ?? current;
       return current < totalPages ? current + 1 : undefined;
     },
   });
 
   const mergedItems = useMemo(() => {
-    const extra =
-      query.data?.pages.flatMap((page) =>
-        page.posts.map((post) => ({
-          ...post,
-          content: post.content ?? "",
-        })),
-      ) ?? [];
+    // Guard against undefined or malformed cache data
+    const pages = query.data?.pages;
+    if (!pages || !Array.isArray(pages)) {
+      return items;
+    }
+
+    const extra = pages.flatMap((page) => {
+      // Additional safety check for each page
+      if (!page || !Array.isArray(page.posts)) {
+        return [];
+      }
+      return page.posts.map((post) => ({
+        ...post,
+        content: post.content ?? "",
+      }));
+    });
 
     const ordered: PostCardData[] = [];
     const seen = new Set<string>();
@@ -79,7 +100,7 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
 
   useEffect(() => {
     setItems(normalizedPosts);
-  }, [posts]);
+  }, [normalizedPosts]);
 
   useEffect(() => {
     if (inView && query.hasNextPage && !query.isFetchingNextPage) {
