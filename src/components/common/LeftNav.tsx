@@ -10,6 +10,7 @@ import {
   Bookmark,
   Heart,
   LifeBuoy,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -18,6 +19,7 @@ import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
 
 type NavItem = {
   icon: LucideIcon;
@@ -27,11 +29,16 @@ type NavItem = {
   badge?: string;
 };
 
+type CompanyNavItem = NavItem & {
+  manageHref?: string;
+};
+
 const primaryNav: NavItem[] = [
   { icon: Home, label: "Feed", href: "/" },
   { icon: Briefcase, label: "Jobs", href: "/jobs" },
   { icon: Building2, label: "Companies", href: "/companies" },
-  { icon: MessageSquareText, label: "Inbox", href: "/inbox" },
+  // Tạm ẩn Inbox (messaging cho applications)
+  // { icon: MessageSquareText, label: "Inbox", href: "/inbox" },
 ];
 
 const personalNav: NavItem[] = [
@@ -39,7 +46,7 @@ const personalNav: NavItem[] = [
   { icon: ClipboardList, label: "Ứng tuyển của tôi", href: "/applications" },
   { icon: Bookmark, label: "Đã lưu", href: "/saved" },
   { icon: Heart, label: "Công ty theo dõi", href: "/following" },
-  { icon: LifeBuoy, label: "Ticket hỗ trợ", href: "/tickets" },
+  { icon: MessageSquareText, label: "Trao đổi với DN", href: "/tickets" },
 ];
 
 function NavSection({ title, items, pathname }: { title: string; items: NavItem[]; pathname: string }) {
@@ -73,6 +80,62 @@ function NavSection({ title, items, pathname }: { title: string; items: NavItem[
                   </span>
                 ) : null}
               </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function CompanyNavSection({ title, items, pathname }: { title: string; items: CompanyNavItem[]; pathname: string }) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  return (
+    <div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{title}</div>
+      <ul className="space-y-1">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const isActive = item.exact
+            ? pathname === item.href
+            : item.href === "/"
+            ? pathname === "/"
+            : pathname.startsWith(item.href);
+          const isHovered = hoveredId === item.href;
+          
+          return (
+            <li 
+              key={item.href}
+              onMouseEnter={() => setHoveredId(item.href)}
+              onMouseLeave={() => setHoveredId(null)}
+              className="relative"
+            >
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
+                  isActive
+                    ? "bg-[var(--muted)] text-[var(--foreground)]"
+                    : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                )}
+              >
+                <Icon size={16} />
+                <span className="flex-1 font-medium truncate">{item.label}</span>
+              </Link>
+              
+              {item.manageHref && isHovered && (
+                <Link
+                  href={item.manageHref}
+                  className={cn(
+                    "absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                    "bg-[var(--brand)] text-white hover:opacity-90"
+                  )}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Quản lý
+                </Link>
+              )}
             </li>
           );
         })}
@@ -141,12 +204,15 @@ export default function LeftNav() {
     );
   }
 
-  const companyItems: NavItem[] = memberships.map((membership) => ({
-    icon: Building2,
-    label: membership.company.name,
-    href: `/companies/${membership.company.slug}`,
-    badge: membership.role === "OWNER" || membership.role === "ADMIN" ? "Quản trị" : undefined,
-  }));
+  const companyItems: CompanyNavItem[] = memberships.map((membership) => {
+    // Tất cả member đều có thể truy cập trang quản lý
+    return {
+      icon: Building2,
+      label: membership.company.name,
+      href: `/companies/${membership.company.slug}`,
+      manageHref: `/companies/${membership.company.slug}/manage`,
+    };
+  });
 
   return (
     <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">
@@ -176,7 +242,7 @@ export default function LeftNav() {
         <NavSection title="Không gian của tôi" items={personalNav} pathname={pathname} />
 
         {companyItems.length > 0 ? (
-          <NavSection title="Công ty của tôi" items={companyItems} pathname={pathname} />
+          <CompanyNavSection title="Công ty của tôi" items={companyItems} pathname={pathname} />
         ) : null}
 
         {user.role === "ADMIN" ? (

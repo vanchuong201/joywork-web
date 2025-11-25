@@ -19,6 +19,7 @@ import CompanyMetricsEditor from "@/components/company/CompanyMetricsEditor";
 import CompanyStoryEditor from "@/components/company/CompanyStoryEditor";
 import JobComposer from "@/components/company/JobComposer";
 import CompanyManageTabs from "@/components/company/CompanyManageTabs";
+import CompanyTicketsList from "@/components/company/CompanyTicketsList";
 import { toast } from "sonner";
 import { type CompanyMetric, type CompanyStoryBlock, type CompanyHighlight } from "@/types/company";
 
@@ -112,7 +113,7 @@ function ManageCompanyPageContent() {
   const memberships = useAuthStore((s) => s.memberships);
   
   const tabParam = searchParams.get("tab");
-  const normalizedTab = ["overview", "stories", "jobs", "applications", "members"].includes(tabParam ?? "")
+  const normalizedTab = ["overview", "stories", "jobs", "applications", "members", "tickets"].includes(tabParam ?? "")
     ? (tabParam as string)
     : "overview";
 
@@ -440,11 +441,6 @@ function ManageCompanyPageContent() {
           </div>
           <div className="text-right text-sm text-[var(--muted-foreground)]">
             <p>Quyền quản trị dành cho Owner & Admin.</p>
-            {company.id ? (
-              <Button asChild size="sm" variant="outline" className="mt-2">
-                <Link href={`/tickets?companyId=${company.id}`}>Xem ticket hỗ trợ</Link>
-              </Button>
-            ) : null}
           </div>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
@@ -758,6 +754,9 @@ function ManageCompanyPageContent() {
               </Card>
             )}
           />
+        }
+        tickets={
+          <CompanyTicketsList companyId={company.id} />
         }
         members={
           <Card>

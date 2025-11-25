@@ -11,9 +11,10 @@ type Props = {
   jobs: ReactNode;
   applications: ReactNode;
   members: ReactNode;
+  tickets: ReactNode;
 };
 
-const VALID_TABS = new Set(["overview", "stories", "jobs", "applications", "members"]);
+const VALID_TABS = new Set(["overview", "stories", "jobs", "applications", "members", "tickets"]);
 
 export default function CompanyManageTabs({
   initialTab,
@@ -22,6 +23,7 @@ export default function CompanyManageTabs({
   jobs,
   applications,
   members,
+  tickets,
 }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -55,6 +57,7 @@ export default function CompanyManageTabs({
         <TabsTrigger value="jobs">Việc làm</TabsTrigger>
         <TabsTrigger value="applications">Ứng tuyển</TabsTrigger>
         <TabsTrigger value="members">Thành viên</TabsTrigger>
+        <TabsTrigger value="tickets">Tickets</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview">{overview}</TabsContent>
@@ -62,6 +65,7 @@ export default function CompanyManageTabs({
       <TabsContent value="jobs">{jobs}</TabsContent>
       <TabsContent value="applications">{applications}</TabsContent>
       <TabsContent value="members">{members}</TabsContent>
+      <TabsContent value="tickets">{tickets}</TabsContent>
     </Tabs>
   );
 }
