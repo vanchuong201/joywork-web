@@ -207,9 +207,9 @@ export default function LeftNav() {
   const companyItems: CompanyNavItem[] = memberships.map((membership) => {
     // Tất cả member đều có thể truy cập trang quản lý
     return {
-      icon: Building2,
-      label: membership.company.name,
-      href: `/companies/${membership.company.slug}`,
+    icon: Building2,
+    label: membership.company.name,
+    href: `/companies/${membership.company.slug}`,
       manageHref: `/companies/${membership.company.slug}/manage`,
     };
   });

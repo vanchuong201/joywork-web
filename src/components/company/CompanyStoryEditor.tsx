@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { type CompanyStoryBlock } from "@/types/company";
 import CompanyStoryRenderer from "@/components/company/CompanyStoryRenderer";
+import { Plus } from "lucide-react";
 
 type EditableBlock = {
   _localId: string;
@@ -27,6 +28,7 @@ type Props = {
   companyId: string;
   initialStory?: CompanyStoryBlock[] | null;
   fallbackDescription?: string | null;
+  onSaved?: () => void;
 };
 
 const BLOCK_TYPES: Array<{ value: CompanyStoryBlock["type"]; label: string }> = [
@@ -103,7 +105,7 @@ const SAMPLE_STORY: CompanyStoryBlock[] = [
   },
 ];
 
-export default function CompanyStoryEditor({ companyId, initialStory, fallbackDescription }: Props) {
+export default function CompanyStoryEditor({ companyId, initialStory, fallbackDescription, onSaved }: Props) {
   const [blocks, setBlocks] = useState<EditableBlock[]>(() => toEditableBlocks(initialStory));
   const [isDirty, setDirty] = useState(false);
 
@@ -121,6 +123,7 @@ export default function CompanyStoryEditor({ companyId, initialStory, fallbackDe
     onSuccess: () => {
       toast.success("Đã lưu phần giới thiệu doanh nghiệp");
       setDirty(false);
+      onSaved?.();
     },
     onError: (error: any) => {
       const message = error?.response?.data?.error?.message ?? "Không thể lưu nội dung, thử lại sau";
@@ -226,7 +229,15 @@ export default function CompanyStoryEditor({ companyId, initialStory, fallbackDe
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <Button type="button" variant="outline" size="sm" onClick={handleAddBlock}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAddBlock}
+            className="border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand)]/5"
+            aria-label="Thêm khối nội dung"
+          >
+            <Plus className="mr-1 h-4 w-4" />
             Thêm khối nội dung
           </Button>
           <div className="flex items-center gap-2">
@@ -249,7 +260,7 @@ export default function CompanyStoryEditor({ companyId, initialStory, fallbackDe
             </Button>
           </div>
         </div>
-        <div className="space-y-3 rounded-lg border border-dashed border-[var(--border)] bg-[var(--background)]/40 p-4">
+        <div className="space-y-3 rounded-lg border border-dashed border-[var(--border)] bg-[var(--background)]/40 p-4 mt-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h4 className="text-sm font-medium text-[var(--foreground)]">Xem trước dành cho ứng viên</h4>
             <p className="text-xs text-[var(--muted-foreground)]">

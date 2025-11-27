@@ -1,17 +1,90 @@
- "use client";
+"use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { type CompanyStoryBlock } from "@/types/company";
 import { cn } from "@/lib/utils";
+import { Pencil } from "lucide-react";
 
 type Props = {
   blocks?: CompanyStoryBlock[] | null;
   fallbackDescription?: string | null;
+  canEditDescription?: boolean;
+  onEditDescription?: () => void;
 };
 
-export default function CompanyStoryRenderer({ blocks, fallbackDescription }: Props) {
+export default function CompanyStoryRenderer({
+  blocks,
+  fallbackDescription,
+  canEditDescription,
+  onEditDescription,
+}: Props) {
   const sanitizedFallback = fallbackDescription;
+
+  function AboutCard() {
+    // Read-more state for long description content
+    const [expanded, setExpanded] = useState(false);
+    const [showReadMore, setShowReadMore] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      if (!containerRef.current || expanded) return;
+      const el = containerRef.current;
+      const checkOverflow = () => {
+        const hasOverflow = el.scrollHeight > el.clientHeight + 4; // tolerance
+        setShowReadMore(hasOverflow);
+      };
+      checkOverflow();
+      const onResize = () => checkOverflow();
+      window.addEventListener("resize", onResize);
+      return () => window.removeEventListener("resize", onResize);
+    }, [expanded, sanitizedFallback]);
+
+    return (
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[var(--foreground)]">Về doanh nghiệp</h2>
+          {canEditDescription ? (
+            <Button size="sm" variant="outline" onClick={onEditDescription}>
+              <Pencil className="mr-1 h-3 w-3" />
+              Chỉnh sửa
+            </Button>
+          ) : null}
+        </CardHeader>
+        <CardContent className="text-sm leading-relaxed text-[var(--muted-foreground)]">
+          <div
+            ref={containerRef}
+            className={cn(
+              "relative transition-[max-height]",
+              expanded ? "max-h-none" : "max-h-[320px] overflow-hidden",
+            )}
+          >
+            <div
+              className="space-y-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-[var(--foreground)] [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-[var(--foreground)] [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-[var(--foreground)] [&_strong]:text-[var(--foreground)] [&_a]:text-[var(--brand)] hover:[&_a]:text-[var(--brand)] [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-[var(--brand)] [&_blockquote]:bg-[var(--brand)]/5 [&_blockquote]:p-4 [&_code]:rounded [&_code]:bg-[var(--muted)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[var(--foreground)]"
+              dangerouslySetInnerHTML={{ __html: sanitizedFallback! }}
+            />
+            {!expanded && showReadMore ? (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--card)] to-transparent" />
+            ) : null}
+          </div>
+          {showReadMore ? (
+            <div className="mt-3 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                aria-expanded={expanded}
+                className="text-sm underline underline-offset-2 text-[var(--brand)] hover:text-[var(--brand)] focus:outline-none"
+              >
+                {expanded ? "Thu gọn" : "Xem thêm"}
+              </button>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!blocks?.length) {
     if (!sanitizedFallback) {
@@ -24,35 +97,13 @@ export default function CompanyStoryRenderer({ blocks, fallbackDescription }: Pr
       );
     }
 
-    return (
-      <Card>
-        <CardHeader>
-          <h2 className="text-lg font-semibold text-[var(--foreground)]">Về doanh nghiệp</h2>
-        </CardHeader>
-        <CardContent className="text-sm leading-relaxed text-[var(--muted-foreground)]">
-          <div
-            className="space-y-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-[var(--foreground)] [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-[var(--foreground)] [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-[var(--foreground)] [&_strong]:text-[var(--foreground)] [&_a]:text-[var(--brand)] hover:[&_a]:text-[var(--brand)] [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-[var(--brand)] [&_blockquote]:bg-[var(--brand)]/5 [&_blockquote]:p-4 [&_code]:rounded [&_code]:bg-[var(--muted)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[var(--foreground)]"
-            dangerouslySetInnerHTML={{ __html: sanitizedFallback }}
-          />
-        </CardContent>
-      </Card>
-    );
+    return <AboutCard />;
   }
 
   return (
     <div className="space-y-6">
       {sanitizedFallback ? (
-        <Card>
-          <CardHeader>
-            <h2 className="text-lg font-semibold text-[var(--foreground)]">Về doanh nghiệp</h2>
-          </CardHeader>
-          <CardContent className="text-sm leading-relaxed text-[var(--muted-foreground)]">
-            <div
-              className="space-y-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-[var(--foreground)] [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-[var(--foreground)] [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-[var(--foreground)] [&_strong]:text-[var(--foreground)] [&_a]:text-[var(--brand)] hover:[&_a]:text-[var(--brand)] [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-[var(--brand)] [&_blockquote]:bg-[var(--brand)]/5 [&_blockquote]:p-4 [&_code]:rounded [&_code]:bg-[var(--muted)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[var(--foreground)]"
-              dangerouslySetInnerHTML={{ __html: sanitizedFallback }}
-            />
-          </CardContent>
-        </Card>
+        <AboutCard />
       ) : null}
       {blocks.map((block, index) => {
         const key = block.id ?? `${block.type}-${index}`;

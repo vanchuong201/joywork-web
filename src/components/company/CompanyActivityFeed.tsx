@@ -21,9 +21,9 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
   const queryClient = useQueryClient();
   const normalizedPosts = useMemo(
     () =>
-      posts?.map((post) => ({
-        ...post,
-        content: post.content ?? "",
+    posts?.map((post) => ({
+      ...post,
+      content: post.content ?? "",
       })) ?? [],
     [posts]
   );
@@ -73,8 +73,8 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
         return [];
       }
       return page.posts.map((post) => ({
-        ...post,
-        content: post.content ?? "",
+          ...post,
+          content: post.content ?? "",
       }));
     });
 

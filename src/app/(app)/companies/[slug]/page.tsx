@@ -110,8 +110,44 @@ export default async function CompanyProfilePage({
 
   const normalizedTab = ["overview", "activity", "jobs"].includes(tabParam ?? "") ? (tabParam as string) : "overview";
 
+  const metricsSection =
+    company.metrics && company.metrics.length > 0 ? (
+      <div className="mt-6 mb-6">
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-semibold text-[var(--foreground)]">Chỉ số nổi bật</h3>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {company.metrics.map((metric, idx) => (
+                <div
+                  key={metric.id ?? idx}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--background)] p-4"
+                >
+                  <p className="text-sm font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
+                    {metric.label}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{metric.value}</p>
+                  {metric.description ? (
+                    <p className="mt-2 text-xs text-[var(--muted-foreground)]">{metric.description}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    ) : null;
+
   const overviewContent = (
-    <CompanyStoryRenderer blocks={company.profileStory} fallbackDescription={company.description} />
+    <>
+      {/* About first */}
+      <CompanyStoryRenderer blocks={undefined} fallbackDescription={company.description} />
+      {/* Then metrics (if any) */}
+      {metricsSection}
+      {/* Then other story blocks */}
+      <CompanyStoryRenderer blocks={company.profileStory} fallbackDescription={undefined} />
+    </>
   );
 
   const activityContent = postsData.posts.length === 0 ? (
