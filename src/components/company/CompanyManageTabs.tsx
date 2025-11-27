@@ -7,19 +7,19 @@ import { useEffect, useState, type ReactNode } from "react";
 type Props = {
   initialTab: string;
   overview: ReactNode;
-  stories: ReactNode;
+  activity: ReactNode;
   jobs: ReactNode;
   applications: ReactNode;
   members: ReactNode;
   tickets: ReactNode;
 };
 
-const VALID_TABS = new Set(["overview", "stories", "jobs", "applications", "members", "tickets"]);
+const VALID_TABS = new Set(["overview", "activity", "jobs", "applications", "members", "tickets"]);
 
 export default function CompanyManageTabs({
   initialTab,
   overview,
-  stories,
+  activity,
   jobs,
   applications,
   members,
@@ -53,15 +53,15 @@ export default function CompanyManageTabs({
     <Tabs value={tab} onValueChange={handleTabChange} className="space-y-4">
       <TabsList>
         <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-        <TabsTrigger value="stories">Stories</TabsTrigger>
+        <TabsTrigger value="activity">Hoạt động</TabsTrigger>
         <TabsTrigger value="jobs">Việc làm</TabsTrigger>
         <TabsTrigger value="applications">Ứng tuyển</TabsTrigger>
         <TabsTrigger value="members">Thành viên</TabsTrigger>
-        <TabsTrigger value="tickets">Tickets</TabsTrigger>
+        <TabsTrigger value="tickets">Trao đổi</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview">{overview}</TabsContent>
-      <TabsContent value="stories">{stories}</TabsContent>
+      <TabsContent value="activity">{activity}</TabsContent>
       <TabsContent value="jobs">{jobs}</TabsContent>
       <TabsContent value="applications">{applications}</TabsContent>
       <TabsContent value="members">{members}</TabsContent>

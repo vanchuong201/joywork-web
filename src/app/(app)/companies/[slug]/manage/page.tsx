@@ -1,27 +1,27 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth";
-import { useMemo, useState, useCallback, type ReactNode } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import EmptyState from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import Link from "next/link";
-import CompanyPostComposer from "@/components/company/PostComposer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import CompanyProfileForm from "@/components/company/CompanyProfileForm";
-import CompanyMetricsEditor from "@/components/company/CompanyMetricsEditor";
-import CompanyStoryEditor from "@/components/company/CompanyStoryEditor";
-import JobComposer from "@/components/company/JobComposer";
+import Link from "next/link";
+import Image from "next/image";
 import CompanyManageTabs from "@/components/company/CompanyManageTabs";
+import CompanyStoryRenderer from "@/components/company/CompanyStoryRenderer";
+import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
 import CompanyTicketsList from "@/components/company/CompanyTicketsList";
-import { toast } from "sonner";
-import { type CompanyMetric, type CompanyStoryBlock, type CompanyHighlight } from "@/types/company";
+import CompanyPostComposer from "@/components/company/PostComposer";
+import JobComposer from "@/components/company/JobComposer";
+import EditCoverModal from "@/components/company/EditCoverModal";
+import EditLogoModal from "@/components/company/EditLogoModal";
+import EditCompanyInfoModal from "@/components/company/EditCompanyInfoModal";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Pencil } from "lucide-react";
+import type { CompanyMetric, CompanyStoryBlock, CompanyHighlight } from "@/types/company";
 
 type CompanyManageResponse = {
   id: string;
@@ -100,12 +100,6 @@ type ApplicationItem = {
 
 const MAX_ITEMS = 10;
 
-type PostTypeOption = "STORY" | "ANNOUNCEMENT" | "EVENT";
-type PostVisibilityOption = "PUBLIC" | "PRIVATE";
-
-const POST_TYPES: PostTypeOption[] = ["STORY", "ANNOUNCEMENT", "EVENT"];
-const POST_VISIBILITIES: PostVisibilityOption[] = ["PUBLIC", "PRIVATE"];
-
 function ManageCompanyPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -113,7 +107,7 @@ function ManageCompanyPageContent() {
   const memberships = useAuthStore((s) => s.memberships);
   
   const tabParam = searchParams.get("tab");
-  const normalizedTab = ["overview", "stories", "jobs", "applications", "members", "tickets"].includes(tabParam ?? "")
+  const normalizedTab = ["overview", "activity", "jobs", "applications", "members", "tickets"].includes(tabParam ?? "")
     ? (tabParam as string)
     : "overview";
 
@@ -122,11 +116,17 @@ function ManageCompanyPageContent() {
     [memberships, slug]
   );
 
-  const hasAccess = membership && ["OWNER", "ADMIN"].includes(membership.role);
+  // MEMBER can now access /manage but with limited permissions
+  const canEdit = membership && ["OWNER", "ADMIN"].includes(membership.role);
+
+  const queryClient = useQueryClient();
+  const [editCoverOpen, setEditCoverOpen] = useState(false);
+  const [editLogoOpen, setEditLogoOpen] = useState(false);
+  const [editInfoOpen, setEditInfoOpen] = useState(false);
 
   const companyQuery = useQuery({
     queryKey: ["company-manage", slug],
-    enabled: Boolean(slug) && Boolean(hasAccess),
+    enabled: Boolean(slug) && Boolean(membership),
     queryFn: async () => {
       const res = await api.get(`/api/companies/${slug}`);
       return res.data.data.company as CompanyManageResponse;
@@ -134,25 +134,6 @@ function ManageCompanyPageContent() {
   });
 
   const companyId = companyQuery.data?.id;
-
-  const queryClient = useQueryClient();
-  const [editingPostId, setEditingPostId] = useState<string | null>(null);
-  const [postDraft, setPostDraft] = useState<{
-    title: string;
-    content: string;
-    type: PostTypeOption;
-    visibility: PostVisibilityOption;
-  }>({
-    title: "",
-    content: "",
-    type: "STORY",
-    visibility: "PUBLIC",
-  });
-  const [postSavingId, setPostSavingId] = useState<string | null>(null);
-  const [postToggleId, setPostToggleId] = useState<string | null>(null);
-  const [postDeleteId, setPostDeleteId] = useState<string | null>(null);
-  const [jobToggleId, setJobToggleId] = useState<string | null>(null);
-  const [jobDeleteId, setJobDeleteId] = useState<string | null>(null);
 
   const postsQuery = useQuery({
     queryKey: ["company-posts", companyId],
@@ -187,189 +168,30 @@ function ManageCompanyPageContent() {
     },
   });
 
-  const updatePostMutation = useMutation({
-    mutationFn: async ({
-      postId,
-      title,
-      content,
-      type,
-      visibility,
-    }: {
-      postId: string;
-      title: string;
-      content: string;
-      type: PostTypeOption;
-      visibility: PostVisibilityOption;
-    }) => {
-      const res = await api.patch(`/api/posts/${postId}`, {
-        title: title.trim(),
-        content: content.trim(),
-        type,
-        visibility,
-      });
-      return res.data.data.post as PostItem;
-    },
-    onSuccess: () => {
-      toast.success("Đã cập nhật bài viết");
-      setEditingPostId(null);
-      void postsQuery.refetch();
-      queryClient.invalidateQueries({ queryKey: ["feed"] });
-    },
-    onError: (error: any) => {
-      const message = error?.response?.data?.error?.message ?? "Cập nhật bài viết thất bại";
-      toast.error(message);
-    },
-  });
-
-  const togglePublishMutation = useMutation({
-    mutationFn: async ({ postId, published }: { postId: string; published: boolean }) => {
-      if (published) {
-        await api.post(`/api/posts/${postId}/unpublish`);
-      } else {
-        await api.post(`/api/posts/${postId}/publish`);
-      }
-    },
-    onSuccess: (_data, variables) => {
-      toast.success(variables.published ? "Đã chuyển bài về nháp" : "Bài viết đã được công khai");
-      void postsQuery.refetch();
-      queryClient.invalidateQueries({ queryKey: ["feed"] });
-    },
-    onError: (error: any) => {
-      const message = error?.response?.data?.error?.message ?? "Không thể thay đổi trạng thái bài viết";
-      toast.error(message);
-    },
-  });
-
-  const deletePostMutation = useMutation({
-    mutationFn: async ({ postId }: { postId: string }) => {
-      await api.delete(`/api/posts/${postId}`);
-    },
-    onSuccess: () => {
-      toast.success("Đã xoá bài viết");
-      void postsQuery.refetch();
-      queryClient.invalidateQueries({ queryKey: ["feed"] });
-    },
-    onError: (error: any) => {
-      const message = error?.response?.data?.error?.message ?? "Xoá bài viết thất bại";
-      toast.error(message);
-    },
-  });
-
-  const toggleJobMutation = useMutation({
-    mutationFn: async ({ jobId, nextActive }: { jobId: string; nextActive: boolean }) => {
-      await api.patch(`/api/jobs/${jobId}`, { isActive: nextActive });
-    },
-    onSuccess: (_data, variables) => {
-      toast.success(variables.nextActive ? "Job đã mở" : "Đã đóng job");
-      void jobsQuery.refetch();
-    },
-    onError: (error: any) => {
-      const message = error?.response?.data?.error?.message ?? "Không thể cập nhật trạng thái job";
-      toast.error(message);
-    },
-  });
-
-  const deleteJobMutation = useMutation({
-    mutationFn: async ({ jobId }: { jobId: string }) => {
-      await api.delete(`/api/jobs/${jobId}`);
-    },
-    onSuccess: () => {
-      toast.success("Đã xoá job");
-      void jobsQuery.refetch();
-    },
-    onError: (error: any) => {
-      const message = error?.response?.data?.error?.message ?? "Xoá job thất bại";
-      toast.error(message);
-    },
-  });
-
-  const startEditingPost = useCallback((post: PostItem) => {
-    setEditingPostId(post.id);
-    setPostDraft({
-      title: post.title,
-      content: post.content,
-      type: POST_TYPES.includes(post.type as PostTypeOption)
-        ? (post.type as PostTypeOption)
-        : "STORY",
-      visibility: POST_VISIBILITIES.includes(post.visibility as PostVisibilityOption)
-        ? (post.visibility as PostVisibilityOption)
-        : "PUBLIC",
+  const handleCoverUpdate = async (newUrl: string) => {
+    // Update local cache
+    queryClient.setQueryData(["company-manage", slug], (old: CompanyManageResponse | undefined) => {
+      if (!old) return old;
+      return { ...old, coverUrl: newUrl };
     });
-  }, []);
+    // Refetch to sync with server
+    await companyQuery.refetch();
+  };
 
-  const cancelEditingPost = useCallback(() => {
-    setEditingPostId(null);
-  }, []);
+  const handleLogoUpdate = async (newUrl: string) => {
+    // Update local cache
+    queryClient.setQueryData(["company-manage", slug], (old: CompanyManageResponse | undefined) => {
+      if (!old) return old;
+      return { ...old, logoUrl: newUrl };
+    });
+    // Refetch to sync with server
+    await companyQuery.refetch();
+  };
 
-  const savePost = useCallback(async () => {
-    if (!editingPostId) return;
-    setPostSavingId(editingPostId);
-    try {
-      await updatePostMutation.mutateAsync({
-        postId: editingPostId,
-        title: postDraft.title,
-        content: postDraft.content,
-        type: postDraft.type,
-        visibility: postDraft.visibility,
-      });
-    } finally {
-      setPostSavingId(null);
-    }
-  }, [editingPostId, postDraft, updatePostMutation]);
-
-  const handleDeletePost = useCallback(
-    (post: PostItem) => {
-      if (!window.confirm("Bạn chắc chắn muốn xoá bài viết này?")) return;
-      setPostDeleteId(post.id);
-      deletePostMutation.mutate(
-        { postId: post.id },
-        {
-          onSettled: () => setPostDeleteId(null),
-        },
-      );
-    },
-    [deletePostMutation],
-  );
-
-  const handleTogglePublish = useCallback(
-    (post: PostItem) => {
-      setPostToggleId(post.id);
-      togglePublishMutation.mutate(
-        { postId: post.id, published: Boolean(post.publishedAt) },
-        {
-          onSettled: () => setPostToggleId(null),
-        },
-      );
-    },
-    [togglePublishMutation],
-  );
-
-  const handleToggleJob = useCallback(
-    (job: JobItem) => {
-      setJobToggleId(job.id);
-      toggleJobMutation.mutate(
-        { jobId: job.id, nextActive: !job.isActive },
-        {
-          onSettled: () => setJobToggleId(null),
-        },
-      );
-    },
-    [toggleJobMutation],
-  );
-
-  const handleDeleteJob = useCallback(
-    (job: JobItem) => {
-      if (!window.confirm("Xoá job này? Hành động này không thể hoàn tác.")) return;
-      setJobDeleteId(job.id);
-      deleteJobMutation.mutate(
-        { jobId: job.id },
-        {
-          onSettled: () => setJobDeleteId(null),
-        },
-      );
-    },
-    [deleteJobMutation],
-  );
+  const handleInfoUpdate = async () => {
+    // Refetch to sync with server after info update
+    await companyQuery.refetch();
+  };
 
   if (!slug) {
     return (
@@ -377,33 +199,23 @@ function ManageCompanyPageContent() {
     );
   }
 
-  if (!hasAccess) {
+  if (!membership) {
     return (
       <EmptyState
         title="Bạn không có quyền truy cập"
-        subtitle="Quyền quản trị chỉ dành cho Owner hoặc Admin của công ty."
+        subtitle="Chỉ thành viên của công ty mới có thể truy cập trang quản trị."
       />
     );
   }
 
   if (companyQuery.isLoading || !companyQuery.data) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-48 w-full" />
+      <div className="mx-auto max-w-[1080px] space-y-6 p-4">
+        <Skeleton className="h-64 w-full rounded-2xl" />
         <Skeleton className="h-10 w-1/3" />
-        <div className="grid gap-4 md:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, idx) => (
-            <Card key={idx}>
-              <CardHeader className="space-y-2">
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-6 w-1/3" />
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-3/4" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
         </div>
       </div>
     );
@@ -411,433 +223,334 @@ function ManageCompanyPageContent() {
 
   const company = companyQuery.data;
 
-  return (
-    <div className="space-y-6">
-      <Card className="overflow-hidden">
-        {company.coverUrl ? (
-          <div className="h-40 w-full overflow-hidden">
-            <img src={company.coverUrl} alt={company.name} className="h-full w-full object-cover" />
-          </div>
-        ) : null}
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex items-start gap-4">
-            {company.logoUrl ? (
-              <img src={company.logoUrl} alt={company.name} className="h-16 w-16 rounded-md object-cover" />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-md bg-[var(--muted)] text-lg font-semibold text-[var(--muted-foreground)]">
-                {company.name.slice(0, 1)}
-              </div>
-            )}
-            <div>
-              <h1 className="text-2xl font-semibold text-[var(--foreground)]">{company.name}</h1>
-              <p className="text-sm text-[var(--muted-foreground)]">{company.tagline ?? "Chưa có tagline"}</p>
-              <div className="mt-2 flex flex-wrap gap-3 text-xs text-[var(--muted-foreground)]">
-                {company.industry && <span>Ngành: {company.industry}</span>}
-                {company.location && <span>Địa điểm: {company.location}</span>}
-                {company.size && <span>Quy mô: {company.size}</span>}
-                {company.foundedYear && <span>Thành lập: {company.foundedYear}</span>}
-              </div>
-            </div>
-          </div>
-          <div className="text-right text-sm text-[var(--muted-foreground)]">
-            <p>Quyền quản trị dành cho Owner & Admin.</p>
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
-          <MetricCard label="Bài viết" value={company.stats?.posts ?? 0} />
-          <MetricCard label="Việc làm" value={company.stats?.jobs ?? 0} />
-          <MetricCard label="Người theo dõi" value={company.stats?.followers ?? 0} />
-        </CardContent>
-      </Card>
+  // Tab content
+  const overviewContent = (
+    <CompanyStoryRenderer blocks={company.profileStory} fallbackDescription={company.description} />
+  );
 
-      <CompanyManageTabs
-        initialTab={normalizedTab}
-        overview={
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <h3 className="text-lg font-semibold text-[var(--foreground)]">Hồ sơ doanh nghiệp</h3>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  Cập nhật thông tin giúp trang profile của bạn hấp dẫn và đồng nhất trên toàn hệ thống.
-                </p>
+  const activityContent = (
+    <div className="space-y-4">
+      {canEdit && companyId ? (
+        <CompanyPostComposer companyId={companyId} onCreated={() => postsQuery.refetch()} />
+      ) : null}
+      {postsQuery.isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <Skeleton key={idx} className="h-32 w-full" />
+          ))}
+        </div>
+      ) : postsQuery.data && postsQuery.data.length > 0 ? (
+        <CompanyActivityFeed
+          posts={postsQuery.data.map(p => ({
+            ...p,
+            author: { id: '', email: '', name: null },
+            company: { id: company.id, name: company.name, slug: company.slug, logoUrl: company.logoUrl },
+            likesCount: 0,
+            commentsCount: 0,
+            isLiked: false,
+            isSaved: false,
+          }))}
+          companyId={company.id}
+        />
+      ) : (
+        <EmptyState
+          title="Chưa có bài viết công khai"
+          subtitle="Khi doanh nghiệp đăng bài, nội dung sẽ hiển thị tại đây."
+        />
+      )}
+    </div>
+  );
+
+  const jobsContent = (
+    <div className="space-y-4">
+      {canEdit && companyId ? (
+        <JobComposer companyId={companyId} onCreated={() => jobsQuery.refetch()} />
+      ) : null}
+      {jobsQuery.isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <Skeleton key={idx} className="h-32 w-full" />
+          ))}
+        </div>
+      ) : jobsQuery.data && jobsQuery.data.length > 0 ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {jobsQuery.data.map((job) => (
+            <Card key={job.id}>
+              <CardHeader className="space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
+                  <span>
+                    {job.remote ? "Remote" : job.location ?? "Không ghi rõ"} · {job.employmentType} · {job.experienceLevel}
+                  </span>
+                  <span>{new Date(job.createdAt).toLocaleDateString("vi-VN")}</span>
+                </div>
+                <Link
+                  href={`/jobs/${job.id}`}
+                  className="text-base font-semibold text-[var(--foreground)] hover:text-[var(--brand)]"
+                >
+                  {job.title}
+                </Link>
               </CardHeader>
-              <CardContent className="pt-0">
-                <CompanyProfileForm
-                  companyId={company.id}
-                  initialData={{
-                    name: company.name,
-                    tagline: company.tagline ?? "",
-                    description: company.description ?? "",
-                    website: company.website ?? "",
-                    location: company.location ?? "",
-                    industry: company.industry ?? "",
-                    size: company.size ?? "",
-                    foundedYear: company.foundedYear ?? null,
-                    headcount: company.headcount ?? null,
-                    headcountNote: company.headcountNote ?? "",
-                    logoUrl: company.logoUrl ?? "",
-                    coverUrl: company.coverUrl ?? "",
-                  }}
-                  onSuccess={() => {
-                    void companyQuery.refetch();
-                  }}
-                />
+              <CardContent className="space-y-3 text-sm text-[var(--muted-foreground)]">
+                <p className="line-clamp-3 leading-relaxed">{job.description ?? "Chưa có mô tả"}</p>
+                <div className="text-xs">
+                  <p>Trạng thái: {job.isActive ? "Đang mở" : "Đã đóng"}</p>
+                </div>
+                <Button asChild size="sm">
+                  <Link href={`/jobs/${job.id}`}>Xem chi tiết</Link>
+                </Button>
               </CardContent>
             </Card>
-
-            <CompanyMetricsEditor companyId={company.id} initialMetrics={company.metrics} />
-            <CompanyStoryEditor
-              companyId={company.id}
-              initialStory={company.profileStory}
-              fallbackDescription={company.description}
-            />
-          </div>
-        }
-        stories={
-          <div className="space-y-4">
-            {companyId ? (
-              <CompanyPostComposer companyId={companyId} onCreated={() => postsQuery.refetch()} />
-            ) : null}
-            <ItemList
-              isLoading={postsQuery.isLoading}
-              items={postsQuery.data}
-              emptyMessage="Chưa có story nào. Hãy chia sẻ câu chuyện mới của công ty."
-              renderItem={(post) => (
-                <Card key={post.id}>
-                  <CardHeader className="flex flex-col gap-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
-                        <span className="rounded-full bg-[var(--muted)] px-2 py-1 text-[var(--foreground)]">
-                          {post.type}
-                        </span>
-                        <span>• {post.visibility === "PUBLIC" ? "Công khai" : "Riêng tư"}</span>
-                      </div>
-                      <span className="text-xs text-[var(--muted-foreground)]">
-                        {post.publishedAt
-                          ? `Xuất bản: ${new Date(post.publishedAt).toLocaleString()}`
-                          : `Tạo lúc: ${new Date(post.createdAt).toLocaleString()}`}
-                      </span>
-                    </div>
-                    {editingPostId !== post.id ? (
-                      <h3 className="text-base font-semibold text-[var(--foreground)]">{post.title}</h3>
-                    ) : null}
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-sm">
-                    {editingPostId === post.id ? (
-                      <>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-[var(--foreground)]">Tiêu đề</label>
-                          <Input
-                            value={postDraft.title}
-                            onChange={(e) =>
-                              setPostDraft((prev) => ({
-                                ...prev,
-                                title: e.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-[var(--foreground)]">Nội dung</label>
-                          <Textarea
-                            rows={4}
-                            value={postDraft.content}
-                            onChange={(e) =>
-                              setPostDraft((prev) => ({
-                                ...prev,
-                                content: e.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-[var(--foreground)]">Loại bài</label>
-                            <select
-                              value={postDraft.type}
-                              onChange={(e) =>
-                                setPostDraft((prev) => ({
-                                  ...prev,
-                                  type: e.target.value as PostTypeOption,
-                                }))
-                              }
-                              className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-                            >
-                              {POST_TYPES.map((type) => (
-                                <option key={type} value={type}>
-                                  {type}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-[var(--foreground)]">Hiển thị</label>
-                            <select
-                              value={postDraft.visibility}
-                              onChange={(e) =>
-                                setPostDraft((prev) => ({
-                                  ...prev,
-                                  visibility: e.target.value as PostVisibilityOption,
-                                }))
-                              }
-                              className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-                            >
-                              {POST_VISIBILITIES.map((option) => (
-                                <option key={option} value={option}>
-                                  {option === "PUBLIC" ? "Công khai" : "Riêng tư"}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={cancelEditingPost}
-                            disabled={postSavingId === post.id}
-                          >
-                            Huỷ
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => void savePost()}
-                            disabled={
-                              postSavingId === post.id ||
-                              !postDraft.title.trim() ||
-                              !postDraft.content.trim()
-                            }
-                          >
-                            {postSavingId === post.id ? "Đang lưu..." : "Lưu thay đổi"}
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <p className="whitespace-pre-wrap leading-relaxed text-[var(--muted-foreground)]">
-                          {post.content}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
-                          <span>{post.publishedAt ? "Đang hiển thị trên trang công ty" : "Chưa xuất bản"}</span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => startEditingPost(post)}
-                          >
-                            Chỉnh sửa
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleTogglePublish(post)}
-                            disabled={postToggleId === post.id}
-                          >
-                            {postToggleId === post.id
-                              ? "Đang xử lý..."
-                              : post.publishedAt
-                              ? "Ẩn bài"
-                              : "Đăng ngay"}
-                          </Button>
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={`/posts/${post.id}`} target="_blank">
-                              Xem
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-red-500 text-red-500 hover:bg-red-500/10"
-                            onClick={() => handleDeletePost(post)}
-                            disabled={postDeleteId === post.id}
-                          >
-                            {postDeleteId === post.id ? "Đang xoá..." : "Xoá"}
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            />
-          </div>
-        }
-        jobs={
-          <div className="space-y-4">
-            {companyId ? (
-              <JobComposer companyId={companyId} onCreated={() => jobsQuery.refetch()} />
-            ) : null}
-            <ItemList
-              isLoading={jobsQuery.isLoading}
-              items={jobsQuery.data}
-              emptyMessage="Chưa có job nào. Tạo job mới để thu hút ứng viên."
-              renderItem={(job) => (
-                <Card key={job.id}>
-                  <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 className="text-base font-semibold text-[var(--foreground)]">{job.title}</h3>
-                      <p className="text-xs text-[var(--muted-foreground)]">
-                        {job.remote ? "Remote" : job.location ?? "Không ghi rõ"} • {job.employmentType} • {job.experienceLevel}
-                      </p>
-                    </div>
-                    <p className="text-xs text-[var(--muted-foreground)]">
-                      {new Date(job.createdAt).toLocaleString()} • {job.isActive ? "Đang mở" : "Đã đóng"}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-[var(--muted-foreground)]">
-                    <p className="line-clamp-3 whitespace-pre-wrap leading-relaxed">
-                      {job.description ?? "Chưa cập nhật mô tả chi tiết cho job này."}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs">
-                      {(job.salaryMin || job.salaryMax) && (
-                        <span className="rounded-md bg-[var(--muted)] px-2 py-1 text-[var(--foreground)]">
-                          Lương: {formatSalaryRange(job.salaryMin, job.salaryMax, job.currency)}
-                        </span>
-                      )}
-                      <span className="rounded-md bg-[var(--muted)] px-2 py-1 text-[var(--foreground)]">
-                        Trạng thái: {job.isActive ? "Đang mở" : "Đã đóng"}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleToggleJob(job)}
-                        disabled={jobToggleId === job.id}
-                      >
-                        {jobToggleId === job.id
-                          ? "Đang cập nhật..."
-                          : job.isActive
-                          ? "Đóng job"
-                          : "Mở job"}
-                      </Button>
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/jobs/${job.id}`} target="_blank">
-                          Xem job
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-red-500 text-red-500 hover:bg-red-500/10"
-                        onClick={() => handleDeleteJob(job)}
-                        disabled={jobDeleteId === job.id}
-                      >
-                        {jobDeleteId === job.id ? "Đang xoá..." : "Xoá"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            />
-          </div>
-        }
-        applications={
-          <ItemList
-            isLoading={applicationsQuery.isLoading}
-            items={applicationsQuery.data}
-            emptyMessage="Chưa có hồ sơ ứng tuyển nào."
-            renderItem={(application) => (
-              <Card key={application.id}>
-                <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h3 className="text-base font-semibold text-[var(--foreground)]">{application.job.title}</h3>
-                    <p className="text-sm text-[var(--muted-foreground)]">{application.user.name ?? application.user.email}</p>
-                  </div>
-                  <p className="text-xs text-[var(--muted-foreground)]">
-                    {new Date(application.appliedAt).toLocaleString()} • {application.status}
-                  </p>
-                </CardHeader>
-              </Card>
-            )}
-          />
-        }
-        tickets={
-          <CompanyTicketsList companyId={company.id} />
-        }
-        members={
-          <Card>
-            <CardContent className="divide-y divide-[var(--border)] p-0">
-              {company.members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                  <div>
-                    <p className="font-medium text-[var(--foreground)]">{member.user.name ?? member.user.email}</p>
-                    <p className="text-xs text-[var(--muted-foreground)]">{member.user.email}</p>
-                  </div>
-                  <div className="text-xs uppercase text-[var(--muted-foreground)]">{member.role}</div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        }
-      />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title="Hiện chưa có job đang mở"
+          subtitle="Khi doanh nghiệp mở job mới, bạn sẽ thấy tại đây."
+        />
+      )}
     </div>
   );
-}
 
-function MetricCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <p className="text-xs uppercase text-[var(--muted-foreground)]">{label}</p>
-      <p className="text-2xl font-semibold text-[var(--foreground)]">{value.toLocaleString()}</p>
+  const applicationsContent = applicationsQuery.isLoading ? (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, idx) => (
+        <Skeleton key={idx} className="h-24 w-full" />
+      ))}
     </div>
+  ) : applicationsQuery.data && applicationsQuery.data.length > 0 ? (
+    <div className="space-y-3">
+      {applicationsQuery.data.map((application) => (
+        <Card key={application.id}>
+          <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-[var(--foreground)]">{application.job.title}</h3>
+              <p className="text-sm text-[var(--muted-foreground)]">{application.user.name ?? application.user.email}</p>
+            </div>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              {new Date(application.appliedAt).toLocaleString()} • {application.status}
+            </p>
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  ) : (
+    <EmptyState title="Chưa có hồ sơ ứng tuyển nào" subtitle="Khi có ứng viên nộp hồ sơ, sẽ hiển thị tại đây." />
   );
-}
 
-function ItemList<T>({
-  isLoading,
-  items,
-  emptyMessage,
-  renderItem,
-}: {
-  isLoading: boolean;
-  items?: T[];
-  emptyMessage: string;
-  renderItem: (item: T) => ReactNode;
-}) {
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, idx) => (
-          <Card key={idx}>
-            <CardHeader className="space-y-2">
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-3 w-1/3" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-2/3" />
-            </CardContent>
-          </Card>
+  const membersContent = (
+    <Card>
+      <CardContent className="divide-y divide-[var(--border)] p-0">
+        {company.members.map((member) => (
+          <div key={member.id} className="flex items-center justify-between px-4 py-3 text-sm">
+            <div>
+              <p className="font-medium text-[var(--foreground)]">{member.user.name ?? member.user.email}</p>
+              <p className="text-xs text-[var(--muted-foreground)]">{member.user.email}</p>
+            </div>
+            <div className="text-xs uppercase text-[var(--muted-foreground)]">{member.role}</div>
+          </div>
         ))}
+      </CardContent>
+    </Card>
+  );
+
+  const ticketsContent = companyId ? <CompanyTicketsList companyId={companyId} /> : null;
+
+  return (
+    <div className="mx-auto max-w-[1080px] space-y-6 p-4">
+      {/* Company Hero - Similar to public page */}
+      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        {/* Cover Section */}
+        <div className="relative h-72 w-full bg-gradient-to-br from-[var(--brand)]/15 via-transparent to-transparent">
+          {company.coverUrl ? (
+            <Image
+              src={company.coverUrl}
+              alt={company.name}
+              fill
+              priority
+              className="object-cover"
+            />
+          ) : null}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          
+          {/* Edit Cover Button */}
+          {canEdit && (
+            <button
+              onClick={() => setEditCoverOpen(true)}
+              className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-[var(--foreground)] shadow-lg transition hover:bg-white"
+              title="Chỉnh sửa ảnh cover"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Logo and Name */}
+          <div className="absolute bottom-5 left-6 flex flex-wrap items-end gap-4">
+            <div className="relative">
+              {company.logoUrl ? (
+                <Image
+                  src={company.logoUrl}
+                  alt={company.name}
+                  width={96}
+                  height={96}
+                  className="h-24 w-24 rounded-2xl border-4 border-white/80 bg-white object-cover shadow-xl"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white/80 bg-white text-3xl font-semibold text-[var(--muted-foreground)] shadow-xl">
+                  {company.name.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              
+              {/* Edit Logo Button */}
+              {canEdit && (
+                <button
+                  onClick={() => setEditLogoOpen(true)}
+                  className="absolute -bottom-2 -right-2 rounded-full bg-white p-2 text-[var(--foreground)] shadow-lg transition hover:bg-[var(--muted)]"
+                  title="Chỉnh sửa logo"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <div className="space-y-2 text-white drop-shadow">
+              <h1 className="text-2xl font-semibold">{company.name}</h1>
+              {company.tagline ? (
+                <p className="text-sm text-white/85">{company.tagline}</p>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {/* Company Info Section */}
+        <div className="flex flex-wrap items-start justify-between gap-4 p-6">
+          <div className="flex flex-wrap gap-2 text-xs text-[var(--muted-foreground)]">
+            {company.industry && (
+              <span className="rounded-full bg-[var(--muted)] px-3 py-1 text-[var(--foreground)]">
+                Ngành: {company.industry}
+              </span>
+            )}
+            {company.location && (
+              <span className="rounded-full bg-[var(--muted)] px-3 py-1 text-[var(--foreground)]">
+                Trụ sở: {company.location}
+              </span>
+            )}
+            {company.size && (
+              <span className="rounded-full bg-[var(--muted)] px-3 py-1 text-[var(--foreground)]">
+                Quy mô: {translateCompanySize(company.size)}
+              </span>
+            )}
+            {company.foundedYear && (
+              <span className="rounded-full bg-[var(--muted)] px-3 py-1 text-[var(--foreground)]">
+                Thành lập: {company.foundedYear}
+              </span>
+            )}
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {company.website ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href={company.website} target="_blank" rel="noreferrer">
+                  🌐 Website
+                </Link>
+              </Button>
+            ) : null}
+            {canEdit && (
+              <Button variant="outline" size="sm" onClick={() => setEditInfoOpen(true)}>
+                <Pencil className="mr-1 h-3 w-3" />
+                Chỉnh sửa thông tin
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 border-t border-[var(--border)] p-6">
+          <div>
+            <p className="text-xs uppercase text-[var(--muted-foreground)]">Bài viết</p>
+            <p className="text-2xl font-semibold text-[var(--foreground)]">{company.stats?.posts ?? 0}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-[var(--muted-foreground)]">Việc làm</p>
+            <p className="text-2xl font-semibold text-[var(--foreground)]">{company.stats?.jobs ?? 0}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-[var(--muted-foreground)]">Người theo dõi</p>
+            <p className="text-2xl font-semibold text-[var(--foreground)]">{company.stats?.followers ?? 0}</p>
+          </div>
+        </div>
       </div>
-    );
-  }
 
-  if (!items || items.length === 0) {
-    return <EmptyState title="Chưa có dữ liệu" subtitle={emptyMessage} />;
-  }
+      {/* Tabs */}
+      <CompanyManageTabs
+        initialTab={normalizedTab}
+        overview={overviewContent}
+        activity={activityContent}
+        jobs={jobsContent}
+        applications={applicationsContent}
+        members={membersContent}
+        tickets={ticketsContent}
+      />
 
-  return <div className="space-y-3">{items.map(renderItem)}</div>;
+      {/* Modals */}
+      {canEdit && companyId && (
+        <>
+          <EditCoverModal
+            isOpen={editCoverOpen}
+            onClose={() => setEditCoverOpen(false)}
+            companyId={companyId}
+            currentCoverUrl={company.coverUrl}
+            onSuccess={handleCoverUpdate}
+          />
+          <EditLogoModal
+            isOpen={editLogoOpen}
+            onClose={() => setEditLogoOpen(false)}
+            companyId={companyId}
+            companyName={company.name}
+            currentLogoUrl={company.logoUrl}
+            onSuccess={handleLogoUpdate}
+          />
+          <EditCompanyInfoModal
+            isOpen={editInfoOpen}
+            onClose={() => setEditInfoOpen(false)}
+            companyId={companyId}
+            initialData={{
+              name: company.name,
+              tagline: company.tagline,
+              website: company.website,
+              location: company.location,
+              industry: company.industry,
+              size: company.size,
+              foundedYear: company.foundedYear,
+            }}
+            onSuccess={handleInfoUpdate}
+          />
+        </>
+      )}
+    </div>
+  );
 }
 
-function formatSalaryRange(min?: number | null, max?: number | null, currency?: string) {
-  if (!min && !max) return "Thoả thuận";
-  const formatter = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 });
-  const unit = currency ?? "VND";
-  if (min && max) return `${formatter.format(min)} - ${formatter.format(max)} ${unit}`;
-  if (min) return `${formatter.format(min)} ${unit}`;
-  return `${formatter.format(max!)} ${unit}`;
+function translateCompanySize(size?: string | null) {
+  switch (size) {
+    case "STARTUP":
+      return "Startup (1-20)";
+    case "SMALL":
+      return "Nhỏ (20-50)";
+    case "MEDIUM":
+      return "Vừa (50-200)";
+    case "LARGE":
+      return "Lớn (200-1000)";
+    case "ENTERPRISE":
+      return "Tập đoàn (>1000)";
+    default:
+      return "Đang cập nhật";
+  }
 }
 
 export default function ManageCompanyPage() {
   return (
     <Suspense fallback={
-      <div className="space-y-6">
-        <Skeleton className="h-32 rounded-lg" />
+      <div className="mx-auto max-w-[1080px] space-y-6 p-4">
+        <Skeleton className="h-64 rounded-2xl" />
         <div className="space-y-4">
           <Skeleton className="h-8 w-32" />
           <Skeleton className="h-24 rounded-lg" />
@@ -848,4 +561,3 @@ export default function ManageCompanyPage() {
     </Suspense>
   );
 }
-

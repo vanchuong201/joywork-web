@@ -176,7 +176,7 @@ export default async function CompanyProfilePage({
 function CompanyHero({ company }: { company: CompanyProfile }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
-      <div className="relative h-56 w-full bg-gradient-to-br from-[var(--brand)]/15 via-transparent to-transparent">
+      <div className="relative h-72 w-full bg-gradient-to-br from-[var(--brand)]/15 via-transparent to-transparent">
         {company.coverUrl ? (
           <Image
             src={company.coverUrl}
