@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { deleteUploadedObject, uploadCompanyPostImage } from "@/lib/uploads";
 import api from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ImagePlus, X, Loader2 } from "lucide-react";
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -124,10 +124,7 @@ async function fileToBase64(file: File): Promise<string> {
 }
 
 export default function CompanyPostComposer({ companyId, onCreated }: Props) {
-  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [postType, setPostType] = useState<"STORY" | "ANNOUNCEMENT" | "EVENT">("STORY");
-  const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
   const [mediaItems, dispatch] = useReducer(mediaReducer, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
@@ -162,11 +159,14 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
           order: index,
         }));
 
+      // Auto generate a simple title if not provided, but UI hides it
+      const title = content.slice(0, 50).trim() || "New Post";
+
       const res = await api.post(`/api/posts/companies/${companyId}/posts`, {
         title,
         content,
-        type: postType,
-        visibility,
+        type: "STORY", // Default
+        visibility: "PUBLIC", // Default
         publishNow: true,
         images,
       });
@@ -175,10 +175,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
     },
     onSuccess: () => {
       toast.success("Đăng bài thành công");
-      setTitle("");
       setContent("");
-      setPostType("STORY");
-      setVisibility("PUBLIC");
       mediaItems.forEach((item) => {
         URL.revokeObjectURL(item.previewUrl);
         previewUrlsRef.current.delete(item.previewUrl);
@@ -272,10 +269,10 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
   };
 
   const canSubmit = useMemo(() => {
-    if (!title.trim() || !content.trim()) return false;
+    if (!content.trim()) return false;
     if (pendingUploads || hasErrorMedia) return false;
     return true;
-  }, [title, content, pendingUploads, hasErrorMedia]);
+  }, [content, pendingUploads, hasErrorMedia]);
 
   const handleSubmit = () => {
     if (!canSubmit) {
@@ -289,99 +286,54 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
     createPost.mutate();
   };
 
-  const resetComposer = () => {
-    setTitle("");
-    setContent("");
-    setPostType("STORY");
-    setVisibility("PUBLIC");
-    mediaItems.forEach((item) => {
-      previewUrlsRef.current.delete(item.previewUrl);
-      URL.revokeObjectURL(item.previewUrl);
-    });
-    dispatch({ type: "RESET" });
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
   return (
-    <Card>
-      <CardHeader className="pb-0">
-        <div>
-          <h2 className="text-lg font-semibold text-[var(--foreground)]">Đăng bài mới</h2>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            Chia sẻ câu chuyện, thông báo hoặc sự kiện từ công ty của bạn.
-          </p>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-[var(--foreground)]" htmlFor="post-title">
-            Tiêu đề
-          </label>
-          <Input
-            id="post-title"
-            placeholder="Tiêu đề bài viết..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={200}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-[var(--foreground)]" htmlFor="post-content">
-            Nội dung
-          </label>
+    <Card className="overflow-hidden border border-[var(--border)] bg-[var(--card)] shadow-sm">
+      <CardContent className="p-4">
+        <div className="space-y-4">
           <Textarea
-            id="post-content"
-            placeholder="Hãy kể câu chuyện của bạn..."
-            rows={5}
+            placeholder="Chia sẻ hoạt động mới..."
+            rows={3}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            maxLength={10000}
+            maxLength={5000}
+            className="min-h-[80px] resize-none border-none bg-transparent px-0 py-0 text-base focus-visible:ring-0"
           />
-        </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--foreground)]" htmlFor="post-type">
-              Loại bài viết
-            </label>
-            <select
-              id="post-type"
-              value={postType}
-              onChange={(e) => setPostType(e.target.value as typeof postType)}
-              className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-            >
-              <option value="STORY">Story</option>
-              <option value="ANNOUNCEMENT">Announcement</option>
-              <option value="EVENT">Event</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--foreground)]" htmlFor="post-visibility">
-              Hiển thị
-            </label>
-            <select
-              id="post-visibility"
-              value={visibility}
-              onChange={(e) => setVisibility(e.target.value as typeof visibility)}
-              className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-            >
-              <option value="PUBLIC">Công khai</option>
-              <option value="PRIVATE">Riêng tư</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[var(--foreground)]">Thư viện ảnh</p>
-              <p className="text-xs text-[var(--muted-foreground)]">
-                Tối đa {MAX_IMAGES} ảnh, dung lượng &lt;= 8MB, định dạng JPG/PNG/WebP.
-              </p>
+          {mediaItems.length > 0 && (
+            <div className="grid gap-2 sm:grid-cols-3 md:grid-cols-4">
+              {mediaItems.map((item) => (
+                <div key={item.id} className="group relative aspect-square overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--muted)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.previewUrl}
+                    alt="preview"
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition hover:bg-black/80 group-hover:opacity-100"
+                    onClick={() => void handleRemoveMedia(item.id)}
+                    aria-label="Xóa ảnh"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                  {item.status === "uploading" && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <Loader2 className="h-5 w-5 animate-spin text-white" />
+                    </div>
+                  )}
+                  {item.status === "error" && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 p-2 text-center text-[10px] text-white">
+                      <span className="mb-1">Lỗi</span>
+                      <span className="line-clamp-2">{item.errorMessage}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
+          )}
+
+          <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
             <div className="flex items-center gap-2">
               <input
                 ref={fileInputRef}
@@ -396,64 +348,36 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
               />
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={mediaItems.length >= MAX_IMAGES || createPost.isPending}
+                className="h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               >
-                Thêm ảnh
+                <ImagePlus className="h-4 w-4" />
+                <span className="text-xs font-medium">Thêm ảnh</span>
               </Button>
             </div>
+
+            <Button 
+              type="button" 
+              onClick={handleSubmit} 
+              disabled={!canSubmit || createPost.isPending}
+              size="sm"
+              className="h-8 px-4"
+            >
+              {createPost.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Đang đăng...
+                </>
+              ) : (
+                "Đăng tin"
+              )}
+            </Button>
           </div>
-
-          {mediaItems.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-              {mediaItems.map((item) => (
-                <div key={item.id} className="relative overflow-hidden rounded-md border border-[var(--border)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.previewUrl} alt="preview" className="h-36 w-full object-cover" />
-                  <button
-                    type="button"
-                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm text-white"
-                    onClick={() => void handleRemoveMedia(item.id)}
-                    aria-label="Xóa ảnh"
-                  >
-                    ×
-                  </button>
-                  {item.status === "uploading" ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white">
-                      Đang tải...
-                    </div>
-                  ) : item.status === "error" ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 px-2 text-center text-xs text-white">
-                      {item.errorMessage ?? "Lỗi tải ảnh"}
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--background)] p-6 text-center text-sm text-[var(--muted-foreground)]">
-              Chưa có ảnh nào. Bạn có thể thêm tối đa {MAX_IMAGES} ảnh cho bài viết này.
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={resetComposer}
-            disabled={createPost.isPending}
-          >
-            Đặt lại
-          </Button>
-          <Button type="button" onClick={handleSubmit} disabled={!canSubmit || createPost.isPending}>
-            {createPost.isPending ? "Đang đăng..." : "Đăng bài"}
-          </Button>
         </div>
       </CardContent>
     </Card>
   );
 }
-

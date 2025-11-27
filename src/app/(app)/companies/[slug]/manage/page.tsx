@@ -22,6 +22,7 @@ import EditCompanyInfoModal from "@/components/company/EditCompanyInfoModal";
 import EditDescriptionModal from "@/components/company/EditDescriptionModal";
 import EditMetricsModal from "@/components/company/EditMetricsModal";
 import EditStoryModal from "@/components/company/EditStoryModal";
+import CompanyMembersList from "@/components/company/CompanyMembersList";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Pencil } from "lucide-react";
 import type { CompanyMetric, CompanyStoryBlock, CompanyHighlight } from "@/types/company";
@@ -108,6 +109,7 @@ function ManageCompanyPageContent() {
   const searchParams = useSearchParams();
   const slug = Array.isArray(params?.slug) ? params?.slug[0] : (params?.slug as string | undefined);
   const memberships = useAuthStore((s) => s.memberships);
+  const user = useAuthStore((s) => s.user);
   
   const tabParam = searchParams.get("tab");
   const normalizedTab = ["overview", "activity", "jobs", "applications", "members", "tickets"].includes(tabParam ?? "")
@@ -288,7 +290,7 @@ function ManageCompanyPageContent() {
       </Card>
 
       {/* Story blocks wrapped in a card with edit action */}
-      <Card>
+            <Card>
         <CardHeader className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[var(--foreground)]">Câu chuyện doanh nghiệp</h3>
           {canEdit && (
@@ -297,7 +299,7 @@ function ManageCompanyPageContent() {
               Chỉnh sửa
             </Button>
           )}
-        </CardHeader>
+              </CardHeader>
         <CardContent>
           {company.profileStory && company.profileStory.length > 0 ? (
             <CompanyStoryRenderer blocks={company.profileStory} />
@@ -306,8 +308,8 @@ function ManageCompanyPageContent() {
               Chưa có nội dung trình bày. {canEdit ? "Nhấn “Chỉnh sửa” để thêm ngay." : "Quản trị viên có thể thêm nội dung tại đây."}
             </div>
           )}
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
           </div>
   );
 
@@ -421,19 +423,12 @@ function ManageCompanyPageContent() {
   );
 
   const membersContent = (
-          <Card>
-            <CardContent className="divide-y divide-[var(--border)] p-0">
-              {company.members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                  <div>
-                    <p className="font-medium text-[var(--foreground)]">{member.user.name ?? member.user.email}</p>
-                    <p className="text-xs text-[var(--muted-foreground)]">{member.user.email}</p>
-                  </div>
-                  <div className="text-xs uppercase text-[var(--muted-foreground)]">{member.role}</div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+    <CompanyMembersList
+      companyId={company.id}
+      members={company.members}
+      currentUserRole={membership.role}
+      currentUserId={user?.id ?? ""}
+    />
   );
 
   const ticketsContent = companyId ? <CompanyTicketsList companyId={companyId} /> : null;

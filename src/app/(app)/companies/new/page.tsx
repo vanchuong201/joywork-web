@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/useAuth";
 import { useMemo, useState, useEffect } from "react";
 
 const schema = z.object({
@@ -25,6 +26,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function CreateCompanyPage() {
   const router = useRouter();
+  const { fetchMe } = useAuthStore();
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   const slugify = useMemo(
@@ -78,8 +80,9 @@ export default function CreateCompanyPage() {
       const sanitizedSlug = slugify(values.slug);
       const payload = { ...values, slug: sanitizedSlug };
       const { data } = await api.post("/api/companies", payload);
+      await fetchMe();
       toast.success("Đã tạo doanh nghiệp");
-      router.push(`/companies/${data.data.company.slug}`);
+      router.push(`/companies/${data.data.company.slug}/manage`);
     } catch (e: any) {
       toast.error(e?.response?.data?.error?.message ?? "Không thể tạo doanh nghiệp");
     }

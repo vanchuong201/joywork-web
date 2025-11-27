@@ -264,6 +264,53 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       ].filter(Boolean),
     [likeCount, shareCount],
   );
+  const renderContent = () => {
+    const [expanded, setExpanded] = useState(false);
+    const [showReadMore, setShowReadMore] = useState(false);
+    const contentRef = useRef<HTMLParagraphElement>(null);
+
+    useEffect(() => {
+      if (!contentRef.current || expanded) return;
+      const el = contentRef.current;
+      const checkOverflow = () => {
+        const hasOverflow = el.scrollHeight > el.clientHeight + 4;
+        setShowReadMore(hasOverflow);
+      };
+      checkOverflow();
+      const onResize = () => checkOverflow();
+      window.addEventListener("resize", onResize);
+      return () => window.removeEventListener("resize", onResize);
+    }, [expanded, post.content]);
+
+    return (
+      <>
+        <div className="relative mt-3">
+          <p
+            ref={contentRef}
+            className={cn(
+              "whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]",
+              expanded ? "" : "line-clamp-4 max-h-24 overflow-hidden",
+            )}
+          >
+            {post.content}
+          </p>
+          {!expanded && showReadMore ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[var(--card)] to-transparent" />
+          ) : null}
+        </div>
+        {showReadMore ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-1 text-xs font-medium text-[var(--brand)] hover:underline"
+          >
+            {expanded ? "Thu gọn" : "Xem thêm"}
+          </button>
+        ) : null}
+      </>
+    );
+  };
+
   return (
     <article className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-0 overflow-hidden">
       <div className="p-4">
@@ -295,11 +342,11 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             ) : null}
           </div>
         </div>
-        <h3 className="text-base font-semibold">
+        {/* <h3 className="text-base font-semibold">
           <Link href={`/posts/${post.id}`} className="hover:underline">
             {post.title}
           </Link>
-        </h3>
+        </h3> */}
         {hasImages ? (
           <MediaGrid images={post.images!} />
         ) : post.coverUrl ? (
@@ -316,7 +363,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             </PhotoView>
           </PhotoProvider>
         ) : null}
-        <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">{post.content}</p>
+        {renderContent()}
         {post.tags?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {post.tags.map((t) => (
