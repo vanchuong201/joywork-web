@@ -10,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
+import { PhotoProvider, PhotoView } from "react-photo-view";
+import "react-photo-view/dist/react-photo-view.css";
 import CompanyManageTabs from "@/components/company/CompanyManageTabs";
 import CompanyStoryRenderer from "@/components/company/CompanyStoryRenderer";
 import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
@@ -436,21 +438,26 @@ function ManageCompanyPageContent() {
   return (
     <div className="mx-auto max-w-[1080px] space-y-6 p-4">
       {/* Company Hero - Similar to public page */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
-        {/* Cover Section */}
-        <div className="relative h-72 w-full bg-gradient-to-br from-[var(--brand)]/15 via-transparent to-transparent">
-          {company.coverUrl ? (
-            <Image
-              src={company.coverUrl}
-              alt={company.name}
-              fill
-              priority
-              className="object-cover"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          
-          {/* Edit Cover Button */}
+      <PhotoProvider maskOpacity={0.8}>
+        <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+          {/* Cover Section */}
+          <div className="relative h-72 w-full bg-gradient-to-br from-[var(--brand)]/15 via-transparent to-transparent">
+            {company.coverUrl ? (
+              <PhotoView src={company.coverUrl}>
+                <Image
+                  src={company.coverUrl}
+                  alt={company.name}
+                  fill
+                  priority
+                  quality={100}
+                  unoptimized
+                  className="cursor-zoom-in object-cover"
+                />
+              </PhotoView>
+            ) : null}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            
+            {/* Edit Cover Button */}
           {canEdit && (
             <button
               onClick={() => setEditCoverOpen(true)}
@@ -465,13 +472,17 @@ function ManageCompanyPageContent() {
           <div className="absolute bottom-5 left-6 flex flex-wrap items-end gap-4">
             <div className="relative">
               {company.logoUrl ? (
-                <Image
-                  src={company.logoUrl}
-                  alt={company.name}
-                  width={96}
-                  height={96}
-                  className="h-24 w-24 rounded-2xl border-4 border-white/80 bg-white object-cover shadow-xl"
-                />
+                <PhotoView src={company.logoUrl}>
+                  <Image
+                    src={company.logoUrl}
+                    alt={company.name}
+                    width={192}
+                    height={192}
+                    quality={100}
+                    unoptimized
+                    className="h-24 w-24 cursor-zoom-in rounded-2xl border-4 border-white/80 bg-white object-cover shadow-xl"
+                  />
+                </PhotoView>
               ) : (
                 <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white/80 bg-white text-3xl font-semibold text-[var(--muted-foreground)] shadow-xl">
                   {company.name.slice(0, 1).toUpperCase()}
@@ -556,6 +567,7 @@ function ManageCompanyPageContent() {
           </div>
         </div>
       </div>
+      </PhotoProvider>
 
       {/* Tabs */}
       <CompanyManageTabs

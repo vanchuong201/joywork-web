@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useRef, type ChangeEvent, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -47,6 +47,14 @@ export default function EditCoverModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [coverKey, setCoverKey] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPreviewUrl(currentCoverUrl ?? null);
+      setSelectedFile(null);
+      setCoverKey(null);
+    }
+  }, [isOpen, currentCoverUrl]);
 
   const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

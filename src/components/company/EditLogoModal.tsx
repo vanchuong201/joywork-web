@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useRef, type ChangeEvent, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -49,6 +49,14 @@ export default function EditLogoModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [logoKey, setLogoKey] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPreviewUrl(currentLogoUrl ?? null);
+      setSelectedFile(null);
+      setLogoKey(null);
+    }
+  }, [isOpen, currentLogoUrl]);
 
   const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
