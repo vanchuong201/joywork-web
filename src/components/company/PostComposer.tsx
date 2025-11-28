@@ -314,21 +314,21 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                     className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition hover:bg-black/80 group-hover:opacity-100"
                     onClick={() => void handleRemoveMedia(item.id)}
                     aria-label="Xóa ảnh"
-                  >
+            >
                     <X className="h-3 w-3" />
                   </button>
                   {item.status === "uploading" && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                       <Loader2 className="h-5 w-5 animate-spin text-white" />
-                    </div>
+          </div>
                   )}
                   {item.status === "error" && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 p-2 text-center text-[10px] text-white">
                       <span className="mb-1">Lỗi</span>
                       <span className="line-clamp-2">{item.errorMessage}</span>
-                    </div>
+          </div>
                   )}
-                </div>
+        </div>
               ))}
             </div>
           )}
@@ -357,10 +357,10 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                 <ImagePlus className="h-4 w-4" />
                 <span className="text-xs font-medium">Thêm ảnh</span>
               </Button>
-            </div>
+        </div>
 
-            <Button 
-              type="button" 
+          <Button
+            type="button"
               onClick={handleSubmit} 
               disabled={!canSubmit || createPost.isPending}
               size="sm"
@@ -374,7 +374,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
               ) : (
                 "Đăng tin"
               )}
-            </Button>
+          </Button>
           </div>
         </div>
       </CardContent>

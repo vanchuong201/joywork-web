@@ -28,6 +28,7 @@ export default function CreateCompanyPage() {
   const router = useRouter();
   const { fetchMe } = useAuthStore();
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const slugify = useMemo(
     () =>
@@ -58,7 +59,7 @@ export default function CreateCompanyPage() {
     formState: { isSubmitting, errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    mode: "onSubmit",
+    mode: "onChange",
     defaultValues: { name: "", slug: "", tagline: "", description: "" },
   });
 
@@ -67,6 +68,13 @@ export default function CreateCompanyPage() {
 
   const nameValue = watch("name");
   const slugValue = watch("slug");
+  const sanitizedSlugValue = useMemo(() => slugify(slugValue || ""), [slugValue, slugify]);
+  const isFormValid = useMemo(() => {
+    const nameValid = (nameValue || "").trim().length >= 2;
+    const slugValid = sanitizedSlugValue.length >= 2 && /^[a-z0-9-]+$/.test(sanitizedSlugValue);
+    const hasErrors = Boolean(errors.name) || Boolean(errors.slug);
+    return nameValid && slugValid && !hasErrors;
+  }, [nameValue, sanitizedSlugValue, errors.name, errors.slug]);
 
   useEffect(() => {
     if (!slugManuallyEdited) {
@@ -77,6 +85,7 @@ export default function CreateCompanyPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
+      setSubmitError(null);
       const sanitizedSlug = slugify(values.slug);
       const payload = { ...values, slug: sanitizedSlug };
       const { data } = await api.post("/api/companies", payload);
@@ -84,7 +93,9 @@ export default function CreateCompanyPage() {
       toast.success("Đã tạo doanh nghiệp");
       router.push(`/companies/${data.data.company.slug}/manage`);
     } catch (e: any) {
-      toast.error(e?.response?.data?.error?.message ?? "Không thể tạo doanh nghiệp");
+      const message = e?.response?.data?.error?.message ?? "Không thể tạo doanh nghiệp";
+      setSubmitError(message);
+      toast.error(message);
     }
   };
 
@@ -102,14 +113,14 @@ export default function CreateCompanyPage() {
             placeholder="Ví dụ: JoyWork Studio"
             {...nameField}
             onChange={(event) => {
-              nameField.onChange(event);
+              nameField.onChange(event).catch(() => {});
               const v = (event.target.value || "").trim();
               if (v.length >= 2) {
                 clearErrors("name");
               }
             }}
             onBlur={(event) => {
-              nameField.onBlur(event);
+              nameField.onBlur(event).catch(() => {});
               const v = (event.target.value || "").trim();
               if (v.length < 2) {
                 setError("name", { type: "manual", message: "Tên doanh nghiệp cần ít nhất 2 ký tự" });
@@ -129,7 +140,7 @@ export default function CreateCompanyPage() {
             {...slugField}
             value={slugValue}
             onChange={(event) => {
-              slugField.onChange(event);
+              slugField.onChange(event).catch(() => {});
               setSlugManuallyEdited(true);
               const sanitized = slugify(event.target.value, { trimEdge: false });
               setValue("slug", sanitized, { shouldDirty: true, shouldTouch: true, shouldValidate: false });
@@ -138,7 +149,7 @@ export default function CreateCompanyPage() {
               }
             }}
             onBlur={(event) => {
-              slugField.onBlur(event);
+              slugField.onBlur(event).catch(() => {});
               const trimmed = slugify(slugValue || "");
               setValue("slug", trimmed, { shouldDirty: true, shouldTouch: true, shouldValidate: false });
               if (trimmed.length < 2) {
@@ -177,7 +188,10 @@ export default function CreateCompanyPage() {
           <Textarea className="mt-1" placeholder="Giới thiệu về sứ mệnh, sản phẩm, văn hoá..." rows={5} {...register("description")} />
         </div>
 
-        <Button disabled={isSubmitting} className="w-full md:w-auto">
+        {submitError ? (
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{submitError}</div>
+        ) : null}
+        <Button disabled={isSubmitting || !isFormValid} className="w-full md:w-auto">
           {isSubmitting ? "Đang tạo..." : "Tạo doanh nghiệp"}
         </Button>
       </form>
