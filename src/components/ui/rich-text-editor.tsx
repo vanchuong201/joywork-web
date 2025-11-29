@@ -11,6 +11,7 @@ type RichTextEditorProps = {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
 };
 
 export default function RichTextEditor({
@@ -19,6 +20,7 @@ export default function RichTextEditor({
   placeholder,
   className,
   disabled,
+  onBlur,
 }: RichTextEditorProps) {
   const extraCommands = useMemo(() => (disabled ? [] : getExtraCommands()), [disabled]);
 
@@ -33,7 +35,7 @@ export default function RichTextEditor({
       <MDEditor
         value={value}
         onChange={(val) => onChange(val ?? "")}
-        textareaProps={{ placeholder }}
+        textareaProps={{ placeholder, onBlur }}
         hideToolbar={disabled}
         visibleDragbar={false}
         preview="edit"

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, BookmarkCheck, BookmarkPlus } from "lucide-react";
+import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
@@ -14,6 +14,11 @@ import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import { cn } from "@/lib/utils";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
+import { format, formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { uploadCompanyPostImage } from "@/lib/uploads";
 
 type LikeButtonProps = {
   liked: boolean;
@@ -94,6 +99,9 @@ export type PostCardData = {
   title: string;
   content: string;
   company: Company;
+  createdAt?: string | null;
+  publishedAt?: string | null;
+  createdBy?: { id: string; name?: string | null; email?: string } | null;
   coverUrl?: string | null;
   tags?: string[] | null;
   likesCount?: number | null;
@@ -211,12 +219,37 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
   const likeCount = post.likesCount ?? (post as any)?._count?.likes ?? 0;
   const shareCount = post.sharesCount ?? (post as any)?._count?.shares ?? 0;
   const user = useAuthStore((s) => s.user);
+  const memberships = useAuthStore((s) => s.memberships);
   const { openPrompt } = useAuthPrompt();
   const qc = useQueryClient();
   const [isSaved, setIsSaved] = useState(Boolean(post.isSaved));
   useEffect(() => {
     setIsSaved(Boolean(post.isSaved));
   }, [post.isSaved]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+  const [draftTitle, setDraftTitle] = useState(post.title ?? "");
+  const [draftContent, setDraftContent] = useState(post.content ?? "");
+  useEffect(() => {
+    setDraftTitle(post.title ?? "");
+    setDraftContent(post.content ?? "");
+  }, [post.title, post.content]);
+  const myRole = useMemo(() => memberships.find((m) => m.company.id === post.company.id)?.role, [memberships, post.company.id]);
+  const isOwnerOrAdmin = myRole === "OWNER" || myRole === "ADMIN";
+  const isMember = myRole === "MEMBER";
+  const isAuthor = Boolean(user?.id) && Boolean((post as any)?.createdBy?.id) && (post as any)?.createdBy?.id === user?.id;
+  const canEdit = Boolean(user) && (isOwnerOrAdmin || (isMember && isAuthor));
   const saveMutation = useMutation({
     mutationFn: async (nextSaved: boolean) => {
       if (nextSaved) {
@@ -256,6 +289,60 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       toast.error("Không thể sao chép link");
     }
   }, [post.id]);
+  const updateMutation = useMutation({
+    mutationFn: async (payload: { title?: string; content?: string }) => {
+      const { data } = await api.patch(`/api/posts/${post.id}`, payload);
+      return data?.data?.post as PostCardData;
+    },
+    onSuccess: () => {
+      toast.success("Đã cập nhật bài viết");
+      setIsEditing(false);
+      qc.invalidateQueries({ queryKey: ["feed"] });
+      qc.invalidateQueries({ queryKey: ["company-posts"] });
+      qc.invalidateQueries({ queryKey: ["company-posts-feed"] });
+      qc.invalidateQueries({ queryKey: ["post"] });
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Không thể cập nhật bài viết"),
+  });
+  const handleEditSave = useCallback(() => {
+    if (!user) {
+      openPrompt("login");
+      return;
+    }
+    if (!canEdit) {
+      toast.error("Bạn không có quyền sửa bài viết này");
+      return;
+    }
+    updateMutation.mutate({ title: draftTitle, content: draftContent });
+  }, [user, canEdit, updateMutation, draftTitle, draftContent, openPrompt]);
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/api/posts/${post.id}`);
+    },
+    onSuccess: () => {
+      toast.success("Đã xoá bài viết");
+      setMenuOpen(false);
+      qc.invalidateQueries({ queryKey: ["feed"] });
+      qc.invalidateQueries({ queryKey: ["company-posts"] });
+      qc.invalidateQueries({ queryKey: ["company-posts-feed"] });
+      qc.invalidateQueries({ queryKey: ["post"] });
+      qc.invalidateQueries({ queryKey: ["saved-posts"] });
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Không thể xoá bài viết"),
+  });
+  const handleDelete = useCallback(() => {
+    if (!user) {
+      openPrompt("login");
+      return;
+    }
+    if (!canEdit) {
+      toast.error("Bạn không có quyền xoá bài viết này");
+      return;
+    }
+    const ok = window.confirm("Bạn chắc chắn muốn xoá bài viết này?");
+    if (!ok) return;
+    deleteMutation.mutate();
+  }, [user, canEdit, deleteMutation, openPrompt]);
   const footerInfo = useMemo(
     () =>
       [
@@ -264,7 +351,8 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       ].filter(Boolean),
     [likeCount, shareCount],
   );
-  const renderContent = () => {
+
+  function PostContent({ content }: { content: string }) {
     const [expanded, setExpanded] = useState(false);
     const [showReadMore, setShowReadMore] = useState(false);
     const contentRef = useRef<HTMLParagraphElement>(null);
@@ -280,7 +368,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       const onResize = () => checkOverflow();
       window.addEventListener("resize", onResize);
       return () => window.removeEventListener("resize", onResize);
-    }, [expanded, post.content]);
+    }, [expanded, content]);
 
     return (
       <>
@@ -292,7 +380,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
               expanded ? "" : "line-clamp-4 max-h-24 overflow-hidden",
             )}
           >
-            {post.content}
+            {content}
           </p>
           {!expanded && showReadMore ? (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[var(--card)] to-transparent" />
@@ -309,7 +397,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
         ) : null}
       </>
     );
-  };
+  }
 
   return (
     <article className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-0 overflow-hidden">
@@ -337,8 +425,58 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
               {post.company.name}
               </Link>
             </CompanyHoverCard>
-            {post.company.slogan ? (
-              <span className="text-xs">{post.company.slogan}</span>
+            <div className="text-xs flex items-center gap-2">
+              {post.company.slogan ? <span>{post.company.slogan}</span> : null}
+              {(() => {
+                const dateStr = (post.publishedAt ?? post.createdAt) ?? null;
+                if (!dateStr) return null;
+                const dateObj = new Date(dateStr);
+                const relative = formatDistanceToNow(dateObj, { addSuffix: true, locale: vi });
+                const exact = format(dateObj, "HH:mm dd/MM/yyyy");
+                return (
+                  <span title={exact}>
+                    {relative}
+                  </span>
+                );
+              })()}
+            </div>
+          </div>
+          <div className="relative ml-auto flex items-center gap-2" ref={menuRef}>
+            {canEdit ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  title="Tuỳ chọn"
+                  aria-label="Tuỳ chọn"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+                {menuOpen ? (
+                  <div className="absolute right-0 top-8 z-20 min-w-36 rounded-md border border-[var(--border)] bg-[var(--card)] p-1 shadow-md">
+                    <button
+                      className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-[var(--muted)]"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setIsEditing(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Sửa bài
+                    </button>
+                    <button
+                      className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                      onClick={handleDelete}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {deleteMutation.isPending ? "Đang xoá..." : "Xoá bài"}
+                    </button>
+                  </div>
+                ) : null}
+              </>
             ) : null}
           </div>
         </div>
@@ -363,7 +501,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             </PhotoView>
           </PhotoProvider>
         ) : null}
-        {renderContent()}
+        <PostContent content={post.content} />
         {post.tags?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {post.tags.map((t) => (
@@ -394,8 +532,179 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
           <span className="ml-auto text-xs text-[var(--muted-foreground)]">{footerInfo.join(" · ")}</span>
         ) : null}
       </div>
+      {/* Edit Modal */}
+      {isEditing ? (
+        <EditPostModal
+          open={isEditing}
+          onClose={() => setIsEditing(false)}
+          post={post}
+          companyId={post.company.id}
+          isSubmitting={updateMutation.isPending}
+          onSubmit={(payload) => {
+            if (!user) {
+              openPrompt("login");
+              return;
+            }
+            if (!canEdit) {
+              toast.error("Bạn không có quyền sửa bài viết này");
+              return;
+            }
+            updateMutation.mutate({
+              title: payload.title,
+              content: payload.content,
+              images: payload.images.map((img) => ({
+                ...(img.id ? { id: img.id } : {}),
+                ...(img.key ? { key: img.key } : {}),
+                url: img.url,
+                ...(typeof img.width === "number" ? { width: img.width } : {}),
+                ...(typeof img.height === "number" ? { height: img.height } : {}),
+                order: img.order,
+              })),
+            } as any);
+          }}
+        />
+      ) : null}
     </article>
   );
 }
 
+function toBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+type EditableImage = { id?: string; key?: string; url: string; width?: number; height?: number; order: number };
+
+function EditPostModal({
+  open,
+  onClose,
+  post,
+  companyId,
+  onSubmit,
+  isSubmitting,
+}: {
+  open: boolean;
+  onClose: () => void;
+  post: PostCardData;
+  companyId: string;
+  onSubmit: (payload: { title: string; content: string; images: EditableImage[] }) => void;
+  isSubmitting: boolean;
+}) {
+  const [title, setTitle] = useState(post.title ?? "");
+  const [content, setContent] = useState(post.content ?? "");
+  const [images, setImages] = useState<EditableImage[]>(
+    (post.images ?? []).map((img, idx) => ({ id: img.id, url: img.url, order: img.order ?? idx }))
+  );
+
+  useEffect(() => {
+    if (open) {
+      setTitle(post.title ?? "");
+      setContent(post.content ?? "");
+      setImages((post.images ?? []).map((img, idx) => ({ id: img.id, url: img.url, order: img.order ?? idx })));
+    }
+  }, [open, post]);
+
+  if (!open) return null;
+
+  const pickFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    let next = [...images];
+    for (const file of files) {
+      try {
+        const dataUrl = await toBase64(file);
+        const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+        const { key, assetUrl } = await uploadCompanyPostImage({
+          companyId,
+          fileName: file.name,
+          fileType: file.type,
+          fileData: base64,
+        });
+        next.push({ key, url: assetUrl, order: next.length });
+      } catch {
+        toast.error(`Tải ảnh thất bại: ${file.name}`);
+      }
+    }
+    setImages(next.slice(0, 8));
+    e.target.value = "";
+  };
+
+  const removeAt = (idx: number) => {
+    const next = images.filter((_, i) => i !== idx).map((img, i) => ({ ...img, order: i }));
+    setImages(next);
+  };
+
+  const move = (idx: number, dir: -1 | 1) => {
+    const j = idx + dir;
+    if (j < 0 || j >= images.length) return;
+    const next = [...images];
+    const tmp = next[idx];
+    next[idx] = next[j];
+    next[j] = tmp;
+    setImages(next.map((img, i) => ({ ...img, order: i })));
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
+      <div className="w-[min(680px,92vw)] rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-[var(--foreground)]">Chỉnh sửa bài viết</h3>
+          <Button size="sm" variant="outline" onClick={onClose}>
+            Đóng
+          </Button>
+        </div>
+        <div className="space-y-3">
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tiêu đề" />
+          <Textarea rows={8} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Nội dung" />
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium text-[var(--foreground)]">Ảnh (tối đa 8)</span>
+              <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-[var(--brand)]">
+                <input type="file" accept="image/*" multiple hidden onChange={pickFiles} />
+                Thêm ảnh
+              </label>
+            </div>
+            {images.length ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {images.map((img, idx) => (
+                  <div key={(img.id ?? img.key ?? img.url) + idx} className="relative overflow-hidden rounded-md border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.url} alt="" className="h-32 w-full object-cover" />
+                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/40 px-2 py-1 text-xs text-white">
+                      <span>#{idx + 1}</span>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => move(idx, -1)} className="rounded bg-white/20 px-1">↑</button>
+                        <button onClick={() => move(idx, +1)} className="rounded bg-white/20 px-1">↓</button>
+                        <button onClick={() => removeAt(idx)} className="rounded bg-red-500/80 px-1">Xóa</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed p-4 text-center text-sm text-[var(--muted-foreground)]">
+                Chưa có ảnh. Nhấn “Thêm ảnh” để tải lên.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>Huỷ</Button>
+          <Button
+            onClick={() => onSubmit({ title, content, images })}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 

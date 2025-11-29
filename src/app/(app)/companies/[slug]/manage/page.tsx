@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useMemo } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
@@ -12,12 +12,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
+import * as Popover from "@radix-ui/react-popover";
 import CompanyManageTabs from "@/components/company/CompanyManageTabs";
 import CompanyStoryRenderer from "@/components/company/CompanyStoryRenderer";
 import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
 import CompanyTicketsList from "@/components/company/CompanyTicketsList";
 import CompanyPostComposer from "@/components/company/PostComposer";
-import JobComposer from "@/components/company/JobComposer";
 import EditCoverModal from "@/components/company/EditCoverModal";
 import EditLogoModal from "@/components/company/EditLogoModal";
 import EditCompanyInfoModal from "@/components/company/EditCompanyInfoModal";
@@ -26,12 +26,18 @@ import EditMetricsModal from "@/components/company/EditMetricsModal";
 import EditStoryModal from "@/components/company/EditStoryModal";
 import CompanyMembersList from "@/components/company/CompanyMembersList";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Pencil } from "lucide-react";
+import { Pencil, MoreVertical } from "lucide-react";
+import CreateJobModal from "@/components/company/CreateJobModal";
+import EditJobModal from "@/components/company/EditJobModal";
+import { Badge } from "@/components/ui/badge";
+import CompanyFollowersModal from "@/components/company/CompanyFollowersModal";
 import type { CompanyMetric, CompanyStoryBlock, CompanyHighlight } from "@/types/company";
+import { toast } from "sonner";
 
 type CompanyManageResponse = {
   id: string;
   name: string;
+  legalName?: string | null;
   slug: string;
   tagline?: string | null;
   description?: string | null;
@@ -88,6 +94,7 @@ type JobItem = {
   currency: string;
   isActive: boolean;
   createdAt: string;
+  _count?: { applications: number };
 };
 
 type ApplicationItem = {
@@ -133,6 +140,12 @@ function ManageCompanyPageContent() {
   const [editDescriptionOpen, setEditDescriptionOpen] = useState(false);
   const [editMetricsOpen, setEditMetricsOpen] = useState(false);
   const [editStoryOpen, setEditStoryOpen] = useState(false);
+  const [createJobOpen, setCreateJobOpen] = useState(false);
+  const [editJobId, setEditJobId] = useState<string | null>(null);
+  const [followersOpen, setFollowersOpen] = useState(false);
+  const router = useRouter();
+  const [menuOpenForJobId, setMenuOpenForJobId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
 
   const companyQuery = useQuery({
     queryKey: ["company-manage", slug],
@@ -157,22 +170,29 @@ function ManageCompanyPageContent() {
   });
 
   const jobsQuery = useQuery({
-    queryKey: ["company-jobs", companyId],
+    queryKey: ["company-jobs", companyId, statusFilter],
     enabled: Boolean(companyId),
     queryFn: async () => {
       const res = await api.get(`/api/jobs`, {
-        params: { companyId, page: 1, limit: MAX_ITEMS },
+        params: {
+          companyId,
+          page: 1,
+          limit: MAX_ITEMS,
+          ...(statusFilter === "all" ? {} : { isActive: statusFilter === "open" }),
+        },
       });
       return res.data.data.jobs as JobItem[];
     },
   });
+
+  const selectedJobId = searchParams.get("jobId") || undefined;
 
   const applicationsQuery = useQuery({
     queryKey: ["company-applications", companyId],
     enabled: Boolean(companyId),
     queryFn: async () => {
       const res = await api.get(`/api/jobs/applications`, {
-        params: { companyId, page: 1, limit: MAX_ITEMS },
+        params: { companyId, jobId: selectedJobId, page: 1, limit: MAX_ITEMS },
       });
       return res.data.data.applications as ApplicationItem[];
     },
@@ -348,11 +368,49 @@ function ManageCompanyPageContent() {
           </div>
   );
 
+  const stripHtml = (html?: string | null) => {
+    if (!html) return "";
+    return html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  };
+
+  const closeJob = async (jobId: string) => {
+    try {
+      await api.patch(`/api/jobs/${jobId}`, { isActive: false });
+      toast.success("Đã đóng job");
+      await jobsQuery.refetch();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error?.message ?? "Không thể đóng job");
+    } finally {
+      setMenuOpenForJobId(null);
+    }
+  };
+
   const jobsContent = (
-          <div className="space-y-4">
-      {canEdit && companyId ? (
-              <JobComposer companyId={companyId} onCreated={() => jobsQuery.refetch()} />
-            ) : null}
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm">
+          <label htmlFor="job-status-filter" className="text-[var(--muted-foreground)]">
+            Trạng thái:
+          </label>
+          <select
+            id="job-status-filter"
+            className="h-9 rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+          >
+            <option value="all">Tất cả</option>
+            <option value="open">Đang mở</option>
+            <option value="closed">Đã đóng</option>
+          </select>
+        </div>
+        {canEdit && companyId ? (
+          <div className="flex items-center justify-end">
+            <Button size="sm" onClick={() => setCreateJobOpen(true)}>
+              + Đăng job mới
+            </Button>
+          </div>
+        ) : null}
+      </div>
       {jobsQuery.isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, idx) => (
@@ -361,30 +419,90 @@ function ManageCompanyPageContent() {
         </div>
       ) : jobsQuery.data && jobsQuery.data.length > 0 ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          {jobsQuery.data.map((job) => (
+          {jobsQuery.data
+            .filter((job) =>
+              statusFilter === "all" ? true : statusFilter === "open" ? job.isActive : !job.isActive,
+            )
+            .map((job) => (
                 <Card key={job.id}>
               <CardHeader className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
-                  <span>
-                    {job.remote ? "Remote" : job.location ?? "Không ghi rõ"} · {job.employmentType} · {job.experienceLevel}
-                  </span>
-                  <span>{new Date(job.createdAt).toLocaleDateString("vi-VN")}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-base font-semibold text-[var(--foreground)] truncate">{job.title}</div>
+                    <div className="mt-1">
+                      <Badge
+                        className={
+                          (job.isActive
+                            ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                            : "bg-rose-100 text-rose-700 border border-rose-200")
+                        }
+                      >
+                        {job.isActive ? "Đang mở" : "Đã đóng"}
+                      </Badge>
                     </div>
-                <Link
-                  href={`/jobs/${job.id}`}
-                  className="text-base font-semibold text-[var(--foreground)] hover:text-[var(--brand)]"
-                >
-                  {job.title}
-                </Link>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
+                      <span>{job.remote ? "Remote" : job.location ?? "Không ghi rõ"}</span>
+                      <span>·</span>
+                      <span>{job.employmentType}</span>
+                      <span>·</span>
+                      <span>{job.experienceLevel}</span>
+                    </div>
+                  </div>
+                  {canEdit ? (
+                    <Popover.Root open={menuOpenForJobId === job.id} onOpenChange={(o) => setMenuOpenForJobId(o ? job.id : null)}>
+                      <Popover.Trigger asChild>
+                        <button
+                          className="rounded p-1 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                          aria-label="Mở menu"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </Popover.Trigger>
+                      <Popover.Portal>
+                        <Popover.Content className="z-50 mt-2 w-44 rounded-md border border-[var(--border)] bg-[var(--card)] p-1 shadow-lg">
+                          <button
+                            className="w-full rounded px-3 py-2 text-left text-sm hover:bg-[var(--muted)]"
+                            onClick={() => closeJob(job.id)}
+                            disabled={!job.isActive}
+                          >
+                            Đóng job
+                          </button>
+                          <button
+                            className="w-full rounded px-3 py-2 text-left text-sm hover:bg-[var(--muted)]"
+                            onClick={() => {
+                              setMenuOpenForJobId(null);
+                              setEditJobId(job.id);
+                            }}
+                          >
+                            Chỉnh sửa
+                          </button>
+                          <Link
+                            href={`/jobs/${job.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-[var(--muted)]"
+                            onClick={() => setMenuOpenForJobId(null)}
+                          >
+                            Xem công khai
+                          </Link>
+                        </Popover.Content>
+                      </Popover.Portal>
+                    </Popover.Root>
+                  ) : null}
+                </div>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-[var(--muted-foreground)]">
-                <p className="line-clamp-3 leading-relaxed">{job.description ?? "Chưa có mô tả"}</p>
-                <div className="text-xs">
-                  <p>Trạng thái: {job.isActive ? "Đang mở" : "Đã đóng"}</p>
-                    </div>
-                <Button asChild size="sm">
-                  <Link href={`/jobs/${job.id}`}>Xem chi tiết</Link>
-                      </Button>
+                <div className="flex items-center justify-between text-xs">
+                  <p className="text-[var(--muted-foreground)]">Ngày tạo: {new Date(job.createdAt).toLocaleDateString("vi-VN")}</p>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`?tab=applications&jobId=${job.id}`)}
+                    className="rounded-full bg-[var(--brand)]/10 px-3 py-1 font-medium text-[var(--brand)] hover:bg-[var(--brand)]/15"
+                    title="Xem danh sách ứng tuyển"
+                  >
+                    Ứng tuyển: {job._count?.applications ?? 0}
+                  </button>
+                </div>
                   </CardContent>
                 </Card>
           ))}
@@ -500,12 +618,20 @@ function ManageCompanyPageContent() {
                 </button>
               )}
             </div>
-            <div className="space-y-2 text-white drop-shadow">
-              <h1 className="text-2xl font-semibold">{company.name}</h1>
-              {company.tagline ? (
-                <p className="text-sm text-white/85">{company.tagline}</p>
-              ) : null}
-            </div>
+          <div className="space-y-2 text-white drop-shadow">
+            <h1 className="text-2xl font-semibold">
+              {company.legalName ? (
+                <>
+                  {company.legalName} <span className="font-normal opacity-90">({company.name})</span>
+                </>
+              ) : (
+                company.name
+              )}
+            </h1>
+            {company.tagline ? (
+              <p className="text-sm text-white/85">{company.tagline}</p>
+            ) : null}
+          </div>
           </div>
         </div>
 
@@ -563,7 +689,14 @@ function ManageCompanyPageContent() {
           </div>
     <div>
             <p className="text-xs uppercase text-[var(--muted-foreground)]">Người theo dõi</p>
-            <p className="text-2xl font-semibold text-[var(--foreground)]">{company.stats?.followers ?? 0}</p>
+            <button
+              type="button"
+              className="text-2xl font-semibold text-[var(--foreground)] underline decoration-dotted underline-offset-4 hover:text-[var(--brand)]"
+              onClick={() => setFollowersOpen(true)}
+              title="Xem danh sách người theo dõi"
+            >
+              {company.stats?.followers ?? 0}
+            </button>
           </div>
         </div>
       </div>
@@ -583,6 +716,35 @@ function ManageCompanyPageContent() {
       {/* Modals */}
       {canEdit && companyId && (
         <>
+          {followersOpen ? (
+            <CompanyFollowersModal
+              isOpen={followersOpen}
+              onClose={() => setFollowersOpen(false)}
+              companyId={companyId}
+            />
+          ) : null}
+          {editJobId ? (
+            <EditJobModal
+              isOpen={Boolean(editJobId)}
+              onClose={() => setEditJobId(null)}
+              jobId={editJobId ?? ""}
+              onSaved={async () => {
+                await jobsQuery.refetch();
+                setEditJobId(null);
+              }}
+            />
+          ) : null}
+          {createJobOpen ? (
+            <CreateJobModal
+              isOpen={createJobOpen}
+              onClose={() => setCreateJobOpen(false)}
+              companyId={companyId}
+              onCreated={async () => {
+                await jobsQuery.refetch();
+                setCreateJobOpen(false);
+              }}
+            />
+          ) : null}
           <EditCoverModal
             isOpen={editCoverOpen}
             onClose={() => setEditCoverOpen(false)}
@@ -604,6 +766,7 @@ function ManageCompanyPageContent() {
             companyId={companyId}
             initialData={{
               name: company.name,
+              legalName: company.legalName,
               tagline: company.tagline,
               website: company.website,
               location: company.location,

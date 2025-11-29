@@ -77,10 +77,10 @@ export default function JobDetailPage() {
         <h1 className="text-2xl font-semibold text-[var(--foreground)]">{job.title}</h1>
         <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
           <Badge className="border border-[var(--border)] bg-transparent text-[var(--muted-foreground)]">
-            {job.employmentType}
+            {translateEmploymentType(job.employmentType)}
           </Badge>
           <Badge className="border border-[var(--border)] bg-transparent text-[var(--muted-foreground)]">
-            {job.experienceLevel}
+            {translateExperienceLevel(job.experienceLevel)}
           </Badge>
           <span>{job.remote ? "Làm việc từ xa" : job.location ?? "Không ghi rõ địa điểm"}</span>
         </div>
@@ -97,7 +97,10 @@ export default function JobDetailPage() {
 
         <section className="space-y-4">
           <h2 className="text-lg font-semibold text-[var(--foreground)]">Mô tả công việc</h2>
-          <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]">{job.description}</p>
+          <div
+            className="prose prose-sm max-w-none text-[var(--muted-foreground)]"
+            dangerouslySetInnerHTML={{ __html: job.description ?? "" }}
+          />
           {job.requirements ? (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-[var(--foreground)]">Yêu cầu</h3>
@@ -135,6 +138,42 @@ export default function JobDetailPage() {
       </CardContent>
     </Card>
   );
+}
+
+function translateEmploymentType(type?: string) {
+  switch (type) {
+    case "FULL_TIME":
+      return "Toàn thời gian";
+    case "PART_TIME":
+      return "Bán thời gian";
+    case "CONTRACT":
+      return "Hợp đồng";
+    case "INTERNSHIP":
+      return "Thực tập";
+    case "FREELANCE":
+      return "Tự do";
+    default:
+      return type ?? "";
+  }
+}
+
+function translateExperienceLevel(level?: string) {
+  switch (level) {
+    case "ENTRY":
+      return "Mới tốt nghiệp";
+    case "JUNIOR":
+      return "Junior";
+    case "MID":
+      return "Mid";
+    case "SENIOR":
+      return "Senior";
+    case "LEAD":
+      return "Lead";
+    case "EXECUTIVE":
+      return "Executive";
+    default:
+      return level ?? "";
+  }
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {

@@ -226,7 +226,15 @@ function CompanyHero({ company }: { company: CompanyProfile }) {
         <div className="absolute bottom-5 left-6 flex flex-wrap items-end gap-4">
           <CompanyAvatar company={company} />
           <div className="space-y-2 text-white drop-shadow">
-            <h1 className="text-2xl font-semibold">{company.name}</h1>
+            <h1 className="text-2xl font-semibold">
+              {company.legalName ? (
+                <>
+                  {company.legalName} <span className="font-normal opacity-90">({company.name})</span>
+                </>
+              ) : (
+                company.name
+              )}
+            </h1>
             {company.tagline ? (
               <p className="text-sm text-white/85">{company.tagline}</p>
             ) : null}

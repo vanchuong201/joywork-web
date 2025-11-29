@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,6 +15,7 @@ const sizeOptions = ["STARTUP", "SMALL", "MEDIUM", "LARGE", "ENTERPRISE"] as con
 
 const schema = z.object({
   name: z.string().min(2, "Tên công ty cần ít nhất 2 ký tự"),
+  legalName: z.string().max(200, "Tên đăng ký kinh doanh tối đa 200 ký tự").optional().or(z.literal("")),
   tagline: z
     .string()
     .max(120, "Tagline tối đa 120 ký tự")
@@ -47,6 +48,7 @@ type Props = {
   companyId: string;
   initialData: {
     name: string;
+    legalName?: string | null;
     tagline?: string | null;
     website?: string | null;
     location?: string | null;
@@ -75,6 +77,7 @@ export default function EditCompanyInfoModal({
     resolver: zodResolver(schema),
     defaultValues: {
       name: initialData.name,
+      legalName: initialData.legalName ?? "",
       tagline: initialData.tagline ?? "",
       website: initialData.website ?? "",
       location: initialData.location ?? "",
@@ -84,11 +87,28 @@ export default function EditCompanyInfoModal({
     },
   });
 
+  // Keep form in sync when modal opens or initialData changes
+  useEffect(() => {
+    if (isOpen) {
+      reset({
+        name: initialData.name,
+        legalName: initialData.legalName ?? "",
+        tagline: initialData.tagline ?? "",
+        website: initialData.website ?? "",
+        location: initialData.location ?? "",
+        industry: initialData.industry ?? "",
+        size: (initialData.size as FormValues["size"]) ?? "",
+        foundedYear: initialData.foundedYear ? String(initialData.foundedYear) : "",
+      });
+    }
+  }, [isOpen, initialData, reset]);
+
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
       const payload = {
         name: values.name.trim(),
+        legalName: values.legalName?.trim() || undefined,
         tagline: values.tagline?.trim() || undefined,
         website: values.website?.trim() || undefined,
         location: values.location?.trim() || undefined,
@@ -142,6 +162,12 @@ export default function EditCompanyInfoModal({
               <FormField label="Tên công ty" required error={errors.name?.message}>
                 <Input placeholder="Ví dụ: JoyWork Studio" {...register("name")} />
               </FormField>
+              <FormField label="Tên đăng ký kinh doanh" error={errors.legalName?.message}>
+                <Input placeholder="Công ty Cổ phần Công nghệ JoyWork" {...register("legalName")} />
+              </FormField>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-1">
               <FormField label="Tagline" error={errors.tagline?.message}>
                 <Input placeholder="Thông điệp ngắn gọn" {...register("tagline")} />
               </FormField>

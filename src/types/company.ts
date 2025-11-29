@@ -68,6 +68,7 @@ export type CompanyHighlight = {
 export type CompanyProfile = {
   id: string;
   name: string;
+  legalName?: string | null;
   slug: string;
   tagline?: string | null;
   description?: string | null;

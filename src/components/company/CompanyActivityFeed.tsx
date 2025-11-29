@@ -32,6 +32,8 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
   const previousState = useRef<PostCardData[] | null>(null);
   const [items, setItems] = useState<PostCardData[]>(normalizedPosts);
   const { ref, inView } = useInView<HTMLDivElement>({ rootMargin: "200px" });
+  const user = useAuthStore((state) => state.user);
+  const { openPrompt } = useAuthPrompt();
 
   // Reset query cache when companyId changes
   useEffect(() => {
@@ -39,6 +41,37 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
       queryClient.removeQueries({ queryKey: ["company-posts-feed", companyId] });
     }
   }, [companyId, queryClient]);
+
+  // Refresh trang 1 ở client để lấy isSaved/isLiked theo user sau SSR (nếu đã đăng nhập)
+  useEffect(() => {
+    let cancelled = false;
+    async function refreshFirstPage() {
+      if (!companyId || !user) return;
+      try {
+        const res = await api.get("/api/posts", { params: { companyId, page: 1, limit: PAGE_SIZE } });
+        const fresh = (res.data?.data?.posts ?? []) as PostCardData[];
+        if (!Array.isArray(fresh) || cancelled) return;
+        // Merge flags vào items hiện tại
+        setItems((prev) => {
+          const map = new Map<string, PostCardData>();
+          for (const p of prev) map.set(p.id, p);
+          for (const p of fresh) {
+            const cur = map.get(p.id);
+            if (cur) {
+              map.set(p.id, { ...cur, isLiked: p.isLiked, isSaved: p.isSaved, likesCount: p.likesCount ?? (p as any)?._count?.likes });
+            }
+          }
+          return Array.from(map.values());
+        });
+      } catch {
+        // ignore
+      }
+    }
+    void refreshFirstPage();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, user]);
 
   const query = useInfiniteQuery({
     queryKey: ["company-posts-feed", companyId], // Changed key to avoid conflict with manage page query
@@ -145,9 +178,6 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
       }
     },
   });
-
-  const user = useAuthStore((state) => state.user);
-  const { openPrompt } = useAuthPrompt();
 
   const handleLike = useCallback(
     (post: PostCardData) => {
