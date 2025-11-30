@@ -9,6 +9,7 @@ import { deleteUploadedObject, uploadCompanyPostImage } from "@/lib/uploads";
 import api from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, X, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -130,6 +131,11 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
   const mountedRef = useRef(true);
   const previewUrlsRef = useRef<Set<string>>(new Set());
   const queryClient = useQueryClient();
+  const [jobs, setJobs] = useState<Array<{ id: string; title: string; location?: string | null; isActive: boolean }>>(
+    [],
+  );
+  const [jobQuery, setJobQuery] = useState("");
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
 
   useEffect(() => {
     mountedRef.current = true; // ensure true after StrictMode remount in dev
@@ -169,6 +175,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
         visibility: "PUBLIC", // Default
         publishNow: true,
         images,
+        jobIds: selectedJobIds,
       });
 
       return res.data.data.post as { id: string };
@@ -176,6 +183,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
     onSuccess: () => {
       toast.success("Đăng bài thành công");
       setContent("");
+      setSelectedJobIds([]);
       mediaItems.forEach((item) => {
         URL.revokeObjectURL(item.previewUrl);
         previewUrlsRef.current.delete(item.previewUrl);
@@ -274,6 +282,37 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
     return true;
   }, [content, pendingUploads, hasErrorMedia]);
 
+  // Load company jobs once
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get(`/api/jobs`, { params: { companyId, page: 1, limit: 50 } });
+        if (!cancelled) {
+          const items =
+            (res.data?.data?.jobs as Array<{ id: string; title: string; location?: string | null; isActive: boolean }>) ??
+            [];
+          setJobs(items);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId]);
+
+  const filteredJobs = useMemo(() => {
+    const q = jobQuery.trim().toLowerCase();
+    if (!q) return jobs;
+    return jobs.filter((j) => j.title.toLowerCase().includes(q));
+  }, [jobs, jobQuery]);
+
+  const toggleJob = (id: string) => {
+    setSelectedJobIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
   const handleSubmit = () => {
     if (!canSubmit) {
       if (pendingUploads) {
@@ -332,6 +371,73 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
               ))}
             </div>
           )}
+
+          {/* Attach jobs */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-[var(--foreground)]">Đính kèm job (tuỳ chọn)</span>
+              <span className="text-xs text-[var(--muted-foreground)]">{selectedJobIds.length}/10</span>
+            </div>
+            <Input
+              value={jobQuery}
+              onChange={(e) => setJobQuery(e.target.value)}
+              placeholder="Tìm theo tiêu đề job..."
+              className="h-9"
+            />
+            <div className="max-h-44 overflow-auto rounded-md border border-[var(--border)]">
+              {filteredJobs.length ? (
+                <ul className="divide-y divide-[var(--border)]">
+                  {filteredJobs.slice(0, 20).map((job) => {
+                    const checked = selectedJobIds.includes(job.id);
+                    return (
+                      <li
+                        key={job.id}
+                        className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-[var(--muted)]"
+                        onClick={() => toggleJob(job.id)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleJob(job.id)}
+                          className="h-4 w-4"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm text-[var(--foreground)]">{job.title}</div>
+                          <div className="text-xs text-[var(--muted-foreground)]">
+                            {job.isActive ? "Đang mở" : "Đã đóng"} {job.location ? `· ${job.location}` : ""}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="px-3 py-6 text-center text-sm text-[var(--muted-foreground)]">Không có job phù hợp</div>
+              )}
+            </div>
+            {selectedJobIds.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {selectedJobIds.map((id) => {
+                  const j = jobs.find((x) => x.id === id);
+                  if (!j) return null;
+                  return (
+                    <span key={id} className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background)] px-3 py-1 text-xs">
+                      <span className="truncate max-w-[220px]">{j.title}</span>
+                      <button
+                        className="rounded-full bg-[var(--muted)] p-1"
+                        onClick={() => setSelectedJobIds((prev) => prev.filter((x) => x !== id))}
+                        title="Gỡ"
+                        type="button"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
 
           <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
             <div className="flex items-center gap-2">

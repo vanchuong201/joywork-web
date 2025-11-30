@@ -71,11 +71,12 @@ function sanitizeHtmlFromMarkdown(markdown: string | undefined | null) {
   if (!markdown) return "";
   const rawHtml = markdownToHtml(markdown);
   const sanitized = DOMPurify.sanitize(rawHtml, DESCRIPTION_SANITIZE_CONFIG as any);
-  const normalized = sanitized.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
+  const sanitizedString = typeof sanitized === "string" ? sanitized : sanitized.toString();
+  const normalized = sanitizedString.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
   if (!normalized || normalized === "<p></p>") {
     return "";
   }
-  return sanitized;
+  return sanitizedString;
 }
 
 export default function EditJobModal({ isOpen, onClose, jobId, onSaved }: Props) {

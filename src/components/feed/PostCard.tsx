@@ -109,6 +109,7 @@ export type PostCardData = {
   isLiked?: boolean | null;
   isSaved?: boolean | null;
   images?: { id?: string; url: string; width?: number | null; height?: number | null; order?: number }[] | null;
+  jobs?: { id: string; title: string; location?: string | null; employmentType: string; isActive: boolean }[] | null;
 };
 
 function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) {
@@ -502,6 +503,42 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
           </PhotoProvider>
         ) : null}
         <PostContent content={post.content} />
+        {post.jobs && post.jobs.length ? (
+          <div className="mt-3 space-y-2">
+            <div className="text-xs font-medium text-[var(--muted-foreground)]">Jobs đính kèm</div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {post.jobs.map((j) => (
+                <Link
+                  key={j.id}
+                  href={`/jobs/${j.id}`}
+                  target="_blank"
+                  className="group rounded-md border border-[var(--border)] bg-[var(--background)] p-3 hover:border-[var(--brand)]"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-[var(--foreground)] group-hover:text-[var(--brand)]">
+                        {j.title}
+                      </div>
+                      <div className="text-xs text-[var(--muted-foreground)]">
+                        {j.employmentType} {j.location ? `· ${j.location}` : ""}
+                      </div>
+                    </div>
+                    <span
+                      className={
+                        "inline-flex h-6 items-center rounded-full px-2 text-xs " +
+                        (j.isActive
+                          ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                          : "bg-rose-100 text-rose-700 border border-rose-200")
+                      }
+                    >
+                      {j.isActive ? "Đang mở" : "Đã đóng"}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {post.tags?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {post.tags.map((t) => (
