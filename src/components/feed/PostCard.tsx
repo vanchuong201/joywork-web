@@ -110,6 +110,8 @@ export type PostCardData = {
   isSaved?: boolean | null;
   images?: { id?: string; url: string; width?: number | null; height?: number | null; order?: number }[] | null;
   jobs?: { id: string; title: string; location?: string | null; employmentType: string; isActive: boolean }[] | null;
+  reactions?: { JOY: number; TRUST: number; SKEPTIC: number } | null;
+  userReaction?: "JOY" | "TRUST" | "SKEPTIC" | null;
 };
 
 function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) {
@@ -227,6 +229,20 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
   useEffect(() => {
     setIsSaved(Boolean(post.isSaved));
   }, [post.isSaved]);
+  const [myReaction, setMyReaction] = useState<PostCardData["userReaction"]>(post.userReaction ?? null);
+  const [reactionCounts, setReactionCounts] = useState<{ JOY: number; TRUST: number; SKEPTIC: number }>({
+    JOY: post.reactions?.JOY ?? 0,
+    TRUST: post.reactions?.TRUST ?? 0,
+    SKEPTIC: post.reactions?.SKEPTIC ?? 0,
+  });
+  useEffect(() => {
+    setMyReaction(post.userReaction ?? null);
+    setReactionCounts({
+      JOY: post.reactions?.JOY ?? 0,
+      TRUST: post.reactions?.TRUST ?? 0,
+      SKEPTIC: post.reactions?.SKEPTIC ?? 0,
+    });
+  }, [post.userReaction, post.reactions?.JOY, post.reactions?.TRUST, post.reactions?.SKEPTIC]);
   const [isEditing, setIsEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -290,6 +306,50 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       toast.error("Không thể sao chép link");
     }
   }, [post.id]);
+  const reactMutation = useMutation({
+    mutationFn: async (type: "JOY" | "TRUST" | "SKEPTIC" | null) => {
+      if (type === null) {
+        await api.delete(`/api/posts/${post.id}/react`);
+        return { type: null };
+      }
+      await api.post(`/api/posts/${post.id}/react`, { type });
+      return { type };
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Không thể phản ứng"),
+  });
+  const toggleReaction = useCallback((type: "JOY" | "TRUST" | "SKEPTIC") => {
+    if (!user) {
+      openPrompt("like");
+      return;
+    }
+    const nextType: "JOY" | "TRUST" | "SKEPTIC" | null = myReaction === type ? null : type;
+    setReactionCounts((prev) => {
+      const copy = { ...prev };
+      if (myReaction) copy[myReaction] = Math.max(0, copy[myReaction] - 1);
+      if (nextType) copy[nextType] = copy[nextType] + 1;
+      return copy;
+    });
+    const prevType = myReaction;
+    setMyReaction(nextType);
+    reactMutation.mutate(nextType, {
+      onError: () => {
+        // revert
+        setReactionCounts((prev) => {
+          const copy = { ...prev };
+          if (nextType) copy[nextType] = Math.max(0, copy[nextType] - 1);
+          if (prevType) copy[prevType] = copy[prevType] + 1;
+          return copy;
+        });
+        setMyReaction(prevType);
+      },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["feed"] });
+        qc.invalidateQueries({ queryKey: ["company-posts"] });
+        qc.invalidateQueries({ queryKey: ["company-posts-feed"] });
+        qc.invalidateQueries({ queryKey: ["post"] });
+      },
+    });
+  }, [user, openPrompt, myReaction, reactMutation, qc, post.id]);
   const updateMutation = useMutation({
     mutationFn: async (payload: { title?: string; content?: string }) => {
       const { data } = await api.patch(`/api/posts/${post.id}`, payload);

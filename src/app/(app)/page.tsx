@@ -30,11 +30,13 @@ function FeedPageContent() {
   const companyId = sp.get("companyId") || undefined;
   const { ref, inView } = useInView<HTMLDivElement>({ rootMargin: "300px" });
   const pageSize = 6;
+  const user = useAuthStore((state) => state.user);
+  const following = tab === "following" ? true : undefined;
   const query = useInfiniteQuery<{ posts: Post[]; pagination: { page: number; totalPages: number } }>({
-    queryKey: ["feed", { type, companyId }],
+    queryKey: ["feed", { type, companyId, following }],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
-      const res = await api.get("/api/posts", { params: { limit: pageSize, page: pageParam, type, companyId } });
+      const res = await api.get("/api/posts", { params: { limit: pageSize, page: pageParam, type, companyId, following } });
       return res.data.data;
     },
     getNextPageParam: (lastPage) => {
@@ -62,7 +64,6 @@ function FeedPageContent() {
     router.replace(`${pathname}?${next.toString()}`);
   };
   const qc = useQueryClient();
-  const user = useAuthStore((state) => state.user);
   const { openPrompt } = useAuthPrompt();
   const like = useMutation({
     mutationFn: async (p: Post) => {
@@ -92,11 +93,20 @@ function FeedPageContent() {
     <div className="space-y-4">
       <div className="sticky top-[64px] z-10 -mx-2 bg-[var(--background)]/80 px-2 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/60">
         <div className="flex items-center justify-between py-2">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+          <Tabs
+            value={tab}
+            onValueChange={(v) => {
+              if (v === "following" && !user) {
+                openPrompt("login");
+                return;
+              }
+              setTab(v as any);
+            }}
+          >
             <TabsList>
               <TabsTrigger value="all">Tất cả</TabsTrigger>
               <TabsTrigger value="trending">Nổi bật</TabsTrigger>
-              <TabsTrigger value="following" disabled title="Sắp ra mắt">Theo dõi</TabsTrigger>
+              <TabsTrigger value="following">Theo dõi</TabsTrigger>
             </TabsList>
           </Tabs>
           <Button variant="outline" size="sm" onClick={() => setShowFilters((s) => !s)}>
@@ -157,7 +167,16 @@ function FeedPageContent() {
           ) : null}
         </div>
       ) : (
-        <EmptyState title="No posts" subtitle="Try switching type or follow companies" />
+        <EmptyState
+          title={tab === "following" ? "Chưa có bài viết từ doanh nghiệp bạn theo dõi" : "No posts"}
+          subtitle={
+            tab === "following"
+              ? user
+                ? "Hãy theo dõi thêm doanh nghiệp để cập nhật hoạt động mới."
+                : "Đăng nhập và theo dõi doanh nghiệp để xem bài viết."
+              : "Try switching type or follow companies"
+          }
+        />
       )}
     </div>
   );
