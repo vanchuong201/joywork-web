@@ -67,6 +67,7 @@ type CompanyManageResponse = {
       id: string;
       email: string;
       name?: string | null;
+      avatar?: string | null;
     };
   }>;
 };
@@ -79,6 +80,8 @@ type PostItem = {
   visibility: string;
   publishedAt?: string | null;
   createdAt: string;
+  images?: { id: string; url: string; width?: number | null; height?: number | null; order?: number }[];
+  jobs?: { id: string; title: string; location?: string | null; employmentType: string; isActive: boolean }[];
 };
 
 type JobItem = {
@@ -350,6 +353,8 @@ function ManageCompanyPageContent() {
         <CompanyActivityFeed
           posts={postsQuery.data.map(p => ({
             ...p,
+            images: p.images,
+            jobs: p.jobs,
             author: { id: '', email: '', name: null },
             company: { id: company.id, name: company.name, slug: company.slug, logoUrl: company.logoUrl ?? undefined },
             likesCount: 0,

@@ -252,7 +252,10 @@ function JobsPageContent() {
                   <div className="text-base font-semibold">{j.title}</div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="text-sm leading-6 text-[var(--muted-foreground)] line-clamp-3">{j.description}</div>
+                  <div
+                    className="prose prose-sm max-w-none text-[var(--muted-foreground)] leading-6 max-h-[4.5rem] overflow-hidden"
+                    dangerouslySetInnerHTML={{ __html: j.description ?? "" }}
+                  />
                   <div className="flex items-center gap-2">
                     <Button asChild size="sm">
                       <Link href={`/jobs/${j.id}`}>Xem chi tiết</Link>

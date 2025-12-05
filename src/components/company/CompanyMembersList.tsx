@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuthStore } from "@/store/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MoreVertical, Trash2, UserCog, Shield, ShieldAlert, User } from "lucide-react";
+import { MoreVertical, Trash2, UserCog, Shield, ShieldAlert, User, LogOut } from "lucide-react";
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import api from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import InviteMemberModal from "./InviteMemberModal";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 type Member = {
   id: string;
@@ -22,6 +23,7 @@ type Member = {
     id: string;
     email: string;
     name?: string | null;
+    avatar?: string | null;
   };
 };
 
@@ -35,6 +37,7 @@ type Props = {
 export default function CompanyMembersList({ companyId, members, currentUserRole, currentUserId }: Props) {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const canManage = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
 
@@ -48,6 +51,20 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.error?.message ?? "Không thể xóa thành viên");
+    },
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/api/companies/${companyId}/leave`);
+    },
+    onSuccess: () => {
+      toast.success("Đã rời khỏi công ty");
+      // Reload lại toàn bộ trang để update state memberships
+      window.location.href = "/companies"; 
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.error?.message ?? "Không thể rời khỏi công ty");
     },
   });
 
@@ -70,12 +87,18 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
     }
   };
 
+  const handleLeave = () => {
+    if (confirm("Bạn có chắc chắn muốn rời khỏi công ty này?")) {
+      leaveMutation.mutate();
+    }
+  };
+
   const handleUpdateRole = (memberId: string, newRole: "ADMIN" | "MEMBER") => {
     updateRoleMutation.mutate({ memberId, role: newRole });
   };
 
   const canActionOnMember = (targetMember: Member) => {
-    if (targetMember.userId === currentUserId) return false; // Cannot action on self
+    if (targetMember.userId === currentUserId) return true; // Self (for leave action) - logic changed below
     if (currentUserRole === "OWNER") return true; // Owner can action on anyone else
     if (currentUserRole === "ADMIN") {
       // Admin can only action on MEMBERS
@@ -111,9 +134,17 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
           {members.map((member) => (
             <div key={member.id} className="flex items-center justify-between px-6 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--muted)] font-semibold text-[var(--muted-foreground)]">
-                  {(member.user.name ?? member.user.email).charAt(0).toUpperCase()}
-                </div>
+                {member.user.avatar ? (
+                  <img
+                    src={member.user.avatar}
+                    alt={member.user.name ?? "Avatar"}
+                    className="h-10 w-10 rounded-full object-cover bg-[var(--muted)]"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--muted)] font-semibold text-[var(--muted-foreground)]">
+                    {(member.user.name ?? member.user.email).charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <p className="font-medium text-[var(--foreground)]">{member.user.name ?? "Chưa đặt tên"}</p>
                   <p className="text-sm text-[var(--muted-foreground)]">{member.user.email}</p>
@@ -140,56 +171,81 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
                       leaveTo="transform opacity-0 scale-95"
                     >
                       <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                        <div className="py-1">
-                          {member.role === "MEMBER" && (
-                            <Menu.Item>
-                              {({ active }) => (
-                                <button
-                                  onClick={() => handleUpdateRole(member.id, "ADMIN")}
-                                  className={cn(
-                                    active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                                    "group flex w-full items-center px-4 py-2 text-sm"
+                        {member.userId === currentUserId ? (
+                           // Self actions (Leave company)
+                           <div className="py-1">
+                              {currentUserRole !== 'OWNER' && (
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={handleLeave}
+                                      className={cn(
+                                        active ? "bg-red-50 text-red-900" : "text-red-700",
+                                        "group flex w-full items-center px-4 py-2 text-sm"
+                                      )}
+                                    >
+                                      <LogOut className="mr-3 h-4 w-4 text-red-500" aria-hidden="true" />
+                                      Rời công ty
+                                    </button>
                                   )}
-                                >
-                                  <Shield className="mr-3 h-4 w-4 text-blue-500" aria-hidden="true" />
-                                  Thăng cấp Admin
-                                </button>
+                                </Menu.Item>
                               )}
-                            </Menu.Item>
-                          )}
-                          {member.role === "ADMIN" && currentUserRole === "OWNER" && (
-                            <Menu.Item>
-                              {({ active }) => (
-                                <button
-                                  onClick={() => handleUpdateRole(member.id, "MEMBER")}
-                                  className={cn(
-                                    active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                                    "group flex w-full items-center px-4 py-2 text-sm"
+                           </div>
+                        ) : (
+                           // Actions on others
+                           <>
+                            <div className="py-1">
+                              {member.role === "MEMBER" && (
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleUpdateRole(member.id, "ADMIN")}
+                                      className={cn(
+                                        active ? "bg-gray-100 text-gray-900" : "text-gray-700",
+                                        "group flex w-full items-center px-4 py-2 text-sm"
+                                      )}
+                                    >
+                                      <Shield className="mr-3 h-4 w-4 text-blue-500" aria-hidden="true" />
+                                      Thăng cấp Admin
+                                    </button>
                                   )}
-                                >
-                                  <User className="mr-3 h-4 w-4 text-gray-500" aria-hidden="true" />
-                                  Giáng cấp Member
-                                </button>
+                                </Menu.Item>
                               )}
-                            </Menu.Item>
-                          )}
-                        </div>
-                        <div className="py-1">
-                          <Menu.Item>
-                            {({ active }) => (
-                              <button
-                                onClick={() => handleRemove(member.id)}
-                                className={cn(
-                                  active ? "bg-red-50 text-red-900" : "text-red-700",
-                                  "group flex w-full items-center px-4 py-2 text-sm"
+                              {member.role === "ADMIN" && currentUserRole === "OWNER" && (
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleUpdateRole(member.id, "MEMBER")}
+                                      className={cn(
+                                        active ? "bg-gray-100 text-gray-900" : "text-gray-700",
+                                        "group flex w-full items-center px-4 py-2 text-sm"
+                                      )}
+                                    >
+                                      <User className="mr-3 h-4 w-4 text-gray-500" aria-hidden="true" />
+                                      Giáng cấp Member
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              )}
+                            </div>
+                            <div className="py-1">
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => handleRemove(member.id)}
+                                    className={cn(
+                                      active ? "bg-red-50 text-red-900" : "text-red-700",
+                                      "group flex w-full items-center px-4 py-2 text-sm"
+                                    )}
+                                  >
+                                    <Trash2 className="mr-3 h-4 w-4 text-red-500" aria-hidden="true" />
+                                    Xóa thành viên
+                                  </button>
                                 )}
-                              >
-                                <Trash2 className="mr-3 h-4 w-4 text-red-500" aria-hidden="true" />
-                                Xóa thành viên
-                              </button>
-                            )}
-                          </Menu.Item>
-                        </div>
+                              </Menu.Item>
+                            </div>
+                           </>
+                        )}
                       </Menu.Items>
                     </Transition>
                   </Menu>

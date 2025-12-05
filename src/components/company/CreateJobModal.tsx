@@ -17,32 +17,60 @@ import { marked } from "marked";
 const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"] as const;
 const experienceLevels = ["ENTRY", "JUNIOR", "MID", "SENIOR", "LEAD", "EXECUTIVE"] as const;
 
-const schema = z.object({
-  title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự"),
-  descriptionMd: z.string().min(10, "Mô tả tối thiểu 10 ký tự"),
-  location: z.string().optional().or(z.literal("")),
-  remote: z.boolean().optional().default(false),
-  employmentType: z.enum(employmentTypes).default("FULL_TIME"),
-  experienceLevel: z.enum(experienceLevels).default("MID"),
-  salaryMin: z
-    .string()
-    .optional()
-    .or(z.literal(""))
-    .refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
-  salaryMax: z
-    .string()
-    .optional()
-    .or(z.literal(""))
-    .refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
-  currency: z.string().min(3).max(3).default("VND"),
-  applicationDeadline: z
-    .string()
-    .optional()
-    .or(z.literal(""))
-    .refine((val) => !val || !Number.isNaN(Date.parse(val)), {
-      message: "Ngày không hợp lệ",
-    }),
-});
+const schema = z
+  .object({
+    title: z
+      .string()
+      .min(4, "Tiêu đề tối thiểu 4 ký tự")
+      .max(200, "Tiêu đề tối đa 200 ký tự"),
+    descriptionMd: z
+      .string()
+      .min(10, "Mô tả tối thiểu 10 ký tự"),
+    location: z
+      .string()
+      .max(100, "Địa điểm tối đa 100 ký tự")
+      .optional()
+      .or(z.literal("")),
+    remote: z.boolean().optional().default(false),
+    employmentType: z.enum(employmentTypes).default("FULL_TIME"),
+    experienceLevel: z.enum(experienceLevels).default("MID"),
+    salaryMin: z
+      .string()
+      .refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
+    salaryMax: z
+      .string()
+      .refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
+    currency: z
+      .string()
+      .refine((v) => !v || /^[A-Z]{3}$/.test(v), "Mã tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)"),
+    applicationDeadline: z
+      .string()
+      .refine((val) => !val || !Number.isNaN(Date.parse(val)), {
+        message: "Ngày không hợp lệ",
+      }),
+  })
+  .superRefine((vals, ctx) => {
+    // Giới hạn mô tả theo backend (10000 ký tự) - tính theo HTML đã làm sạch tương đối
+    const html = sanitizeHtmlFromMarkdown(vals.descriptionMd || "");
+    const plain = html.replace(/<[^>]*>/g, "");
+    if (plain.length > 10000) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["descriptionMd"],
+        message: "Mô tả tối đa 10000 ký tự",
+      });
+    }
+    // Ràng buộc lương: min <= max
+    const min = vals.salaryMin ? Number(vals.salaryMin) : undefined;
+    const max = vals.salaryMax ? Number(vals.salaryMax) : undefined;
+    if (typeof min === "number" && typeof max === "number" && !Number.isNaN(min) && !Number.isNaN(max) && min > max) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["salaryMin"],
+        message: "Lương tối thiểu không được lớn hơn lương tối đa",
+      });
+    }
+  });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -137,6 +165,9 @@ export default function CreateJobModal({ isOpen, onClose, companyId, onCreated }
     return titleOk && descOk && !hasErrors;
   }, [titleValue, descriptionMd, errors.title, errors.descriptionMd]);
   const titleRegister = register("title");
+  const currencyRegister = register("currency");
+  const salaryMinRegister = register("salaryMin");
+  const salaryMaxRegister = register("salaryMax");
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
@@ -151,7 +182,9 @@ export default function CreateJobModal({ isOpen, onClose, companyId, onCreated }
         experienceLevel: values.experienceLevel,
         salaryMin: values.salaryMin ? Number(values.salaryMin) : undefined,
         salaryMax: values.salaryMax ? Number(values.salaryMax) : undefined,
-        currency: values.currency,
+        currency: values.currency?.trim()
+          ? values.currency.trim().toUpperCase()
+          : undefined, // bỏ qua để backend dùng mặc định
         applicationDeadline: values.applicationDeadline ? new Date(values.applicationDeadline).toISOString() : undefined,
       };
       await api.post(`/api/jobs/companies/${companyId}/jobs`, payload);
@@ -159,8 +192,51 @@ export default function CreateJobModal({ isOpen, onClose, companyId, onCreated }
       onCreated?.();
       handleClose();
     } catch (error: any) {
-      const message = error?.response?.data?.error?.message ?? "Đăng job thất bại, vui lòng thử lại";
-      toast.error(message);
+      const err = error?.response?.data?.error;
+      // Map lỗi từ backend (Zod/Fastify) về field
+      const details = err?.details;
+      let mapped = false;
+      let focused = false;
+      if (Array.isArray(details)) {
+        for (const d of details) {
+          const path = Array.isArray(d?.path) ? d.path : Array.isArray(d?.instancePath) ? String(d.instancePath).split("/").filter(Boolean) : [];
+          const field = path[0];
+          let msg: string = d?.message || err?.message || "Dữ liệu không hợp lệ";
+          // Sửa thông điệp dịch sai của backend cho currency
+          if (field === "currency" && /Mật khẩu cần ít nhất/i.test(msg)) {
+            msg = "Mã tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)";
+          }
+          if (field === "title") {
+            setError("title", { type: "server", message: msg });
+            if (!focused) { (document.querySelector('input[name="title"]') as HTMLInputElement | null)?.focus(); focused = true; }
+            mapped = true;
+          } else if (field === "description") {
+            setError("descriptionMd", { type: "server", message: msg });
+            if (!focused) { (document.querySelector('[contenteditable="true"]') as HTMLElement | null)?.focus(); focused = true; }
+            mapped = true;
+          } else if (field === "location") {
+            setError("location", { type: "server", message: msg });
+            mapped = true;
+          } else if (field === "salaryMin") {
+            setError("salaryMin", { type: "server", message: msg });
+            mapped = true;
+          } else if (field === "salaryMax") {
+            setError("salaryMax", { type: "server", message: msg });
+            mapped = true;
+          } else if (field === "currency") {
+            setError("currency", { type: "server", message: msg });
+            if (!focused) { (document.querySelector('input[name="currency"]') as HTMLInputElement | null)?.focus(); focused = true; }
+            mapped = true;
+          } else if (field === "applicationDeadline") {
+            setError("applicationDeadline", { type: "server", message: msg });
+            mapped = true;
+          }
+        }
+      }
+      if (!mapped) {
+        const message = err?.message ?? "Đăng job thất bại, vui lòng thử lại";
+        toast.error(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -311,13 +387,67 @@ export default function CreateJobModal({ isOpen, onClose, companyId, onCreated }
 
             <div className="grid gap-4 md:grid-cols-3">
               <FormField label="Lương tối thiểu" error={errors.salaryMin?.message}>
-                <Input placeholder="Ví dụ: 15000000" inputMode="numeric" {...register("salaryMin")} />
+                <Input
+                  placeholder="Ví dụ: 15000000"
+                  inputMode="numeric"
+                  {...salaryMinRegister}
+                  onChange={(e) => {
+                    salaryMinRegister.onChange(e).catch(() => {});
+                  }}
+                  onBlur={(e) => {
+                    salaryMinRegister.onBlur(e).catch(() => {});
+                    const v = (e.target.value || "").trim();
+                    if (v && !/^\d+$/.test(v)) {
+                      setError("salaryMin", { type: "manual", message: "Lương phải là số" });
+                    } else {
+                      clearErrors("salaryMin");
+                    }
+                  }}
+                />
               </FormField>
               <FormField label="Lương tối đa" error={errors.salaryMax?.message}>
-                <Input placeholder="Ví dụ: 25000000" inputMode="numeric" {...register("salaryMax")} />
+                <Input
+                  placeholder="Ví dụ: 25000000"
+                  inputMode="numeric"
+                  {...salaryMaxRegister}
+                  onChange={(e) => {
+                    salaryMaxRegister.onChange(e).catch(() => {});
+                  }}
+                  onBlur={(e) => {
+                    salaryMaxRegister.onBlur(e).catch(() => {});
+                    const v = (e.target.value || "").trim();
+                    if (v && !/^\d+$/.test(v)) {
+                      setError("salaryMax", { type: "manual", message: "Lương phải là số" });
+                    } else {
+                      clearErrors("salaryMax");
+                    }
+                  }}
+                />
               </FormField>
-              <FormField label="Đơn vị lương">
-                <Input placeholder="VND" maxLength={3} {...register("currency")} />
+              <FormField label="Đơn vị lương" error={errors.currency?.message}>
+                <Input
+                  placeholder="VND"
+                  maxLength={3}
+                  {...currencyRegister}
+                  onChange={(e) => {
+                    const v = (e.target.value || "").toUpperCase();
+                    e.target.value = v;
+                    // cập nhật vào form state
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                    currencyRegister.onChange(e);
+                  }}
+                  onBlur={(e) => {
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                    currencyRegister.onBlur(e);
+                    // validate để hiển thị lỗi ngay
+                    const v = (e.target.value || "").trim();
+                    if (v && !/^[A-Z]{3}$/.test(v)) {
+                      setError("currency", { type: "manual", message: "Mã tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)" });
+                    } else {
+                      clearErrors("currency");
+                    }
+                  }}
+                />
               </FormField>
             </div>
 

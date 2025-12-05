@@ -19,6 +19,7 @@ import { vi } from "date-fns/locale";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { uploadCompanyPostImage } from "@/lib/uploads";
+import { createPortal } from "react-dom";
 
 type LikeButtonProps = {
   liked: boolean;
@@ -229,6 +230,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
   useEffect(() => {
     setIsSaved(Boolean(post.isSaved));
   }, [post.isSaved]);
+  /* reaction state is defined above */
   const [myReaction, setMyReaction] = useState<PostCardData["userReaction"]>(post.userReaction ?? null);
   const [reactionCounts, setReactionCounts] = useState<{ JOY: number; TRUST: number; SKEPTIC: number }>({
     JOY: post.reactions?.JOY ?? 0,
@@ -323,13 +325,13 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       return;
     }
     const nextType: "JOY" | "TRUST" | "SKEPTIC" | null = myReaction === type ? null : type;
+    const prevType = myReaction;
     setReactionCounts((prev) => {
       const copy = { ...prev };
-      if (myReaction) copy[myReaction] = Math.max(0, copy[myReaction] - 1);
+      if (prevType) copy[prevType] = Math.max(0, copy[prevType] - 1);
       if (nextType) copy[nextType] = copy[nextType] + 1;
       return copy;
     });
-    const prevType = myReaction;
     setMyReaction(nextType);
     reactMutation.mutate(nextType, {
       onError: () => {
@@ -350,8 +352,9 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       },
     });
   }, [user, openPrompt, myReaction, reactMutation, qc, post.id]);
+  /* reaction handlers are defined once above */
   const updateMutation = useMutation({
-    mutationFn: async (payload: { title?: string; content?: string }) => {
+    mutationFn: async (payload: any) => {
       const { data } = await api.patch(`/api/posts/${post.id}`, payload);
       return data?.data?.post as PostCardData;
     },
@@ -610,7 +613,41 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
         ) : null}
       </div>
       <div className="flex items-center gap-2 border-t border-[var(--border)] p-3">
-        <LikeButton liked={Boolean(post.isLiked)} likes={likeCount} onToggle={onLike ? () => onLike(post) : undefined} />
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant={myReaction === "JOY" ? "default" : "outline"}
+            className={cn("gap-1", myReaction === "JOY" ? "bg-[#fff1f4] text-[#d946ef] border-[#f0abfc]" : undefined)}
+            onClick={() => toggleReaction("JOY")}
+            disabled={reactMutation.isPending}
+          >
+            <span aria-hidden>😍</span>
+            <span>JOY</span>
+            {reactionCounts.JOY > 0 ? <span className="ml-1 tabular-nums">{reactionCounts.JOY}</span> : null}
+          </Button>
+          <Button
+            size="sm"
+            variant={myReaction === "TRUST" ? "default" : "outline"}
+            className={cn("gap-1", myReaction === "TRUST" ? "bg-[#ecfeff] text-[#0891b2] border-[#a5f3fc]" : undefined)}
+            onClick={() => toggleReaction("TRUST")}
+            disabled={reactMutation.isPending}
+          >
+            <span aria-hidden>👍</span>
+            <span>Trust</span>
+            {reactionCounts.TRUST > 0 ? <span className="ml-1 tabular-nums">{reactionCounts.TRUST}</span> : null}
+          </Button>
+          <Button
+            size="sm"
+            variant={myReaction === "SKEPTIC" ? "default" : "outline"}
+            className={cn("gap-1", myReaction === "SKEPTIC" ? "bg-[#fff7ed] text-[#c2410c] border-[#fed7aa]" : undefined)}
+            onClick={() => toggleReaction("SKEPTIC")}
+            disabled={reactMutation.isPending}
+          >
+            <span aria-hidden>🤔</span>
+            <span>Hoài nghi</span>
+            {reactionCounts.SKEPTIC > 0 ? <span className="ml-1 tabular-nums">{reactionCounts.SKEPTIC}</span> : null}
+          </Button>
+        </div>
         <Button
           size="sm"
           variant="outline"
@@ -657,6 +694,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                 ...(typeof img.height === "number" ? { height: img.height } : {}),
                 order: img.order,
               })),
+              jobIds: payload.jobIds,
             } as any);
           }}
         />
@@ -688,7 +726,7 @@ function EditPostModal({
   onClose: () => void;
   post: PostCardData;
   companyId: string;
-  onSubmit: (payload: { title: string; content: string; images: EditableImage[] }) => void;
+  onSubmit: (payload: { title: string; content: string; images: EditableImage[]; jobIds: string[] }) => void;
   isSubmitting: boolean;
 }) {
   const [title, setTitle] = useState(post.title ?? "");
@@ -696,14 +734,65 @@ function EditPostModal({
   const [images, setImages] = useState<EditableImage[]>(
     (post.images ?? []).map((img, idx) => ({ id: img.id, url: img.url, order: img.order ?? idx }))
   );
+  const [jobIds, setJobIds] = useState<string[]>(
+    (post.jobs ?? []).map((j) => j.id)
+  );
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [availableJobs, setAvailableJobs] = useState<
+    { id: string; title: string; isActive: boolean; location?: string | null; employmentType: string }[]
+  >([]);
 
   useEffect(() => {
     if (open) {
       setTitle(post.title ?? "");
       setContent(post.content ?? "");
       setImages((post.images ?? []).map((img, idx) => ({ id: img.id, url: img.url, order: img.order ?? idx })));
+      setJobIds((post.jobs ?? []).map((j) => j.id));
+      // Prefill available jobs từ post hiện tại để luôn hiển thị tối thiểu các job đã gắn
+      setAvailableJobs(
+        (post.jobs ?? []).map((j) => ({
+          id: j.id,
+          title: j.title,
+          isActive: j.isActive,
+          location: j.location,
+          employmentType: j.employmentType,
+        }))
+      );
+      // fetch jobs of company for selection
+      (async () => {
+        setJobsLoading(true);
+        try {
+          const { data } = await api.get("/api/jobs", {
+            params: { companyId, page: 1, limit: 50 },
+          });
+          const jobs = (data?.data?.jobs ?? []).map((j: any) => ({
+            id: j.id as string,
+            title: j.title as string,
+            isActive: Boolean(j.isActive),
+            location: j.location ?? null,
+            employmentType: j.employmentType as string,
+          }));
+          // Merge với các job đã có từ post (đảm bảo không mất các job đã chọn)
+          const mergedMap = new Map<string, any>();
+          for (const j of jobs) mergedMap.set(j.id, j);
+          for (const j of (post.jobs ?? []).map((pj) => ({
+            id: pj.id,
+            title: pj.title,
+            isActive: pj.isActive,
+            location: pj.location,
+            employmentType: pj.employmentType,
+          }))) {
+            if (!mergedMap.has(j.id)) mergedMap.set(j.id, j);
+          }
+          setAvailableJobs(Array.from(mergedMap.values()));
+        } catch {
+          setAvailableJobs([]);
+        } finally {
+          setJobsLoading(false);
+        }
+      })();
     }
-  }, [open, post]);
+  }, [open, post, companyId]);
 
   if (!open) return null;
 
@@ -745,9 +834,12 @@ function EditPostModal({
     setImages(next.map((img, i) => ({ ...img, order: i })));
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
-      <div className="w-[min(680px,92vw)] rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+  const toggleJob = (id: string) =>
+    setJobIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40">
+      <div className="w-[min(680px,92vw)] max-h-[90vh] overflow-auto rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-xl">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-base font-semibold text-[var(--foreground)]">Chỉnh sửa bài viết</h3>
           <Button size="sm" variant="outline" onClick={onClose}>
@@ -755,7 +847,6 @@ function EditPostModal({
           </Button>
         </div>
         <div className="space-y-3">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tiêu đề" />
           <Textarea rows={8} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Nội dung" />
 
           <div>
@@ -789,12 +880,56 @@ function EditPostModal({
               </div>
             )}
           </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium text-[var(--foreground)]">Jobs đính kèm</span>
+              <span className="text-xs text-[var(--muted-foreground)]">
+                {jobsLoading ? "Đang tải..." : `${jobIds.length} đã chọn`}
+              </span>
+            </div>
+            <div className="max-h-60 overflow-auto rounded-md border">
+              {jobsLoading ? (
+                <div className="p-3 text-sm text-[var(--muted-foreground)]">Đang tải danh sách job...</div>
+              ) : availableJobs.length ? (
+                <ul className="divide-y divide-[var(--border)]">
+                  {availableJobs.map((j) => {
+                    const checked = jobIds.includes(j.id);
+                    return (
+                      <li key={j.id} className="flex items-center gap-3 px-3 py-2">
+                        <input
+                          id={`job-${j.id}`}
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={checked}
+                          onChange={() => toggleJob(j.id)}
+                        />
+                        <label htmlFor={`job-${j.id}`} className="flex-1 cursor-pointer">
+                          <div className="text-sm text-[var(--foreground)]">{j.title}</div>
+                          <div className="text-xs text-[var(--muted-foreground)]">
+                            {j.employmentType} {j.location ? `· ${j.location}` : ""} {j.isActive ? "· Đang mở" : "· Đã đóng"}
+                          </div>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : jobIds.length ? (
+                // Fallback: nếu API không trả job nhưng post có sẵn jobIds, hiển thị danh sách đã chọn (read-only)
+                <div className="p-3 text-sm text-[var(--muted-foreground)]">
+                  Không tải được danh sách job. Vẫn giữ nguyên {jobIds.length} job đã gắn cho bài viết này.
+                </div>
+              ) : (
+                <div className="p-3 text-sm text-[var(--muted-foreground)]">Chưa có job nào trong công ty này.</div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>Huỷ</Button>
           <Button
-            onClick={() => onSubmit({ title, content, images })}
+            onClick={() => onSubmit({ title, content, images, jobIds })}
             disabled={isSubmitting}
           >
             {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
@@ -803,5 +938,7 @@ function EditPostModal({
       </div>
     </div>
   );
+  if (typeof window === "undefined") return null;
+  return createPortal(modalContent, document.body);
 }
 
