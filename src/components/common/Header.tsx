@@ -10,14 +10,16 @@ import {
   ChevronDown,
   LogOut,
   Settings,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuth";
 import Link from "next/link";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import ChangePasswordDialog from "@/components/auth/ChangePasswordDialog";
 
 const navIcons: Record<string, LucideIcon> = {
   "/": Home,
@@ -35,6 +37,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const accountRef = useRef<HTMLDetailsElement>(null);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const isReady = initialized && !loading;
 
@@ -133,6 +136,16 @@ export default function Header() {
                   </Link>
                   <button
                     type="button"
+                    onClick={() => {
+                      if (accountRef.current) accountRef.current.open = false;
+                      setShowChangePassword(true);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 text-left text-[var(--foreground)] hover:bg-[var(--muted)]"
+                  >
+                    <Lock size={14} /> Đổi mật khẩu
+                  </button>
+                  <button
+                    type="button"
                     onClick={handleLogout}
                     className="flex items-center gap-2 px-3 py-2 text-left text-[var(--destructive)] hover:bg-[var(--muted)]"
                   >
@@ -159,6 +172,7 @@ export default function Header() {
           )}
         </div>
       </div>
+      <ChangePasswordDialog open={showChangePassword} onClose={() => setShowChangePassword(false)} />
     </header>
   );
 }

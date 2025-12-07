@@ -133,7 +133,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
   const mountedRef = useRef(true);
   const previewUrlsRef = useRef<Set<string>>(new Set());
   const queryClient = useQueryClient();
-  const [jobs, setJobs] = useState<Array<{ id: string; title: string; location?: string | null; isActive: boolean }>>(
+  const [jobs, setJobs] = useState<Array<{ id: string; title: string; location?: string | null; isActive: boolean; employmentType: string }>>(
     [],
   );
   const [jobQuery, setJobQuery] = useState("");
@@ -296,7 +296,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
         const res = await api.get(`/api/jobs`, { params: { companyId, page: 1, limit: 50 } });
         if (!cancelled) {
           const items =
-            (res.data?.data?.jobs as Array<{ id: string; title: string; location?: string | null; isActive: boolean }>) ??
+            (res.data?.data?.jobs as Array<{ id: string; title: string; location?: string | null; isActive: boolean; employmentType: string }>) ??
             [];
           setJobs(items);
         }
