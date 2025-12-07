@@ -5,6 +5,7 @@ import api from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import TrendingHashtags from "@/components/feed/TrendingHashtags";
 
 type Company = { id: string; name: string; slug: string };
 type Post = { id: string; title: string };
@@ -26,6 +27,7 @@ export default function RightRail() {
   });
   return (
     <aside className="hidden w-72 shrink-0 border-l border-[var(--border)] bg-[var(--card)] p-4 lg:block">
+      <TrendingHashtags />
       <section>
         <h3 className="mb-3 text-sm font-semibold">Top Companies</h3>
         {isLoading ? (

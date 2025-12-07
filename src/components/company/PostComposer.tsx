@@ -8,8 +8,10 @@ import { toast } from "sonner";
 import { deleteUploadedObject, uploadCompanyPostImage } from "@/lib/uploads";
 import api from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, X, Loader2 } from "lucide-react";
+import { ImagePlus, X, Loader2, Briefcase, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import HashtagInput from "@/components/shared/HashtagInput";
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -136,6 +138,8 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
   );
   const [jobQuery, setJobQuery] = useState("");
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+  const [showJobSelector, setShowJobSelector] = useState(false);
+  const [hashtags, setHashtags] = useState<string[]>([]);
 
   useEffect(() => {
     mountedRef.current = true; // ensure true after StrictMode remount in dev
@@ -176,6 +180,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
         publishNow: true,
         images,
         jobIds: selectedJobIds,
+        hashtags,
       });
 
       return res.data.data.post as { id: string };
@@ -184,6 +189,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
       toast.success("Đăng bài thành công");
       setContent("");
       setSelectedJobIds([]);
+      setHashtags([]);
       mediaItems.forEach((item) => {
         URL.revokeObjectURL(item.previewUrl);
         previewUrlsRef.current.delete(item.previewUrl);
@@ -372,72 +378,100 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
             </div>
           )}
 
-          {/* Attach jobs */}
+          {/* Hashtags */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-[var(--foreground)]">Đính kèm job (tuỳ chọn)</span>
-              <span className="text-xs text-[var(--muted-foreground)]">{selectedJobIds.length}/10</span>
+              <span className="text-sm font-medium text-[var(--foreground)]">Chủ đề (Hashtags)</span>
+              <span className="text-xs text-[var(--muted-foreground)]">{hashtags.length}/5</span>
             </div>
-            <Input
-              value={jobQuery}
-              onChange={(e) => setJobQuery(e.target.value)}
-              placeholder="Tìm theo tiêu đề job..."
-              className="h-9"
-            />
-            <div className="max-h-44 overflow-auto rounded-md border border-[var(--border)]">
-              {filteredJobs.length ? (
-                <ul className="divide-y divide-[var(--border)]">
-                  {filteredJobs.slice(0, 20).map((job) => {
-                    const checked = selectedJobIds.includes(job.id);
-                    return (
-                      <li
-                        key={job.id}
-                        className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-[var(--muted)]"
-                        onClick={() => toggleJob(job.id)}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleJob(job.id)}
-                          className="h-4 w-4"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <div className="min-w-0">
-                          <div className="truncate text-sm text-[var(--foreground)]">{job.title}</div>
-                          <div className="text-xs text-[var(--muted-foreground)]">
-                            {job.isActive ? "Đang mở" : "Đã đóng"} {job.location ? `· ${job.location}` : ""}
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <div className="px-3 py-6 text-center text-sm text-[var(--muted-foreground)]">Không có job phù hợp</div>
-              )}
-            </div>
-            {selectedJobIds.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {selectedJobIds.map((id) => {
-                  const j = jobs.find((x) => x.id === id);
-                  if (!j) return null;
-                  return (
-                    <span key={id} className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background)] px-3 py-1 text-xs">
-                      <span className="truncate max-w-[220px]">{j.title}</span>
-                      <button
-                        className="rounded-full bg-[var(--muted)] p-1"
-                        onClick={() => setSelectedJobIds((prev) => prev.filter((x) => x !== id))}
-                        title="Gỡ"
-                        type="button"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            ) : null}
+            <HashtagInput value={hashtags} onChange={setHashtags} />
           </div>
+
+          {/* Selected Jobs Chips */}
+          {selectedJobIds.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {selectedJobIds.map((id) => {
+                const j = jobs.find((x) => x.id === id);
+                if (!j) return null;
+                return (
+                  <span key={id} className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background)] px-3 py-1 text-xs shadow-sm">
+                    <span className="truncate max-w-[220px] font-medium text-[var(--foreground)]">{j.title}</span>
+                    <button
+                      className="rounded-full hover:bg-[var(--muted)] p-0.5 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                      onClick={() => setSelectedJobIds((prev) => prev.filter((x) => x !== id))}
+                      title="Gỡ"
+                      type="button"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Job Selector - Improved UI */}
+          {showJobSelector && (
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+               <div className="flex items-center gap-1 border-b border-[var(--border)] bg-[var(--muted)]/50 p-2">
+                  <Input
+                    value={jobQuery}
+                    onChange={(e) => setJobQuery(e.target.value)}
+                    placeholder="Tìm kiếm công việc..."
+                    className="h-8 flex-1 border-none bg-transparent focus-visible:ring-0 px-2 shadow-none"
+                    autoFocus
+                  />
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => setShowJobSelector(false)}
+                    className="h-7 px-3 text-xs font-medium hover:bg-[var(--background)] hover:text-[var(--foreground)] text-[var(--muted-foreground)]"
+                  >
+                    Xong
+                  </Button>
+               </div>
+              <div className="max-h-56 overflow-auto bg-[var(--background)] p-1">
+                {filteredJobs.length ? (
+                  <ul className="space-y-0.5">
+                    {filteredJobs.slice(0, 20).map((job) => {
+                      const checked = selectedJobIds.includes(job.id);
+                      return (
+                        <li
+                          key={job.id}
+                          className={cn(
+                            "group flex cursor-pointer items-center justify-between gap-3 px-3 py-2.5 rounded-md transition-colors text-sm",
+                            checked ? "bg-[var(--brand)]/5 text-[var(--brand)]" : "hover:bg-[var(--muted)] text-[var(--foreground)]"
+                          )}
+                          onClick={() => toggleJob(job.id)}
+                        >
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-medium truncate">{job.title}</span>
+                            <div className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]/80">
+                               <span className={cn("inline-block w-1.5 h-1.5 rounded-full", job.isActive ? "bg-emerald-500" : "bg-gray-300")} />
+                               <span>{job.isActive ? "Đang mở" : "Đã đóng"}</span>
+                               <span>·</span>
+                               <span>{job.employmentType}</span>
+                               {job.location && (
+                                <>
+                                   <span>·</span>
+                                   <span className="truncate">{job.location}</span>
+                                </>
+                               )}
+                            </div>
+                          </div>
+                          {checked && <Check className="h-4 w-4 shrink-0 text-[var(--brand)]" />}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div className="px-3 py-8 text-center text-sm text-[var(--muted-foreground)]">
+                    Không tìm thấy công việc phù hợp
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
             <div className="flex items-center gap-2">
@@ -462,6 +496,19 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
               >
                 <ImagePlus className="h-4 w-4" />
                 <span className="text-xs font-medium">Thêm ảnh</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowJobSelector((prev) => !prev)}
+                className={cn(
+                  "h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]",
+                  (showJobSelector || selectedJobIds.length > 0) && "text-[var(--brand)] bg-[var(--brand)]/10 hover:bg-[var(--brand)]/20"
+                )}
+              >
+                <Briefcase className="h-4 w-4" />
+                <span className="text-xs font-medium">Đính kèm Job</span>
               </Button>
         </div>
 

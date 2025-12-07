@@ -115,13 +115,17 @@ function SavedPageContent() {
           ) : savedPosts.length ? (
             <div className="space-y-6">
               {savedPosts.map((p) => (
-                <div key={p.id} className="space-y-2">
-                  <PostCard post={p} />
-                  <div className="flex justify-end">
-                    <Button asChild size="sm" variant="outline">
-                      <Link href={`/posts/${p.id}`}>Xem chi tiết</Link>
-                    </Button>
-                  </div>
+                <div key={p.id}>
+                  <PostCard
+                    post={p}
+                    onLike={() => {
+                      if (p.isLiked) api.delete(`/api/posts/${p.id}/like`);
+                      else api.post(`/api/posts/${p.id}/like`);
+                      // React Query sẽ tự động update UI nhờ invalidateQueries trong PostCard (handleSave cũng làm vậy)
+                      // Tuy nhiên PostCard onLike chỉ là callback để trigger animation + update local like count
+                      // Nên ta chỉ cần gọi API là đủ.
+                    }}
+                  />
                 </div>
               ))}
               {postsQuery.hasNextPage ? (

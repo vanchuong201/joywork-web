@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2, Briefcase, X, Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { uploadCompanyPostImage } from "@/lib/uploads";
 import { createPortal } from "react-dom";
+import HashtagInput from "@/components/shared/HashtagInput";
 
 type LikeButtonProps = {
   liked: boolean;
@@ -105,6 +106,7 @@ export type PostCardData = {
   createdBy?: { id: string; name?: string | null; email?: string } | null;
   coverUrl?: string | null;
   tags?: string[] | null;
+  hashtags?: { id: string; slug: string; label: string }[] | null;
   likesCount?: number | null;
   sharesCount?: number | null;
   isLiked?: boolean | null;
@@ -602,12 +604,14 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             </div>
           </div>
         ) : null}
-        {post.tags?.length ? (
+        {post.hashtags?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
-            {post.tags.map((t) => (
-              <Badge key={t} className="bg-[#F7FAFF] text-[#17499A]">
-                #{t}
+            {post.hashtags.map((h) => (
+              <Link key={h.id} href={`/tags/${h.slug}`}>
+                <Badge className="bg-[#F7FAFF] text-[#17499A] hover:bg-[#e0efff]">
+                  #{h.label}
               </Badge>
+              </Link>
             ))}
           </div>
         ) : null}
@@ -695,6 +699,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                 order: img.order,
               })),
               jobIds: payload.jobIds,
+              hashtags: payload.hashtags,
             } as any);
           }}
         />
@@ -726,7 +731,7 @@ function EditPostModal({
   onClose: () => void;
   post: PostCardData;
   companyId: string;
-  onSubmit: (payload: { title: string; content: string; images: EditableImage[]; jobIds: string[] }) => void;
+  onSubmit: (payload: { title: string; content: string; images: EditableImage[]; jobIds: string[]; hashtags: string[] }) => void;
   isSubmitting: boolean;
 }) {
   const [title, setTitle] = useState(post.title ?? "");
@@ -737,6 +742,10 @@ function EditPostModal({
   const [jobIds, setJobIds] = useState<string[]>(
     (post.jobs ?? []).map((j) => j.id)
   );
+  const [hashtags, setHashtags] = useState<string[]>(
+    (post.hashtags ?? []).map((h) => h.label)
+  );
+  const [showJobSelector, setShowJobSelector] = useState(false);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [availableJobs, setAvailableJobs] = useState<
     { id: string; title: string; isActive: boolean; location?: string | null; employmentType: string }[]
@@ -748,6 +757,7 @@ function EditPostModal({
       setContent(post.content ?? "");
       setImages((post.images ?? []).map((img, idx) => ({ id: img.id, url: img.url, order: img.order ?? idx })));
       setJobIds((post.jobs ?? []).map((j) => j.id));
+      setHashtags((post.hashtags ?? []).map((h) => h.label));
       // Prefill available jobs từ post hiện tại để luôn hiển thị tối thiểu các job đã gắn
       setAvailableJobs(
         (post.jobs ?? []).map((j) => ({
@@ -881,55 +891,114 @@ function EditPostModal({
             )}
           </div>
 
-          <div>
-            <div className="mb-2 flex items-center justify-between">
+          {/* Hashtags */}
+          <div className="space-y-2">
+            <div className="mb-2 text-sm font-medium text-[var(--foreground)]">Hashtags</div>
+            <HashtagInput value={hashtags} onChange={setHashtags} placeholder="Thêm chủ đề (hashtag)..." />
+          </div>
+
+          {/* Jobs */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-[var(--foreground)]">Jobs đính kèm</span>
-              <span className="text-xs text-[var(--muted-foreground)]">
-                {jobsLoading ? "Đang tải..." : `${jobIds.length} đã chọn`}
-              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowJobSelector(!showJobSelector)}
+                className="h-6 gap-1 px-2 text-xs text-[var(--brand)] hover:bg-[var(--brand)]/10"
+              >
+                <Briefcase className="h-3 w-3" />
+                {showJobSelector ? "Đóng danh sách" : "Thêm/Xoá Job"}
+              </Button>
             </div>
-            <div className="max-h-60 overflow-auto rounded-md border">
-              {jobsLoading ? (
-                <div className="p-3 text-sm text-[var(--muted-foreground)]">Đang tải danh sách job...</div>
-              ) : availableJobs.length ? (
-                <ul className="divide-y divide-[var(--border)]">
-                  {availableJobs.map((j) => {
-                    const checked = jobIds.includes(j.id);
-                    return (
-                      <li key={j.id} className="flex items-center gap-3 px-3 py-2">
-                        <input
-                          id={`job-${j.id}`}
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={checked}
-                          onChange={() => toggleJob(j.id)}
-                        />
-                        <label htmlFor={`job-${j.id}`} className="flex-1 cursor-pointer">
-                          <div className="text-sm text-[var(--foreground)]">{j.title}</div>
-                          <div className="text-xs text-[var(--muted-foreground)]">
-                            {j.employmentType} {j.location ? `· ${j.location}` : ""} {j.isActive ? "· Đang mở" : "· Đã đóng"}
-                          </div>
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : jobIds.length ? (
-                // Fallback: nếu API không trả job nhưng post có sẵn jobIds, hiển thị danh sách đã chọn (read-only)
-                <div className="p-3 text-sm text-[var(--muted-foreground)]">
-                  Không tải được danh sách job. Vẫn giữ nguyên {jobIds.length} job đã gắn cho bài viết này.
+
+            {/* Chips */}
+            {jobIds.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                    {jobIds.map(id => {
+                        const j = availableJobs.find(x => x.id === id);
+                        if (!j) return null;
+                        return (
+                             <span key={id} className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background)] px-3 py-1 text-xs shadow-sm">
+                                <span className="truncate max-w-[220px] font-medium text-[var(--foreground)]">{j.title}</span>
+                                <button
+                                  className="rounded-full hover:bg-[var(--muted)] p-0.5 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                                  onClick={() => toggleJob(id)}
+                                  title="Gỡ"
+                                  type="button"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                        );
+                    })}
                 </div>
-              ) : (
-                <div className="p-3 text-sm text-[var(--muted-foreground)]">Chưa có job nào trong công ty này.</div>
-              )}
-            </div>
+            )}
+
+            {/* Selector - Improved UI */}
+            {showJobSelector && (
+                <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--muted)]/50 px-3 py-2">
+                        <span className="text-xs font-medium text-[var(--muted-foreground)]">Chọn từ danh sách</span>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setShowJobSelector(false)}
+                            className="h-6 px-2 text-xs hover:bg-[var(--background)]"
+                        >
+                            Xong
+                        </Button>
+                    </div>
+                    <div className="max-h-56 overflow-auto p-1">
+                        {jobsLoading ? (
+                        <div className="p-4 text-center text-sm text-[var(--muted-foreground)]">Đang tải danh sách job...</div>
+                    ) : availableJobs.length ? (
+                        <ul className="divide-y divide-[var(--border)]">
+                        {availableJobs.map((j) => {
+                            const checked = jobIds.includes(j.id);
+                            return (
+                            <li 
+                                key={j.id} 
+                                className={cn(
+                                    "group flex cursor-pointer items-center justify-between gap-3 px-3 py-2.5 transition-colors text-sm",
+                                    checked ? "bg-[var(--brand)]/5 text-[var(--brand)]" : "hover:bg-[var(--muted)] text-[var(--foreground)]"
+                                )}
+                                onClick={() => toggleJob(j.id)}
+                            >
+                                <div className="flex flex-col min-w-0">
+                                    <span className="font-medium truncate">{j.title}</span>
+                                    <div className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]/80">
+                                        <span className={cn("inline-block w-1.5 h-1.5 rounded-full", j.isActive ? "bg-emerald-500" : "bg-gray-300")} />
+                                        <span>{j.isActive ? "Đang mở" : "Đã đóng"}</span>
+                                        {j.location && (
+                                            <>
+                                            <span>·</span>
+                                            <span className="truncate">{j.location}</span>
+                                            </>
+                                        )}
+                                        <span>·</span>
+                                        <span>{j.employmentType}</span>
+                                    </div>
+                                </div>
+                                {checked && <Check className="h-4 w-4 shrink-0 text-[var(--brand)]" />}
+                            </li>
+                            );
+                        })}
+                        </ul>
+                    ) : (
+                        <div className="p-4 text-center text-sm text-[var(--muted-foreground)]">Chưa có job nào trong công ty này.</div>
+                    )}
+                    </div>
+                </div>
+            )}
           </div>
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>Huỷ</Button>
           <Button
-            onClick={() => onSubmit({ title, content, images, jobIds })}
+            onClick={() => onSubmit({ title, content, images, jobIds, hashtags })}
             disabled={isSubmitting}
           >
             {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}

@@ -141,9 +141,9 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
                     className="h-10 w-10 rounded-full object-cover bg-[var(--muted)]"
                   />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--muted)] font-semibold text-[var(--muted-foreground)]">
-                    {(member.user.name ?? member.user.email).charAt(0).toUpperCase()}
-                  </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--muted)] font-semibold text-[var(--muted-foreground)]">
+                  {(member.user.name ?? member.user.email).charAt(0).toUpperCase()}
+                </div>
                 )}
                 <div>
                   <p className="font-medium text-[var(--foreground)]">{member.user.name ?? "Chưa đặt tên"}</p>
@@ -194,56 +194,56 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
                         ) : (
                            // Actions on others
                            <>
-                            <div className="py-1">
-                              {member.role === "MEMBER" && (
-                                <Menu.Item>
-                                  {({ active }) => (
-                                    <button
-                                      onClick={() => handleUpdateRole(member.id, "ADMIN")}
-                                      className={cn(
-                                        active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                                        "group flex w-full items-center px-4 py-2 text-sm"
-                                      )}
-                                    >
-                                      <Shield className="mr-3 h-4 w-4 text-blue-500" aria-hidden="true" />
-                                      Thăng cấp Admin
-                                    </button>
+                        <div className="py-1">
+                          {member.role === "MEMBER" && (
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => handleUpdateRole(member.id, "ADMIN")}
+                                  className={cn(
+                                    active ? "bg-gray-100 text-gray-900" : "text-gray-700",
+                                    "group flex w-full items-center px-4 py-2 text-sm"
                                   )}
-                                </Menu.Item>
+                                >
+                                  <Shield className="mr-3 h-4 w-4 text-blue-500" aria-hidden="true" />
+                                  Thăng cấp Admin
+                                </button>
                               )}
-                              {member.role === "ADMIN" && currentUserRole === "OWNER" && (
-                                <Menu.Item>
-                                  {({ active }) => (
-                                    <button
-                                      onClick={() => handleUpdateRole(member.id, "MEMBER")}
-                                      className={cn(
-                                        active ? "bg-gray-100 text-gray-900" : "text-gray-700",
-                                        "group flex w-full items-center px-4 py-2 text-sm"
-                                      )}
-                                    >
-                                      <User className="mr-3 h-4 w-4 text-gray-500" aria-hidden="true" />
-                                      Giáng cấp Member
-                                    </button>
+                            </Menu.Item>
+                          )}
+                          {member.role === "ADMIN" && currentUserRole === "OWNER" && (
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => handleUpdateRole(member.id, "MEMBER")}
+                                  className={cn(
+                                    active ? "bg-gray-100 text-gray-900" : "text-gray-700",
+                                    "group flex w-full items-center px-4 py-2 text-sm"
                                   )}
-                                </Menu.Item>
+                                >
+                                  <User className="mr-3 h-4 w-4 text-gray-500" aria-hidden="true" />
+                                  Giáng cấp Member
+                                </button>
                               )}
-                            </div>
-                            <div className="py-1">
-                              <Menu.Item>
-                                {({ active }) => (
-                                  <button
-                                    onClick={() => handleRemove(member.id)}
-                                    className={cn(
-                                      active ? "bg-red-50 text-red-900" : "text-red-700",
-                                      "group flex w-full items-center px-4 py-2 text-sm"
-                                    )}
-                                  >
-                                    <Trash2 className="mr-3 h-4 w-4 text-red-500" aria-hidden="true" />
-                                    Xóa thành viên
-                                  </button>
+                            </Menu.Item>
+                          )}
+                        </div>
+                        <div className="py-1">
+                          <Menu.Item>
+                            {({ active }) => (
+                              <button
+                                onClick={() => handleRemove(member.id)}
+                                className={cn(
+                                  active ? "bg-red-50 text-red-900" : "text-red-700",
+                                  "group flex w-full items-center px-4 py-2 text-sm"
                                 )}
-                              </Menu.Item>
-                            </div>
+                              >
+                                <Trash2 className="mr-3 h-4 w-4 text-red-500" aria-hidden="true" />
+                                Xóa thành viên
+                              </button>
+                            )}
+                          </Menu.Item>
+                        </div>
                            </>
                         )}
                       </Menu.Items>

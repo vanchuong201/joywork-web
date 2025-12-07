@@ -82,6 +82,7 @@ type PostItem = {
   createdAt: string;
   images?: { id: string; url: string; width?: number | null; height?: number | null; order?: number }[];
   jobs?: { id: string; title: string; location?: string | null; employmentType: string; isActive: boolean }[];
+  hashtags?: { id: string; slug: string; label: string }[];
 };
 
 type JobItem = {
@@ -355,6 +356,7 @@ function ManageCompanyPageContent() {
             ...p,
             images: p.images,
             jobs: p.jobs,
+            hashtags: p.hashtags,
             author: { id: '', email: '', name: null },
             company: { id: company.id, name: company.name, slug: company.slug, logoUrl: company.logoUrl ?? undefined },
             likesCount: 0,

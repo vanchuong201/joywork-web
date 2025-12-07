@@ -31,23 +31,23 @@ const schema = z
       .max(100, "Địa điểm tối đa 100 ký tự")
       .optional()
       .or(z.literal("")),
-    remote: z.boolean().optional().default(false),
-    employmentType: z.enum(employmentTypes).default("FULL_TIME"),
-    experienceLevel: z.enum(experienceLevels).default("MID"),
-    salaryMin: z
-      .string()
-      .refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
-    salaryMax: z
-      .string()
-      .refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
+  remote: z.boolean().optional().default(false),
+  employmentType: z.enum(employmentTypes).default("FULL_TIME"),
+  experienceLevel: z.enum(experienceLevels).default("MID"),
+  salaryMin: z
+    .string()
+    .refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
+  salaryMax: z
+    .string()
+    .refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
     currency: z
       .string()
       .refine((v) => !v || /^[A-Z]{3}$/.test(v), "Mã tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)"),
-    applicationDeadline: z
-      .string()
-      .refine((val) => !val || !Number.isNaN(Date.parse(val)), {
-        message: "Ngày không hợp lệ",
-      }),
+  applicationDeadline: z
+    .string()
+    .refine((val) => !val || !Number.isNaN(Date.parse(val)), {
+      message: "Ngày không hợp lệ",
+    }),
   })
   .superRefine((vals, ctx) => {
     // Giới hạn mô tả theo backend (10000 ký tự) - tính theo HTML đã làm sạch tương đối
@@ -70,7 +70,7 @@ const schema = z
         message: "Lương tối thiểu không được lớn hơn lương tối đa",
       });
     }
-  });
+});
 
 type FormValues = z.infer<typeof schema>;
 
@@ -235,7 +235,7 @@ export default function CreateJobModal({ isOpen, onClose, companyId, onCreated }
       }
       if (!mapped) {
         const message = err?.message ?? "Đăng job thất bại, vui lòng thử lại";
-        toast.error(message);
+      toast.error(message);
       }
     } finally {
       setIsSubmitting(false);

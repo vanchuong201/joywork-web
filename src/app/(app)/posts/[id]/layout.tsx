@@ -25,16 +25,30 @@ export async function generateMetadata({
 
 	let post: Post | null = null;
 	try {
-		const res = await fetch(`${apiBase}/api/posts/${id}`, {
+		// Trong môi trường server-side của Next.js (đặc biệt là khi chạy local trong Docker container),
+		// việc gọi đến 'http://localhost:4000' có thể thất bại nếu container không phân giải được 'localhost'.
+		// Tuy nhiên, nếu chạy npm run dev ở máy host thì ok.
+		// Để chắc chắn, in ra URL đang fetch để debug.
+		const fetchUrl = `${apiBase}/api/posts/${id}`;
+		console.log("Fetching metadata from:", fetchUrl);
+
+		const res = await fetch(fetchUrl, {
 			cache: "no-store",
 			next: { revalidate: 0 },
 		});
+		
 		if (res.ok) {
 			const json = (await res.json()) as PostResponse;
+			// Quan trọng: cần kiểm tra kỹ cấu trúc trả về.
+			// API: { data: { post: { ... } } }
 			post = json?.data?.post ?? null;
+			// Debug: in ra ảnh lấy được
+			console.log("Metadata fetch success. Images count:", post?.images?.length, "Cover:", post?.coverUrl);
+		} else {
+			console.error("Metadata fetch failed:", res.status, res.statusText);
 		}
-	} catch {
-		// ignore — fallback metadata below
+	} catch (e) {
+		console.error("Metadata fetch error:", e);
 	}
 
 	const baseTitle = post?.title?.trim();
@@ -44,14 +58,41 @@ export async function generateMetadata({
 		: `Bài viết trên ${siteName}`;
 	const rawDesc = (post?.content ?? "").replace(/\s+/g, " ").trim();
 	const description = rawDesc.length > 0 ? rawDesc.slice(0, 160) : `${post?.company?.name ?? siteName} - Chia sẻ hoạt động mới`;
-	const imageCandidate =
-		post?.coverUrl ||
-		(post?.images && post.images.length > 0 ? post.images[0]?.url : undefined) ||
-		post?.company?.logoUrl ||
-		undefined;
+	
+	// Ưu tiên ảnh từ post -> cover -> logo
+	let imageObj: { url: string; width?: number | null; height?: number | null } | undefined = undefined;
+	
+	if (post?.images && Array.isArray(post.images) && post.images.length > 0) {
+		const img = post.images[0];
+		if (img && img.url) {
+			imageObj = { url: img.url, width: img.width, height: img.height };
+		}
+	} 
+	
+	if (!imageObj && post?.coverUrl) {
+		imageObj = { url: post.coverUrl, width: 1200, height: 630 };
+	} 
+	
+	if (!imageObj && post?.company?.logoUrl) {
+		imageObj = { url: post.company.logoUrl, width: 200, height: 200 };
+	}
+
 	// Fallback ảnh OG động (PNG) được sinh từ route /posts/[id]/opengraph-image
 	const ogDynamicImage = `${appBase}/posts/${id}/opengraph-image`;
-	const image = imageCandidate || ogDynamicImage;
+	
+	// Logic chọn URL: nếu imageObj tồn tại -> dùng URL của nó. Nếu không -> dùng ảnh động.
+	// Quan trọng: cần đảm bảo imageUrl nhận đúng giá trị từ imageObj.url nếu có.
+	let imageUrl = ogDynamicImage;
+	if (imageObj && imageObj.url) {
+		imageUrl = imageObj.url;
+	}
+
+	// Nếu dùng ảnh thật, ưu tiên thông số thật. Nếu không, fallback về 1200x630
+	const imageWidth = imageObj?.width || 1200;
+	const imageHeight = imageObj?.height || 630;
+
+	console.log("Final OG Image URL:", imageUrl);
+
 	const publisher = process.env.NEXT_PUBLIC_FB_PUBLISHER;
 	const url = `${appBase}/posts/${id}`;
 
@@ -66,14 +107,23 @@ export async function generateMetadata({
 			siteName,
 			type: "article",
 			publishedTime: post?.publishedAt ?? undefined,
-			images: image ? [{ url: image }] : undefined,
+			images: imageUrl
+				? [
+						{
+							url: imageUrl,
+							width: imageWidth,
+							height: imageHeight,
+							alt: title,
+						},
+				  ]
+				: undefined,
 			locale: "vi_VN",
 		},
 		twitter: {
-			card: image ? "summary_large_image" : "summary",
+			card: "summary_large_image",
 			title,
 			description,
-			images: image ? [image] : undefined,
+			images: imageUrl ? [imageUrl] : undefined,
 		},
 		other: {
 			...(publisher ? { "article:publisher": publisher } : {}),
