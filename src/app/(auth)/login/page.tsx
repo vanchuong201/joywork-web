@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+
 const schema = z.object({
   email: z
     .string()
@@ -42,6 +44,84 @@ function LoginPageContent() {
       setServerError(null);
     }
   }, [watchedEmail, watchedPassword, serverError]);
+
+  // Lắng nghe kết quả đăng nhập mạng xã hội từ popup
+  useEffect(() => {
+    const handleLoginSuccess = () => {
+      (async () => {
+        try {
+          await fetchMe();
+          toast.success("Đăng nhập thành công");
+          const redirectUrl = searchParams.get("redirect");
+          const safeRedirect = redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/";
+          router.push(safeRedirect);
+        } catch {
+          toast.error("Không thể tải thông tin tài khoản sau khi đăng nhập");
+        }
+      })();
+    };
+
+    const handleLoginFailure = (message?: string) => {
+      toast.error(message || "Đăng nhập mạng xã hội thất bại");
+    };
+
+    // 1. Listener cho postMessage (nếu window.opener còn sống)
+    function handleMessage(event: MessageEvent) {
+      if (typeof window === "undefined") return;
+      if (event.origin !== window.location.origin) return;
+
+      const data = event.data as any;
+      if (!data || data.type !== "social-login-result") return;
+
+      if (data.success) {
+        handleLoginSuccess();
+      } else {
+        handleLoginFailure(data.message);
+      }
+    }
+
+    // 2. Listener cho BroadcastChannel (nếu window.opener bị mất)
+    const channel = new BroadcastChannel('social_login_channel');
+    channel.onmessage = (event) => {
+      const data = event.data;
+      if (data?.type === "social-login-result") {
+        if (data.success) {
+          handleLoginSuccess();
+        } else {
+          handleLoginFailure(data.message);
+        }
+        // Đóng channel sau khi nhận tin để tránh duplicate (mặc dù component unmount sẽ close)
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("message", handleMessage);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("message", handleMessage);
+      }
+      channel.close();
+    };
+  }, [fetchMe, router, searchParams]);
+
+  const openSocialPopup = (provider: "google" | "facebook") => {
+    if (typeof window === "undefined") return;
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const url = `${API_BASE_URL}/api/auth/${provider}/start?mode=popup`;
+    const popup = window.open(
+      url,
+      `oauth-${provider}`,
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,status=no`
+    );
+    if (!popup) {
+      toast.error("Trình duyệt đã chặn popup, vui lòng cho phép popup và thử lại");
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     // Validate với Zod trước khi call API
@@ -120,7 +200,32 @@ function LoginPageContent() {
             {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
           </Button>
         </form>
-        <div className="mt-6 space-y-2 text-center text-sm text-[var(--muted-foreground)]">
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
+            <div className="h-px flex-1 bg-[var(--border)]" />
+            <span>Hoặc</span>
+            <div className="h-px flex-1 bg-[var(--border)]" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2"
+              onClick={() => openSocialPopup("google")}
+            >
+              <span className="text-sm font-medium">Tiếp tục với Google</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2"
+              onClick={() => openSocialPopup("facebook")}
+            >
+              <span className="text-sm font-medium">Tiếp tục với Facebook</span>
+            </Button>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2 text-center text-sm text-[var(--muted-foreground)]">
           <div>
             Chưa có tài khoản?{" "}
             <a
