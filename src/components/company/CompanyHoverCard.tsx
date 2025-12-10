@@ -202,7 +202,7 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
         companyName={companyName}
         onCreated={(ticket) => {
           setTicketModalOpen(false);
-          toast.success("Đã tạo ticket, chuyển tới trang hội thoại");
+          toast.success("Đã tạo tin nhắn, chuyển tới trang hội thoại");
           router.push(`/tickets/${ticket.id}`);
         }}
       />

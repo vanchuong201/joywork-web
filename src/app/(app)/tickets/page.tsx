@@ -39,9 +39,9 @@ function TicketsPageContent() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-[var(--foreground)]">Ticket hỗ trợ</h1>
+        <h1 className="text-2xl font-semibold text-[var(--foreground)]">Tin nhắn / Hỗ trợ</h1>
         <p className="text-sm text-[var(--muted-foreground)]">
-          Những ticket bạn đã gửi tới các doanh nghiệp trên JoyWork.
+          Những tin nhắn bạn đã gửi tới các doanh nghiệp trên JoyWork.
         </p>
       </header>
 
@@ -73,7 +73,7 @@ function TicketsPageContent() {
                 <div className="line-clamp-2 text-left">
                   {ticket.lastMessage
                     ? ticket.lastMessage.content
-                    : "Chưa có trao đổi thêm trong ticket này."}
+                    : "Chưa có trao đổi thêm trong hội thoại này."}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button asChild size="sm" variant="outline">
@@ -88,8 +88,8 @@ function TicketsPageContent() {
         </div>
       ) : (
         <EmptyState
-          title="Chưa có ticket"
-          subtitle="Gửi ticket tới doanh nghiệp từ hover card để được hỗ trợ nhanh."
+          title="Chưa có tin nhắn"
+          subtitle="Liên hệ với doanh nghiệp để được hỗ trợ nhanh."
         />
       )}
     </div>

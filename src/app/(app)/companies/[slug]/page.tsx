@@ -1,4 +1,5 @@
 import CompanyManageButton from "@/components/company/CompanyManageButton";
+import CompanyMessageButton from "@/components/company/CompanyMessageButton";
 import CompanyStoryRenderer from "@/components/company/CompanyStoryRenderer";
 import CompanyProfileTabs from "@/components/company/CompanyProfileTabs";
 import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
@@ -308,9 +309,7 @@ function CompanyActions({ company }: { company: CompanyProfile }) {
         initialFollowers={company.stats?.followers ?? 0}
         showCount
       />
-      <Button variant="outline" size="sm">
-        💬 Nhắn tin / Liên hệ
-      </Button>
+      <CompanyMessageButton companyId={company.id} companyName={company.name} />
       <CompanyManageButton slug={company.slug} />
     </div>
   );

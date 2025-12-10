@@ -48,13 +48,13 @@ export default function CreateTicketModal({ open, onOpenChange, companyId, compa
       return res.data.data.ticket as CompanyTicket;
     },
     onSuccess: (ticket) => {
-      toast.success("Đã gửi ticket tới doanh nghiệp");
+      toast.success("Đã gửi tin nhắn tới doanh nghiệp");
       setContent("");
       onOpenChange(false);
       onCreated?.(ticket);
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.error?.message ?? "Không thể gửi ticket, vui lòng thử lại";
+      const message = error?.response?.data?.error?.message ?? "Không thể gửi tin nhắn, vui lòng thử lại";
       toast.error(message);
     },
   });
@@ -68,7 +68,7 @@ export default function CreateTicketModal({ open, onOpenChange, companyId, compa
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl focus:outline-none">
           <div className="flex items-start justify-between gap-4">
             <Dialog.Title className="text-lg font-semibold text-[var(--foreground)]">
-              Gửi ticket tới {companyName}
+              Gửi tin nhắn tới {companyName}
             </Dialog.Title>
             <Dialog.Close
               className="rounded-full p-1 text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]"
@@ -79,7 +79,7 @@ export default function CreateTicketModal({ open, onOpenChange, companyId, compa
           </div>
 
           <Dialog.Description className="mt-2 text-sm text-[var(--muted-foreground)]">
-            Hãy mô tả ngắn gọn yêu cầu hoặc câu hỏi của bạn. Doanh nghiệp sẽ nhận thông báo qua email và phản hồi ngay khi có thể.
+            Hãy mô tả ngắn gọn yêu cầu hoặc câu hỏi của bạn. Doanh nghiệp sẽ nhận thông báo và phản hồi ngay khi có thể.
           </Dialog.Description>
 
           <div className="mt-4 space-y-4">
@@ -120,7 +120,7 @@ export default function CreateTicketModal({ open, onOpenChange, companyId, compa
               </Button>
             </Dialog.Close>
             <Button onClick={() => mutation.mutate()} disabled={!canSubmit}>
-              {mutation.isPending ? "Đang gửi..." : "Gửi ticket"}
+              {mutation.isPending ? "Đang gửi..." : "Gửi tin nhắn"}
             </Button>
           </div>
         </Dialog.Content>

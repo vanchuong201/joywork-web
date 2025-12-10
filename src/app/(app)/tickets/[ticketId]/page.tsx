@@ -70,16 +70,16 @@ function TicketThreadContent() {
     },
   });
 
-  const closeMutation = useMutation({
+    const closeMutation = useMutation({
     mutationFn: async () => {
       await api.patch(`/api/tickets/${ticketId}/status`, { status: "CLOSED" });
     },
     onSuccess: () => {
-      toast.success("Đã đóng ticket");
+      toast.success("Đã kết thúc hội thoại");
       query.refetch();
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.error?.message ?? "Không thể cập nhật ticket";
+      const msg = error?.response?.data?.error?.message ?? "Không thể cập nhật hội thoại";
       toast.error(msg);
     },
   });
@@ -94,7 +94,7 @@ function TicketThreadContent() {
   }
 
   if (!query.data || !ticketId) {
-    return <EmptyState title="Không tìm thấy ticket" subtitle="Ticket đã bị xoá hoặc bạn không có quyền truy cập." />;
+    return <EmptyState title="Không tìm thấy hội thoại" subtitle="Hội thoại đã bị xoá hoặc bạn không có quyền truy cập." />;
   }
 
   const { ticket, messages } = query.data;
@@ -126,7 +126,7 @@ function TicketThreadContent() {
               onClick={() => closeMutation.mutate()}
               disabled={closeMutation.isPending}
             >
-              {closeMutation.isPending ? "Đang đóng..." : "Đóng ticket"}
+              {closeMutation.isPending ? "Đang xử lý..." : "Kết thúc hội thoại"}
             </Button>
           ) : null}
         </div>
@@ -162,7 +162,7 @@ function TicketThreadContent() {
 
       {ticket.status === "CLOSED" ? (
         <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--muted)]/40 p-4 text-sm text-[var(--muted-foreground)]">
-          Ticket đã được đóng, bạn không thể tiếp tục gửi tin nhắn.
+          Hội thoại đã kết thúc, bạn không thể tiếp tục gửi tin nhắn.
         </div>
       ) : (
         <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 space-y-3">

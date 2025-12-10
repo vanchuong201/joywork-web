@@ -10,12 +10,14 @@ function SocialCallbackContent() {
     const success = searchParams.get("success") === "true";
     const message = searchParams.get("message");
     const provider = searchParams.get("provider");
+    const action = searchParams.get("action") ?? undefined;
 
     const messageData = {
       type: "social-login-result",
       success,
       message,
       provider,
+      action,
     };
 
     // 1. Gửi message về window opener (ưu tiên)

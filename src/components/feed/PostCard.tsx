@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2, Briefcase, X, Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
@@ -568,51 +567,43 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
           </PhotoProvider>
         ) : null}
         <PostContent content={post.content} />
+        {post.hashtags?.length ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {post.hashtags.map((h) => (
+              <Link key={h.id} href={`/tags/${h.slug}`}>
+                <span className="inline-flex items-center rounded-full bg-[var(--muted)]/50 px-2.5 py-0.5 text-xs font-medium text-[var(--brand)] hover:bg-[var(--brand)]/10 border border-transparent hover:border-[var(--brand)]/20 transition-colors">
+                  #{h.label}
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : null}
         {post.jobs && post.jobs.length ? (
           <div className="mt-3 space-y-2">
-            <div className="text-xs font-medium text-[var(--muted-foreground)]">Jobs đính kèm</div>
             <div className="grid gap-2 sm:grid-cols-2">
               {post.jobs.map((j) => (
                 <Link
                   key={j.id}
                   href={`/jobs/${j.id}`}
                   target="_blank"
-                  className="group rounded-md border border-[var(--border)] bg-[var(--background)] p-3 hover:border-[var(--brand)]"
+                  className="group flex items-center gap-3 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 hover:border-[var(--brand)]/50 hover:bg-[var(--muted)]/30 transition-all"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-[var(--foreground)] group-hover:text-[var(--brand)]">
-                        {j.title}
-                      </div>
-                      <div className="text-xs text-[var(--muted-foreground)]">
-                        {j.employmentType} {j.location ? `· ${j.location}` : ""}
-                      </div>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-[var(--muted)] text-[var(--muted-foreground)] group-hover:bg-[var(--brand)]/10 group-hover:text-[var(--brand)]">
+                     <Briefcase className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-[var(--foreground)] group-hover:text-[var(--brand)]">
+                      {j.title}
                     </div>
-                    <span
-                      className={
-                        "inline-flex h-6 items-center rounded-full px-2 text-xs " +
-                        (j.isActive
-                          ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                          : "bg-rose-100 text-rose-700 border border-rose-200")
-                      }
-                    >
-                      {j.isActive ? "Đang mở" : "Đã đóng"}
-                    </span>
+                    <div className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
+                       <span className={cn("inline-block h-1.5 w-1.5 rounded-full", j.isActive ? "bg-emerald-500" : "bg-gray-300")} />
+                       <span>{j.employmentType}</span>
+                       {j.location && <span className="truncate">· {j.location}</span>}
+                    </div>
                   </div>
                 </Link>
               ))}
             </div>
-          </div>
-        ) : null}
-        {post.hashtags?.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {post.hashtags.map((h) => (
-              <Link key={h.id} href={`/tags/${h.slug}`}>
-                <Badge className="bg-[#F7FAFF] text-[#17499A] hover:bg-[#e0efff]">
-                  #{h.label}
-              </Badge>
-              </Link>
-            ))}
           </div>
         ) : null}
       </div>

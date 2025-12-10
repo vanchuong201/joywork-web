@@ -28,6 +28,7 @@ import { useAuthStore } from "@/store/useAuth";
 type ProfileResponse = {
   id: string;
   email: string;
+  emailVerified?: boolean;
   name?: string | null;
   role: string;
   createdAt: string;
@@ -92,6 +93,8 @@ function extractS3Key(url: string): string | null {
     return null;
   }
 }
+
+import SocialAccounts from "@/components/profile/SocialAccounts";
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
@@ -523,6 +526,33 @@ export default function ProfilePage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Email account (read-only) */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-base font-medium text-[var(--foreground)]">Email tài khoản</p>
+              <p className="text-xs text-[var(--muted-foreground)]">Địa chỉ email đăng nhập, chỉ đọc</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3">
+            <Input value={data.email} readOnly className="w-80" />
+            <span
+              className={
+                "inline-flex items-center rounded-full px-2 py-0.5 text-xs " +
+                (data.emailVerified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700")
+              }
+            >
+              {data.emailVerified ? "Đã xác minh" : "Chưa xác minh"}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <SocialAccounts />
     </div>
   );
 }
