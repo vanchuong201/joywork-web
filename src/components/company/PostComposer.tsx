@@ -293,14 +293,14 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
 
   // Lazy load company jobs
   useEffect(() => {
-    if (!showJobSelector || jobsLoaded || isFetchingJobs) return;
+    if (!showJobSelector || jobsLoaded) return;
 
     let cancelled = false;
+    setIsFetchingJobs(true);
     (async () => {
-      setIsFetchingJobs(true);
       try {
         const res = await api.get(`/api/jobs`, { params: { companyId, page: 1, limit: 50 } });
-        if (!cancelled) {
+        if (!cancelled && mountedRef.current) {
           const items =
             (res.data?.data?.jobs as Array<{ id: string; title: string; location?: string | null; isActive: boolean; employmentType: string }>) ??
             [];
@@ -310,7 +310,9 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
       } catch {
         // ignore
       } finally {
-        if (!cancelled) setIsFetchingJobs(false);
+        if (mountedRef.current) {
+          setIsFetchingJobs(false);
+        }
       }
     })();
     return () => {
