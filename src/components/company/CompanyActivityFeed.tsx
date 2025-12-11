@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useMemo, useEffect } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import PostCard, { type PostCardData } from "@/components/feed/PostCard";
 import api from "@/lib/api";
 import useInView from "@/hooks/useInView";
 import { useAuthStore } from "@/store/useAuth";
-import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 
 type Props = {
   posts: PostCardData[];
@@ -15,197 +13,70 @@ type Props = {
   totalPages?: number;
 };
 
-// Should match or be compatible with initial server fetch
 const PAGE_SIZE = 10;
 
 export default function CompanyActivityFeed({ posts, companyId, totalPages }: Props) {
-  const queryClient = useQueryClient();
-  const normalizedPosts = useMemo(
-    () =>
-      posts?.map((post) => ({
-        ...post,
-        content: post.content ?? "",
-      })) ?? [],
-    [posts]
-  );
-
-  const previousState = useRef<PostCardData[] | null>(null);
-  const [items, setItems] = useState<PostCardData[]>(normalizedPosts);
   const { ref, inView } = useInView<HTMLDivElement>({ rootMargin: "200px" });
   const user = useAuthStore((state) => state.user);
-  const { openPrompt } = useAuthPrompt();
 
-  // Reset query cache when companyId changes
-  useEffect(() => {
-    if (companyId) {
-      queryClient.removeQueries({ queryKey: ["company-posts-feed", companyId] });
-    }
-  }, [companyId, queryClient]);
+  const initialData = useMemo(() => ({
+    pages: [
+      {
+        posts: posts.map((post) => ({
+          ...post,
+          content: post.content ?? "",
+        })),
+        pagination: {
+          page: 1,
+          limit: PAGE_SIZE,
+          total: 0,
+          totalPages: totalPages ?? 1,
+        },
+      },
+    ],
+    pageParams: [1],
+  }), [posts, totalPages]);
 
-  // Refresh trang 1 ở client để lấy isSaved/isLiked theo user sau SSR (nếu đã đăng nhập)
-  useEffect(() => {
-    let cancelled = false;
-    async function refreshFirstPage() {
-      if (!companyId || !user) return;
-      try {
-        const res = await api.get("/api/posts", { params: { companyId, page: 1, limit: PAGE_SIZE } });
-        const fresh = (res.data?.data?.posts ?? []) as PostCardData[];
-        if (!Array.isArray(fresh) || cancelled) return;
-        // Merge flags vào items hiện tại
-        setItems((prev) => {
-          const map = new Map<string, PostCardData>();
-          for (const p of prev) map.set(p.id, p);
-          for (const p of fresh) {
-            const cur = map.get(p.id);
-            if (cur) {
-              map.set(p.id, { ...cur, isLiked: p.isLiked, isSaved: p.isSaved, likesCount: p.likesCount ?? (p as any)?._count?.likes });
-            }
-          }
-          return Array.from(map.values());
-        });
-      } catch {
-        // ignore
-      }
-    }
-    void refreshFirstPage();
-    return () => {
-      cancelled = true;
-    };
-  }, [companyId, user]);
-
-  const query = useInfiniteQuery({
-    queryKey: ["company-posts-feed", companyId], // Changed key to avoid conflict with manage page query
-    initialPageParam: 2,
-    enabled:
-      Boolean(companyId) &&
-      normalizedPosts.length > 0 && // Only fetch more if we have initial data
-      (totalPages === undefined || totalPages > 1),
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ["company-posts-feed", companyId, user?.id],
+    initialPageParam: 1,
+    initialData: initialData as any,
     queryFn: async ({ pageParam }) => {
       const res = await api.get("/api/posts", {
         params: { companyId, page: pageParam, limit: PAGE_SIZE },
       });
-      return res.data.data as { posts: PostCardData[]; pagination: { page: number; totalPages: number } };
+      return res.data.data;
     },
-    getNextPageParam: (lastPage) => {
+    getNextPageParam: (lastPage: any) => {
       if (!lastPage || !lastPage.pagination) return undefined;
-      const current = lastPage.pagination.page;
-      const total = lastPage.pagination.totalPages;
-      return current < total ? current + 1 : undefined;
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
     },
+    // Refetch immediately if user is logged in (to get like/save status), otherwise trust SSR data for a bit
+    staleTime: user ? 0 : 1000 * 60 * 5,
   });
 
-  const mergedItems = useMemo(() => {
-    const pages = query.data?.pages;
-    
-    // If no new pages fetched yet, just return initial items
-    if (!pages || !Array.isArray(pages) || pages.length === 0) {
-      return items;
-    }
-
-    const extra = pages.flatMap((page) => {
-      if (!page || !Array.isArray(page.posts)) {
-        return [];
-      }
-      return page.posts.map((post) => ({
-        ...post,
-        content: post.content ?? "",
-      }));
-    });
-
-    // Merge and deduplicate
-    const ordered: PostCardData[] = [];
-    const seen = new Set<string>();
-
-    // Add initial items first
-    for (const item of items) {
-      if (item?.id && !seen.has(item.id)) {
-        seen.add(item.id);
-        ordered.push(item);
-      }
-    }
-
-    // Add fetched items
-    for (const item of extra) {
-      if (item?.id && !seen.has(item.id)) {
-        seen.add(item.id);
-        ordered.push(item);
-      }
-    }
-
-    return ordered;
-  }, [items, query.data]);
-
   useEffect(() => {
-    setItems(normalizedPosts);
-  }, [normalizedPosts]);
-
-  useEffect(() => {
-    if (inView && query.hasNextPage && !query.isFetchingNextPage) {
-      void query.fetchNextPage();
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [inView, query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const mutation = useMutation({
-    mutationFn: async (post: PostCardData) => {
-      if (post.isLiked) {
-        await api.delete(`/api/posts/${post.id}/like`);
-      } else {
-        await api.post(`/api/posts/${post.id}/like`);
-      }
-      return post.id;
-    },
-    onMutate: async (post) => {
-      setItems((prev) => {
-        previousState.current = prev;
-        return prev.map((item) => {
-          if (item.id !== post.id) return item;
-          const likeCount = getLikeCount(item);
-          return {
-            ...item,
-            isLiked: !item.isLiked,
-            likesCount: likeCount + (item.isLiked ? -1 : 1),
-          };
-        });
-      });
-      return { postId: post.id };
-    },
-    onError: (error: any, _variables, _context) => {
-      toast.error(error?.response?.data?.error?.message ?? "Không thể cập nhật lượt thích");
-      if (previousState.current) {
-        setItems(previousState.current);
-      } else {
-        setItems(normalizedPosts);
-      }
-    },
-  });
-
-  const handleLike = useCallback(
-    (post: PostCardData) => {
-      if (!user) {
-        openPrompt("like");
-        return;
-      }
-      if (mutation.isPending) return;
-      mutation.mutate(post);
-    },
-    [mutation, user, openPrompt],
-  );
+  const items = useMemo(() => data?.pages.flatMap((p: any) => p.posts) ?? [], [data]);
 
   return (
     <div className="space-y-4">
-      {mergedItems.map((post) => (
-        <PostCard key={post.id} post={post} onLike={() => handleLike(post)} />
+      {items.map((post: PostCardData) => (
+        <PostCard key={post.id} post={post} />
       ))}
-      {query.hasNextPage ? (
-        <div ref={ref} className="flex justify-center py-4 text-xs text-[var(--muted-foreground)]">
-          {query.isFetchingNextPage ? "Đang tải thêm..." : "Đang tải nội dung..."}
+      
+      {(isFetchingNextPage) && (
+        <div className="py-4 text-center text-sm text-[var(--muted-foreground)]">
+          Đang tải thêm...
         </div>
-      ) : null}
+      )}
+      
+      <div ref={ref} className="h-px" />
     </div>
   );
-}
-
-function getLikeCount(post: PostCardData) {
-  const count = post.likesCount ?? (post as any)?._count?.likes ?? 0;
-  return count;
 }

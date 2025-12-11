@@ -288,10 +288,16 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
     return true;
   }, [content, pendingUploads, hasErrorMedia]);
 
-  // Load company jobs once
+  const [jobsLoaded, setJobsLoaded] = useState(false);
+  const [isFetchingJobs, setIsFetchingJobs] = useState(false);
+
+  // Lazy load company jobs
   useEffect(() => {
+    if (!showJobSelector || jobsLoaded || isFetchingJobs) return;
+
     let cancelled = false;
     (async () => {
+      setIsFetchingJobs(true);
       try {
         const res = await api.get(`/api/jobs`, { params: { companyId, page: 1, limit: 50 } });
         if (!cancelled) {
@@ -299,15 +305,18 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
             (res.data?.data?.jobs as Array<{ id: string; title: string; location?: string | null; isActive: boolean; employmentType: string }>) ??
             [];
           setJobs(items);
+          setJobsLoaded(true);
         }
       } catch {
         // ignore
+      } finally {
+        if (!cancelled) setIsFetchingJobs(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [companyId]);
+  }, [companyId, showJobSelector, jobsLoaded]);
 
   const filteredJobs = useMemo(() => {
     const q = jobQuery.trim().toLowerCase();
@@ -431,7 +440,12 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                   </Button>
                </div>
               <div className="max-h-56 overflow-auto bg-[var(--background)] p-1">
-                {filteredJobs.length ? (
+                {isFetchingJobs ? (
+                  <div className="flex items-center justify-center py-6 text-[var(--muted-foreground)]">
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    <span className="text-sm">Đang tải danh sách việc làm...</span>
+                  </div>
+                ) : filteredJobs.length ? (
                   <ul className="space-y-0.5">
                     {filteredJobs.slice(0, 20).map((job) => {
                       const checked = selectedJobIds.includes(job.id);

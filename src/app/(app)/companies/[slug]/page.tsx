@@ -81,7 +81,7 @@ export default async function CompanyProfilePage({
 
   // NOTE: initial page is hydrated once; subsequent pages fetched client-side in CompanyActivityFeed
   const postsPromise = fetch(
-    `${baseURL}/api/posts?companyId=${company.id}&page=1&limit=5`,
+    `${baseURL}/api/posts?companyId=${company.id}&page=1&limit=10`,
     { cache: "no-store", next: { revalidate: 0 } },
   )
     .then(async (res): Promise<PostsResponse> => {

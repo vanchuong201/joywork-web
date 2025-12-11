@@ -164,7 +164,7 @@ function ManageCompanyPageContent() {
 
   const postsQuery = useQuery({
     queryKey: ["company-posts", companyId],
-    enabled: Boolean(companyId),
+    enabled: Boolean(companyId) && normalizedTab === "activity",
     queryFn: async () => {
       const res = await api.get(`/api/posts/companies/${companyId}/posts`, {
         params: { page: 1, limit: MAX_ITEMS },
@@ -175,7 +175,7 @@ function ManageCompanyPageContent() {
 
   const jobsQuery = useQuery({
     queryKey: ["company-jobs", companyId, statusFilter],
-    enabled: Boolean(companyId),
+    enabled: Boolean(companyId) && normalizedTab === "jobs",
     queryFn: async () => {
       const res = await api.get(`/api/jobs`, {
         params: {
@@ -193,7 +193,7 @@ function ManageCompanyPageContent() {
 
   const applicationsQuery = useQuery({
     queryKey: ["company-applications", companyId],
-    enabled: Boolean(companyId),
+    enabled: Boolean(companyId) && normalizedTab === "applications",
     queryFn: async () => {
       const res = await api.get(`/api/jobs/applications`, {
         params: { companyId, jobId: selectedJobId, page: 1, limit: MAX_ITEMS },
