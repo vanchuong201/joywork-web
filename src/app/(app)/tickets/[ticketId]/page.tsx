@@ -70,7 +70,7 @@ function TicketThreadContent() {
     },
   });
 
-    const closeMutation = useMutation({
+  const closeMutation = useMutation({
     mutationFn: async () => {
       await api.patch(`/api/tickets/${ticketId}/status`, { status: "CLOSED" });
     },

@@ -1,365 +1,263 @@
-import CompanyManageButton from "@/components/company/CompanyManageButton";
-import CompanyMessageButton from "@/components/company/CompanyMessageButton";
-import CompanyStoryRenderer from "@/components/company/CompanyStoryRenderer";
-import CompanyProfileTabs from "@/components/company/CompanyProfileTabs";
-import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
-import CompanyFollowButton from "@/components/company/CompanyFollowButton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import EmptyState from "@/components/ui/empty-state";
-import { Button } from "@/components/ui/button";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import type { PostCardData } from "@/components/feed/PostCard";
-import { CompanyProfile } from "@/types/company";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Users, Briefcase, Calendar, MessageCircle } from "lucide-react";
+import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
+import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero";
+import CompanyProfileContent from "@/components/company/profile/CompanyProfileContent";
+import { formatDate } from "@/lib/utils";
 
-type CompanyResponse = {
-  data: {
-    company: CompanyProfile;
-  };
-};
-
-type ActivityPost = PostCardData & { excerpt?: string | null };
-
-type PostsResponse = {
-  data: {
-    posts: ActivityPost[];
-    pagination?: {
-      page: number;
-      totalPages: number;
-    };
-  };
-};
-
-type JobsResponse = {
-  data: {
-    jobs: Array<{
-      id: string;
-      title: string;
-      description: string;
-      employmentType: string;
-      experienceLevel: string;
-      location?: string | null;
-      remote: boolean;
-      salaryMin?: number | null;
-      salaryMax?: number | null;
-      currency: string;
-      applicationDeadline?: string | null;
-      isActive: boolean;
-      createdAt: string;
-    }>;
-  };
-};
-
-export default async function CompanyProfilePage({
-  params,
-  searchParams,
-}: {
+type Props = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ tab?: string }>;
-}) {
-  const [{ slug }, { tab: tabParam }] = await Promise.all([params, searchParams]);
-  const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+};
 
-  const companyRes = await fetch(`${baseURL}/api/companies/${slug}`, {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+
+async function getCompany(slug: string) {
+  const res = await fetch(`${API_BASE_URL}/api/companies/${slug}`, {
     cache: "no-store",
-    next: { revalidate: 0 },
+    next: { tags: [`company-${slug}`] },
   });
 
-  if (!companyRes.ok) {
-    return (
-      <div className="mx-auto max-w-[1080px] space-y-6 p-4">
-        <EmptyState
-          title="Không tìm thấy công ty"
-          subtitle="Có thể công ty đã bị xoá hoặc đang ở chế độ riêng tư."
-        />
-      </div>
-    );
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error("Failed to fetch company");
   }
 
-  const companyPayload = (await companyRes.json()) as CompanyResponse;
-  const company = companyPayload.data.company;
+  return res.json().then((r) => r.data.company);
+}
 
-  // NOTE: initial page is hydrated once; subsequent pages fetched client-side in CompanyActivityFeed
-  const postsPromise = fetch(
-    `${baseURL}/api/posts?companyId=${company.id}&page=1&limit=10`,
-    { cache: "no-store", next: { revalidate: 0 } },
-  )
-    .then(async (res): Promise<PostsResponse> => {
-      if (!res.ok) {
-        return { data: { posts: [] } };
-      }
-      return (await res.json()) as PostsResponse;
-    })
-    .catch(() => ({ data: { posts: [] } }));
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const company = await getCompany(slug);
+  if (!company) return {};
 
-  const jobsPromise = fetch(
-    `${baseURL}/api/jobs?companyId=${company.id}&page=1&limit=8`,
-    { cache: "no-store", next: { revalidate: 0 } },
-  )
-    .then(async (res): Promise<JobsResponse> => {
-      if (!res.ok) {
-        return { data: { jobs: [] } };
-      }
-      return (await res.json()) as JobsResponse;
-    })
-    .catch(() => ({ data: { jobs: [] } }));
+  return {
+    title: `${company.name} | JoyWork`,
+    description: company.tagline || company.description,
+    openGraph: {
+      title: company.name,
+      description: company.tagline || company.description,
+      images: company.coverUrl ? [company.coverUrl] : company.logoUrl ? [company.logoUrl] : [],
+    },
+  };
+}
 
-  const [{ data: postsData }, { data: jobsData }] = await Promise.all([
-    postsPromise,
-    jobsPromise,
-  ]);
+export default async function CompanyPage({ params, searchParams }: Props) {
+  const { slug } = await params;
+  const company = await getCompany(slug);
+  if (!company) notFound();
 
-  const normalizedTab = ["overview", "activity", "jobs"].includes(tabParam ?? "") ? (tabParam as string) : "overview";
+  const { tab: searchTab } = await searchParams;
+  const tab = searchTab || "overview";
 
-  const metricsSection =
-    company.metrics && company.metrics.length > 0 ? (
-      <div className="mt-6 mb-6">
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-[var(--foreground)]">Chỉ số nổi bật</h3>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {company.metrics.map((metric, idx) => (
-                <div
-                  key={metric.id ?? idx}
-                  className="rounded-lg border border-[var(--border)] bg-[var(--background)] p-4"
-                >
-                  <p className="text-sm font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-                    {metric.label}
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{metric.value}</p>
-                  {metric.description ? (
-                    <p className="mt-2 text-xs text-[var(--muted-foreground)]">{metric.description}</p>
-                  ) : null}
+  // Data fetching based on tab to optimize performance
+  // Activity Feed
+  let posts = [];
+  let postsPagination = null;
+  if (tab === "activity") {
+    try {
+        const res = await fetch(
+            `${API_BASE_URL}/api/posts?companyId=${company.id}&page=1&limit=10`,
+            { cache: "no-store", next: { revalidate: 0 } },
+        );
+        if (res.ok) {
+            const data = await res.json();
+            posts = data.data.posts;
+            postsPagination = data.data.pagination;
+        }
+    } catch (e) {
+        console.error("Error fetching posts", e);
+    }
+  }
+
+  // Jobs
+  let jobs = [];
+  if (tab === "jobs") {
+    try {
+        const res = await fetch(
+            `${API_BASE_URL}/api/jobs?companyId=${company.id}&page=1&limit=20&isActive=true`,
+            { cache: "no-store" }
+        );
+        if (res.ok) {
+            jobs = (await res.json()).data.jobs;
+        }
+    } catch (e) {
+        console.error("Error fetching jobs", e);
+    }
+  }
+
+  // Members (People)
+  let members = [];
+  if (tab === "people") {
+      members = company.members || [];
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900 pb-20">
+      
+      {/* Hero Section */}
+      <CompanyProfileHero company={company} />
+
+      {/* Main Content & Tabs */}
+      <div className="max-w-7xl mx-auto px-6">
+        <Tabs defaultValue={tab} className="w-full">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-12 border-b border-slate-200">
+                <TabsList className="bg-transparent h-auto p-0 gap-8 w-full md:w-auto overflow-x-auto flex-nowrap justify-start">
+                    <Link href={`/companies/${company.slug}?tab=overview`} scroll={false}>
+                        <TabsTrigger 
+                            value="overview" 
+                            className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
+                        >
+                            Hồ sơ công ty
+                        </TabsTrigger>
+                    </Link>
+                    <Link href={`/companies/${company.slug}?tab=activity`} scroll={false}>
+                        <TabsTrigger 
+                            value="activity" 
+                            className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
+                        >
+                            Hoạt động
+                        </TabsTrigger>
+                    </Link>
+                    <Link href={`/companies/${company.slug}?tab=jobs`} scroll={false}>
+                        <TabsTrigger 
+                            value="jobs" 
+                            className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
+                        >
+                            Tuyển dụng <span className="ml-2 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">{company.stats?.jobs || 0}</span>
+                        </TabsTrigger>
+                    </Link>
+                    <Link href={`/companies/${company.slug}?tab=people`} scroll={false}>
+                        <TabsTrigger 
+                            value="people" 
+                            className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
+                        >
+                            Con người
+                        </TabsTrigger>
+                    </Link>
+                </TabsList>
+                
+                {/* Right side actions (optional) */}
+                <div className="hidden md:flex items-center gap-3">
+                    {/* Could add Share button or similar here */}
                 </div>
-              ))}
             </div>
-          </CardContent>
-        </Card>
+
+            {/* TAB: OVERVIEW (PROFILE) */}
+            <TabsContent value="overview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                <CompanyProfileContent company={company} />
+            </TabsContent>
+
+            {/* TAB: ACTIVITY */}
+            <TabsContent value="activity" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                <div className="max-w-3xl mx-auto">
+                    {posts.length > 0 ? (
+                        <CompanyActivityFeed 
+                            posts={posts} 
+                            companyId={company.id} 
+                            totalPages={postsPagination?.totalPages} 
+                        />
+                    ) : (
+                        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                <MessageCircle className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có hoạt động nào</h3>
+                            <p className="text-slate-500">Công ty chưa đăng tải bài viết nào gần đây.</p>
+                        </div>
+                    )}
+                </div>
+            </TabsContent>
+
+            {/* TAB: JOBS */}
+            <TabsContent value="jobs" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                 <div className="grid gap-6">
+                    {jobs.length > 0 ? (
+                        jobs.map((job: any) => (
+                            <Link href={`/jobs/${job.id}`} key={job.id} className="block group">
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-1">{job.title}</h3>
+                                            <div className="flex items-center gap-4 text-sm text-slate-500">
+                                                <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {job.location || "Remote"}</span>
+                                                <span className="flex items-center gap-1"><Briefcase className="w-4 h-4" /> {job.employmentType}</span>
+                                                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {formatDate(job.createdAt)}</span>
+                                            </div>
+                                        </div>
+                                        {company.logoUrl && (
+                                            <div className="w-12 h-12 relative bg-white rounded-lg border border-slate-100 p-1">
+                                                <Image src={company.logoUrl} alt={company.name} fill className="object-contain p-1" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2 mt-4">
+                                        {job.skills?.slice(0, 3).map((skill: string) => (
+                                            <Badge key={skill} variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-0 font-normal">
+                                                {skill}
+                                            </Badge>
+                                        ))}
+                                        {job.skills?.length > 3 && (
+                                            <Badge variant="secondary" className="bg-slate-50 text-slate-500 border-0 font-normal">
+                                                +{job.skills.length - 3}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </div>
+                            </Link>
+                        ))
+                    ) : (
+                        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                <Briefcase className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có vị trí tuyển dụng</h3>
+                            <p className="text-slate-500">Hiện tại công ty chưa đăng tuyển vị trí nào.</p>
+                        </div>
+                    )}
+                 </div>
+            </TabsContent>
+
+            {/* TAB: PEOPLE */}
+            <TabsContent value="people" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {members.length > 0 ? (
+                        members.map((member: any) => (
+                            <div key={member.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                                <div className="w-16 h-16 relative rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
+                                    {member.user.avatar ? (
+                                        <Image src={member.user.avatar} alt={member.user.name || "Member"} fill className="object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-xl">
+                                            {(member.user.name || member.user.email).charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-900">{member.user.name || "Thành viên ẩn danh"}</h4>
+                                    <p className="text-sm text-slate-500 mb-1">{member.role === 'OWNER' ? 'Founder / Owner' : member.role}</p>
+                                    <p className="text-xs text-slate-400 truncate max-w-[180px]">{member.user.email}</p>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="col-span-full text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                <Users className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có thành viên công khai</h3>
+                            <p className="text-slate-500">Danh sách thành viên đang được cập nhật.</p>
+                        </div>
+                    )}
+                 </div>
+            </TabsContent>
+        </Tabs>
       </div>
-    ) : null;
-
-  const overviewContent = (
-    <>
-      {/* About first */}
-      <CompanyStoryRenderer blocks={undefined} fallbackDescription={company.description} />
-      {/* Then metrics (if any) */}
-      {metricsSection}
-      {/* Then other story blocks */}
-      <CompanyStoryRenderer blocks={company.profileStory} fallbackDescription={undefined} />
-    </>
-  );
-
-  const activityContent = postsData.posts.length === 0 ? (
-    <EmptyState
-      title="Chưa có bài viết công khai"
-      subtitle="Khi doanh nghiệp đăng bài, nội dung sẽ hiển thị tại đây."
-    />
-  ) : (
-    <CompanyActivityFeed
-      posts={postsData.posts}
-      companyId={company.id}
-      totalPages={("pagination" in postsData ? postsData.pagination?.totalPages : undefined)}
-    />
-  );
-
-  const jobsContent = jobsData.jobs.length === 0 ? (
-    <EmptyState
-      title="Hiện chưa có job đang mở"
-      subtitle="Khi doanh nghiệp mở job mới, bạn sẽ thấy tại đây."
-    />
-  ) : (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {jobsData.jobs.map((job) => (
-        <Card key={job.id}>
-          <CardHeader className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
-              <span>
-                {job.remote ? "Remote" : job.location ?? "Không ghi rõ"} · {job.employmentType} · {job.experienceLevel}
-              </span>
-              <span>{formatDate(job.createdAt)}</span>
-            </div>
-            <Link
-              href={`/jobs/${job.id}`}
-              className="text-base font-semibold text-[var(--foreground)] hover:text-[var(--brand)]"
-            >
-              {job.title}
-            </Link>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-[var(--muted-foreground)]">
-            <p className="line-clamp-3 leading-relaxed">{createExcerpt(job.description, 260)}</p>
-            <div className="text-xs">
-              <p>Lương: {formatSalary(job.salaryMin, job.salaryMax, job.currency)}</p>
-              {job.applicationDeadline ? <p>Hạn nộp: {formatDate(job.applicationDeadline)}</p> : null}
-            </div>
-            <Button asChild size="sm">
-              <Link href={`/jobs/${job.id}`}>Xem chi tiết job</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
     </div>
   );
-
-  return (
-    <div className="mx-auto max-w-[1080px] space-y-6 p-4">
-      <CompanyHero company={company} />
-      <CompanyProfileTabs initialTab={normalizedTab} overview={overviewContent} activity={activityContent} jobs={jobsContent} />
-    </div>
-  );
-}
-
-function CompanyHero({ company }: { company: CompanyProfile }) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
-      <div className="relative h-72 w-full bg-gradient-to-br from-[var(--brand)]/15 via-transparent to-transparent">
-        {company.coverUrl ? (
-          <Image
-            src={company.coverUrl}
-            alt={company.name}
-            fill
-            priority
-            className="object-cover"
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        <div className="absolute bottom-5 left-6 flex flex-wrap items-end gap-4">
-          <CompanyAvatar company={company} />
-          <div className="space-y-2 text-white drop-shadow">
-            <h1 className="text-2xl font-semibold">
-              {company.legalName ? (
-                <>
-                  {company.legalName} <span className="font-normal opacity-90">({company.name})</span>
-                </>
-              ) : (
-                company.name
-              )}
-            </h1>
-            {company.tagline ? (
-              <p className="text-sm text-white/85">{company.tagline}</p>
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-start justify-between gap-4 p-6">
-        <CompanyMetadata company={company} />
-        <CompanyActions company={company} />
-      </div>
-
-    </div>
-  );
-}
-
-function CompanyAvatar({ company }: { company: CompanyProfile }) {
-  if (company.logoUrl) {
-    return (
-      <Image
-        src={company.logoUrl}
-        alt={company.name}
-        width={96}
-        height={96}
-        className="h-24 w-24 rounded-2xl border-4 border-white/80 bg-white object-cover shadow-xl"
-      />
-    );
-  }
-
-  return (
-    <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white/80 bg-white text-3xl font-semibold text-[var(--muted-foreground)] shadow-xl">
-      {company.name.slice(0, 1).toUpperCase()}
-    </div>
-  );
-}
-
-function CompanyMetadata({ company }: { company: CompanyProfile }) {
-  const tags = [
-    company.industry ? `Ngành: ${company.industry}` : null,
-    company.location ? `Trụ sở: ${company.location}` : null,
-    company.size ? `Quy mô: ${translateCompanySize(company.size)}` : null,
-    company.foundedYear ? `Thành lập: ${company.foundedYear}` : null,
-  ].filter(Boolean) as string[];
-
-  if (!tags.length) return null;
-
-  return (
-    <div className="flex flex-wrap gap-2 text-xs text-[var(--muted-foreground)]">
-      {tags.map((tag, idx) => (
-        <span key={idx} className="rounded-full bg-[var(--muted)] px-3 py-1 text-[var(--foreground)]">
-          {tag}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function CompanyActions({ company }: { company: CompanyProfile }) {
-  return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      {company.website ? (
-        <Button asChild variant="outline" size="sm">
-          <Link href={company.website} target="_blank" rel="noreferrer">
-            🌐 Website
-          </Link>
-        </Button>
-      ) : null}
-      <CompanyFollowButton
-        companyId={company.id}
-        companySlug={company.slug}
-        initialFollowers={company.stats?.followers ?? 0}
-        showCount
-      />
-      <CompanyMessageButton companyId={company.id} companyName={company.name} />
-      <CompanyManageButton slug={company.slug} />
-    </div>
-  );
-}
-
-function translateCompanySize(size?: string | null) {
-  switch (size) {
-    case "STARTUP":
-      return "Startup (1-20)";
-    case "SMALL":
-      return "Nhỏ (20-50)";
-    case "MEDIUM":
-      return "Vừa (50-200)";
-    case "LARGE":
-      return "Lớn (200-1000)";
-    case "ENTERPRISE":
-      return "Tập đoàn (>1000)";
-    default:
-      return "Đang cập nhật";
-  }
-}
-
-function formatNumber(value: number | null | undefined) {
-  return new Intl.NumberFormat("vi-VN").format(value ?? 0);
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
-function formatSalary(min?: number | null, max?: number | null, currency?: string) {
-  if (!min && !max) return "Thoả thuận";
-  const unit = currency ?? "VND";
-  const fmt = (value: number) =>
-    new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(value);
-  if (min && max) return `${fmt(min)} - ${fmt(max)} ${unit}`;
-  if (min) return `${fmt(min)} ${unit}`;
-  return `${fmt(max!)} ${unit}`;
-}
-
-function createExcerpt(content: string, maxLength = 200) {
-  if (!content) return "";
-  const normalized = content.replace(/\s+/g, " ").trim();
-  if (normalized.length <= maxLength) return normalized;
-  return `${normalized.slice(0, maxLength).trim()}…`;
 }

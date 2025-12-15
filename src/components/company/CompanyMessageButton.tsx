@@ -8,13 +8,25 @@ import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import CreateTicketModal from "@/components/tickets/CreateTicketModal";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 type Props = {
   companyId: string;
   companyName: string;
+  className?: string;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "sm" | "lg" | "icon";
+  children?: React.ReactNode;
 };
 
-export default function CompanyMessageButton({ companyId, companyName }: Props) {
+export default function CompanyMessageButton({ 
+    companyId, 
+    companyName,
+    className,
+    variant = "outline",
+    size = "sm",
+    children 
+}: Props) {
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const { openPrompt } = useAuthPrompt();
@@ -30,8 +42,17 @@ export default function CompanyMessageButton({ companyId, companyName }: Props) 
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={handleMessageClick}>
-        <MessageCircleHeart className="mr-2 h-4 w-4" /> Nhắn tin / Liên hệ
+      <Button 
+        variant={variant} 
+        size={size} 
+        onClick={handleMessageClick}
+        className={className}
+      >
+        {children ? children : (
+            <>
+                <MessageCircleHeart className="mr-2 h-4 w-4" /> Nhắn tin / Liên hệ
+            </>
+        )}
       </Button>
 
       <CreateTicketModal
@@ -48,4 +69,3 @@ export default function CompanyMessageButton({ companyId, companyName }: Props) 
     </>
   );
 }
-

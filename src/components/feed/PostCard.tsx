@@ -592,14 +592,14 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                      <Briefcase className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-[var(--foreground)] group-hover:text-[var(--brand)]">
-                      {j.title}
-                    </div>
+                      <div className="truncate text-sm font-medium text-[var(--foreground)] group-hover:text-[var(--brand)]">
+                        {j.title}
+                      </div>
                     <div className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
                        <span className={cn("inline-block h-1.5 w-1.5 rounded-full", j.isActive ? "bg-emerald-500" : "bg-gray-300")} />
                        <span>{j.employmentType}</span>
                        {j.location && <span className="truncate">· {j.location}</span>}
-                    </div>
+                      </div>
                   </div>
                 </Link>
               ))}
@@ -981,7 +981,7 @@ function EditPostModal({
                         <div className="p-4 text-center text-sm text-[var(--muted-foreground)]">Chưa có job nào trong công ty này.</div>
                     )}
                     </div>
-                </div>
+              </div>
             )}
           </div>
         </div>
