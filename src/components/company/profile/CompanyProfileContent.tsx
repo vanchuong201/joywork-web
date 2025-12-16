@@ -218,7 +218,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const handleSave = () => {
     const payload: any = {};
     const validSections = [
-        'stats', 'vision', 'mission', 'coreValues', 'products', 
+        'stats', 'vision', 'mission', 'coreValues', 'leadershipPhilosophy', 'products', 
         'recruitmentPrinciples', 'benefits', 'hrJourney', 'careerPath', 
         'salaryAndBonus', 'training', 'leaders', 'awards'
     ];
@@ -347,6 +347,60 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                  </div>
               </div>
            </div>
+        </section>
+
+        {/* SECTION 4: PHILOSOPHY (Leadership & Management) (MANDATORY) */}
+        <section className="max-w-7xl mx-auto px-6 relative group/philosophy">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                {/* Left: Media & Quote */}
+                <div className="relative group/leadership">
+                    {isEditable && (
+                        <div className="absolute top-4 right-4 z-30 opacity-0 group-hover/leadership:opacity-100 transition-opacity">
+                             <Button onClick={() => handleEdit('leadershipPhilosophy', { leadershipPhilosophy: profile?.leadershipPhilosophy || {} })} variant="secondary" size="sm" className="bg-white/90 hover:bg-white shadow-sm border">
+                                <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa Lãnh đạo
+                            </Button>
+                        </div>
+                    )}
+                    <div className="absolute -inset-4 bg-slate-200 opacity-50 blur-xl rounded-[3rem]"></div>
+                    
+                    <div className="relative rounded-[2rem] shadow-2xl w-full overflow-hidden z-10 bg-slate-900 aspect-video">
+                        {profile?.leadershipPhilosophy?.mediaType === 'video' ? (
+                            <video 
+                                className="w-full h-full object-cover"
+                                controls
+                                playsInline
+                                poster={profile?.leadershipPhilosophy?.media || "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1000"}
+                            >
+                                <source src={profile?.leadershipPhilosophy?.media || "https://videos.pexels.com/video-files/3252757/3252757-hd_1920_1080_25fps.mp4"} type="video/mp4" />
+                                Your browser does not support the video tag.
+                            </video>
+                        ) : (
+                            <img 
+                                src={profile?.leadershipPhilosophy?.media || "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1000"} 
+                                alt="Leadership Philosophy" 
+                                className="w-full h-full object-cover"
+                            />
+                        )}
+                    </div>
+                    
+                    <div className="absolute -bottom-10 -right-10 z-20 bg-white p-6 rounded-2xl shadow-xl border-l-8 border-slate-800 hidden md:block max-w-sm pointer-events-none">
+                        <p className="text-xl font-serif italic text-slate-800">"{profile?.leadershipPhilosophy?.quote || "Lãnh đạo không phải là chức danh, mà là trách nhiệm phụng sự."}"</p>
+                    </div>
+                </div>
+
+                {/* Right: Management Stats (tạm thời chỉ mô tả, chưa cho chỉnh sửa/lưu số liệu) */}
+                <div className="relative">
+                      <Badge>TRIẾT LÝ QUẢN TRỊ</Badge>
+                      <h2 className="text-4xl font-extrabold text-slate-900 mt-4 mb-6 leading-tight">Cam Kết Được <br/><span className="text-blue-600">Xác Thực Bởi Số Liệu</span></h2>
+                      <p className="text-slate-600 text-lg mb-10">Chúng tôi xây dựng niềm tin dựa trên sự minh bạch. Mọi cam kết với nhân viên đều được đo lường và công bố định kỳ.</p>
+                      
+                      <div className="space-y-8">
+                        <div className="text-slate-400 italic">
+                          Đang cập nhật số liệu... (phần này sẽ được triển khai sau dưới dạng tính năng xác thực bởi nhân viên)
+                        </div>
+                      </div>
+                </div>
+            </div>
         </section>
 
         {/* SECTION 5: PRODUCTS (MANDATORY) */}
@@ -870,6 +924,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                         {editingSection === 'vision' && "Chỉnh sửa Tầm nhìn"}
                         {editingSection === 'mission' && "Chỉnh sửa Sứ mệnh"}
                         {editingSection === 'coreValues' && "Chỉnh sửa Giá trị cốt lõi"}
+                        {editingSection === 'leadershipPhilosophy' && "Chỉnh sửa Triết lý lãnh đạo"}
                         {editingSection === 'stats' && "Chỉnh sửa Số liệu"}
                         {editingSection === 'products' && "Chỉnh sửa Hệ sinh thái sản phẩm"}
                         {editingSection === 'recruitmentPrinciples' && "Chỉnh sửa Nguyên tắc tuyển dụng"}
@@ -923,6 +978,49 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                             />
                         </div>
                     )}
+
+                    {editingSection === 'leadershipPhilosophy' && (
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Câu trích dẫn triết lý</Label>
+                                <Textarea 
+                                    value={formData.leadershipPhilosophy?.quote || ''} 
+                                    onChange={e => setFormData({...formData, leadershipPhilosophy: {...formData.leadershipPhilosophy, quote: e.target.value}})}
+                                    rows={3}
+                                    placeholder="Lãnh đạo không phải là chức danh..."
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Loại Media</Label>
+                                <select 
+                                    className="w-full border rounded-md p-2 bg-white"
+                                    value={formData.leadershipPhilosophy?.mediaType || 'image'}
+                                    onChange={e => setFormData({...formData, leadershipPhilosophy: {...formData.leadershipPhilosophy, mediaType: e.target.value as any}})}
+                                >
+                                    <option value="image">Hình ảnh</option>
+                                    <option value="video">Video (URL)</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Media {formData.leadershipPhilosophy?.mediaType === 'video' ? '(Video URL)' : '(Ảnh)'}</Label>
+                                {formData.leadershipPhilosophy?.mediaType === 'image' || !formData.leadershipPhilosophy?.mediaType ? (
+                                    <ImageUpload 
+                                        value={formData.leadershipPhilosophy?.media || ''} 
+                                        companyId={company.id}
+                                        onChange={url => setFormData({...formData, leadershipPhilosophy: {...formData.leadershipPhilosophy, media: url}})}
+                                    />
+                                ) : (
+                                    <Input 
+                                        value={formData.leadershipPhilosophy?.media || ''} 
+                                        onChange={e => setFormData({...formData, leadershipPhilosophy: {...formData.leadershipPhilosophy, media: e.target.value}})}
+                                        placeholder="https://..." 
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* managementPhilosophy: tạm thời chưa cho chỉnh sửa, sẽ triển khai sau */}
                     
                     {editingSection === 'stats' && (
                         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">

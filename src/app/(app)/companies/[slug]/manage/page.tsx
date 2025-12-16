@@ -67,14 +67,14 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
              </Link>
              <div className="h-4 w-px bg-slate-200" />
              <span className="font-bold text-slate-700">Trang quản trị</span>
-         </div>
+        </div>
          <div className="flex items-center gap-2">
              <Button variant="outline" size="sm" asChild>
                  <Link href={`/companies/${company.slug}/settings`}>
                      <Settings className="w-4 h-4 mr-2" /> Cài đặt
                  </Link>
-             </Button>
-         </div>
+            </Button>
+          </div>
       </div>
 
       {/* Hero Section (Read-only view for context, editing via Settings or specific Edit Hero modal later) */}
@@ -116,9 +116,9 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
                         >
                             <Users className="w-4 h-4" /> Ứng viên
                         </TabsTrigger>
-                    </Link>
+                          </Link>
                 </TabsList>
-            </div>
+    </div>
 
             {/* TAB: OVERVIEW (Editable Profile) */}
             <TabsContent value="overview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
@@ -132,8 +132,8 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
             {/* Reuse existing ManageCompanyPageContent for complex logic of other tabs */}
             <div className={tab === "overview" ? "hidden" : "block"}>
                 <ManageCompanyPageContent company={company} />
-            </div>
-            
+        </div>
+
         </Tabs>
       </div>
     </div>

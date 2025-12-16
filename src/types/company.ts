@@ -46,6 +46,13 @@ export interface CompanyProfileData {
   vision?: string;
   mission?: string;
   coreValues?: string;
+  leadershipPhilosophy?: {
+    media?: string;
+    mediaType?: 'image' | 'video';
+    quote?: string;
+    author?: string;
+  };
+  managementPhilosophy?: Array<{ label: string; value: number }>;
   products?: any; 
   recruitmentPrinciples?: any;
   benefits?: any;
