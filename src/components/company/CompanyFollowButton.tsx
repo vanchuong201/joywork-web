@@ -16,6 +16,8 @@ type Props = {
   initialFollowers?: number;
   showCount?: boolean;
   className?: string;
+  variant?: "default" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "sm" | "lg" | "icon";
 };
 
 export default function CompanyFollowButton({
@@ -24,6 +26,8 @@ export default function CompanyFollowButton({
   initialFollowers = 0,
   showCount = false,
   className,
+  variant = "outline",
+  size = "sm",
 }: Props) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -75,13 +79,19 @@ export default function CompanyFollowButton({
   const Icon = isFollowing ? Check : Plus;
   const followerLabel = followers.toLocaleString("vi-VN");
 
+  const isOutline = variant === "outline" || variant === "ghost";
+
   return (
     <Button
-      variant="outline"
-      size="sm"
+      variant={variant}
+      size={size}
       onClick={handleAction}
       disabled={isSubmitting || loading}
-      className={cn("gap-1", className, isFollowing ? "border-[var(--brand)] text-[var(--brand)]" : undefined)}
+      className={cn(
+        "gap-1", 
+        className, 
+        isFollowing && isOutline ? "border-[var(--brand)] text-[var(--brand)]" : undefined
+      )}
     >
       <Icon className="h-4 w-4" />
       {isFollowing ? "Đang theo dõi" : "Theo dõi"}

@@ -77,7 +77,7 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
       </div>
 
       {/* Hero Section (Read-only view for context, editing via Settings or specific Edit Hero modal later) */}
-      <CompanyProfileHero company={company} />
+      <CompanyProfileHero company={company} isEditable={true} />
 
       {/* Main Content & Tabs */}
       <div className="max-w-7xl mx-auto px-6">
