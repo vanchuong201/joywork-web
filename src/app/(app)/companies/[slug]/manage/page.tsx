@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Settings, Users, Briefcase, FileText, LayoutDashboard, Pencil } from "lucide-react";
 import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero";
 import CompanyProfileContent from "@/components/company/profile/CompanyProfileContent";
-import ManageCompanyPageContent from "@/components/company/ManageCompanyPageContent"; 
-import { getServerSession } from "@/lib/auth"; // Assume
+import ManageCompanyPageContent from "@/components/company/ManageCompanyPageContent";
 import { headers } from "next/headers";
 
 type Props = {

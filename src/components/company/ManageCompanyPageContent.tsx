@@ -38,7 +38,7 @@ export default function ManageCompanyPageContent({ company }: { company: Company
         {/* Tab: Activity */}
         {tab === "activity" && (
             <div className="max-w-3xl mx-auto space-y-8">
-                <PostComposer companyId={company.id} userAvatar={null} />
+                <PostComposer companyId={company.id} />
                 <div className="mt-8">
                     <h3 className="text-xl font-bold mb-4 text-slate-800">Bài viết đã đăng</h3>
                     {/* Pass empty array, component will fetch data */}
@@ -63,7 +63,7 @@ export default function ManageCompanyPageContent({ company }: { company: Company
                             <div>
                                 <h4 className="font-bold text-lg mb-1 text-slate-900">{job.title}</h4>
                                 <div className="flex flex-wrap gap-3 text-sm text-slate-500 items-center">
-                                    <Badge variant={job.isActive ? "default" : "secondary"} className={job.isActive ? "bg-green-500 hover:bg-green-600" : ""}>
+                                    <Badge className={job.isActive ? "bg-green-500 hover:bg-green-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}>
                                         {job.isActive ? "Đang tuyển" : "Đã đóng"}
                                     </Badge>
                                     <span>Đăng ngày: {formatDate(job.createdAt)}</span>

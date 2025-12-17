@@ -50,7 +50,7 @@ export default function CompanyProfileHero({ company }: { company: Company }) {
                             </span>
                         )}
                         {company.isVerified && (
-                             <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border-0 px-3 py-1">
+                             <Badge className="bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border-0 px-3 py-1">
                                  <CheckCircle className="w-4 h-4 mr-1.5" /> Đã xác thực
                              </Badge>
                         )}

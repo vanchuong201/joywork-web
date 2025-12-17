@@ -14,7 +14,7 @@ type Props = {
   companyId: string;
   companyName: string;
   className?: string;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  variant?: "default" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
   children?: React.ReactNode;
 };

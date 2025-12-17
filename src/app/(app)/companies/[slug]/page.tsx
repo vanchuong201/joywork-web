@@ -198,12 +198,12 @@ export default async function CompanyPage({ params, searchParams }: Props) {
                                     </div>
                                     <div className="flex gap-2 mt-4">
                                         {job.skills?.slice(0, 3).map((skill: string) => (
-                                            <Badge key={skill} variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-0 font-normal">
+                                            <Badge key={skill} className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-0 font-normal">
                                                 {skill}
                                             </Badge>
                                         ))}
                                         {job.skills?.length > 3 && (
-                                            <Badge variant="secondary" className="bg-slate-50 text-slate-500 border-0 font-normal">
+                                            <Badge className="bg-slate-50 text-slate-500 border-0 font-normal">
                                                 +{job.skills.length - 3}
                                             </Badge>
                                         )}

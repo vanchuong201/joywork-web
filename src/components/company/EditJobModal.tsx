@@ -77,10 +77,10 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-  jobId: string;
-  onSaved?: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  job: any;
+  onSuccess?: () => void;
 };
 
 const DESCRIPTION_SANITIZE_CONFIG = {
@@ -120,8 +120,7 @@ function sanitizeHtmlFromMarkdown(markdown: string | undefined | null) {
   return sanitizedString;
 }
 
-export default function EditJobModal({ isOpen, onClose, jobId, onSaved }: Props) {
-  const [loading, setLoading] = useState(false);
+export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -165,39 +164,27 @@ export default function EditJobModal({ isOpen, onClose, jobId, onSaved }: Props)
   const salaryMaxRegister = register("salaryMax");
 
   useEffect(() => {
-    const fetchJob = async () => {
-      if (!isOpen || !jobId) return;
-      setLoading(true);
-      try {
-        const res = await api.get(`/api/jobs/${jobId}`);
-        const job = res.data.data.job;
-        reset({
-          title: job.title ?? "",
-          descriptionMd: htmlToMarkdown(job.description ?? ""),
-          location: job.location ?? "",
-          remote: job.remote ?? false,
-          employmentType: job.employmentType ?? "FULL_TIME",
-          experienceLevel: job.experienceLevel ?? "MID",
-          salaryMin: job.salaryMin ? String(job.salaryMin) : "",
-          salaryMax: job.salaryMax ? String(job.salaryMax) : "",
-          currency: job.currency ?? "VND",
-          applicationDeadline: job.applicationDeadline ? job.applicationDeadline.slice(0, 10) : "",
-        });
-      } catch (e: any) {
-        toast.error(e?.response?.data?.error?.message ?? "Không tải được dữ liệu job");
-        onClose();
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchJob();
-  }, [isOpen, jobId, reset, onClose]);
+    if (open && job) {
+      reset({
+        title: job.title ?? "",
+        descriptionMd: htmlToMarkdown(job.description ?? ""),
+        location: job.location ?? "",
+        remote: job.remote ?? false,
+        employmentType: job.employmentType ?? "FULL_TIME",
+        experienceLevel: job.experienceLevel ?? "MID",
+        salaryMin: job.salaryMin ? String(job.salaryMin) : "",
+        salaryMax: job.salaryMax ? String(job.salaryMax) : "",
+        currency: job.currency ?? "VND",
+        applicationDeadline: job.applicationDeadline ? job.applicationDeadline.slice(0, 10) : "",
+      });
+    }
+  }, [open, job, reset]);
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
       const descriptionHtml = sanitizeHtmlFromMarkdown(values.descriptionMd);
-      await api.patch(`/api/jobs/${jobId}`, {
+      await api.patch(`/api/jobs/${job.id}`, {
         title: values.title.trim(),
         description: descriptionHtml || undefined,
         location: values.location?.trim() || undefined,
@@ -212,8 +199,8 @@ export default function EditJobModal({ isOpen, onClose, jobId, onSaved }: Props)
         applicationDeadline: values.applicationDeadline ? new Date(values.applicationDeadline).toISOString() : undefined,
       });
       toast.success("Cập nhật job thành công");
-      onSaved?.();
-      onClose();
+      onSuccess?.();
+      handleClose();
     } catch (e: any) {
       const err = e?.response?.data?.error;
       const details = err?.details;
@@ -262,15 +249,21 @@ export default function EditJobModal({ isOpen, onClose, jobId, onSaved }: Props)
     }
   };
 
+  const handleClose = () => {
+    if (!isSubmitting) {
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onClose={() => (!isSubmitting ? onClose() : undefined)} className="relative z-50">
+    <Dialog open={open} onClose={handleClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto w-full max-w-3xl rounded-xl bg-[var(--card)] p-6 shadow-xl">
           <div className="mb-4 flex items-center justify-between">
             <Dialog.Title className="text-lg font-semibold text-[var(--foreground)]">Chỉnh sửa job</Dialog.Title>
             <button
-              onClick={() => (!isSubmitting ? onClose() : undefined)}
+              onClick={handleClose}
               disabled={isSubmitting}
               className="rounded-full p-1 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-50"
             >
@@ -278,10 +271,7 @@ export default function EditJobModal({ isOpen, onClose, jobId, onSaved }: Props)
             </button>
           </div>
 
-          {loading ? (
-            <div className="h-24 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--card)]" />
-          ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField label="Tiêu đề job" error={errors.title?.message} required>
                   <Input
@@ -432,7 +422,7 @@ export default function EditJobModal({ isOpen, onClose, jobId, onSaved }: Props)
               </div>
 
               <div className="mt-4 flex items-center justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => (!isSubmitting ? onClose() : undefined)} disabled={isSubmitting}>
+                <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
                   Huỷ
                 </Button>
                 <Button type="submit" disabled={!isFormValid || isSubmitting}>
@@ -440,7 +430,6 @@ export default function EditJobModal({ isOpen, onClose, jobId, onSaved }: Props)
                 </Button>
               </div>
             </form>
-          )}
         </Dialog.Panel>
       </div>
     </Dialog>

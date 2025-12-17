@@ -13,16 +13,34 @@ import {
 } from "lucide-react";
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import React from "react";
 import { uploadCompanyPostImage } from "@/lib/uploads";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // Icon Mapping
 const iconMap: any = {
@@ -188,11 +206,119 @@ const SectionCarousel = ({ children, className, itemClassName = "flex-[0_0_auto]
   )
 }
 
+const SortableStatementItem = ({ id, statement, toggleStatementPublic }: { id: string, statement: any, toggleStatementPublic: (s: any, checked: boolean) => void }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 999 : 'auto',
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+          "flex items-center justify-between p-3 rounded-lg border bg-white transition-all touch-none select-none",
+          isDragging ? "border-blue-500 shadow-lg scale-[1.02]" : "border-slate-200 hover:border-slate-300"
+      )}
+    >
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+             <div {...attributes} {...listeners} className="cursor-grab text-slate-400 hover:text-slate-600 flex-shrink-0 p-1 hover:bg-slate-100 rounded active:cursor-grabbing">
+                 <Layout className="w-4 h-4" /> 
+             </div>
+             <div className="space-y-1 flex-1 min-w-0">
+                <div className="font-medium text-sm text-slate-900 line-clamp-2">{statement.title}</div>
+                <div className="flex items-center gap-3 text-xs text-slate-500">
+                    <span>{statement.percentYes ?? 0}% xác thực</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                    <span>{statement.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã kết thúc'}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div className="flex items-center gap-2 pl-4 flex-shrink-0">
+            <span className={cn("text-xs font-medium", statement.isPublic ? "text-blue-600" : "text-slate-400")}>
+                {statement.isPublic ? "Công khai" : "Ẩn"}
+            </span>
+            <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                checked={!!statement.isPublic}
+                onChange={(e) => toggleStatementPublic(statement, e.target.checked)}
+            />
+        </div>
+    </div>
+  );
+};
+
 export default function CompanyProfileContent({ company, isEditable = false }: Props) {
   const { profile } = company;
   const router = useRouter();
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>({});
+
+  // Company statements (Triết lý quản trị) & verification lists
+  const [statements, setStatements] = useState<any[] | null>(null);
+  const [statementsLoading, setStatementsLoading] = useState(false);
+  const [statementsError, setStatementsError] = useState<string | null>(null);
+
+  const [verificationLists, setVerificationLists] = useState<any[]>([]);
+  const [listsLoading, setListsLoading] = useState(false);
+  const [selectedListId, setSelectedListId] = useState<string>("");
+  
+  // State for new statements (array)
+  const [newStatements, setNewStatements] = useState<
+    Array<{ title: string; description: string; isPublic: boolean }>
+  >([{ title: "", description: "", isPublic: true }]);
+  
+  const [sendingStatement, setSendingStatement] = useState(false);
+  const [uploadingCsvList, setUploadingCsvList] = useState(false);
+  const [manageStatementsOpen, setManageStatementsOpen] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setStatements((items) => {
+        if (!items) return items;
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        
+        // Call API to save order
+        const orders = newItems.map((item, index) => ({
+            id: item.id,
+            order: index
+        }));
+        
+        api.put(`/api/companies/${company.id}/statements/reorder`, { orders })
+           .catch(err => {
+               console.error("Failed to reorder statements", err);
+               toast.error("Không thể lưu thứ tự sắp xếp");
+           });
+
+        return newItems;
+      });
+    }
+  };
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -209,6 +335,179 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       console.error(err);
     }
   });
+
+  // Load statements stats for "Triết lý quản trị"
+  useEffect(() => {
+    let cancelled = false;
+    async function loadStatements() {
+      try {
+        setStatementsLoading(true);
+        setStatementsError(null);
+
+        const url = isEditable
+          ? `/api/companies/${company.id}/statements`
+          : `/api/companies/public/${company.slug}/statements`;
+
+        const res = await api.get(url);
+        const items = res.data?.data?.statements ?? [];
+        if (!cancelled) {
+          setStatements(items);
+        }
+      } catch (error) {
+        console.error("Failed to load company statements", error);
+        if (!cancelled) {
+          setStatementsError("Không thể tải số liệu xác thực cam kết.");
+        }
+      } finally {
+        if (!cancelled) {
+          setStatementsLoading(false);
+        }
+      }
+    }
+
+    loadStatements();
+    return () => {
+      cancelled = true;
+    };
+  }, [company.id, company.slug, isEditable]);
+
+  // Load uploaded verification contact lists (only in edit mode)
+  useEffect(() => {
+    if (!isEditable) return;
+    let cancelled = false;
+
+    async function loadLists() {
+      try {
+        setListsLoading(true);
+        const res = await api.get(`/api/companies/${company.id}/verification-contacts/lists`);
+        const lists = res.data?.data?.lists ?? [];
+        if (!cancelled) {
+          setVerificationLists(lists);
+          if (!selectedListId && lists.length > 0) {
+            setSelectedListId(lists[0].id);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load verification contact lists", error);
+      } finally {
+        if (!cancelled) {
+          setListsLoading(false);
+        }
+      }
+    }
+
+    loadLists();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [company.id, isEditable]);
+
+  const handleUploadCsvList = async (file: File) => {
+    try {
+      setUploadingCsvList(true);
+      const base64 = await fileToBase64(file);
+      await api.post(`/api/companies/${company.id}/verification-contacts/upload-csv`, {
+        fileName: file.name,
+        fileType: file.type || "text/csv",
+        fileData: base64,
+      });
+      toast.success("Tải danh sách email thành công");
+
+      // Reload lists
+      try {
+        setListsLoading(true);
+        const res = await api.get(`/api/companies/${company.id}/verification-contacts/lists`);
+        const lists = res.data?.data?.lists ?? [];
+        setVerificationLists(lists);
+        if (!selectedListId && lists.length > 0) {
+          setSelectedListId(lists[0].id);
+        }
+      } finally {
+        setListsLoading(false);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Tải danh sách email thất bại");
+    } finally {
+      setUploadingCsvList(false);
+    }
+  };
+
+  const handleSendStatement = async () => {
+    if (!selectedListId) {
+      toast.error("Vui lòng chọn danh sách email nhân viên.");
+      return;
+    }
+
+    // Filter out empty statements
+    const validStatements = newStatements
+      .map(s => ({ ...s, title: s.title.trim(), description: s.description.trim() }))
+      .filter(s => s.title.length > 0);
+
+    if (validStatements.length === 0) {
+      toast.error("Vui lòng nhập ít nhất một tuyên bố.");
+      return;
+    }
+
+    try {
+      setSendingStatement(true);
+      await api.post(`/api/companies/${company.id}/statements/send`, {
+        listId: selectedListId,
+        statements: validStatements.map(s => ({
+            title: s.title,
+            description: s.description || undefined,
+            isPublic: s.isPublic
+        })),
+      });
+      toast.success("Đã gửi tuyên bố cho nhân viên xác thực");
+      
+      // Reset form
+      setNewStatements([{ title: "", description: "", isPublic: true }]);
+      setManageStatementsOpen(false);
+
+      // Reload statements stats
+      try {
+        setStatementsLoading(true);
+        const res = await api.get(`/api/companies/${company.id}/statements`);
+        const items = res.data?.data?.statements ?? [];
+        setStatements(items);
+      } finally {
+        setStatementsLoading(false);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Gửi tuyên bố thất bại. Vui lòng thử lại.");
+    } finally {
+      setSendingStatement(false);
+    }
+  };
+
+  const toggleStatementPublic = async (statement: any, newStatus: boolean) => {
+    try {
+      // Optimistic update
+      setStatements((prev) =>
+        (prev || []).map((s: any) =>
+          s.id === statement.id ? { ...s, isPublic: newStatus } : s
+        )
+      );
+
+      await api.patch(
+        `/api/companies/${company.id}/statements/${statement.id}`,
+        { isPublic: newStatus }
+      );
+      toast.success("Đã cập nhật trạng thái hiển thị");
+    } catch (error) {
+      console.error(error);
+      toast.error("Cập nhật thất bại.");
+      // Revert on error
+      setStatements((prev) =>
+        (prev || []).map((s: any) =>
+          s.id === statement.id ? { ...s, isPublic: !newStatus } : s
+        )
+      );
+    }
+  };
 
   const handleEdit = (section: string, initialData: any) => {
     setEditingSection(section);
@@ -388,16 +687,291 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     </div>
                 </div>
 
-                {/* Right: Management Stats (tạm thời chỉ mô tả, chưa cho chỉnh sửa/lưu số liệu) */}
+                {/* Right: Management Stats - verified by employees */}
                 <div className="relative">
-                      <Badge>TRIẾT LÝ QUẢN TRỊ</Badge>
-                      <h2 className="text-4xl font-extrabold text-slate-900 mt-4 mb-6 leading-tight">Cam Kết Được <br/><span className="text-blue-600">Xác Thực Bởi Số Liệu</span></h2>
-                      <p className="text-slate-600 text-lg mb-10">Chúng tôi xây dựng niềm tin dựa trên sự minh bạch. Mọi cam kết với nhân viên đều được đo lường và công bố định kỳ.</p>
-                      
-                      <div className="space-y-8">
-                        <div className="text-slate-400 italic">
-                          Đang cập nhật số liệu... (phần này sẽ được triển khai sau dưới dạng tính năng xác thực bởi nhân viên)
+                      {isEditable && (
+                        <div className="absolute top-0 right-0 z-10">
+                             <Button onClick={() => setManageStatementsOpen(true)} variant="outline" size="sm" className="bg-white shadow-sm hover:bg-slate-50 text-slate-700">
+                                <Pencil className="w-3 h-3 mr-2" /> Cập nhật
+                            </Button>
                         </div>
+                      )}
+                      
+                      <Badge>TRIẾT LÝ QUẢN TRỊ</Badge>
+                      <h2 className="text-4xl font-extrabold text-slate-900 mt-4 mb-6 leading-tight">
+                        Cam Kết Được <br/><span className="text-blue-600">Xác Thực Bởi Số Liệu</span>
+                      </h2>
+                      <p className="text-slate-600 text-lg mb-6">
+                        Các tuyên bố dưới đây được xác thực trực tiếp bởi nhân viên thông qua email riêng biệt.
+                      </p>
+
+                      <Dialog open={manageStatementsOpen} onOpenChange={setManageStatementsOpen}>
+                        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white sm:p-8">
+                            <DialogHeader>
+                                <DialogTitle className="text-2xl font-bold">Quản lý Cam Kết & Xác thực</DialogTitle>
+                                <DialogDescription className="text-slate-500">
+                                    Tạo các tuyên bố mới để gửi email xác thực cho nhân viên, hoặc quản lý hiển thị các tuyên bố đã có.
+                                </DialogDescription>
+                            </DialogHeader>
+                            
+                            <div className="space-y-8 py-6">
+                                {/* 1. EXISTING STATEMENTS (Now First) */}
+                                <div className="space-y-4 border-b border-slate-100 pb-8">
+                                     <h4 className="font-semibold text-slate-900 flex items-center gap-2 text-lg">
+                                        <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">1</span>
+                                        Quản lý tuyên bố hiện tại ({statements?.length || 0})
+                                    </h4>
+                                    <div className="pl-9 space-y-3">
+                                        {!statements || statements.length === 0 ? (
+                                            <p className="text-sm text-slate-400 italic">Chưa có tuyên bố nào.</p>
+                                        ) : (
+                                            <DndContext
+                                              sensors={sensors}
+                                              collisionDetection={closestCenter}
+                                              onDragEnd={handleDragEnd}
+                                            >
+                                              <SortableContext
+                                                items={statements.map((s: any) => s.id)}
+                                                strategy={verticalListSortingStrategy}
+                                              >
+                                                  <div className="grid gap-3 max-h-[300px] overflow-y-auto pr-2">
+                                                      {statements.map((s: any) => (
+                                                          <SortableStatementItem
+                                                              key={s.id}
+                                                              id={s.id}
+                                                              statement={s}
+                                                              toggleStatementPublic={toggleStatementPublic}
+                                                          />
+                                                      ))}
+                                                  </div>
+                                              </SortableContext>
+                                            </DndContext>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 2. NEW STATEMENTS (Now Second) */}
+                                <div className="space-y-4 border-b border-slate-100 pb-8">
+                                     <h4 className="font-semibold text-slate-900 flex items-center gap-2 text-lg">
+                                        <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">2</span>
+                                        Tạo tuyên bố mới
+                                    </h4>
+                                    <div className="pl-9 space-y-4">
+                                        {newStatements.map((stmt, idx) => (
+                                            <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative group">
+                                                {newStatements.length > 1 && (
+                                                    <button 
+                                                        onClick={() => {
+                                                            const next = [...newStatements];
+                                                            next.splice(idx, 1);
+                                                            setNewStatements(next);
+                                                        }}
+                                                        className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                                    >
+                                                        <Trash className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <Label className="text-xs text-slate-500 mb-1.5 block uppercase font-semibold">Nội dung tuyên bố {idx + 1}</Label>
+                                                        <Input
+                                                            value={stmt.title}
+                                                            onChange={(e) => {
+                                                                const next = [...newStatements];
+                                                                next[idx].title = e.target.value;
+                                                                setNewStatements(next);
+                                                            }}
+                                                            placeholder="Ví dụ: 10 năm hoạt động công ty luôn thưởng lương tháng 13"
+                                                            className="bg-white"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Input
+                                                            value={stmt.description}
+                                                            onChange={(e) => {
+                                                                const next = [...newStatements];
+                                                                next[idx].description = e.target.value;
+                                                                setNewStatements(next);
+                                                            }}
+                                                            placeholder="Mô tả thêm (tuỳ chọn)..."
+                                                            className="bg-white text-sm"
+                                                        />
+                                                    </div>
+                                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                            checked={stmt.isPublic}
+                                                            onChange={(e) => {
+                                                                const next = [...newStatements];
+                                                                next[idx].isPublic = e.target.checked;
+                                                                setNewStatements(next);
+                                                            }}
+                                                        />
+                                                        <span className="text-sm text-slate-600">Hiển thị công khai trên hồ sơ</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            onClick={() => setNewStatements([...newStatements, { title: "", description: "", isPublic: true }])}
+                                            className="w-full border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50"
+                                        >
+                                            <Plus className="w-4 h-4 mr-2" /> Thêm dòng tuyên bố khác
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* 3. SELECT LIST (Now Third) */}
+                                <div className="space-y-4">
+                                    <h4 className="font-semibold text-slate-900 flex items-center gap-2 text-lg">
+                                        <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">3</span>
+                                        Danh sách email nhân viên
+                                    </h4>
+                                    <div className="pl-9 space-y-4">
+                                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                            <div className="flex-1 w-full">
+                                                <Label className="text-sm font-medium text-slate-700 mb-2 block">Chọn danh sách đã tải lên</Label>
+                                                <select
+                                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                    value={selectedListId}
+                                                    onChange={(e) => setSelectedListId(e.target.value)}
+                                                >
+                                                    <option value="">-- Chọn danh sách email --</option>
+                                                    {verificationLists.map((l) => (
+                                                    <option key={l.id} value={l.id}>
+                                                        {l.name} ({l.contactsCount} email)
+                                                    </option>
+                                                    ))}
+                                                </select>
+                                                {listsLoading && <p className="text-xs text-slate-400 mt-1">Đang tải danh sách...</p>}
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                                 <a
+                                                    href="/verification-contacts-template.csv"
+                                                    download="verification-contacts-template.csv"
+                                                    className="text-sm text-blue-600 hover:text-blue-700 font-medium underline px-2"
+                                                >
+                                                    Tải mẫu CSV
+                                                </a>
+                                                <label className="flex-1 sm:flex-none whitespace-nowrap inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm">
+                                                    <input
+                                                    type="file"
+                                                    accept=".csv,text/csv"
+                                                    className="hidden"
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        await handleUploadCsvList(file);
+                                                        e.target.value = "";
+                                                    }}
+                                                    disabled={uploadingCsvList}
+                                                    />
+                                                    {uploadingCsvList ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                        Đang tải lên...
+                                                    </>
+                                                    ) : (
+                                                    <>
+                                                        <ImagePlus className="w-4 h-4 mr-2" />
+                                                        Tải danh sách mới
+                                                    </>
+                                                    )}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                             <DialogFooter className="gap-2 sm:gap-0">
+                                <Button variant="ghost" onClick={() => setManageStatementsOpen(false)}>Đóng</Button>
+                                <Button onClick={handleSendStatement} disabled={sendingStatement} className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200">
+                                    {sendingStatement ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Đang xử lý...
+                                        </>
+                                    ) : (
+                                        <>Lưu & Gửi email xác thực</>
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      <div className="space-y-4 mt-4">
+                        {statementsLoading && (
+                          <div className="text-sm text-slate-400 italic">Đang tải số liệu xác thực...</div>
+                        )}
+                        {statementsError && !statementsLoading && (
+                          <div className="text-sm text-red-500">{statementsError}</div>
+                        )}
+                        {!statementsLoading && !statementsError && (statements?.length ?? 0) === 0 && (
+                          <div className="text-slate-400 italic text-sm">
+                            Chưa có tuyên bố nào được xác thực. Doanh nghiệp có thể tạo tuyên bố và gửi email cho nhân viên để bắt đầu thu thập số liệu.
+                          </div>
+                        )}
+
+                        {statements && statements.length > 0 && (
+                          <div className="space-y-4">
+                            {statements.map((s: any) => (
+                              <TooltipProvider key={s.id} delayDuration={100}>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div
+                                            className="relative group/statement rounded-xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm hover:shadow-md transition-shadow cursor-default"
+                                        >
+                                            <div className="space-y-2">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="text-sm font-semibold text-slate-900 line-clamp-2">
+                                                {s.title}
+                                                </div>
+                                                <div className="text-xs text-slate-600 whitespace-nowrap font-medium bg-slate-100 px-2 py-1 rounded-full">
+                                                {Math.round(s.percentYes ?? 0)}%
+                                                </div>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div
+                                                className="h-full bg-slate-900 rounded-full"
+                                                style={{ width: `${Math.min(100, Math.max(0, s.percentYes ?? 0))}%` }}
+                                                />
+                                            </div>
+                                            {isEditable && (
+                                                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                                                <div>
+                                                    {s.isExpired || s.status === "EXPIRED"
+                                                    ? "Đã kết thúc xác thực"
+                                                    : "Đang trong thời gian xác thực"}
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    {s.sentAt && (
+                                                    <span>Gửi: {new Date(s.sentAt).toLocaleDateString("vi-VN")}</span>
+                                                    )}
+                                                    {s.expiresAt && (
+                                                    <span>
+                                                        Hết hạn: {new Date(s.expiresAt).toLocaleDateString("vi-VN")}
+                                                    </span>
+                                                    )}
+                                                </div>
+                                                </div>
+                                            )}
+                                            </div>
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                          <p>{(s.yesCount ?? 0)}/{s.totalRecipients ?? 0} nhân sự xác thực đúng</p>
+                                      </TooltipContent>
+                                  </Tooltip>
+                              </TooltipProvider>
+                            ))}
+                          </div>
+                        )}
                       </div>
                 </div>
             </div>
@@ -1912,6 +2486,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
      </div>
   );
 }

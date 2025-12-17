@@ -108,3 +108,15 @@ export interface Company {
   profile?: CompanyProfileData;
 }
 
+
+export interface CompanySummary {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl?: string;
+  tagline?: string;
+  location?: string;
+  followersCount: number;
+  postsCount: number;
+  jobsActive: number;
+}

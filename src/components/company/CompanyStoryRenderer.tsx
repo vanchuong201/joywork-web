@@ -109,15 +109,15 @@ export default function CompanyStoryRenderer({
         const key = block.id ?? `${block.type}-${index}`;
         switch (block.type) {
           case "text":
-            return <TextSection key={key} block={block} />;
+            return <TextSection key={key} block={block as Extract<CompanyStoryBlock, { type: "text" }>} />;
           case "list":
-            return <ListSection key={key} block={block} />;
+            return <ListSection key={key} block={block as Extract<CompanyStoryBlock, { type: "list" }>} />;
           case "quote":
-            return <QuoteSection key={key} block={block} />;
+            return <QuoteSection key={key} block={block as Extract<CompanyStoryBlock, { type: "quote" }>} />;
           case "stats":
-            return <StatsSection key={key} block={block} />;
+            return <StatsSection key={key} block={block as Extract<CompanyStoryBlock, { type: "stats" }>} />;
           case "media":
-            return <MediaSection key={key} block={block} />;
+            return <MediaSection key={key} block={block as Extract<CompanyStoryBlock, { type: "media" }>} />;
           default:
             return null;
         }
@@ -142,7 +142,7 @@ function SectionHeader({
   );
 }
 
-function TextSection({ block }: { block: Extract<CompanyStoryBlock, { type: "text" }> }) {
+function TextSection({ block }: { block: CompanyStoryBlock }) {
   if (!block.body && !block.title) return null;
   return (
     <Card>
@@ -158,7 +158,7 @@ function TextSection({ block }: { block: Extract<CompanyStoryBlock, { type: "tex
   );
 }
 
-function ListSection({ block }: { block: Extract<CompanyStoryBlock, { type: "list" }> }) {
+function ListSection({ block }: { block: CompanyStoryBlock }) {
   if (!block.items?.length) return null;
   return (
     <Card>
@@ -177,7 +177,7 @@ function ListSection({ block }: { block: Extract<CompanyStoryBlock, { type: "lis
   );
 }
 
-function QuoteSection({ block }: { block: Extract<CompanyStoryBlock, { type: "quote" }> }) {
+function QuoteSection({ block }: { block: CompanyStoryBlock }) {
   if (!block.quote?.text) return null;
   return (
     <Card className="border-l-4 border-l-[var(--brand)] bg-[var(--brand)]/3">
@@ -198,7 +198,7 @@ function QuoteSection({ block }: { block: Extract<CompanyStoryBlock, { type: "qu
   );
 }
 
-function StatsSection({ block }: { block: Extract<CompanyStoryBlock, { type: "stats" }> }) {
+function StatsSection({ block }: { block: CompanyStoryBlock }) {
   if (!block.stats?.length) return null;
   return (
     <Card>
@@ -225,7 +225,7 @@ function StatsSection({ block }: { block: Extract<CompanyStoryBlock, { type: "st
   );
 }
 
-function MediaSection({ block }: { block: Extract<CompanyStoryBlock, { type: "media" }> }) {
+function MediaSection({ block }: { block: CompanyStoryBlock }) {
   if (!block.media?.length) return null;
   return (
     <Card>

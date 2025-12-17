@@ -75,10 +75,10 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   companyId: string;
-  onCreated?: () => void;
+  onSuccess?: () => void;
 };
 
 const DESCRIPTION_SANITIZE_CONFIG = {
@@ -126,7 +126,7 @@ function sanitizeHtmlFromMarkdown(markdown: string | undefined | null) {
   return sanitizedString;
 }
 
-export default function CreateJobModal({ isOpen, onClose, companyId, onCreated }: Props) {
+export default function CreateJobModal({ open, onOpenChange, companyId, onSuccess }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -189,7 +189,7 @@ export default function CreateJobModal({ isOpen, onClose, companyId, onCreated }
       };
       await api.post(`/api/jobs/companies/${companyId}/jobs`, payload);
       toast.success("Đăng job mới thành công");
-      onCreated?.();
+      onSuccess?.();
       handleClose();
     } catch (error: any) {
       const err = error?.response?.data?.error;
@@ -245,7 +245,7 @@ export default function CreateJobModal({ isOpen, onClose, companyId, onCreated }
   const handleClose = () => {
     if (!isSubmitting) {
       reset();
-      onClose();
+      onOpenChange(false);
     }
   };
 
@@ -286,7 +286,7 @@ export default function CreateJobModal({ isOpen, onClose, companyId, onCreated }
   };
 
   return (
-    <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
+    <Dialog open={open} onClose={handleClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto w-full max-w-3xl rounded-xl bg-[var(--card)] p-6 shadow-xl">
