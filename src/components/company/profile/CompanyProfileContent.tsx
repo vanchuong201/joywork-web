@@ -48,6 +48,215 @@ const iconMap: any = {
   Coffee, Layout, Rocket, GraduationCap, Building2, MapPin, Calendar, CheckCircle, ArrowRight, Clock, ChevronRight
 };
 
+// Sample data from template-profile/App.tsx, used as demo content in manage mode
+const SAMPLE_STATS = [
+  { label: 'Tăng trưởng năm', value: '125%', trend: '+15%', icon: 'TrendingUp' },
+  { label: 'Nhân sự toàn cầu', value: '500+', icon: 'Users' },
+  { label: 'Tỷ lệ giữ chân', value: '96%', icon: 'Heart' },
+  { label: 'Tăng lương/năm', value: '15%', icon: 'Zap' },
+  { label: 'Tỷ lệ Nam/Nữ', value: '45/55', icon: 'Users' },
+  { label: 'Thu nhập TB', value: '$2,500', icon: 'DollarSign' },
+];
+
+const SAMPLE_PRODUCTS = [
+  'TechCloud', 'SmartAI', 'FinSafe', 'EduMate',
+  'HealthLink', 'AutoLog', 'CyberShield', 'GreenEnergy',
+].map((name) => ({ name }));
+
+const SAMPLE_RECRUITMENT_PRINCIPLES = [
+  {
+    title: 'Thái Độ > Trình Độ',
+    desc: 'Kỹ năng có thể đào tạo, nhưng thái độ và tư duy tích cực là tố chất sẵn có.',
+    icon: 'Star',
+  },
+  {
+    title: 'Phù Hợp Văn Hóa',
+    desc: 'Tìm kiếm mảnh ghép phù hợp với giá trị cốt lõi và sứ mệnh của tổ chức.',
+    icon: 'Heart',
+  },
+  {
+    title: 'Minh Bạch Quy Trình',
+    desc: 'Mọi ứng viên đều được tôn trọng và thông báo kết quả rõ ràng, nhanh chóng.',
+    icon: 'ShieldCheck',
+  },
+  {
+    title: 'Đa Dạng & Bao Trùm',
+    desc: 'Tôn trọng sự khác biệt, không phân biệt giới tính, vùng miền hay xuất phát điểm.',
+    icon: 'Globe',
+  },
+];
+
+const SAMPLE_BENEFITS = {
+  financial: [
+    'Mức lương cạnh tranh Top thị trường (P75)',
+    'Thưởng tháng 13 cam kết + Thưởng hiệu quả (2-6 tháng lương)',
+    'Đánh giá tăng lương định kỳ 2 lần/năm',
+    'Gói bảo hiểm sức khỏe Premium cho bản thân và gia đình',
+    'Phụ cấp cơm trưa, xăng xe, điện thoại, trang phục',
+  ],
+  nonFinancial: [
+    'Happy Hour thứ 6 hàng tuần, Teabreak mỗi ngày',
+    'Company Trip & Team Building chuẩn 5 sao hàng năm',
+    'CLB Thể thao (Bóng đá, Yoga, Running) có HLV riêng',
+    'Khu vực Pantry, Gaming, Gym ngay tại văn phòng',
+    'Chế độ nghỉ phép linh hoạt & Hybrid working',
+  ],
+};
+
+const SAMPLE_HR_JOURNEY = [
+  {
+    step: '01',
+    title: 'Hội Nhập (Onboarding)',
+    desc: '2 tuần đầu tiên: Tìm hiểu văn hóa, quy trình và nhận Mentor hướng dẫn 1-1.',
+    color: 'bg-slate-700',
+  },
+  {
+    step: '02',
+    title: 'Thử Thách (Probation)',
+    desc: '2 tháng thử việc: Tham gia dự án thực tế, thể hiện năng lực và tiềm năng.',
+    color: 'bg-slate-800',
+  },
+  {
+    step: '03',
+    title: 'Phát Triển (Review)',
+    desc: 'Định kỳ 6 tháng: Đánh giá hiệu suất (KPIs/OKRs) và hoạch định lộ trình thăng tiến.',
+    color: 'bg-slate-900',
+  },
+];
+
+const SAMPLE_CAREER_PATH = ['Fresher', 'Junior', 'Senior', 'Team Lead', 'Manager', 'Director'];
+
+const SAMPLE_SALARY_AND_BONUS = {
+  salary: ['Lương cứng (Fixed)', 'Phụ cấp (Allowance)', 'Lương tháng 13', 'OT pay (nếu có)'],
+  bonus: ['Thưởng dự án (Project)', 'Thưởng nóng (Spot)', 'Thưởng kinh doanh', 'ESOP (Cổ phần)'],
+};
+
+const SAMPLE_TRAINING = {
+  description:
+    'Tại TechCorp, việc học chưa bao giờ dừng lại. Chúng tôi cung cấp tài khoản Udemy, Coursera Business không giới hạn và thư viện sách chuyên ngành phong phú.',
+  budget: '20.000.000 VNĐ',
+  image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800',
+  programs: [
+    {
+      title: 'Workshop Nội Bộ',
+      desc: 'Chia sẻ kiến thức chuyên môn (Tech Talk) chiều thứ 6 hàng tuần từ các chuyên gia.',
+    },
+    {
+      title: 'Hệ Thống Mentor',
+      desc: 'Chương trình Buddy & Mentor 1-1 giúp định hướng phát triển nghề nghiệp rõ ràng.',
+    },
+    {
+      title: 'Chứng Chỉ Quốc Tế',
+      desc: 'Tài trợ 100% lệ phí thi các chứng chỉ AWS, Google, PMP, IELTS...',
+    },
+  ],
+};
+
+const SAMPLE_LEADERS = [
+  {
+    name: 'Nguyễn Văn Hùng',
+    role: 'Chủ tịch HĐQT (Founder & Chairman)',
+    image:
+      'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400',
+    location: 'Hồ Chí Minh, Việt Nam',
+    message: 'Chúng tôi không chỉ xây dựng sản phẩm, chúng tôi kiến tạo di sản.',
+  },
+  {
+    name: 'Trần Thu Hà',
+    role: 'Tổng Giám Đốc (CEO)',
+    image:
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
+    location: 'Hà Nội, Việt Nam',
+    message: 'Con người là tài sản vô giá và là trung tâm của mọi sự phát triển.',
+  },
+  {
+    name: 'Lê Minh Tuấn',
+    role: 'Giám đốc Công nghệ (CTO)',
+    image:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400',
+    location: 'Đà Nẵng, Việt Nam',
+    message: 'Đổi mới sáng tạo là DNA của TechCorp.',
+  },
+];
+
+const SAMPLE_TYPICAL_DAY = [
+  { time: '08:30', title: 'Khởi động', desc: 'Check-in & Coffee sáng', icon: 'Coffee' },
+  { time: '09:00', title: 'Đồng bộ', desc: 'Daily Standup Meeting', icon: 'Users' },
+  { time: '12:00', title: 'Tái tạo', desc: 'Ăn trưa & Nghỉ ngơi', icon: 'Heart' },
+  { time: '16:00', title: 'Tập trung', desc: 'Deep Work / Focus Time', icon: 'Zap' },
+];
+
+const SAMPLE_AWARDS = [
+  { year: '2023', name: 'Nơi làm việc tốt nhất Châu Á', org: 'HR Asia Award' },
+  { year: '2022', name: 'Sao Khuê 5 Sao (Phần mềm)', org: 'VINASA' },
+  { year: '2021', name: 'Top 50 Doanh Nghiệp CNTT', org: 'VNR500' },
+  { year: '2020', name: 'Sản phẩm đổi mới sáng tạo', org: 'Better Choice Award' },
+];
+
+const SAMPLE_FOUNDER_STORY = {
+  title: '"Từ Garage Nhỏ Đến Giấc Mơ Toàn Cầu"',
+  content:
+    'Vào một ngày mưa năm 2015, ba kỹ sư trẻ ngồi lại với nhau tại một căn phòng trọ nhỏ ở Sài Gòn. Họ trăn trở về việc làm sao để sản phẩm công nghệ Việt Nam có thể cạnh tranh sòng phẳng trên bản đồ thế giới.\n\nVới số vốn ít ỏi nhưng hoài bão lớn, TechCorp ra đời. Chúng tôi không chỉ xây dựng doanh nghiệp, chúng tôi xây dựng một cộng đồng những người dám nghĩ, dám làm và dám thất bại.',
+  founder: 'Nguyễn Văn Hùng - Founder',
+};
+
+const SAMPLE_MILESTONES = [
+  { year: '2015', title: 'Thành Lập', desc: 'Khởi đầu hành trình từ garage nhỏ với 5 kỹ sư tâm huyết.' },
+  { year: '2018', title: 'Vươn Ra Biển Lớn', desc: 'Khai trương văn phòng đại diện tại Singapore và Tokyo.' },
+  {
+    year: '2020',
+    title: 'Vòng Vốn Series B',
+    desc: 'Huy động thành công 20 triệu USD từ các quỹ đầu tư uy tín.',
+  },
+  {
+    year: '2023',
+    title: 'Top 10 Sao Khuê',
+    desc: 'Vinh danh Top 10 Doanh nghiệp Công nghệ xuất sắc nhất.',
+  },
+];
+
+const SAMPLE_TESTIMONIALS = [
+  {
+    name: 'Mai Phương Anh',
+    role: 'Senior Developer',
+    quote:
+      'Môi trường làm việc đẳng cấp, sếp luôn lắng nghe và trao quyền cho nhân viên.',
+    image:
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+  },
+  {
+    name: 'Nguyễn Quốc Bảo',
+    role: 'Product Manager',
+    quote:
+      'Lộ trình thăng tiến cực kỳ rõ ràng, văn hóa đào tạo bài bản chuẩn quốc tế.',
+    image:
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200',
+  },
+  {
+    name: 'Lê Hương Ly',
+    role: 'UI/UX Designer',
+    quote:
+      'TechCorp giống như ngôi nhà thứ hai, nơi sự sáng tạo không bao giờ bị giới hạn.',
+    image:
+      'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=200',
+  },
+];
+
+const SAMPLE_VISION =
+  'Trở thành tập đoàn công nghệ số 1 khu vực, tiên phong kiến tạo hệ sinh thái số thông minh phục vụ 100 triệu người dùng.';
+
+const SAMPLE_MISSION =
+  'Dùng công nghệ để giải quyết các bài toán xã hội, nâng cao chất lượng cuộc sống và tối ưu hóa năng suất lao động.';
+
+const SAMPLE_CORE_VALUES = [
+  'Tận Tâm - Khách hàng là trọng tâm',
+  'Sáng Tạo - Đổi mới không ngừng nghỉ',
+  'Chính Trực - Minh bạch trong mọi hành động',
+  'Hợp Tác - Sức mạnh của sự đoàn kết',
+].join('\n');
+
+const SAMPLE_NOTE = 'Đây là dữ liệu mẫu, sẽ được thay thế khi bạn cập nhật dữ liệu chính thức.';
+
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -563,18 +772,120 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   };
 
   // Default Fallbacks from Seed Data if empty (just in case)
-  const stats = profile?.stats as any[] || [];
-  const products = profile?.products as any[] || [];
-  const recruitmentPrinciples = profile?.recruitmentPrinciples as any[] || [];
-  const benefits = profile?.benefits as any || { financial: [], nonFinancial: [] };
-  const hrJourney = profile?.hrJourney as any[] || [];
-  const careerPath = profile?.careerPath as any[] || [];
-  const salaryAndBonus = profile?.salaryAndBonus as any || { salary: [], bonus: [] };
-  const training = profile?.training as any || { programs: [] };
-  const leaders = profile?.leaders as any[] || [];
-  const culture = profile?.culture as any || { typicalDay: [], testimonials: [] };
-  const awards = profile?.awards as any[] || [];
-  const story = profile?.story as any || { founderStory: {}, milestones: [] };
+  const stats = (profile?.stats as any[]) || [];
+  const products = (profile?.products as any[]) || [];
+  const recruitmentPrinciples = (profile?.recruitmentPrinciples as any[]) || [];
+  const benefits = (profile?.benefits as any) || { financial: [], nonFinancial: [] };
+  const hrJourney = (profile?.hrJourney as any[]) || [];
+  const careerPath = (profile?.careerPath as any[]) || [];
+  const salaryAndBonus = (profile?.salaryAndBonus as any) || { salary: [], bonus: [] };
+  const training = (profile?.training as any) || { programs: [] };
+  const leaders = (profile?.leaders as any[]) || [];
+  const culture = (profile?.culture as any) || { typicalDay: [], testimonials: [] };
+  const awards = (profile?.awards as any[]) || [];
+  const story = (profile?.story as any) || { founderStory: {}, milestones: [] };
+
+  // Flags & merged data to decide when to use sample template content (only in manage mode)
+  const usingSampleStats = isEditable && stats.length === 0;
+  const statsToRender = !isEditable || stats.length > 0 ? stats : SAMPLE_STATS;
+
+  const usingSampleProducts = isEditable && products.length === 0;
+  const productsToRender = !isEditable || products.length > 0 ? products : SAMPLE_PRODUCTS;
+
+  const usingSampleRecruitmentPrinciples = isEditable && recruitmentPrinciples.length === 0;
+  const recruitmentPrinciplesToRender =
+    !isEditable || recruitmentPrinciples.length > 0
+      ? recruitmentPrinciples
+      : SAMPLE_RECRUITMENT_PRINCIPLES;
+
+  const usingSampleBenefits =
+    isEditable &&
+    (!benefits?.financial || benefits.financial.length === 0) &&
+    (!benefits?.nonFinancial || benefits.nonFinancial.length === 0);
+  const benefitsFinancialToRender =
+    !isEditable || (benefits.financial && benefits.financial.length > 0)
+      ? benefits.financial || []
+      : SAMPLE_BENEFITS.financial;
+  const benefitsNonFinancialToRender =
+    !isEditable || (benefits.nonFinancial && benefits.nonFinancial.length > 0)
+      ? benefits.nonFinancial || []
+      : SAMPLE_BENEFITS.nonFinancial;
+
+  const usingSampleHrJourney = isEditable && hrJourney.length === 0;
+  const hrJourneyToRender =
+    !isEditable || hrJourney.length > 0 ? hrJourney : SAMPLE_HR_JOURNEY;
+
+  const usingSampleCareerPath = isEditable && careerPath.length === 0;
+  const careerPathToRender =
+    !isEditable || careerPath.length > 0 ? careerPath : SAMPLE_CAREER_PATH;
+
+  const usingSampleSalaryAndBonus =
+    isEditable &&
+    (!salaryAndBonus?.salary || salaryAndBonus.salary.length === 0) &&
+    (!salaryAndBonus?.bonus || salaryAndBonus.bonus.length === 0);
+  const salaryItemsToRender =
+    !isEditable || (salaryAndBonus.salary && salaryAndBonus.salary.length > 0)
+      ? salaryAndBonus.salary || []
+      : SAMPLE_SALARY_AND_BONUS.salary;
+  const bonusItemsToRender =
+    !isEditable || (salaryAndBonus.bonus && salaryAndBonus.bonus.length > 0)
+      ? salaryAndBonus.bonus || []
+      : SAMPLE_SALARY_AND_BONUS.bonus;
+
+  const usingSampleTraining =
+    isEditable &&
+    !profile?.training &&
+    !(training.description || training.budget || (training.programs || []).length > 0);
+  const trainingDescriptionToRender =
+    training.description || (usingSampleTraining ? SAMPLE_TRAINING.description : '');
+  const trainingBudgetToRender =
+    training.budget || (usingSampleTraining ? SAMPLE_TRAINING.budget : undefined);
+  const trainingImageToRender =
+    training.image || SAMPLE_TRAINING.image;
+  const trainingProgramsToRender =
+    (training.programs?.length || 0) > 0 || !isEditable
+      ? training.programs || []
+      : SAMPLE_TRAINING.programs;
+
+  const usingSampleLeaders = isEditable && leaders.length === 0;
+  const leadersToRender = !isEditable || leaders.length > 0 ? leaders : SAMPLE_LEADERS;
+
+  const usingSampleTypicalDay =
+    isEditable && (!culture.typicalDay || culture.typicalDay.length === 0);
+  const typicalDayToRender =
+    !isEditable || (culture.typicalDay && culture.typicalDay.length > 0)
+      ? culture.typicalDay || []
+      : SAMPLE_TYPICAL_DAY;
+
+  const usingSampleAwards = isEditable && awards.length === 0;
+  const awardsToRender = !isEditable || awards.length > 0 ? awards : SAMPLE_AWARDS;
+
+  const usingSampleFounderStory =
+    isEditable && !story.founderStory?.title;
+  const founderStoryToRender =
+    story.founderStory && story.founderStory.title
+      ? story.founderStory
+      : usingSampleFounderStory
+      ? SAMPLE_FOUNDER_STORY
+      : null;
+
+  const usingSampleMilestones =
+    isEditable && (!story.milestones || story.milestones.length === 0);
+  const milestonesToRender =
+    !isEditable || (story.milestones && story.milestones.length > 0)
+      ? story.milestones || []
+      : SAMPLE_MILESTONES;
+
+  const usingSampleTestimonials =
+    isEditable && (!culture.testimonials || culture.testimonials.length === 0);
+  const testimonialsToRender =
+    !isEditable || (culture.testimonials && culture.testimonials.length > 0)
+      ? culture.testimonials || []
+      : SAMPLE_TESTIMONIALS;
+
+  const usingSampleVision = isEditable && !profile?.vision;
+  const usingSampleMission = isEditable && !profile?.mission;
+  const usingSampleCoreValues = isEditable && !profile?.coreValues;
 
   return (
      <div className="space-y-32 py-12">
@@ -590,7 +901,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
            <SectionTitle title="NHỮNG CON SỐ BIẾT NÓI" subtitle={`Thành tựu ấn tượng khẳng định vị thế dẫn đầu sau ${new Date().getFullYear() - (company.foundedYear || 2015)} năm phát triển`} />
            
            <SectionCarousel>
-              {stats.map((stat: any, idx: number) => {
+              {statsToRender.map((stat: any, idx: number) => {
                  const Icon = iconMap[stat.icon] || TrendingUp;
                  return (
                     <div key={idx} className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden group min-w-[200px] w-[200px] flex flex-col justify-center items-center text-center select-none">
@@ -603,6 +914,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                  );
               })}
            </SectionCarousel>
+           {isEditable && usingSampleStats && (
+             <p className="mt-4 text-xs text-slate-400 italic text-center">
+               {SAMPLE_NOTE}
+             </p>
+           )}
         </section>
 
         {/* SECTION 3: VISION - MISSION - VALUES */}
@@ -614,7 +930,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                  <Target className="w-16 h-16 mb-6 text-blue-600" />
                  <h3 className="text-3xl font-bold mb-4 text-slate-900">Tầm Nhìn</h3>
                  <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-line">
-                    {profile?.vision || "Chưa cập nhật"}
+                    {profile?.vision || (isEditable ? SAMPLE_VISION : "Chưa cập nhật")}
                  </p>
               </div>
 
@@ -624,7 +940,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                  <Globe className="w-16 h-16 mb-6 text-blue-600" />
                  <h3 className="text-3xl font-bold mb-4 text-slate-900">Sứ Mệnh</h3>
                  <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-line">
-                    {profile?.mission || "Chưa cập nhật"}
+                    {profile?.mission || (isEditable ? SAMPLE_MISSION : "Chưa cập nhật")}
                  </p>
               </div>
 
@@ -635,17 +951,25 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                  <h3 className="text-3xl font-bold mb-6 text-slate-900">Giá Trị Cốt Lõi</h3>
                  <div className="space-y-4">
                     {/* Parse core values string to list if possible, else display text */}
-                    {profile?.coreValues?.split('\n').map((val: string, i: number) => (
+                    {(profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : ""))
+                      .split('\n')
+                      .filter((val) => val.trim().length > 0)
+                      .map((val: string, i: number) => (
                         <div key={i} className="flex items-start gap-3">
                           <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-900 font-bold shrink-0 mt-1">
                             {i+1}
                           </div>
                           <div className="text-slate-700 font-medium leading-relaxed">{val}</div>
                         </div>
-                    )) || <p className="text-slate-500">Chưa cập nhật</p>}
+                      ))}
                  </div>
               </div>
            </div>
+           {isEditable && (usingSampleVision || usingSampleMission || usingSampleCoreValues) && (
+             <p className="mt-4 text-xs text-slate-400 italic text-center md:text-left">
+               {SAMPLE_NOTE}
+             </p>
+           )}
         </section>
 
         {/* SECTION 4: PHILOSOPHY (Leadership & Management) (MANDATORY) */}
@@ -992,9 +1316,9 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                   <p className="text-slate-400">Các sản phẩm cốt lõi phục vụ hàng triệu người dùng</p>
                 </div>
                 
-                {products.length > 0 ? (
+                {productsToRender.length > 0 ? (
                     <SectionCarousel>
-                      {products.map((prod: any, i: number) => (
+                      {productsToRender.map((prod: any, i: number) => (
                           <div key={i} className="group flex flex-col items-center gap-3 p-4 md:p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 transition-all cursor-pointer w-32 md:w-40 min-w-[140px] md:min-w-[180px]">
                             <div className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                 <Zap className="text-blue-400" size={28} />
@@ -1009,6 +1333,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     </div>
                 )}
             </div>
+            {isEditable && usingSampleProducts && (
+              <p className="mt-4 text-xs text-slate-400 italic text-center">
+                {SAMPLE_NOTE}
+              </p>
+            )}
         </section>
 
         {/* SECTION 6: RECRUITMENT PRINCIPLES */}
@@ -1023,7 +1352,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 )}
                 <SectionTitle title="NGUYÊN TẮC TUYỂN DỤNG" subtitle="Chúng tôi tìm kiếm những người bạn đồng hành, không chỉ là nhân viên" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {recruitmentPrinciples.map((rule: any, i: number) => {
+                  {recruitmentPrinciplesToRender.map((rule: any, i: number) => {
                     const Icon = iconMap[rule.icon] || Star;
                     return (
                         <div key={i} className="flex gap-6 p-8 bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-lg transition-shadow group">
@@ -1037,12 +1366,17 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                         </div>
                     );
                   })}
-                  {recruitmentPrinciples.length === 0 && isEditable && (
+                  {/* {recruitmentPrinciples.length === 0 && isEditable && (
                       <div className="col-span-full text-center text-slate-500 italic border border-dashed p-8 rounded-xl">
                           Chưa có nguyên tắc nào.
                       </div>
-                  )}
+                  )} */}
                 </div>
+                {isEditable && usingSampleRecruitmentPrinciples && (
+                  <p className="mt-4 text-xs text-slate-400 italic text-center md:text-left">
+                    {SAMPLE_NOTE}
+                  </p>
+                )}
             </section>
         )}
 
@@ -1066,8 +1400,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                       <h3 className="text-2xl font-bold text-slate-900">Tài Chính Vững Chắc</h3>
                   </div>
                   <ul className="space-y-4">
-                      {benefits.financial?.length > 0 ? (
-                          benefits.financial.map((item: string, i: number) => (
+                      {benefitsFinancialToRender.length > 0 ? (
+                          benefitsFinancialToRender.map((item: string, i: number) => (
                             <li key={i} className="flex items-start gap-3 text-slate-700 font-medium">
                                 <CheckCircle className="text-blue-600 mt-1 shrink-0" size={20} />
                                 <span>{item}</span>
@@ -1088,8 +1422,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                       <h3 className="text-2xl font-bold text-slate-900">Tinh Thần Hạnh Phúc</h3>
                   </div>
                   <ul className="space-y-4">
-                      {benefits.nonFinancial?.length > 0 ? (
-                          benefits.nonFinancial.map((item: string, i: number) => (
+                      {benefitsNonFinancialToRender.length > 0 ? (
+                          benefitsNonFinancialToRender.map((item: string, i: number) => (
                             <li key={i} className="flex items-start gap-3 text-slate-700 font-medium">
                                 <CheckCircle className="text-blue-600 mt-1 shrink-0" size={20} />
                                 <span>{item}</span>
@@ -1101,6 +1435,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                   </ul>
                 </div>
             </div>
+            {isEditable && usingSampleBenefits && (
+              <p className="mt-4 text-xs text-slate-400 italic text-center md:text-left">
+                {SAMPLE_NOTE}
+              </p>
+            )}
         </section>
 
         {/* SECTION 8: HR JOURNEY */}
@@ -1120,7 +1459,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                   
                   <div className="relative z-10">
                       <SectionCarousel>
-                          {hrJourney.map((item: any, i: number) => (
+                          {hrJourneyToRender.map((item: any, i: number) => (
                             <div key={i} className="bg-white p-8 rounded-3xl shadow-xl border border-slate-50 flex flex-col items-center text-center group hover:-translate-y-2 transition-transform w-[85vw] md:w-[350px] shrink-0">
                               <div className={`w-16 h-16 rounded-2xl ${item.color || 'bg-slate-800'} text-white flex items-center justify-center font-black text-2xl mb-6 shadow-lg rotate-3 group-hover:rotate-0 transition-transform`}>
                                   {item.step}
@@ -1133,6 +1472,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                   </div>
                 </div>
             </div>
+            {isEditable && usingSampleHrJourney && (
+              <p className="mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
+                {SAMPLE_NOTE}
+              </p>
+            )}
         </section>
 
         {/* SECTION 15: CAREER PATH */}
@@ -1145,11 +1489,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                         </Button>
                     </div>
                 )}
-                {careerPath.length > 0 ? (
+                {careerPathToRender.length > 0 ? (
                     <div className="bg-slate-900 text-white rounded-[3rem] p-10 md:p-16 text-center">
                         <h3 className="text-3xl font-bold mb-12">LỘ TRÌNH THĂNG TIẾN KHÔNG GIỚI HẠN</h3>
                         <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-0">
-                          {careerPath.map((level: string, i: number) => (
+                          {careerPathToRender.map((level: string, i: number) => (
                               <React.Fragment key={i}>
                                 <div className="flex flex-col items-center group">
                                     <div className="w-24 h-24 rounded-full border-4 border-slate-700 bg-slate-800 flex items-center justify-center text-sm font-bold group-hover:border-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-xl z-10 p-2 text-center break-words">
@@ -1168,6 +1512,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     <div className="text-center text-slate-500 italic border border-dashed p-8 rounded-xl bg-slate-50">
                         Chưa có lộ trình thăng tiến.
                     </div>
+                )}
+                {isEditable && usingSampleCareerPath && (
+                  <p className="!mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
+                    {SAMPLE_NOTE}
+                  </p>
                 )}
             </section>
         )}
@@ -1188,8 +1537,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </h3>
                 <p className="text-slate-600 mb-4 font-medium">Chi trả xứng đáng dựa trên năng lực (Performance-based), bao gồm:</p>
                 <div className="grid grid-cols-2 gap-4">
-                    {salaryAndBonus.salary?.length > 0 ? (
-                        salaryAndBonus.salary.map((item: string, i: number) => (
+                    {salaryItemsToRender.length > 0 ? (
+                        salaryItemsToRender.map((item: string, i: number) => (
                           <div key={i} className="flex items-center gap-2 text-sm text-slate-700"><div className="w-2 h-2 bg-slate-800 rounded-full"></div>{item}</div>
                         ))
                     ) : (
@@ -1204,8 +1553,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </h3>
                 <p className="text-slate-600 mb-4 font-medium">Không giới hạn mức trần (Uncapped Bonus):</p>
                 <div className="grid grid-cols-2 gap-4">
-                    {salaryAndBonus.bonus?.length > 0 ? (
-                        salaryAndBonus.bonus.map((item: string, i: number) => (
+                    {bonusItemsToRender.length > 0 ? (
+                        bonusItemsToRender.map((item: string, i: number) => (
                           <div key={i} className="flex items-center gap-2 text-sm text-slate-700"><div className="w-2 h-2 bg-blue-600 rounded-full"></div>{item}</div>
                         ))
                     ) : (
@@ -1214,6 +1563,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </div>
             </div>
         </section>
+        {isEditable && usingSampleSalaryAndBonus && (
+          <p className="!mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
+            {SAMPLE_NOTE}
+          </p>
+        )}
 
         {/* SECTION 9 & 12: TRAINING */}
         <section className="max-w-7xl mx-auto px-6 space-y-12 relative group/training">
@@ -1229,44 +1583,56 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                   <Badge>LEARNING & DEVELOPMENT</Badge>
                   <h2 className="text-4xl md:text-5xl font-black leading-tight">Văn Hóa <br/><span className="text-blue-500">Học Tập</span></h2>
                   <p className="text-slate-300 text-lg leading-relaxed whitespace-pre-line">
-                      {training.description || `Tại ${company.name}, việc học chưa bao giờ dừng lại. Chúng tôi cung cấp tài nguyên học tập không giới hạn và thư viện sách chuyên ngành phong phú.`}
+                      {trainingDescriptionToRender || `Tại ${company.name}, việc học chưa bao giờ dừng lại. Chúng tôi cung cấp tài nguyên học tập không giới hạn và thư viện sách chuyên ngành phong phú.`}
                   </p>
-                  {training.budget && (
+                  {trainingBudgetToRender && (
                       <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 flex items-center gap-6">
                           <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shrink-0 animate-pulse">
                             <GraduationCap size={32} />
                           </div>
                           <div>
                             <p className="text-sm text-slate-300 uppercase font-bold tracking-wider mb-1">Ngân sách đào tạo</p>
-                            <p className="text-2xl md:text-3xl font-bold">{training.budget} <span className="text-sm font-normal text-slate-300">/nhân sự/năm</span></p>
+                            <p className="text-2xl md:text-3xl font-bold">{trainingBudgetToRender} <span className="text-sm font-normal text-slate-300">/nhân sự/năm</span></p>
                           </div>
                       </div>
                   )}
                 </div>
                 <div className="md:w-1/2 relative z-10">
                   <img 
-                    src={training.image || "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800"} 
+                    src={trainingImageToRender} 
                     alt="Training" 
                     className="rounded-3xl shadow-2xl rotate-3 border-8 border-white/10 grayscale-[50%] object-cover aspect-video w-full" 
                   />
                 </div>
             </div>
 
-            <div className="mt-12">
-                <div className="mb-6"><h3 className="text-2xl font-bold text-slate-800 border-l-4 border-slate-900 pl-4">Chương Trình Đào Tạo</h3></div>
+             <div className="mt-12">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-slate-800 border-l-4 border-slate-900 pl-4">
+                    Chương Trình Đào Tạo
+                  </h3>
+                </div>
                 <SectionCarousel>
-                    {training.programs?.map((prog: any, i: number) => (
-                        <div key={i} className="bg-white p-8 rounded-3xl border border-slate-200 hover:shadow-lg transition-shadow w-[85vw] md:w-[350px] shrink-0">
-                          <h4 className="text-xl font-bold text-slate-900 mb-3">{prog.title}</h4>
-                          <p className="text-slate-600">{prog.desc}</p>
-                        </div>
-                    ))}
+                  {trainingProgramsToRender.map((prog: any, i: number) => (
+                    <div
+                      key={i}
+                      className="bg-white p-8 rounded-3xl border border-slate-200 hover:shadow-lg transition-shadow w-[85vw] md:w-[350px] shrink-0"
+                    >
+                      <h4 className="text-xl font-bold text-slate-900 mb-3">{prog.title}</h4>
+                      <p className="text-slate-600">{prog.desc}</p>
+                    </div>
+                  ))}
                 </SectionCarousel>
-            </div>
+              </div>
         </section>
+        {isEditable && usingSampleTraining && (
+          <p className="!mt-2 text-xs text-slate-400 italic text-center md:text-left">
+            {SAMPLE_NOTE}
+          </p>
+        )}
 
         {/* SECTION 10: LEADERS */}
-        {(leaders.length > 0 || isEditable) && (
+        {(leadersToRender.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/leaders">
                 {isEditable && (
                     <div className="absolute top-0 right-6 opacity-0 group-hover/leaders:opacity-100 transition-opacity z-20">
@@ -1278,7 +1644,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 <SectionTitle title="BAN LÃNH ĐẠO" subtitle="Những người thuyền trưởng tài năng và tâm huyết" />
                 <div className="mt-20">
                     <SectionCarousel>
-                        {leaders.map((leader: any, i: number) => (
+                        {leadersToRender.map((leader: any, i: number) => (
                           <div 
                             key={i} 
                             className="bg-white rounded-[2rem] p-8 pt-0 shadow-xl border border-slate-100 text-center relative mt-12 group hover:border-blue-300 transition-all min-w-[300px] md:min-w-[350px]"
@@ -1298,16 +1664,21 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                         ))}
                     </SectionCarousel>
                 </div>
-                {leaders.length === 0 && isEditable && (
+                {/* {leaders.length === 0 && isEditable && (
                   <div className="w-full text-center text-slate-500 italic border border-dashed p-8 rounded-xl mt-8">
                       Chưa có thông tin ban lãnh đạo.
                   </div>
+              )} */}
+              {isEditable && usingSampleLeaders && (
+                <p className="mt-4 text-xs text-slate-400 italic text-center md:text-left">
+                  {SAMPLE_NOTE}
+                </p>
               )}
             </section>
         )}
 
         {/* SECTION 11: TYPICAL DAY */}
-        <section className="bg-slate-50 py-10 rounded-[3rem] mx-6 relative group/culture-day">
+        <section className="bg-slate-50 pt-10 rounded-[3rem] mx-6 relative group/culture-day">
             {isEditable && (
                 <div className="absolute top-6 right-6 opacity-0 group-hover/culture-day:opacity-100 transition-opacity z-20">
                      <Button onClick={() => handleEdit('culture-typical-day', { culture })} variant="secondary" size="sm" className="bg-white shadow-sm border">
@@ -1318,7 +1689,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
             <div className="max-w-7xl mx-auto px-6">
                 <SectionTitle title={`MỘT NGÀY TẠI ${company.name.toUpperCase()}`} />
                 <SectionCarousel>
-                  {culture.typicalDay?.map((slot: any, i: number) => {
+                  {typicalDayToRender.map((slot: any, i: number) => {
                       const Icon = iconMap[slot.icon] || Coffee;
                       return (
                           <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 text-center hover:bg-slate-800 hover:text-white group transition-all duration-300 shadow-md min-w-[200px] md:min-w-[240px]">
@@ -1334,9 +1705,14 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </SectionCarousel>
             </div>
         </section>
+        {isEditable && usingSampleTypicalDay && (
+          <p className="!mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
+            {SAMPLE_NOTE}
+          </p>
+        )}
 
         {/* SECTION 14: AWARDS */}
-        {(awards.length > 0 || isEditable) && (
+        {(awardsToRender.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/awards">
                 {isEditable && (
                     <div className="absolute top-0 right-6 opacity-0 group-hover/awards:opacity-100 transition-opacity z-20">
@@ -1347,7 +1723,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 )}
                 <SectionTitle title="GIẢI THƯỞNG & VINH DANH" />
                 <SectionCarousel>
-                    {awards.map((award: any, i: number) => (
+                    {awardsToRender.map((award: any, i: number) => (
                       <div key={i} className="min-w-[280px] bg-white border border-slate-100 p-6 rounded-2xl flex items-center gap-4 shadow-sm">
                           <div className="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-full flex items-center justify-center shrink-0">
                             <Award size={24} />
@@ -1360,11 +1736,16 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                       </div>
                     ))}
                 </SectionCarousel>
-                {awards.length === 0 && isEditable && (
+                {/* {awards.length === 0 && isEditable && (
                   <div className="w-full text-center text-slate-500 italic border border-dashed p-8 rounded-xl">
                       Chưa có giải thưởng.
                   </div>
-              )}
+                )} */}
+                {isEditable && usingSampleAwards && (
+                  <p className="mt-4 text-xs text-slate-400 italic text-center md:text-left">
+                    {SAMPLE_NOTE}
+                  </p>
+                )}
             </section>
         )}
 
@@ -1379,24 +1760,24 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
             )}
             
             {/* Story Content */}
-             {(story.founderStory?.title || isEditable) && (
+             {(founderStoryToRender || isEditable) && (
                 <section className="max-w-7xl mx-auto px-6">
                     <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-2xl border border-slate-100">
                         <SectionTitle title="CÂU CHUYỆN KHỞI NGUỒN" align="left" />
-                        {story.founderStory?.title ? (
+                        {founderStoryToRender ? (
                              <div className="flex flex-col md:flex-row gap-12 items-start">
-                                {story.founderStory.image && (
+                                {founderStoryToRender.image && (
                                     <div className="md:w-1/3 shrink-0">
-                                        <img src={story.founderStory.image} alt="Founders" className="rounded-3xl shadow-xl w-full rotate-2 hover:rotate-0 transition-transform duration-500 grayscale" />
+                                        <img src={founderStoryToRender.image} alt="Founders" className="rounded-3xl shadow-xl w-full rotate-2 hover:rotate-0 transition-transform duration-500 grayscale" />
                                     </div>
                                 )}
                                 <div className="md:w-2/3 space-y-6">
-                                    <h4 className="text-3xl font-bold text-slate-900">{story.founderStory.title}</h4>
+                                    <h4 className="text-3xl font-bold text-slate-900">{founderStoryToRender.title}</h4>
                                     <p className="text-slate-600 text-lg leading-relaxed whitespace-pre-line">
-                                        {story.founderStory.content}
+                                        {founderStoryToRender.content}
                                     </p>
                                     <div className="pt-4">
-                                        <p className="text-sm font-bold text-slate-400 mt-2">{story.founderStory.founder}</p>
+                                        <p className="text-sm font-bold text-slate-400 mt-2">{founderStoryToRender.founder}</p>
                                     </div>
                                 </div>
                             </div>
@@ -1407,6 +1788,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </section>
             )}
         </section>
+        {isEditable && usingSampleFounderStory && (
+          <p className="!mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
+            {SAMPLE_NOTE}
+          </p>
+        )}
 
         {/* SECTION 19: MILESTONES */}
         <section className="relative group/milestones">
@@ -1419,14 +1805,14 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
             )}
 
             {/* Milestones Content */}
-            {(story.milestones?.length > 0 || isEditable) && (
+            {(milestonesToRender.length > 0 || isEditable) && (
                 <section className="max-w-7xl mx-auto px-6">
                     <SectionTitle title="CỘT MỐC PHÁT TRIỂN" />
                     <div className="relative border-l-4 border-slate-200 ml-4 md:ml-1/2 md:border-l-0">
                         <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-slate-200 -translate-x-1/2 rounded-full"></div>
                         
                         <div className="space-y-12">
-                          {story.milestones?.map((item: any, i: number) => (
+                          {milestonesToRender.map((item: any, i: number) => (
                               <div key={i} className={`flex flex-col md:flex-row items-center ${i % 2 === 0 ? 'md:flex-row-reverse' : ''} relative`}>
                                 <div className="w-full md:w-1/2 p-4 md:p-8">
                                     <div className={`bg-white p-6 rounded-2xl shadow-md border border-slate-100 relative ${i % 2 === 0 ? 'md:text-left' : 'md:text-right'} hover:border-slate-300 transition-colors`}>
@@ -1444,14 +1830,19 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                 <div className="w-full md:w-1/2"></div>
                               </div>
                           ))}
-                           {story.milestones?.length === 0 && (
+                           {/* {story.milestones?.length === 0 && (
                                 <div className="text-center text-slate-500 italic p-8">Chưa có cột mốc phát triển.</div>
-                           )}
+                           )} */}
                         </div>
                     </div>
                 </section>
             )}
         </section>
+        {isEditable && usingSampleMilestones && (
+          <p className="!mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
+            {SAMPLE_NOTE}
+          </p>
+        )}
 
         {/* SECTION 20: TESTIMONIALS */}
         <section className="max-w-7xl mx-auto px-6 pb-20 relative group/testimonials">
@@ -1463,11 +1854,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </div>
             )}
             
-            {(culture.testimonials?.length > 0 || isEditable) && (
+            {(testimonialsToRender.length > 0 || isEditable) && (
                 <>
                     <SectionTitle title="NGƯỜI TRONG CUỘC NÓI GÌ?" subtitle={`Những chia sẻ chân thật từ chính các thành viên ${company.name}`} />
                     <SectionCarousel>
-                        {culture.testimonials?.map((t: any, i: number) => (
+                        {testimonialsToRender.map((t: any, i: number) => (
                           <div key={i} className="bg-white rounded-3xl p-8 shadow-xl border border-slate-50 relative mt-10 w-[85vw] md:w-[350px] shrink-0">
                               <div className="absolute -top-10 left-8">
                                 <img src={t.image} alt={t.name} className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-lg grayscale" />
@@ -1483,12 +1874,19 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                           </div>
                         ))}
                     </SectionCarousel>
-                     {culture.testimonials?.length === 0 && (
+                     {/* {culture.testimonials?.length === 0 && (
                          <div className="text-center text-slate-500 italic mt-8">Chưa có đánh giá nào.</div>
-                     )}
+                     )} */}
+
+                    {isEditable && usingSampleTestimonials && (
+                      <p className="mt-4 text-xs text-slate-400 italic text-center md:text-left">
+                        {SAMPLE_NOTE}
+                      </p>
+                    )}
                 </>
             )}
         </section>
+        
 
         {/* Edit Dialogs (Only basic text for now to keep file size manageable) */}
         <Dialog open={!!editingSection} onOpenChange={(open) => !open && setEditingSection(null)}>

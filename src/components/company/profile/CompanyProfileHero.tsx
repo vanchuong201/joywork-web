@@ -32,6 +32,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         legalName: company.legalName || "",
         location: company.location || "",
         website: company.website || "",
+        email: company.email || "",
+        phone: company.phone || "",
     });
 
     const mutation = useMutation({
@@ -258,7 +260,31 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         {company.website && (
                             <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl group/item relative">
                               <Globe className="text-slate-400 shrink-0" size={20} />
-                              <a href={company.website} target="_blank" rel="noreferrer" className="truncate hover:text-blue-600 hover:underline">{company.website.replace(/^https?:\/\//, '')}</a>
+                              <a
+                                href={company.website}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="truncate hover:text-blue-600 hover:underline"
+                              >
+                                {company.website.replace(/^https?:\/\//, '')}
+                              </a>
+                            </div>
+                        )}
+                        {company.email && (
+                            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl group/item relative">
+                              <Mail className="text-slate-400 shrink-0" size={20} />
+                              <a
+                                href={`mailto:${company.email}`}
+                                className="truncate hover:text-blue-600 hover:underline"
+                              >
+                                {company.email}
+                              </a>
+                            </div>
+                        )}
+                        {company.phone && (
+                            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl group/item relative">
+                              <Phone className="text-slate-400 shrink-0" size={20} />
+                              <span className="truncate">{company.phone}</span>
                             </div>
                         )}
                       </div>
@@ -319,6 +345,21 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             <Input 
                                 value={formData.website} 
                                 onChange={(e) => setFormData({...formData, website: e.target.value})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Email công ty</Label>
+                            <Input 
+                                type="email"
+                                value={formData.email} 
+                                onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Số điện thoại</Label>
+                            <Input 
+                                value={formData.phone} 
+                                onChange={(e) => setFormData({...formData, phone: e.target.value})} 
                             />
                         </div>
                     </div>

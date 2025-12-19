@@ -77,6 +77,8 @@ export interface Company {
   coverUrl?: string;
   website?: string;
   location?: string;
+  email?: string;
+  phone?: string;
   industry?: string;
   size?: string;
   foundedYear?: number;
