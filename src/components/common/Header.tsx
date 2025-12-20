@@ -117,7 +117,7 @@ export default function Header() {
               <div className="absolute right-0 mt-2 w-48 rounded-md border border-[var(--border)] bg-[var(--card)] shadow-lg">
                 <div className="flex flex-col py-2 text-sm">
                   <Link
-                    href="/profile"
+                    href="/account"
                     className="px-3 py-2 text-left text-[var(--foreground)] hover:bg-[var(--muted)]"
                     onClick={() => {
                       if (accountRef.current) accountRef.current.open = false;

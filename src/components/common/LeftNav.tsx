@@ -42,7 +42,7 @@ const primaryNav: NavItem[] = [
 ];
 
 const personalNav: NavItem[] = [
-  { icon: UserRound, label: "Hồ sơ của tôi", href: "/profile" },
+  { icon: UserRound, label: "Hồ sơ của tôi", href: "/account" },
   { icon: ClipboardList, label: "Ứng tuyển của tôi", href: "/applications" },
   { icon: Bookmark, label: "Đã lưu", href: "/saved" },
   { icon: Heart, label: "Công ty theo dõi", href: "/following" },
