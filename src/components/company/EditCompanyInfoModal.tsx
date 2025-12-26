@@ -14,7 +14,7 @@ import { X } from "lucide-react";
 const sizeOptions = ["STARTUP", "SMALL", "MEDIUM", "LARGE", "ENTERPRISE"] as const;
 
 const schema = z.object({
-  name: z.string().min(2, "Tên công ty cần ít nhất 2 ký tự"),
+  name: z.string().min(1, "Tên công ty (Thương hiệu) là bắt buộc").min(2, "Tên công ty cần ít nhất 2 ký tự"),
   legalName: z.string().max(200, "Tên đăng ký kinh doanh tối đa 200 ký tự").optional().or(z.literal("")),
   tagline: z
     .string()
@@ -106,15 +106,16 @@ export default function EditCompanyInfoModal({
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
+      // Chuyển empty strings thành null cho các trường optional
       const payload = {
         name: values.name.trim(),
-        legalName: values.legalName?.trim() || undefined,
-        tagline: values.tagline?.trim() || undefined,
-        website: values.website?.trim() || undefined,
-        location: values.location?.trim() || undefined,
-        industry: values.industry?.trim() || undefined,
-        size: values.size ? values.size : undefined,
-        foundedYear: values.foundedYear ? Number(values.foundedYear) : undefined,
+        legalName: values.legalName?.trim() || null,
+        tagline: values.tagline?.trim() || null,
+        website: values.website?.trim() || null,
+        location: values.location?.trim() || null,
+        industry: values.industry?.trim() || null,
+        size: values.size ? values.size : null,
+        foundedYear: values.foundedYear ? Number(values.foundedYear) : null,
       };
       await api.patch(`/api/companies/${companyId}`, payload);
       toast.success("Cập nhật thông tin công ty thành công");
@@ -159,7 +160,7 @@ export default function EditCompanyInfoModal({
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <FormField label="Tên công ty" required error={errors.name?.message}>
+              <FormField label="Tên công ty (Thương hiệu)" required error={errors.name?.message}>
                 <Input placeholder="Ví dụ: JoyWork Studio" {...register("name")} />
               </FormField>
               <FormField label="Tên đăng ký kinh doanh" error={errors.legalName?.message}>

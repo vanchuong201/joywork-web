@@ -51,7 +51,25 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     });
 
     const handleSave = () => {
-        mutation.mutate(formData);
+        // Chỉ validate trường "name" là required
+        if (!formData.name || formData.name.trim() === "") {
+            toast.error("Vui lòng nhập tên công ty (Thương hiệu)");
+            return;
+        }
+        
+        // Clean data: chuyển empty strings thành null cho các trường optional
+        const payload: any = {
+            name: formData.name.trim(),
+        };
+        
+        // Gửi tất cả các trường, chuyển empty string thành null
+        payload.legalName = formData.legalName?.trim() || null;
+        payload.location = formData.location?.trim() || null;
+        payload.website = formData.website?.trim() || null;
+        payload.email = formData.email?.trim() || null;
+        payload.phone = formData.phone?.trim() || null;
+        
+        mutation.mutate(payload);
     };
 
     const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -319,10 +337,11 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Tên công ty (Thương hiệu)</Label>
+                            <Label>Tên công ty (Thương hiệu) <span className="text-red-500">*</span></Label>
                             <Input 
                                 value={formData.name} 
                                 onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                                required
                             />
                         </div>
                         <div className="space-y-2">

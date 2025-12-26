@@ -49,7 +49,8 @@ export default function Header() {
     ];
 
     if (user) {
-      items.push({ href: "/inbox", label: "Hộp thư" });
+      // Tạm ẩn menu "Hộp thư"
+      // items.push({ href: "/inbox", label: "Hộp thư" });
       if (user.role === "ADMIN") {
         items.push({ href: "/system", label: "Hệ thống" });
       }

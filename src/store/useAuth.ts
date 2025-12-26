@@ -116,13 +116,23 @@ export const useAuthStore = create<AuthState>((set) => ({
         favoritesRes?.data?.data?.favorites?.map((item: any) => item.jobId) ?? [];
 
       const me = meData.data.user;
+      // Debug: Log để kiểm tra dữ liệu avatar
+      console.log('[useAuth] User data from API:', {
+        avatar: me.avatar,
+        profileAvatar: me.profile?.avatar,
+        hasProfile: !!me.profile,
+      });
+      
       const authUser: AuthUser = {
         id: me.id,
         email: me.email,
         name: me.name,
         role: me.role,
-        avatar: me.profile?.avatar ?? null,
+        // Ưu tiên avatar từ User model (account avatar), sau đó mới fallback về profile avatar
+        avatar: me.avatar ?? me.profile?.avatar ?? null,
       };
+      
+      console.log('[useAuth] Final avatar value:', authUser.avatar);
 
       set({ user: authUser, memberships, followedCompanies, savedJobIds });
     } catch (e) {

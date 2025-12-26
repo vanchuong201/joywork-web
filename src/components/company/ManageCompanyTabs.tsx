@@ -38,7 +38,7 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
             value="overview"
             className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
-            <LayoutDashboard className="w-4 h-4" /> Hồ sơ (Edit)
+            <LayoutDashboard className="w-4 h-4" /> Quản lý hồ sơ
           </TabsTrigger>
           <TabsTrigger
             value="activity"

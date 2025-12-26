@@ -19,7 +19,7 @@ import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type NavItem = {
   icon: LucideIcon;
@@ -150,6 +150,7 @@ export default function LeftNav() {
   const memberships = useAuthStore((s) => s.memberships);
   const initialized = useAuthStore((s) => s.initialized);
   const loading = useAuthStore((s) => s.loading);
+  const [avatarError, setAvatarError] = useState(false);
 
   const isReady = initialized && !loading;
 
@@ -161,6 +162,13 @@ export default function LeftNav() {
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase() ?? "")
       .join("") || "?";
+
+  // Reset avatar error khi user hoặc avatar thay đổi
+  useEffect(() => {
+    if (user?.avatar) {
+      setAvatarError(false);
+    }
+  }, [user?.avatar, user?.id]);
 
   if (!isReady) {
     return (
@@ -184,16 +192,16 @@ export default function LeftNav() {
             <p className="mt-1 text-xs">
               Theo dõi công ty, lưu việc làm và nhận thông báo ứng tuyển nhanh chóng.
             </p>
-            <div className="mt-3 flex gap-2 text-sm">
+            <div className="mt-3 flex flex-col gap-2 text-sm">
               <Link
                 href="/login"
-                className="flex-1 rounded-md border border-[var(--brand)] px-3 py-1 text-center text-[var(--brand)] hover:bg-[var(--brand)]/10"
+                className="w-full rounded-md border border-[var(--brand)] px-3 py-1 text-center text-[var(--brand)] hover:bg-[var(--brand)]/10"
               >
                 Đăng nhập
               </Link>
               <Link
                 href="/register"
-                className="flex-1 rounded-md bg-[var(--brand)] px-3 py-1 text-center text-white hover:opacity-90"
+                className="w-full rounded-md bg-[var(--brand)] px-3 py-1 text-center text-white hover:opacity-90"
               >
                 Đăng ký
               </Link>
@@ -219,14 +227,18 @@ export default function LeftNav() {
       <nav className="flex h-full flex-col gap-6 p-4">
         <div className="rounded-md border border-[var(--border)] bg-[var(--background)] p-3">
           <div className="flex items-center gap-3">
-            {user.avatar ? (
+            {user.avatar && !avatarError ? (
+              <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[var(--border)]">
               <Image
                 src={user.avatar}
                 alt={displayName}
                 width={36}
                 height={36}
-                className="h-9 w-9 rounded-full object-cover"
+                  className="h-full w-full object-cover"
+                  unoptimized
+                  onError={() => setAvatarError(true)}
               />
+              </div>
             ) : (
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold uppercase text-white">
                 {initials}
