@@ -11,6 +11,7 @@ export async function uploadProfileAvatar(payload: {
   fileType: string;
   fileData: string;
   previousKey?: string;
+  target?: 'account' | 'profile';
 }): Promise<{ key: string; assetUrl: string }> {
   const { data } = await api.post("/api/uploads/profile/avatar", payload);
   return data.data as { key: string; assetUrl: string };

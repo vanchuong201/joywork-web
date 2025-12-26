@@ -1,12 +1,10 @@
 import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, Users, Briefcase, FileText, LayoutDashboard, Pencil } from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero";
-import CompanyProfileContent from "@/components/company/profile/CompanyProfileContent";
-import ManageCompanyPageContent from "@/components/company/ManageCompanyPageContent";
+import ManageCompanyTabs from "@/components/company/ManageCompanyTabs";
 import { headers } from "next/headers";
 
 type Props = {
@@ -81,59 +79,7 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
 
       {/* Main Content & Tabs */}
       <div className="max-w-7xl mx-auto px-6">
-        <Tabs defaultValue={tab} className="w-full">
-            <div className="flex flex-col md:flex-row items-center justify-between mb-12 border-b border-slate-200 bg-white/50 backdrop-blur-sm sticky top-16 z-20 rounded-xl px-4 shadow-sm">
-                <TabsList className="bg-transparent h-auto p-0 gap-6 w-full md:w-auto overflow-x-auto flex-nowrap justify-start py-2">
-                    <Link href={`/companies/${company.slug}/manage?tab=overview`} scroll={false}>
-                        <TabsTrigger 
-                            value="overview" 
-                            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
-                        >
-                            <LayoutDashboard className="w-4 h-4" /> Hồ sơ (Edit)
-                        </TabsTrigger>
-                    </Link>
-                    <Link href={`/companies/${company.slug}/manage?tab=activity`} scroll={false}>
-                        <TabsTrigger 
-                            value="activity" 
-                            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
-                        >
-                            <FileText className="w-4 h-4" /> Hoạt động
-                        </TabsTrigger>
-                    </Link>
-                    <Link href={`/companies/${company.slug}/manage?tab=jobs`} scroll={false}>
-                        <TabsTrigger 
-                            value="jobs" 
-                            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
-                        >
-                            <Briefcase className="w-4 h-4" /> Tuyển dụng
-                        </TabsTrigger>
-                    </Link>
-                    <Link href={`/companies/${company.slug}/manage?tab=applications`} scroll={false}>
-                        <TabsTrigger 
-                            value="applications" 
-                            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
-                        >
-                            <Users className="w-4 h-4" /> Ứng viên
-                        </TabsTrigger>
-                          </Link>
-                </TabsList>
-    </div>
-
-            {/* TAB: OVERVIEW (Editable Profile) */}
-            <TabsContent value="overview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 flex items-center gap-3 text-blue-800">
-                    <div className="bg-blue-100 p-2 rounded-full"><Pencil className="w-4 h-4" /></div>
-                    <p className="text-sm font-medium">Bạn đang ở chế độ chỉnh sửa. Di chuột vào các mục để chỉnh sửa nội dung.</p>
-                </div>
-                <CompanyProfileContent company={company} isEditable={true} />
-            </TabsContent>
-
-            {/* Reuse existing ManageCompanyPageContent for complex logic of other tabs */}
-            <div className={tab === "overview" ? "hidden" : "block"}>
-                <ManageCompanyPageContent company={company} />
-        </div>
-
-        </Tabs>
+        <ManageCompanyTabs company={company} initialTab={tab} />
       </div>
     </div>
   );

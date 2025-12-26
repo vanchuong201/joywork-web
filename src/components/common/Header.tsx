@@ -114,7 +114,7 @@ export default function Header() {
                 <span className="font-medium leading-tight">{user.name ?? user.email}</span>
                 <ChevronDown size={14} />
               </summary>
-              <div className="absolute right-0 mt-2 w-48 rounded-md border border-[var(--border)] bg-[var(--card)] shadow-lg">
+              <div className="absolute right-0 mt-2 w-56 rounded-md border border-[var(--border)] bg-[var(--card)] shadow-lg">
                 <div className="flex flex-col py-2 text-sm">
                   <Link
                     href="/account"
@@ -123,7 +123,16 @@ export default function Header() {
                       if (accountRef.current) accountRef.current.open = false;
                     }}
                   >
-                    Hồ sơ của tôi
+                    Quản lý tài khoản
+                  </Link>
+                  <Link
+                    href="/account/profile"
+                    className="px-3 py-2 text-left text-[var(--foreground)] hover:bg-[var(--muted)]"
+                    onClick={() => {
+                      if (accountRef.current) accountRef.current.open = false;
+                    }}
+                  >
+                    Quản lý hồ sơ ứng tuyển
                   </Link>
                   <Link
                     href="/applications"

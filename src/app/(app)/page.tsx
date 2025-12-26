@@ -17,6 +17,7 @@ import useInView from "@/hooks/useInView";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
+import FeedLayout from "./feed-layout";
 
 type Post = PostCardData;
 
@@ -184,18 +185,20 @@ function FeedPageContent() {
 
 export default function FeedPage() {
   return (
-    <Suspense fallback={
-      <div className="space-y-4">
-        <Skeleton className="h-16 rounded-lg" />
-        <div className="space-y-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-40 rounded-lg" />
-          ))}
+    <FeedLayout>
+      <Suspense fallback={
+        <div className="space-y-4">
+          <Skeleton className="h-16 rounded-lg" />
+          <div className="space-y-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-40 rounded-lg" />
+            ))}
+          </div>
         </div>
-      </div>
-    }>
-      <FeedPageContent />
-    </Suspense>
+      }>
+        <FeedPageContent />
+      </Suspense>
+    </FeedLayout>
   );
 }
 
