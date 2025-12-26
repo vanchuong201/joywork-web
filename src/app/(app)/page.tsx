@@ -74,7 +74,7 @@ function FeedPageContent() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["feed"] });
     },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Action failed"),
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Thao tác thất bại"),
   });
 
   const handleLike = (p: Post) => {
@@ -116,20 +116,24 @@ function FeedPageContent() {
         </div>
         {showFilters ? (
           <div className="mb-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
-            <h3 className="mb-2 text-sm font-semibold">Post Type</h3>
+            <h3 className="mb-2 text-sm font-semibold">Loại bài viết</h3>
             <div className="flex flex-wrap gap-3 text-sm">
-              {["STORY", "ANNOUNCEMENT", "EVENT"].map((t) => (
-                <label key={t} className="flex items-center gap-2">
-                  <input type="radio" name="postType" checked={type === t} onChange={() => setType(t)} />
-                  {t}
+              {[
+                { value: "STORY", label: "Câu chuyện" },
+                { value: "ANNOUNCEMENT", label: "Thông báo" },
+                { value: "EVENT", label: "Sự kiện" },
+              ].map((t) => (
+                <label key={t.value} className="flex items-center gap-2">
+                  <input type="radio" name="postType" checked={type === t.value} onChange={() => setType(t.value)} />
+                  {t.label}
                 </label>
               ))}
               <button className="ml-2 text-xs text-[var(--brand)]" onClick={() => setType(undefined)}>
-                Clear
+                Xóa bộ lọc
               </button>
             </div>
             <div className="mt-4">
-              <h3 className="mb-2 text-sm font-semibold">Company</h3>
+              <h3 className="mb-2 text-sm font-semibold">Doanh nghiệp</h3>
               <CompanySearch value={companyId} onSelect={setCompany} />
             </div>
           </div>
@@ -169,13 +173,13 @@ function FeedPageContent() {
         </div>
       ) : (
         <EmptyState
-          title={tab === "following" ? "Chưa có bài viết từ doanh nghiệp bạn theo dõi" : "No posts"}
+          title={tab === "following" ? "Chưa có bài viết từ doanh nghiệp bạn theo dõi" : "Chưa có bài viết"}
           subtitle={
             tab === "following"
               ? user
                 ? "Hãy theo dõi thêm doanh nghiệp để cập nhật hoạt động mới."
                 : "Đăng nhập và theo dõi doanh nghiệp để xem bài viết."
-              : "Try switching type or follow companies"
+              : "Thử chuyển loại bài viết hoặc theo dõi thêm doanh nghiệp"
           }
         />
       )}

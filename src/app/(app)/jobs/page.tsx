@@ -95,7 +95,7 @@ function JobsPageContent() {
     () =>
       [
         companyId ? "Đang lọc theo doanh nghiệp" : null,
-        remote === true ? "Remote" : null,
+        remote === true ? "Làm việc từ xa" : null,
         employmentType ? `Loại: ${humanize(employmentType)}` : null,
         experienceLevel ? `Cấp bậc: ${humanize(experienceLevel)}` : null,
       ].filter(Boolean) as string[],
@@ -156,7 +156,7 @@ function JobsPageContent() {
                   checked={remote === true}
                   onChange={(e) => toggleParam("remote", e.target.checked ? "true" : undefined)}
                 />
-                Remote
+                Làm việc từ xa
               </label>
             </div>
             <div className="space-y-2 text-sm">
@@ -267,7 +267,7 @@ function JobsPageContent() {
             ))}
           </div>
         ) : (
-          <EmptyState title="No jobs found" subtitle="Try adjusting filters or search criteria" />
+          <EmptyState title="Không tìm thấy việc làm" subtitle="Thử điều chỉnh bộ lọc hoặc tiêu chí tìm kiếm" />
         )}
       </section>
     </div>

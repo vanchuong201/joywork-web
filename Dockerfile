@@ -18,8 +18,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build Next.js application
-RUN npm run build
+# Build Next.js application (without turbopack for Docker compatibility)
+RUN npx next build
 
 # ---------- Production stage ----------
 FROM node:20-bookworm-slim AS production

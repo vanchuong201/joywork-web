@@ -628,7 +628,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             disabled={reactMutation.isPending}
           >
             <span aria-hidden>👍</span>
-            <span>Trust</span>
+            <span>Tin tưởng</span>
             {reactionCounts.TRUST > 0 ? <span className="ml-1 tabular-nums">{reactionCounts.TRUST}</span> : null}
           </Button>
           <Button
@@ -655,7 +655,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
           {isSaved ? "Đã lưu" : "Lưu bài"}
         </Button>
         <Button size="sm" variant="outline" onClick={handleShare}>
-          Share
+          Chia sẻ
         </Button>
         {footerInfo.length ? (
           <span className="ml-auto text-xs text-[var(--muted-foreground)]">{footerInfo.join(" · ")}</span>
@@ -884,14 +884,14 @@ function EditPostModal({
 
           {/* Hashtags */}
           <div className="space-y-2">
-            <div className="mb-2 text-sm font-medium text-[var(--foreground)]">Hashtags</div>
+            <div className="mb-2 text-sm font-medium text-[var(--foreground)]">Thẻ bắt đầu bằng #</div>
             <HashtagInput value={hashtags} onChange={setHashtags} placeholder="Thêm chủ đề (hashtag)..." />
           </div>
 
           {/* Jobs */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-[var(--foreground)]">Jobs đính kèm</span>
+              <span className="text-sm font-medium text-[var(--foreground)]">Việc làm đính kèm</span>
               <Button
                 type="button"
                 variant="ghost"
@@ -900,7 +900,7 @@ function EditPostModal({
                 className="h-6 gap-1 px-2 text-xs text-[var(--brand)] hover:bg-[var(--brand)]/10"
               >
                 <Briefcase className="h-3 w-3" />
-                {showJobSelector ? "Đóng danh sách" : "Thêm/Xoá Job"}
+                {showJobSelector ? "Đóng danh sách" : "Thêm/Xóa việc làm"}
               </Button>
             </div>
 
@@ -943,7 +943,7 @@ function EditPostModal({
                     </div>
                     <div className="max-h-56 overflow-auto p-1">
                         {jobsLoading ? (
-                        <div className="p-4 text-center text-sm text-[var(--muted-foreground)]">Đang tải danh sách job...</div>
+                        <div className="p-4 text-center text-sm text-[var(--muted-foreground)]">Đang tải danh sách việc làm...</div>
                     ) : availableJobs.length ? (
                         <ul className="divide-y divide-[var(--border)]">
                         {availableJobs.map((j) => {
@@ -978,7 +978,7 @@ function EditPostModal({
                         })}
                         </ul>
                     ) : (
-                        <div className="p-4 text-center text-sm text-[var(--muted-foreground)]">Chưa có job nào trong công ty này.</div>
+                        <div className="p-4 text-center text-sm text-[var(--muted-foreground)]">Chưa có việc làm nào trong công ty này.</div>
                     )}
                     </div>
               </div>

@@ -377,7 +377,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
                   ))}
                 </select>
               </FormField>
-              <FormField label="Remote">
+              <FormField label="Làm việc từ xa">
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" {...register("remote")} />
                   Cho phép làm việc từ xa

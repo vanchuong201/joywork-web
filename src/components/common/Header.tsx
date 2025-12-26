@@ -43,15 +43,15 @@ export default function Header() {
 
   const navItems = useMemo(() => {
     const items = [
-      { href: "/", label: "Feed" },
-      { href: "/jobs", label: "Jobs" },
-      { href: "/companies", label: "Companies" },
+      { href: "/", label: "Bảng tin" },
+      { href: "/jobs", label: "Việc làm" },
+      { href: "/companies", label: "Doanh nghiệp" },
     ];
 
     if (user) {
-      items.push({ href: "/inbox", label: "Inbox" });
+      items.push({ href: "/inbox", label: "Hộp thư" });
       if (user.role === "ADMIN") {
-        items.push({ href: "/system", label: "System" });
+        items.push({ href: "/system", label: "Hệ thống" });
       }
     }
 

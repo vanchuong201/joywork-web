@@ -272,12 +272,12 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="title">Tiêu đề nghề nghiệp</Label>
-              <Input id="title" {...register("title")} placeholder="Full-stack Developer" />
+              <Input id="title" {...register("title")} placeholder="Lập trình viên Full-stack" />
               {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>}
             </div>
             <div>
-              <Label htmlFor="headline">Headline</Label>
-              <Input id="headline" {...register("headline")} placeholder="Experienced developer..." />
+              <Label htmlFor="headline">Tiêu đề ngắn</Label>
+              <Input id="headline" {...register("headline")} placeholder="Lập trình viên giàu kinh nghiệm..." />
               {errors.headline && <p className="mt-1 text-sm text-red-500">{errors.headline.message}</p>}
             </div>
           </div>

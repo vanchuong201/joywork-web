@@ -34,11 +34,11 @@ type CompanyNavItem = NavItem & {
 };
 
 const primaryNav: NavItem[] = [
-  { icon: Home, label: "Feed", href: "/" },
-  { icon: Briefcase, label: "Jobs", href: "/jobs" },
-  { icon: Building2, label: "Companies", href: "/companies" },
+  { icon: Home, label: "Bảng tin", href: "/" },
+  { icon: Briefcase, label: "Việc làm", href: "/jobs" },
+  { icon: Building2, label: "Doanh nghiệp", href: "/companies" },
   // Tạm ẩn Inbox (messaging cho applications)
-  // { icon: MessageSquareText, label: "Inbox", href: "/inbox" },
+  // { icon: MessageSquareText, label: "Hộp thư", href: "/inbox" },
 ];
 
 const personalNav: NavItem[] = [
@@ -247,9 +247,9 @@ export default function LeftNav() {
 
         {user.role === "ADMIN" ? (
           <NavSection
-            title="System"
+            title="Hệ thống"
             items={[
-              { icon: ClipboardList, label: "Moderation", href: "/system" },
+              { icon: ClipboardList, label: "Kiểm duyệt", href: "/system" },
             ]}
             pathname={pathname}
           />
