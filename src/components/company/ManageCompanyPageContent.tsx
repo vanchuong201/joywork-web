@@ -50,7 +50,7 @@ export default function ManageCompanyPageContent({ company }: { company: Company
   const companyData = companyWithMembersQuery.data || company;
   
   // Tìm membership của user hiện tại trong company
-  const currentMembership = companyData.members?.find((m) => m.userId === user?.id);
+  const currentMembership = companyData.members?.find((m: NonNullable<Company['members']>[number]) => m.userId === user?.id);
   const currentUserRole = currentMembership?.role || "MEMBER";
   const currentUserId = user?.id || "";
 
@@ -75,14 +75,14 @@ export default function ManageCompanyPageContent({ company }: { company: Company
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
                     <h3 className="text-xl font-bold text-slate-800">Quản lý tin tuyển dụng</h3>
-                    <Button onClick={() => setCreateJobOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => setCreateJobOpen(true)}>
                         <Plus className="w-4 h-4 mr-2" /> Đăng tin mới
                     </Button>
                 </div>
 
                 <div className="grid gap-4">
                     {jobsQuery.data?.map((job: any) => (
-                        <div key={job.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-blue-300 transition-colors">
+                        <div key={job.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-[var(--brand)]/50 transition-colors">
                             <div>
                                 <h4 className="font-bold text-lg mb-1 text-slate-900">{job.title}</h4>
                                 <div className="flex flex-wrap gap-3 text-sm text-slate-500 items-center">

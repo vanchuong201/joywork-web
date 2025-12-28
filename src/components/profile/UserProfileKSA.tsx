@@ -14,10 +14,10 @@ export default function UserProfileKSA({ knowledge, skills, attitude }: UserProf
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 border-t-4 border-pink-500">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 border-t-4 border-[var(--brand-secondary)]">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-slate-900 flex items-center gap-2">
-          <Sparkles className="text-pink-500" size={20} /> Năng Lực (KSA)
+          <Sparkles className="text-[var(--brand-secondary)]" size={20} /> Năng Lực (KSA)
         </h3>
         {/* <span className="text-xs font-bold bg-pink-500/10 text-pink-500 px-2 py-1 rounded">
           Matching Data

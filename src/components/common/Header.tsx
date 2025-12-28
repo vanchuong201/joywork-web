@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BriefcaseBusiness,
   Search,
   Building2,
   Inbox,
@@ -20,6 +19,7 @@ import { useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChangePasswordDialog from "@/components/auth/ChangePasswordDialog";
+import Image from "next/image";
 
 const navIcons: Record<string, LucideIcon> = {
   "/": Home,
@@ -71,10 +71,15 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/60">
       <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-4 px-4">
         <Link href="/" className="flex items-center gap-2 text-[var(--foreground)]">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--brand)] text-white">
-            <BriefcaseBusiness size={18} />
+          <div className="relative h-8 w-32">
+            <Image
+              src="/JW-mid.png"
+              alt="JoyWork Logo"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
-          <span className="text-lg font-semibold">JoyWork</span>
         </Link>
         <nav className="ml-auto hidden items-center gap-2 md:flex">
           {isReady

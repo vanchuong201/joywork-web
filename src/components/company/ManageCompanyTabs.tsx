@@ -36,37 +36,37 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
         <TabsList className="bg-transparent h-auto p-0 gap-6 w-full md:w-auto overflow-x-auto flex-nowrap justify-start py-2">
           <TabsTrigger
             value="overview"
-            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
             <LayoutDashboard className="w-4 h-4" /> Tổng quan
           </TabsTrigger>
           <TabsTrigger
             value="activity"
-            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
             <FileText className="w-4 h-4" /> Hoạt động
           </TabsTrigger>
           <TabsTrigger
             value="jobs"
-            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
             <Briefcase className="w-4 h-4" /> Việc làm
           </TabsTrigger>
           <TabsTrigger
             value="applications"
-            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
             <Users className="w-4 h-4" /> Ứng tuyển
           </TabsTrigger>
           <TabsTrigger
             value="members"
-            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
             <UserRound className="w-4 h-4" /> Thành viên
           </TabsTrigger>
           <TabsTrigger
             value="tickets"
-            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
             <MessageSquareText className="w-4 h-4" /> Trao đổi
           </TabsTrigger>
@@ -75,9 +75,9 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
 
       {/* TAB: OVERVIEW (Editable Profile) */}
       <TabsContent value="overview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 flex items-center gap-3 text-blue-800">
-          <div className="bg-blue-100 p-2 rounded-full">
-            <Pencil className="w-4 h-4" />
+        <div className="bg-[var(--brand-light)] border border-[var(--brand)]/30 rounded-lg p-4 mb-8 flex items-center gap-3 text-[var(--brand-dark)]">
+          <div className="bg-[var(--brand)]/10 p-2 rounded-full">
+            <Pencil className="w-4 h-4 text-[var(--brand)]" />
           </div>
           <p className="text-sm font-medium">Bạn đang ở chế độ chỉnh sửa. Di chuột vào các mục để chỉnh sửa nội dung.</p>
         </div>

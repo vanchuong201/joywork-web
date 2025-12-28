@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
 import { Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 
 const schema = z.object({
   name: z.string().min(2, "Tên cần ít nhất 2 ký tự"),
@@ -100,7 +101,17 @@ function RegisterPageContent() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4">
       <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-2 h-10 w-10 rounded-md bg-[var(--brand)]" />
+          <div className="mx-auto mb-4 flex justify-center">
+            <div className="relative h-12 w-48">
+              <Image
+                src="/JW-mid.png"
+                alt="JoyWork Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
           <h1 className="text-xl font-semibold text-[var(--foreground)]">Tạo tài khoản JoyWork</h1>
           <p className="text-sm text-[var(--muted-foreground)]">Hoàn tất thông tin để bắt đầu</p>
         </div>
@@ -233,7 +244,17 @@ export default function RegisterPage() {
       <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4">
         <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6">
           <div className="mb-6 text-center">
-            <div className="mx-auto mb-2 h-10 w-10 rounded-md bg-[var(--brand)]" />
+            <div className="mx-auto mb-4 flex justify-center">
+              <div className="relative h-12 w-48">
+                <Image
+                  src="/JW-mid.png"
+                  alt="JoyWork Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </div>
             <h1 className="text-xl font-semibold text-[var(--foreground)]">Tạo tài khoản JoyWork</h1>
             <p className="text-sm text-[var(--muted-foreground)]">Đang tải...</p>
           </div>

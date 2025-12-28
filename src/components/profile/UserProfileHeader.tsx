@@ -27,7 +27,7 @@ export default function UserProfileHeader({ profile }: UserProfileHeaderProps) {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-blue-600 to-pink-600 opacity-10"></div>
+      <div className="absolute top-0 left-0 w-full h-24 opacity-10" style={{ background: `linear-gradient(to right, var(--brand), var(--brand-secondary))` }}></div>
       <div className="relative flex flex-col md:flex-row items-start gap-6 pt-4">
         <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg relative -mt-4">
           <Image

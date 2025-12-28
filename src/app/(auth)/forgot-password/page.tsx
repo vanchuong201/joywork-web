@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 
 const schema = z.object({
   email: z
@@ -85,7 +86,17 @@ function ForgotPasswordContent() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4">
       <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-2 h-10 w-10 rounded-md bg-[var(--brand)]" />
+          <div className="mx-auto mb-4 flex justify-center">
+            <div className="relative h-12 w-48">
+              <Image
+                src="/JW-mid.png"
+                alt="JoyWork Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
           <h1 className="text-xl font-semibold text-[var(--foreground)]">Quên mật khẩu</h1>
           <p className="text-sm text-[var(--muted-foreground)]">
             Nhập email của bạn để nhận link đặt lại mật khẩu
@@ -142,7 +153,17 @@ export default function ForgotPasswordPage() {
         <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4">
           <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6">
             <div className="mb-6 text-center">
-              <div className="mx-auto mb-2 h-10 w-10 rounded-md bg-[var(--brand)]" />
+              <div className="mx-auto mb-4 flex justify-center">
+                <div className="relative h-12 w-48">
+                  <Image
+                    src="/JW-mid.png"
+                    alt="JoyWork Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </div>
               <h1 className="text-xl font-semibold text-[var(--foreground)]">Quên mật khẩu</h1>
               <p className="text-sm text-[var(--muted-foreground)]">Đang tải...</p>
             </div>

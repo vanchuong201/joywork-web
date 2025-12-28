@@ -114,7 +114,7 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
       case "OWNER":
         return <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800"><ShieldAlert className="mr-1 h-3 w-3" /> Owner</span>;
       case "ADMIN":
-        return <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"><Shield className="mr-1 h-3 w-3" /> Admin</span>;
+        return <span className="inline-flex items-center rounded-full bg-[var(--brand-light)] px-2.5 py-0.5 text-xs font-medium text-[var(--brand-dark)]"><Shield className="mr-1 h-3 w-3" /> Admin</span>;
       default:
         return <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800"><User className="mr-1 h-3 w-3" /> Member</span>;
     }
@@ -207,7 +207,7 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
                                     "group flex w-full items-center px-4 py-2 text-sm"
                                   )}
                                 >
-                                  <Shield className="mr-3 h-4 w-4 text-blue-500" aria-hidden="true" />
+                                  <Shield className="mr-3 h-4 w-4 text-[var(--brand)]" aria-hidden="true" />
                                   Thăng cấp Admin
                                 </button>
                               )}
