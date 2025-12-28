@@ -7,16 +7,20 @@ import CompanyActivityFeed from "./CompanyActivityFeed";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, UserRound, MessageSquareText } from "lucide-react";
 import { useState } from "react";
 import CreateJobModal from "./CreateJobModal";
 import EditJobModal from "./EditJobModal";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import CompanyMembersList from "./CompanyMembersList";
+import CompanyTicketsList from "./CompanyTicketsList";
+import { useAuthStore } from "@/store/useAuth";
 
 export default function ManageCompanyPageContent({ company }: { company: Company }) {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "overview";
+  const user = useAuthStore((s) => s.user);
   
   const [createJobOpen, setCreateJobOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<any>(null);
@@ -30,6 +34,25 @@ export default function ManageCompanyPageContent({ company }: { company: Company
       },
       enabled: tab === "jobs"
   });
+
+  // Fetch company with members for members tab (to ensure fresh data)
+  const companyWithMembersQuery = useQuery({
+      queryKey: ["company-with-members", company.id],
+      queryFn: async () => {
+          const res = await api.get(`/api/companies/${company.slug}`);
+          return res.data.data.company;
+      },
+      enabled: tab === "members",
+      initialData: company, // Use initial company data
+  });
+
+  // Sử dụng company data từ query nếu có, nếu không thì dùng company ban đầu
+  const companyData = companyWithMembersQuery.data || company;
+  
+  // Tìm membership của user hiện tại trong company
+  const currentMembership = companyData.members?.find((m) => m.userId === user?.id);
+  const currentUserRole = currentMembership?.role || "MEMBER";
+  const currentUserId = user?.id || "";
 
   if (tab === "overview") return null;
 
@@ -116,6 +139,41 @@ export default function ManageCompanyPageContent({ company }: { company: Company
                     <h4 className="font-bold text-lg text-slate-700 mb-2">Tính năng đang phát triển</h4>
                     <p>Giao diện quản lý ứng viên dạng Kanban Board đang được cập nhật.</p>
                 </div>
+            </div>
+        )}
+
+        {/* Tab: Members */}
+        {tab === "members" && (
+            <div className="space-y-6">
+                {companyWithMembersQuery.isLoading ? (
+                    <div className="space-y-3">
+                        {Array.from({ length: 3 }).map((_, idx) => (
+                            <div key={idx} className="h-20 bg-white rounded-lg border border-slate-200 animate-pulse" />
+                        ))}
+                    </div>
+                ) : companyData.members && companyData.members.length > 0 ? (
+                    <CompanyMembersList
+                        companyId={company.id}
+                        members={companyData.members}
+                        currentUserRole={currentUserRole}
+                        currentUserId={currentUserId}
+                    />
+                ) : (
+                    <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-500">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Users className="w-8 h-8 text-slate-300" />
+                        </div>
+                        <h4 className="font-bold text-lg text-slate-700 mb-2">Chưa có thành viên</h4>
+                        <p>Thêm thành viên để bắt đầu quản lý công ty.</p>
+                    </div>
+                )}
+            </div>
+        )}
+
+        {/* Tab: Tickets */}
+        {tab === "tickets" && (
+            <div className="space-y-6">
+                <CompanyTicketsList companyId={company.id} />
             </div>
         )}
     </div>

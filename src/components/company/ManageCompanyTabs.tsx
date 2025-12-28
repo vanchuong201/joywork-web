@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, FileText, Briefcase, Users } from "lucide-react";
+import { LayoutDashboard, FileText, Briefcase, Users, UserRound, MessageSquareText } from "lucide-react";
 import CompanyProfileContent from "./profile/CompanyProfileContent";
 import ManageCompanyPageContent from "./ManageCompanyPageContent";
 import { Company } from "@/types/company";
@@ -38,7 +38,7 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
             value="overview"
             className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
-            <LayoutDashboard className="w-4 h-4" /> Quản lý hồ sơ
+            <LayoutDashboard className="w-4 h-4" /> Tổng quan
           </TabsTrigger>
           <TabsTrigger
             value="activity"
@@ -50,13 +50,25 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
             value="jobs"
             className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
-            <Briefcase className="w-4 h-4" /> Tuyển dụng
+            <Briefcase className="w-4 h-4" /> Việc làm
           </TabsTrigger>
           <TabsTrigger
             value="applications"
             className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
           >
-            <Users className="w-4 h-4" /> Ứng viên
+            <Users className="w-4 h-4" /> Ứng tuyển
+          </TabsTrigger>
+          <TabsTrigger
+            value="members"
+            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+          >
+            <UserRound className="w-4 h-4" /> Thành viên
+          </TabsTrigger>
+          <TabsTrigger
+            value="tickets"
+            className="data-[state=active]:text-blue-600 data-[state=active]:bg-blue-50/50 text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+          >
+            <MessageSquareText className="w-4 h-4" /> Trao đổi
           </TabsTrigger>
         </TabsList>
       </div>
@@ -82,6 +94,14 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
       </TabsContent>
 
       <TabsContent value="applications" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+        <ManageCompanyPageContent company={company} />
+      </TabsContent>
+
+      <TabsContent value="members" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+        <ManageCompanyPageContent company={company} />
+      </TabsContent>
+
+      <TabsContent value="tickets" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
         <ManageCompanyPageContent company={company} />
       </TabsContent>
     </Tabs>

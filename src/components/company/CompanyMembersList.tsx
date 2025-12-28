@@ -48,6 +48,7 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
     onSuccess: () => {
       toast.success("Đã xóa thành viên");
       queryClient.invalidateQueries({ queryKey: ["company-manage"] });
+      queryClient.invalidateQueries({ queryKey: ["company-with-members"] });
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.error?.message ?? "Không thể xóa thành viên");
@@ -75,6 +76,7 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
     onSuccess: () => {
       toast.success("Đã cập nhật vai trò");
       queryClient.invalidateQueries({ queryKey: ["company-manage"] });
+      queryClient.invalidateQueries({ queryKey: ["company-with-members"] });
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.error?.message ?? "Không thể cập nhật vai trò");
@@ -262,6 +264,7 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
         companyId={companyId}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["company-manage"] });
+          queryClient.invalidateQueries({ queryKey: ["company-with-members"] });
         }}
       />
     </div>
