@@ -54,7 +54,7 @@ export default function CompanyManageTabs({
       <TabsList>
         <TabsTrigger value="overview">Tổng quan</TabsTrigger>
         <TabsTrigger value="activity">Hoạt động</TabsTrigger>
-        <TabsTrigger value="jobs">Việc làm</TabsTrigger>
+        <TabsTrigger value="jobs">Tuyển dụng</TabsTrigger>
         <TabsTrigger value="applications">Ứng tuyển</TabsTrigger>
         <TabsTrigger value="members">Thành viên</TabsTrigger>
         <TabsTrigger value="tickets">Trao đổi</TabsTrigger>

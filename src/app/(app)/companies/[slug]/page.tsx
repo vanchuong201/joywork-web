@@ -4,10 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, Briefcase, Calendar, MessageCircle } from "lucide-react";
+import { Users, MessageCircle } from "lucide-react";
 import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
 import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero";
 import CompanyProfileContent from "@/components/company/profile/CompanyProfileContent";
+import CompanyJobsTab from "@/components/company/CompanyJobsTab";
 import { formatDate } from "@/lib/utils";
 
 type Props = {
@@ -129,17 +130,17 @@ export default async function CompanyPage({ params, searchParams }: Props) {
                             value="jobs" 
                             className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
                         >
-                            Tuyển dụng <span className="ml-2 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">{company.stats?.jobs || 0}</span>
+                            Tuyển dụng
                         </TabsTrigger>
                     </Link>
-                    <Link href={`/companies/${company.slug}?tab=people`} scroll={false}>
+                    {/* <Link href={`/companies/${company.slug}?tab=people`} scroll={false}>
                         <TabsTrigger 
                             value="people" 
                             className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
                         >
-                            Con người
+                            Quản trị viên
                         </TabsTrigger>
-                    </Link>
+                    </Link> */}
                 </TabsList>
                 
                 {/* Right side actions (optional) */}
@@ -176,51 +177,11 @@ export default async function CompanyPage({ params, searchParams }: Props) {
 
             {/* TAB: JOBS */}
             <TabsContent value="jobs" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                 <div className="grid gap-6">
-                    {jobs.length > 0 ? (
-                        jobs.map((job: any) => (
-                            <Link href={`/jobs/${job.id}`} key={job.id} className="block group">
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-1">{job.title}</h3>
-                                            <div className="flex items-center gap-4 text-sm text-slate-500">
-                                                <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {job.location || "Remote"}</span>
-                                                <span className="flex items-center gap-1"><Briefcase className="w-4 h-4" /> {job.employmentType}</span>
-                                                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {formatDate(job.createdAt)}</span>
-                                            </div>
-                                        </div>
-                                        {company.logoUrl && (
-                                            <div className="w-12 h-12 relative bg-white rounded-lg border border-slate-100 p-1">
-                                                <Image src={company.logoUrl} alt={company.name} fill className="object-contain p-1" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-2 mt-4">
-                                        {job.skills?.slice(0, 3).map((skill: string) => (
-                                            <Badge key={skill} className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-0 font-normal">
-                                                {skill}
-                                            </Badge>
-                                        ))}
-                                        {job.skills?.length > 3 && (
-                                            <Badge className="bg-slate-50 text-slate-500 border-0 font-normal">
-                                                +{job.skills.length - 3}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </div>
-                            </Link>
-                        ))
-                    ) : (
-                        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                                <Briefcase className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có vị trí tuyển dụng</h3>
-                            <p className="text-slate-500">Hiện tại công ty chưa đăng tuyển vị trí nào.</p>
-                        </div>
-                    )}
-                 </div>
+                <CompanyJobsTab 
+                    jobs={jobs} 
+                    companyName={company.name}
+                    companyLogoUrl={company.logoUrl}
+                />
             </TabsContent>
 
             {/* TAB: PEOPLE */}
