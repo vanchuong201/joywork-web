@@ -99,7 +99,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900 pb-20">
+    <div className="min-h-screen bg-[var(--background)] font-sans selection:bg-[var(--brand-light)] selection:text-[var(--brand-dark)] pb-20">
       
       {/* Hero Section */}
       <CompanyProfileHero company={company} />
@@ -107,12 +107,12 @@ export default async function CompanyPage({ params, searchParams }: Props) {
       {/* Main Content & Tabs */}
       <div className="max-w-7xl mx-auto px-6">
         <Tabs defaultValue={tab} className="w-full">
-            <div className="flex flex-col md:flex-row items-center justify-between mb-12 border-b border-slate-200">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-12 border-b border-[var(--border)]">
                 <TabsList className="bg-transparent h-auto p-0 gap-8 w-full md:w-auto overflow-x-auto flex-nowrap justify-start">
                     <Link href={`/companies/${company.slug}?tab=overview`} scroll={false}>
                         <TabsTrigger 
                             value="overview" 
-                            className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
+                            className="data-[state=active]:text-[var(--brand)] data-[state=active]:border-b-4 data-[state=active]:border-[var(--brand)] data-[state=active]:bg-transparent text-[var(--muted-foreground)] font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-[var(--foreground)] shadow-none"
                         >
                             Hồ sơ công ty
                         </TabsTrigger>
@@ -120,7 +120,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
                     <Link href={`/companies/${company.slug}?tab=activity`} scroll={false}>
                         <TabsTrigger 
                             value="activity" 
-                            className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
+                            className="data-[state=active]:text-[var(--brand)] data-[state=active]:border-b-4 data-[state=active]:border-[var(--brand)] data-[state=active]:bg-transparent text-[var(--muted-foreground)] font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-[var(--foreground)] shadow-none"
                         >
                             Hoạt động
                         </TabsTrigger>
@@ -128,7 +128,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
                     <Link href={`/companies/${company.slug}?tab=jobs`} scroll={false}>
                         <TabsTrigger 
                             value="jobs" 
-                            className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
+                            className="data-[state=active]:text-[var(--brand)] data-[state=active]:border-b-4 data-[state=active]:border-[var(--brand)] data-[state=active]:bg-transparent text-[var(--muted-foreground)] font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-[var(--foreground)] shadow-none"
                         >
                             Tuyển dụng
                         </TabsTrigger>
@@ -164,12 +164,12 @@ export default async function CompanyPage({ params, searchParams }: Props) {
                             totalPages={postsPagination?.totalPages} 
                         />
                     ) : (
-                        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <div className="text-center py-20 bg-[var(--card)] rounded-3xl border border-[var(--border)] shadow-sm">
+                            <div className="w-16 h-16 bg-[var(--muted)] rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--muted-foreground)]">
                                 <MessageCircle className="w-8 h-8" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có hoạt động nào</h3>
-                            <p className="text-slate-500">Công ty chưa đăng tải bài viết nào gần đây.</p>
+                            <h3 className="text-xl font-bold text-[var(--foreground)] mb-2">Chưa có hoạt động nào</h3>
+                            <p className="text-[var(--muted-foreground)]">Công ty chưa đăng tải bài viết nào gần đây.</p>
                         </div>
                     )}
                 </div>
@@ -189,30 +189,30 @@ export default async function CompanyPage({ params, searchParams }: Props) {
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {members.length > 0 ? (
                         members.map((member: any) => (
-                            <div key={member.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
-                                <div className="w-16 h-16 relative rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
+                            <div key={member.id} className="bg-[var(--card)] p-6 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-4">
+                                <div className="w-16 h-16 relative rounded-full overflow-hidden bg-[var(--muted)] border border-[var(--border)] flex-shrink-0">
                                     {member.user.avatar ? (
                                         <Image src={member.user.avatar} alt={member.user.name || "Member"} fill className="object-cover" />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-xl">
+                                        <div className="w-full h-full flex items-center justify-center text-[var(--muted-foreground)] font-bold text-xl">
                                             {(member.user.name || member.user.email).charAt(0).toUpperCase()}
                                         </div>
                                     )}
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-slate-900">{member.user.name || "Thành viên ẩn danh"}</h4>
-                                    <p className="text-sm text-slate-500 mb-1">{member.role === 'OWNER' ? 'Founder / Owner' : member.role}</p>
-                                    <p className="text-xs text-slate-400 truncate max-w-[180px]">{member.user.email}</p>
+                                    <h4 className="font-bold text-[var(--foreground)]">{member.user.name || "Thành viên ẩn danh"}</h4>
+                                    <p className="text-sm text-[var(--muted-foreground)] mb-1">{member.role === 'OWNER' ? 'Founder / Owner' : member.role}</p>
+                                    <p className="text-xs text-[var(--muted-foreground)]/70 truncate max-w-[180px]">{member.user.email}</p>
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <div className="col-span-full text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <div className="col-span-full text-center py-20 bg-[var(--card)] rounded-3xl border border-[var(--border)] shadow-sm">
+                             <div className="w-16 h-16 bg-[var(--muted)] rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--muted-foreground)]">
                                 <Users className="w-8 h-8" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có thành viên công khai</h3>
-                            <p className="text-slate-500">Danh sách thành viên đang được cập nhật.</p>
+                            <h3 className="text-xl font-bold text-[var(--foreground)] mb-2">Chưa có thành viên công khai</h3>
+                            <p className="text-[var(--muted-foreground)]">Danh sách thành viên đang được cập nhật.</p>
                         </div>
                     )}
                  </div>

@@ -32,41 +32,41 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
 
   return (
     <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-      <div className="flex flex-col md:flex-row items-center justify-between mb-12 border-b border-slate-200 bg-white/50 backdrop-blur-sm sticky top-16 z-20 rounded-xl px-4 shadow-sm">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-12 border-b border-[var(--border)] bg-[var(--card)]/50 backdrop-blur-sm sticky top-16 z-20 rounded-xl px-4 shadow-sm">
         <TabsList className="bg-transparent h-auto p-0 gap-6 w-full md:w-auto overflow-x-auto flex-nowrap justify-start py-2">
           <TabsTrigger
             value="overview"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
           >
             <LayoutDashboard className="w-4 h-4" /> Tổng quan
           </TabsTrigger>
           <TabsTrigger
             value="activity"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
           >
             <FileText className="w-4 h-4" /> Hoạt động
           </TabsTrigger>
           <TabsTrigger
             value="jobs"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
           >
             <Briefcase className="w-4 h-4" /> Việc làm
           </TabsTrigger>
           <TabsTrigger
             value="applications"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
           >
             <Users className="w-4 h-4" /> Ứng tuyển
           </TabsTrigger>
           <TabsTrigger
             value="members"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
           >
             <UserRound className="w-4 h-4" /> Thành viên
           </TabsTrigger>
           <TabsTrigger
             value="tickets"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-slate-500 font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-slate-900 shadow-none flex items-center gap-2"
+            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
           >
             <MessageSquareText className="w-4 h-4" /> Trao đổi
           </TabsTrigger>

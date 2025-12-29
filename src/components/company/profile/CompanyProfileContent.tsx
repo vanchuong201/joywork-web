@@ -341,13 +341,27 @@ interface Props {
   isEditable?: boolean;
 }
 
-const SectionTitle = ({ title, subtitle, align = 'center' }: { title: string, subtitle?: string, align?: 'left' | 'center' }) => (
-  <div className={`mb-16 ${align === 'center' ? 'text-center' : 'text-left'}`}>
-    <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 uppercase tracking-tight mb-3">
+const SectionTitle = ({
+  title,
+  subtitle,
+  align = 'center',
+}: {
+  title: string;
+  subtitle?: string;
+  align?: 'left' | 'center';
+}) => (
+  <div className={`mb-10 md:mb-14 ${align === 'center' ? 'text-center' : 'text-left'}`}>
+    <h2 className="text-3xl md:text-4xl font-extrabold text-[var(--foreground)] uppercase tracking-tight mb-3">
       {title}
     </h2>
-    {subtitle && <p className="text-slate-600 text-lg max-w-3xl mx-auto leading-relaxed">{subtitle}</p>}
-    <div className={`h-1.5 w-24 bg-blue-600 rounded-full mt-4 ${align === 'center' ? 'mx-auto' : ''}`}></div>
+    {subtitle && (
+      <p className="text-[var(--muted-foreground)] text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
+        {subtitle}
+      </p>
+    )}
+    <div
+      className={`h-1.5 w-24 bg-[var(--brand)] rounded-full mt-4 ${align === 'center' ? 'mx-auto' : ''}`}
+    ></div>
   </div>
 );
 
@@ -390,7 +404,7 @@ const SectionCarousel = ({ children, className, itemClassName = "flex-[0_0_auto]
         {canScrollPrev && (
         <button 
             onClick={scrollPrev} 
-            className="absolute left-2 md:-left-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 md:w-10 md:h-10 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all opacity-0 group-hover/slider:opacity-100"
+            className="absolute left-2 md:-left-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 md:w-10 md:h-10 bg-[var(--card)]/90 backdrop-blur rounded-full shadow-lg border border-[var(--border)] flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--brand)] hover:border-[var(--brand)]/40 transition-all opacity-0 group-hover/slider:opacity-100"
         >
             <ChevronLeft className="w-5 h-5" />
         </button>
@@ -398,7 +412,7 @@ const SectionCarousel = ({ children, className, itemClassName = "flex-[0_0_auto]
         {canScrollNext && (
         <button 
             onClick={scrollNext} 
-            className="absolute right-2 md:-right-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 md:w-10 md:h-10 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all opacity-0 group-hover/slider:opacity-100"
+            className="absolute right-2 md:-right-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 md:w-10 md:h-10 bg-[var(--card)]/90 backdrop-blur rounded-full shadow-lg border border-[var(--border)] flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--brand)] hover:border-[var(--brand)]/40 transition-all opacity-0 group-hover/slider:opacity-100"
         >
             <ChevronRight className="w-5 h-5" />
         </button>
@@ -545,7 +559,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     }
   });
 
-  // Load statements stats for "Triết lý quản trị"
+  // Load statements stats cho "Triết lý quản trị"
   useEffect(() => {
     let cancelled = false;
     async function loadStatements() {
@@ -562,10 +576,18 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         if (!cancelled) {
           setStatements(items);
         }
-      } catch (error) {
-        console.error("Failed to load company statements", error);
+      } catch (error: any) {
+        const status = error?.response?.status;
         if (!cancelled) {
-          setStatementsError("Không thể tải số liệu xác thực cam kết.");
+          // Nếu là lỗi 403 ở chế độ edit: user không có quyền ADMIN/OWNER
+          // => không log lỗi và không hiển thị thông báo, chỉ để dữ liệu rỗng
+          if (status === 403 && isEditable) {
+            setStatements([]);
+            setStatementsError(null);
+          } else {
+            console.error("Failed to load company statements", error);
+            setStatementsError("Không thể tải số liệu xác thực cam kết.");
+          }
         }
       } finally {
         if (!cancelled) {
@@ -580,7 +602,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     };
   }, [company.id, company.slug, isEditable]);
 
-  // Load uploaded verification contact lists (only in edit mode)
+  // Load danh sách file CSV "verification contacts" (chỉ ở chế độ edit)
   useEffect(() => {
     if (!isEditable) return;
     let cancelled = false;
@@ -596,8 +618,16 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
             setSelectedListId(lists[0].id);
           }
         }
-      } catch (error) {
-        console.error("Failed to load verification contact lists", error);
+      } catch (error: any) {
+        const status = error?.response?.status;
+        // Nếu là lỗi 403: user không có quyền ADMIN/OWNER → im lặng, không log AxiosError
+        if (status === 403) {
+          if (!cancelled) {
+            setVerificationLists([]);
+          }
+        } else {
+          console.error("Failed to load verification contact lists", error);
+        }
       } finally {
         if (!cancelled) {
           setListsLoading(false);
@@ -891,34 +921,57 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
      <div className="space-y-32 py-12">
         {/* SECTION 2: STATS */}
         <section className="max-w-7xl mx-auto px-6 animate-fade-in-up relative group/section">
-           {isEditable && (
-             <div className="absolute top-0 right-6 opacity-0 group-hover/section:opacity-100 transition-opacity z-30">
-                <Button onClick={() => handleEdit('stats', { stats })} variant="outline" size="sm" className="bg-white">
-                    <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa số liệu
+          <div className="relative rounded-3xl border border-[var(--border)]/60 bg-[var(--card)]/5 px-6 md:px-10 py-10 md:py-12 overflow-hidden">
+            <div className="pointer-events-none absolute inset-x-10 -top-20 h-40 bg-gradient-to-r from-[var(--brand)]/10 via-transparent to-[var(--brand-secondary)]/10 blur-3xl" />
+
+            {isEditable && (
+              <div className="absolute top-6 right-6 opacity-0 group-hover/section:opacity-100 transition-opacity z-30">
+                <Button
+                  onClick={() => handleEdit('stats', { stats })}
+                  variant="outline"
+                  size="sm"
+                  className="bg-[var(--card)]/90 backdrop-blur border-[var(--border)]"
+                >
+                  <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa số liệu
                 </Button>
-             </div>
-           )}
-           <SectionTitle title="NHỮNG CON SỐ BIẾT NÓI" subtitle={`Thành tựu ấn tượng khẳng định vị thế dẫn đầu sau ${new Date().getFullYear() - (company.foundedYear || 2015)} năm phát triển`} />
-           
-           <SectionCarousel>
+              </div>
+            )}
+
+            <SectionTitle
+              title="NHỮNG CON SỐ BIẾT NÓI"
+              subtitle={`Thành tựu ấn tượng khẳng định vị thế dẫn đầu sau ${
+                new Date().getFullYear() - (company.foundedYear || 2015)
+              } năm phát triển`}
+            />
+
+            <SectionCarousel className="mt-4">
               {statsToRender.map((stat: any, idx: number) => {
-                 const Icon = iconMap[stat.icon] || TrendingUp;
-                 return (
-                    <div key={idx} className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden group min-w-[200px] w-[200px] flex flex-col justify-center items-center text-center select-none">
-                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Icon size={64} className="text-slate-900" />
-                      </div>
-                      <div className="text-3xl md:text-4xl font-black text-blue-600 mb-2 relative z-10">{stat.value}</div>
-                      <div className="text-sm font-bold text-slate-500 uppercase tracking-wider relative z-10">{stat.label}</div>
+                const Icon = iconMap[stat.icon] || TrendingUp;
+                return (
+                  <div
+                    key={idx}
+                    className="bg-[var(--card)] rounded-3xl px-6 py-7 shadow-lg shadow-black/5 border border-[var(--border)] hover:-translate-y-2 hover:shadow-xl transition-all duration-300 relative overflow-hidden group min-w-[220px] w-[220px] flex flex-col justify-center items-center text-center select-none"
+                  >
+                    <div className="absolute -top-6 -right-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <Icon size={72} className="text-[var(--brand-secondary)]" />
                     </div>
-                 );
+                    <div className="text-3xl md:text-4xl font-black text-[var(--brand)] mb-1.5 relative z-10">
+                      {stat.value}
+                    </div>
+                    <div className="text-xs md:text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-[0.18em] relative z-10">
+                      {stat.label}
+                    </div>
+                  </div>
+                );
               })}
-           </SectionCarousel>
-           {isEditable && usingSampleStats && (
-             <p className="mt-4 text-xs text-slate-400 italic text-center">
-               {SAMPLE_NOTE}
-             </p>
-           )}
+            </SectionCarousel>
+
+            {isEditable && usingSampleStats && (
+              <p className="mt-6 text-xs text-[var(--muted-foreground)] italic text-center">
+                {SAMPLE_NOTE}
+              </p>
+            )}
+          </div>
         </section>
 
         {/* SECTION 3: VISION - MISSION - VALUES */}

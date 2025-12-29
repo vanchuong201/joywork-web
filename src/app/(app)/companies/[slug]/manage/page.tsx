@@ -55,15 +55,15 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
   const tab = searchTab || "overview";
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-20">
+    <div className="min-h-screen bg-[var(--background)] font-sans pb-20">
       {/* Top Bar for Manager */}
-      <div className="bg-white border-b sticky top-0 z-30 px-6 py-3 flex items-center justify-between shadow-sm">
+      <div className="bg-[var(--card)] border-b border-[var(--border)] sticky top-0 z-30 px-6 py-3 flex items-center justify-between shadow-sm">
          <div className="flex items-center gap-4">
-             <Link href={`/companies/${company.slug}`} className="text-slate-500 hover:text-slate-900 flex items-center gap-2 text-sm font-medium">
+             <Link href={`/companies/${company.slug}`} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-2 text-sm font-medium">
                  <ArrowLeft className="w-4 h-4" /> Xem trang công khai
              </Link>
-             <div className="h-4 w-px bg-slate-200" />
-             <span className="font-bold text-slate-700">Trang quản trị</span>
+             <div className="h-4 w-px bg-[var(--border)]" />
+             <span className="font-bold text-[var(--foreground)]">Trang quản trị</span>
         </div>
          <div className="flex items-center gap-2">
              <Button variant="outline" size="sm" asChild>

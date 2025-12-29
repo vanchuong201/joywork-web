@@ -26,11 +26,22 @@ const optionalUrl = z
   })
   .optional();
 
+// Helper for optional email field - accepts empty string
+const optionalEmail = z
+  .string()
+  .refine((val) => val === "" || z.string().email().safeParse(val).success, {
+    message: "Email không hợp lệ",
+  })
+  .optional();
+
 const schema = z.object({
   fullName: z.string().max(200, "Họ tên đầy đủ tối đa 200 ký tự").optional(),
   title: z.string().max(150, "Tiêu đề tối đa 150 ký tự").optional(),
   headline: z.string().max(100, "Headline tối đa 100 ký tự").optional(),
   bio: z.string().max(2000, "Giới thiệu tối đa 2000 ký tự").optional(),
+  // CV contact info (independent from account email/phone)
+  contactEmail: optionalEmail,
+  contactPhone: z.string().max(50, "Số điện thoại tối đa 50 ký tự").optional(),
   location: z.string().max(100, "Địa điểm tối đa 100 ký tự").optional(),
   website: optionalUrl,
   linkedin: optionalUrl,
@@ -71,6 +82,8 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     defaultValues: {
       // fullName: fallback to profile.name if fullName is not set
       fullName: profile.profile?.fullName || profile.name || "",
+      contactEmail: profile.profile?.contactEmail || profile.email || "",
+      contactPhone: profile.profile?.contactPhone || profile.phone || "",
       title: profile.profile?.title || "",
       headline: profile.profile?.headline || "",
       bio: profile.profile?.bio || "",
@@ -94,6 +107,8 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     reset({
       // fullName: fallback to profile.name if fullName is not set
       fullName: profile.profile?.fullName || profile.name || "",
+      contactEmail: profile.profile?.contactEmail || profile.email || "",
+      contactPhone: profile.profile?.contactPhone || profile.phone || "",
       title: profile.profile?.title || "",
       headline: profile.profile?.headline || "",
       bio: profile.profile?.bio || "",
@@ -287,6 +302,38 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
             <Label htmlFor="bio">Giới thiệu</Label>
             <Textarea id="bio" rows={6} {...register("bio")} placeholder="Giới thiệu về bản thân..." />
             {errors.bio && <p className="mt-1 text-sm text-red-500">{errors.bio.message}</p>}
+          </div>
+
+          {/* CV Email & Phone (independent from account) */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="contactEmail">Email liên hệ trên CV</Label>
+              <Input
+                id="contactEmail"
+                {...register("contactEmail")}
+                placeholder={profile.email || "example@email.com"}
+              />
+              {errors.contactEmail && (
+                <p className="mt-1 text-sm text-red-500">{errors.contactEmail.message}</p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">
+                Mặc định lấy từ email tài khoản ({profile.email}). Bạn có thể thay đổi email hiển thị trên CV.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="contactPhone">Số điện thoại liên hệ trên CV</Label>
+              <Input
+                id="contactPhone"
+                {...register("contactPhone")}
+                placeholder={profile.phone || "0909 123 456"}
+              />
+              {errors.contactPhone && (
+                <p className="mt-1 text-sm text-red-500">{errors.contactPhone.message}</p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">
+                Mặc định lấy từ số điện thoại tài khoản (nếu có). Bạn có thể dùng số khác cho CV.
+              </p>
+            </div>
           </div>
 
           {/* Location & Website */}

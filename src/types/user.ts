@@ -46,6 +46,9 @@ export interface UserProfile {
   website?: string | null;
   linkedin?: string | null;
   github?: string | null;
+   // CV contact info (independent from account email/phone)
+   contactEmail?: string | null;
+   contactPhone?: string | null;
   status?: UserStatus | null;
   isPublic?: boolean;
   visibility?: UserProfileVisibility | null;
