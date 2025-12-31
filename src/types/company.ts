@@ -102,6 +102,13 @@ export interface Company {
       avatar?: string;
     };
   }>;
+  invitations?: Array<{
+    id: string;
+    email: string;
+    role: string;
+    expiresAt: string;
+    createdAt: string;
+  }>;
   stats?: {
     posts: number;
     jobs: number;

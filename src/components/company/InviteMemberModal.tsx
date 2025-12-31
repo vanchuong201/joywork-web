@@ -50,15 +50,11 @@ export default function InviteMemberModal({ isOpen, onClose, companyId, onSucces
     },
     onError: (error: any) => {
       const message = error?.response?.data?.error?.message ?? "Không thể gửi lời mời";
-      if (error?.response?.data?.error?.code === "USER_NOT_FOUND") {
-        toast.error("Không tìm thấy người dùng với email này"); // Cái này backend không check nữa nếu tôi bỏ check user exists trong inviteMember, nhưng trong code inviteMember tôi vẫn check user exist để warn, nhưng thực tế nên cho phép invite email chưa tồn tại?
-        // Code backend inviteMember của tôi:
-        // const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
-        // if (existingUser) { check if member... }
-        // create invitation...
-        // => Backend KHÔNG throw USER_NOT_FOUND. Vậy là OK.
-      } else if (error?.response?.data?.error?.code === "MEMBER_EXISTS") {
+      const code = error?.response?.data?.error?.code;
+      if (code === "MEMBER_EXISTS") {
         toast.error("Người dùng này đã là thành viên công ty");
+      } else if (code === "INVITATION_EXISTS") {
+        toast.error("Email này đã được mời, vui lòng chờ ứng viên chấp nhận hoặc đợi lời mời hết hạn.");
       } else {
         toast.error(message);
       }

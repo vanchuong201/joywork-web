@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useAuthStore } from "@/store/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MoreVertical, Trash2, UserCog, Shield, ShieldAlert, User, LogOut } from "lucide-react";
+import { MoreVertical, Trash2, UserCog, Shield, ShieldAlert, User, LogOut, Clock } from "lucide-react";
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { toast } from "sonner";
@@ -27,14 +26,23 @@ type Member = {
   };
 };
 
+type Invitation = {
+  id: string;
+  email: string;
+  role: string;
+  expiresAt: string;
+  createdAt: string;
+};
+
 type Props = {
   companyId: string;
   members: Member[];
+  invitations?: Invitation[];
   currentUserRole: string; // "OWNER" | "ADMIN" | "MEMBER"
   currentUserId: string;
 };
 
-export default function CompanyMembersList({ companyId, members, currentUserRole, currentUserId }: Props) {
+export default function CompanyMembersList({ companyId, members, invitations = [], currentUserRole, currentUserId }: Props) {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -120,6 +128,14 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
     }
   };
 
+  const formatDateTime = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString("vi-VN");
+    } catch {
+      return iso;
+    }
+  };
+
   return (
     <div className="space-y-4">
       {canManage && (
@@ -130,7 +146,16 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
 
       <Card>
         <CardHeader className="pb-3">
-          <h3 className="text-lg font-semibold">Danh sách thành viên ({members.length})</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">
+              Danh sách thành viên ({members.length})
+            </h3>
+            {invitations.length > 0 && (
+              <p className="text-xs text-slate-500">
+                Đang có {invitations.length} lời mời thành viên đang chờ
+              </p>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="divide-y divide-[var(--border)] p-0">
           {members.map((member) => (
@@ -252,6 +277,38 @@ export default function CompanyMembersList({ companyId, members, currentUserRole
                     </Transition>
                   </Menu>
                 )}
+              </div>
+            </div>
+          ))}
+          
+          {invitations.length > 0 && (
+            <div className="bg-slate-50 px-6 py-3 border-t border-[var(--border)]">
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                Lời mời đang chờ ({invitations.length})
+              </p>
+            </div>
+          )}
+
+          {invitations.map((invitation) => (
+            <div key={invitation.id} className="flex items-center justify-between px-6 py-4 bg-slate-50/80">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-600">
+                  {invitation.email.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-medium text-slate-900">{invitation.email}</p>
+                  <p className="text-xs text-slate-500">
+                    Đã gửi lời mời • Hết hạn: {formatDateTime(invitation.expiresAt)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {getRoleBadge(invitation.role)}
+                <div className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 border border-amber-200">
+                  <Clock className="h-3 w-3" />
+                  Chờ chấp nhận
+                </div>
               </div>
             </div>
           ))}

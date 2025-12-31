@@ -74,6 +74,7 @@ export default function ManageCompanyPageContent({ company }: { company: Company
                     <CompanyMembersList
                         companyId={company.id}
                         members={companyData.members}
+                        invitations={companyData.invitations || []}
                         currentUserRole={currentUserRole}
                         currentUserId={currentUserId}
                     />
