@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
@@ -34,15 +34,6 @@ function TicketThreadContent() {
   const params = useParams();
   const ticketId = Array.isArray(params?.ticketId) ? params.ticketId[0] : (params?.ticketId as string | undefined);
   const sp = useSearchParams();
-  const backHref = useMemo(() => {
-    const scope = sp.get("scope");
-    const companyId = sp.get("companyId");
-    const q = new URLSearchParams();
-    if (scope) q.set("scope", scope);
-    if (companyId) q.set("companyId", companyId);
-    const suffix = q.toString() ? `?${q.toString()}` : "";
-    return `/tickets${suffix}`;
-  }, [sp]);
   const currentUserId = useAuthStore((s) => s.user?.id);
   const [message, setMessage] = useState("");
 
@@ -98,6 +89,10 @@ function TicketThreadContent() {
   }
 
   const { ticket, messages } = query.data;
+  const fromCompanyManage = Boolean(sp.get("companyId"));
+  const backHref = fromCompanyManage
+    ? `/companies/${ticket.company.slug}/manage?tab=tickets`
+    : "/tickets";
   const canSend = message.trim().length > 0 && !sendMutation.isPending && ticket.status !== "CLOSED";
 
   return (

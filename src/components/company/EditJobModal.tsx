@@ -187,16 +187,17 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
       await api.patch(`/api/jobs/${job.id}`, {
         title: values.title.trim(),
         description: descriptionHtml || undefined,
-        location: values.location?.trim() || undefined,
+        location: values.location?.trim() || null,
         remote: values.remote ?? false,
         employmentType: values.employmentType,
         experienceLevel: values.experienceLevel,
-        salaryMin: values.salaryMin ? Number(values.salaryMin) : undefined,
-        salaryMax: values.salaryMax ? Number(values.salaryMax) : undefined,
-        currency: values.currency?.trim()
-          ? values.currency.trim().toUpperCase()
-          : undefined,
-        applicationDeadline: values.applicationDeadline ? new Date(values.applicationDeadline).toISOString() : undefined,
+        salaryMin: values.salaryMin ? Number(values.salaryMin) : null,
+        salaryMax: values.salaryMax ? Number(values.salaryMax) : null,
+        // Only send currency if it has a value (don't clear it to null)
+        ...(values.currency?.trim() 
+          ? { currency: values.currency.trim().toUpperCase() } 
+          : {}),
+        applicationDeadline: values.applicationDeadline ? new Date(values.applicationDeadline).toISOString() : null,
       });
       toast.success("Cập nhật job thành công");
       onSuccess?.();

@@ -39,6 +39,7 @@ export default function AccountTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [origin, setOrigin] = useState<string>("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["account"],
@@ -156,6 +157,12 @@ export default function AccountTab() {
     updateAccount.mutate(values);
   };
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -179,6 +186,8 @@ export default function AccountTab() {
     : "";
 
   const avatarUrl = avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || data.email || 'User')}&background=random&size=200`;
+  const profilePath = `/profile/${data.slug || "your-slug"}`;
+  const profileUrl = `${origin || ""}${profilePath}`;
 
   return (
     <div className="space-y-6">
@@ -268,12 +277,12 @@ export default function AccountTab() {
             <p className="mt-1 text-xs text-slate-500">
               URL profile của bạn:{" "}
               <a
-                href={`${process.env.NEXT_PUBLIC_FRONTEND_ORIGIN}/profile/${data.slug || "your-slug"}`}
+                href={profilePath}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-mono text-blue-600 underline hover:text-blue-800"
               >
-                {`${process.env.NEXT_PUBLIC_FRONTEND_ORIGIN}/profile/${data.slug || "your-slug"}`}
+                {profileUrl}
               </a>
             </p>
           </div>
