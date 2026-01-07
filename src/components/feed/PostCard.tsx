@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2, Briefcase, X, Check } from "lucide-react";
+import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2, Briefcase, X, Check, MessageCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
@@ -13,6 +13,7 @@ import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import { cn } from "@/lib/utils";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
+import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { format, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { uploadCompanyPostImage } from "@/lib/uploads";
 import { createPortal } from "react-dom";
 import HashtagInput from "@/components/shared/HashtagInput";
+import CreateTicketModal from "@/components/tickets/CreateTicketModal";
 
 type LikeButtonProps = {
   liked: boolean;
@@ -231,6 +233,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
   useEffect(() => {
     setIsSaved(Boolean(post.isSaved));
   }, [post.isSaved]);
+  const [ticketModalOpen, setTicketModalOpen] = useState(false);
   /* reaction state is defined above */
   const [myReaction, setMyReaction] = useState<PostCardData["userReaction"]>(post.userReaction ?? null);
   const [reactionCounts, setReactionCounts] = useState<{ JOY: number; TRUST: number; SKEPTIC: number }>({
@@ -480,16 +483,27 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
               {post.company.name.slice(0, 1)}
             </div>
           )}
-          <div className="flex flex-col">
-            <CompanyHoverCard
-              companyId={post.company.id}
-              slug={post.company.slug}
-              companyName={post.company.name}
-            >
-              <Link className="font-medium hover:text-[var(--foreground)]" href={`/companies/${post.company.slug}`}>
-              {post.company.name}
-              </Link>
-            </CompanyHoverCard>
+          <div className="flex flex-col flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <CompanyHoverCard
+                companyId={post.company.id}
+                slug={post.company.slug}
+                companyName={post.company.name}
+              >
+                <Link className="font-medium hover:text-[var(--foreground)] text-[var(--foreground)]" href={`/companies/${post.company.slug}`}>
+                  {post.company.name}
+                </Link>
+              </CompanyHoverCard>
+              {user && (
+                <CompanyFollowButton
+                  companyId={post.company.id}
+                  companySlug={post.company.slug}
+                  variant="link"
+                  size="sm"
+                  className="text-[#2563eb] hover:text-[#1d4ed8] hover:underline p-0 h-auto font-normal text-sm"
+                />
+              )}
+            </div>
             <div className="text-xs flex items-center gap-2">
               {post.company.slogan ? <span>{post.company.slogan}</span> : null}
               {(() => {
@@ -607,59 +621,159 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
           </div>
         ) : null}
       </div>
-      <div className="flex items-center gap-2 border-t border-[var(--border)] p-3">
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant={myReaction === "JOY" ? "default" : "outline"}
-            className={cn("gap-1", myReaction === "JOY" ? "bg-[#fff1f4] text-[#d946ef] border-[#f0abfc]" : undefined)}
-            onClick={() => toggleReaction("JOY")}
-            disabled={reactMutation.isPending}
-          >
-            <span aria-hidden>😍</span>
-            <span>JOY</span>
-            {reactionCounts.JOY > 0 ? <span className="ml-1 tabular-nums">{reactionCounts.JOY}</span> : null}
-          </Button>
-          <Button
-            size="sm"
-            variant={myReaction === "TRUST" ? "default" : "outline"}
-            className={cn("gap-1", myReaction === "TRUST" ? "bg-[#ecfeff] text-[#0891b2] border-[#a5f3fc]" : undefined)}
-            onClick={() => toggleReaction("TRUST")}
-            disabled={reactMutation.isPending}
-          >
-            <span aria-hidden>👍</span>
-            <span>Tin tưởng</span>
-            {reactionCounts.TRUST > 0 ? <span className="ml-1 tabular-nums">{reactionCounts.TRUST}</span> : null}
-          </Button>
-          <Button
-            size="sm"
-            variant={myReaction === "SKEPTIC" ? "default" : "outline"}
-            className={cn("gap-1", myReaction === "SKEPTIC" ? "bg-[#fff7ed] text-[#c2410c] border-[#fed7aa]" : undefined)}
-            onClick={() => toggleReaction("SKEPTIC")}
-            disabled={reactMutation.isPending}
-          >
-            <span aria-hidden>🤔</span>
-            <span>Hoài nghi</span>
-            {reactionCounts.SKEPTIC > 0 ? <span className="ml-1 tabular-nums">{reactionCounts.SKEPTIC}</span> : null}
-          </Button>
+      {/* Reaction summary row */}
+      {(reactionCounts.JOY > 0 || reactionCounts.TRUST > 0 || reactionCounts.SKEPTIC > 0) && (
+        <div className="flex items-center gap-1.5 px-4 py-2 text-xs text-[var(--muted-foreground)]">
+          <div className="flex -space-x-1">
+            {reactionCounts.JOY > 0 && <span className="text-base">😍</span>}
+            {reactionCounts.TRUST > 0 && <span className="text-base">👍</span>}
+            {reactionCounts.SKEPTIC > 0 && <span className="text-base">🤔</span>}
+          </div>
+          <span>{(reactionCounts.JOY + reactionCounts.TRUST + reactionCounts.SKEPTIC).toLocaleString("vi-VN")}</span>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleSave}
-          aria-pressed={isSaved}
-          disabled={saveMutation.isPending}
-          className={cn("gap-1", isSaved ? "border-[var(--brand)] text-[var(--brand)]" : undefined)}
-        >
-          {isSaved ? <BookmarkCheck className="h-4 w-4" /> : <BookmarkPlus className="h-4 w-4" />}
-          {isSaved ? "Đã lưu" : "Lưu bài"}
-        </Button>
-        <Button size="sm" variant="outline" onClick={handleShare}>
-          Chia sẻ
-        </Button>
-        {footerInfo.length ? (
-          <span className="ml-auto text-xs text-[var(--muted-foreground)]">{footerInfo.join(" · ")}</span>
-        ) : null}
+      )}
+      {/* Action buttons row - Facebook style */}
+      <div className="flex items-center border-t border-[var(--border)]">
+        {/* Thích button with hover reactions */}
+        <div className="relative flex-1 group/like">
+          {/* Reaction popup */}
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible group-hover/like:opacity-100 group-hover/like:visible transition-all duration-200 z-50">
+            <div className="flex items-center gap-1 rounded-full bg-white shadow-lg border border-[var(--border)] p-1.5">
+              <button
+                type="button"
+                onClick={() => toggleReaction("TRUST")}
+                disabled={reactMutation.isPending}
+                className={cn(
+                  "flex flex-col items-center justify-center w-10 h-10 rounded-full transition-transform hover:scale-125 hover:bg-blue-50",
+                  myReaction === "TRUST" && "ring-2 ring-blue-400 bg-blue-50"
+                )}
+                title="Tin tưởng"
+              >
+                <span className="text-2xl leading-none">👍</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleReaction("JOY")}
+                disabled={reactMutation.isPending}
+                className={cn(
+                  "flex flex-col items-center justify-center w-10 h-10 rounded-full transition-transform hover:scale-125 hover:bg-pink-50",
+                  myReaction === "JOY" && "ring-2 ring-pink-400 bg-pink-50"
+                )}
+                title="Yêu thích"
+              >
+                <span className="text-2xl leading-none">😍</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleReaction("SKEPTIC")}
+                disabled={reactMutation.isPending}
+                className={cn(
+                  "flex flex-col items-center justify-center w-10 h-10 rounded-full transition-transform hover:scale-125 hover:bg-orange-50",
+                  myReaction === "SKEPTIC" && "ring-2 ring-orange-400 bg-orange-50"
+                )}
+                title="Hoài nghi"
+              >
+                <span className="text-2xl leading-none">🤔</span>
+              </button>
+            </div>
+          </div>
+          {/* Main like button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!user) {
+                openPrompt("like");
+                return;
+              }
+              // Toggle: if has reaction, remove it; else add TRUST (default like)
+              if (myReaction) {
+                toggleReaction(myReaction);
+              } else {
+                toggleReaction("TRUST");
+              }
+            }}
+            disabled={reactMutation.isPending}
+            className={cn(
+              "w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)]",
+              myReaction === "JOY" && "text-[#d946ef]",
+              myReaction === "TRUST" && "text-[#2563eb]",
+              myReaction === "SKEPTIC" && "text-[#ea580c]",
+              !myReaction && "text-[var(--muted-foreground)]"
+            )}
+          >
+            {myReaction === "JOY" ? (
+              <>
+                <span className="text-lg">😍</span>
+                <span>Yêu thích</span>
+              </>
+            ) : myReaction === "TRUST" ? (
+              <>
+                <span className="text-lg">👍</span>
+                <span>Tin tưởng</span>
+              </>
+            ) : myReaction === "SKEPTIC" ? (
+              <>
+                <span className="text-lg">🤔</span>
+                <span>Hoài nghi</span>
+              </>
+            ) : (
+              <>
+                <Heart className="h-5 w-5" />
+                <span>Thích</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Lưu bài */}
+        <div className="flex-1 border-l border-[var(--border)]">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saveMutation.isPending}
+            className={cn(
+              "w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)]",
+              isSaved ? "text-[var(--brand)]" : "text-[var(--muted-foreground)]"
+            )}
+          >
+            {isSaved ? <BookmarkCheck className="h-5 w-5" /> : <BookmarkPlus className="h-5 w-5" />}
+            <span>{isSaved ? "Đã lưu" : "Lưu bài"}</span>
+          </button>
+        </div>
+
+        {/* Trò chuyện */}
+        <div className="flex-1 border-l border-[var(--border)]">
+          <button
+            type="button"
+            onClick={() => {
+              if (!user) {
+                openPrompt("like");
+                return;
+              }
+              setTicketModalOpen(true);
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]"
+          >
+            <MessageCircle className="h-5 w-5" />
+            <span>Trò chuyện</span>
+          </button>
+        </div>
+
+        {/* Chia sẻ */}
+        <div className="flex-1 border-l border-[var(--border)]">
+          <button
+            type="button"
+            onClick={handleShare}
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+            <span>Chia sẻ</span>
+          </button>
+        </div>
       </div>
       {/* Edit Modal */}
       {isEditing ? (
@@ -695,6 +809,20 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
           }}
         />
       ) : null}
+
+      {/* Create Ticket Modal */}
+      <CreateTicketModal
+        open={ticketModalOpen}
+        onOpenChange={setTicketModalOpen}
+        companyId={post.company.id}
+        companyName={post.company.name}
+        onCreated={(ticket) => {
+          setTicketModalOpen(false);
+          toast.success("Đã tạo tin nhắn, chuyển tới trang hội thoại");
+          // Optionally navigate to ticket page
+          // router.push(`/tickets/${ticket.id}`);
+        }}
+      />
     </article>
   );
 }

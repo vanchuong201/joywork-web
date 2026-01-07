@@ -80,6 +80,25 @@ export default function CompanyFollowButton({
   const followerLabel = followers.toLocaleString("vi-VN");
 
   const isOutline = variant === "outline" || variant === "ghost";
+  const isLink = variant === "link";
+
+  // For link variant, render as simple text link (Facebook style)
+  if (isLink) {
+    return (
+      <button
+        type="button"
+        onClick={handleAction}
+        disabled={isSubmitting || loading}
+        className={cn(
+          "text-sm font-normal hover:underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+          isFollowing ? "text-[var(--muted-foreground)]" : "text-[#2563eb] hover:text-[#1d4ed8]",
+          className
+        )}
+      >
+        {isFollowing ? "Đang theo dõi" : "Theo dõi"}
+      </button>
+    );
+  }
 
   return (
     <Button
