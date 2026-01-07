@@ -8,10 +8,14 @@ import { toast } from "sonner";
 import { deleteUploadedObject, uploadCompanyPostImage } from "@/lib/uploads";
 import api from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, X, Loader2, Briefcase, Check } from "lucide-react";
+import { ImagePlus, X, Loader2, Briefcase, Check, ChevronDown, Building2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import HashtagInput from "@/components/shared/HashtagInput";
+import { useAuthStore } from "@/store/useAuth";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -94,11 +98,6 @@ function mediaReducer(state: MediaItem[], action: MediaAction): MediaItem[] {
   }
 }
 
-type Props = {
-  companyId: string;
-  onCreated?: () => void;
-};
-
 async function getImageDimensions(src: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -126,29 +125,47 @@ async function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export default function CompanyPostComposer({ companyId, onCreated }: Props) {
+export default function FeedPostComposer() {
+  const user = useAuthStore((s) => s.user);
+  const memberships = useAuthStore((s) => s.memberships);
+  const router = useRouter();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [content, setContent] = useState("");
   const [mediaItems, dispatch] = useReducer(mediaReducer, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
   const previewUrlsRef = useRef<Set<string>>(new Set());
   const queryClient = useQueryClient();
-  const [jobs, setJobs] = useState<Array<{ id: string; title: string; location?: string | null; isActive: boolean; employmentType: string }>>(
-    [],
-  );
+  const [jobs, setJobs] = useState<Array<{ id: string; title: string; location?: string | null; isActive: boolean; employmentType: string }>>([]);
   const [jobQuery, setJobQuery] = useState("");
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [showJobSelector, setShowJobSelector] = useState(false);
   const [hashtags, setHashtags] = useState<string[]>([]);
 
+  // Auto-select first company if only one
   useEffect(() => {
-    mountedRef.current = true; // ensure true after StrictMode remount in dev
+    if (memberships.length === 1) {
+      setSelectedCompanyId(memberships[0]!.company.id);
+    } else if (memberships.length > 1 && !selectedCompanyId) {
+      // If multiple companies, select first one by default
+      setSelectedCompanyId(memberships[0]!.company.id);
+    }
+  }, [memberships]);
+
+  useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       previewUrlsRef.current.clear();
     };
   }, []);
+
+  const selectedCompany = useMemo(() => {
+    if (!selectedCompanyId) return null;
+    return memberships.find((m) => m.company.id === selectedCompanyId);
+  }, [selectedCompanyId, memberships]);
 
   const pendingUploads = mediaItems.some((item) => item.status === "uploading");
   const hasErrorMedia = mediaItems.some((item) => item.status === "error");
@@ -159,6 +176,10 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
 
   const createPost = useMutation({
     mutationFn: async () => {
+      if (!selectedCompanyId) {
+        throw new Error("Vui lòng chọn công ty");
+      }
+
       const images = mediaItems
         .filter(isUploaded)
         .map((item, index) => ({
@@ -169,14 +190,13 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
           order: index,
         }));
 
-      // Auto generate a simple title if not provided, but UI hides it
       const title = content.slice(0, 50).trim() || "New Post";
 
-      const res = await api.post(`/api/posts/companies/${companyId}/posts`, {
+      const res = await api.post(`/api/posts/companies/${selectedCompanyId}/posts`, {
         title,
         content,
-        type: "STORY", // Default
-        visibility: "PUBLIC", // Default
+        type: "STORY",
+        visibility: "PUBLIC",
         publishNow: true,
         images,
         jobIds: selectedJobIds,
@@ -195,18 +215,18 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
         previewUrlsRef.current.delete(item.previewUrl);
       });
       dispatch({ type: "RESET" });
-      queryClient.invalidateQueries({ queryKey: ["company-posts", companyId] });
+      setIsExpanded(false);
       queryClient.invalidateQueries({ queryKey: ["feed"] });
-      onCreated?.();
+      queryClient.invalidateQueries({ queryKey: ["company-posts"] });
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.error?.message ?? "Đăng bài thất bại";
+      const message = error?.response?.data?.error?.message ?? error?.message ?? "Đăng bài thất bại";
       toast.error(message);
     },
   });
 
   const handleFiles = async (files?: FileList | null) => {
-    if (!files) return;
+    if (!files || !selectedCompanyId) return;
     const availableSlots = MAX_IMAGES - mediaItems.length;
     if (availableSlots <= 0) {
       toast.info("Bạn đã đạt giới hạn 8 ảnh cho một bài viết");
@@ -235,7 +255,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
       try {
         const uploadResult = await fileToBase64(file).then((base64) =>
           uploadCompanyPostImage({
-            companyId,
+            companyId: selectedCompanyId,
             fileName: file.name,
             fileType: file.type,
             fileData: base64,
@@ -246,7 +266,6 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
           type: "SUCCESS",
           payload: { id, key: uploadResult.key, url: uploadResult.assetUrl },
         });
-        // Fetch dimensions in background (best-effort)
         void getImageDimensions(previewUrl)
           .then(({ width, height }) => {
             if (!mountedRef.current) return;
@@ -255,9 +274,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
               payload: { id, key: uploadResult.key, url: uploadResult.assetUrl, width, height },
             });
           })
-          .catch(() => {
-            // ignore dimension errors
-          });
+          .catch(() => {});
       } catch (error: any) {
         const message = error instanceof Error ? error.message : "Tải ảnh thất bại";
         if (!mountedRef.current) return;
@@ -284,22 +301,22 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
 
   const canSubmit = useMemo(() => {
     if (!content.trim()) return false;
+    if (!selectedCompanyId) return false;
     if (pendingUploads || hasErrorMedia) return false;
     return true;
-  }, [content, pendingUploads, hasErrorMedia]);
+  }, [content, selectedCompanyId, pendingUploads, hasErrorMedia]);
 
   const [jobsLoaded, setJobsLoaded] = useState(false);
   const [isFetchingJobs, setIsFetchingJobs] = useState(false);
 
-  // Lazy load company jobs
   useEffect(() => {
-    if (!showJobSelector || jobsLoaded) return;
+    if (!showJobSelector || jobsLoaded || !selectedCompanyId) return;
 
     let cancelled = false;
     setIsFetchingJobs(true);
     (async () => {
       try {
-        const res = await api.get(`/api/jobs`, { params: { companyId, page: 1, limit: 50 } });
+        const res = await api.get(`/api/jobs`, { params: { companyId: selectedCompanyId, page: 1, limit: 50 } });
         if (!cancelled && mountedRef.current) {
           const items =
             (res.data?.data?.jobs as Array<{ id: string; title: string; location?: string | null; isActive: boolean; employmentType: string }>) ??
@@ -318,7 +335,15 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [companyId, showJobSelector, jobsLoaded]);
+  }, [selectedCompanyId, showJobSelector, jobsLoaded]);
+
+  // Reset jobs when company changes
+  useEffect(() => {
+    setJobs([]);
+    setJobsLoaded(false);
+    setSelectedJobIds([]);
+    setShowJobSelector(false);
+  }, [selectedCompanyId]);
 
   const filteredJobs = useMemo(() => {
     const q = jobQuery.trim().toLowerCase();
@@ -329,10 +354,8 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
   const toggleJob = (id: string) => {
     setSelectedJobIds((prev) => {
       if (prev.includes(id)) {
-        // Remove job
         return prev.filter((x) => x !== id);
       } else {
-        // Add job - check limit
         if (prev.length >= 2) {
           toast.error("Chỉ được gắn tối đa 2 việc làm vào bài viết");
           return prev;
@@ -344,6 +367,10 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
 
   const handleSubmit = () => {
     if (!canSubmit) {
+      if (!selectedCompanyId) {
+        toast.error("Vui lòng chọn công ty");
+        return;
+      }
       if (pendingUploads) {
         toast.info("Đang tải ảnh, vui lòng đợi hoàn tất.");
       } else if (hasErrorMedia) {
@@ -358,10 +385,170 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
     createPost.mutate();
   };
 
+  const handleTextareaFocus = () => {
+    if (!user) {
+      toast.info("Vui lòng đăng nhập để đăng bài");
+      return;
+    }
+    if (memberships.length === 0) {
+      toast.info("Bạn cần tham gia công ty để đăng bài");
+      return;
+    }
+    setIsExpanded(true);
+  };
+
+  // Empty state - no companies
+  if (!user) {
+    return null; // Don't show composer for guests
+  }
+
+  if (memberships.length === 0) {
+    return (
+      <Card className="overflow-hidden border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-[var(--muted)] flex items-center justify-center">
+              <Building2 className="w-8 h-8 text-[var(--muted-foreground)]" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-[var(--foreground)] mb-1">
+                Bạn chưa phải thành viên của công ty nào
+              </h3>
+              <p className="text-sm text-[var(--muted-foreground)] mb-4">
+                Tạo công ty mới để bắt đầu đăng bài và chia sẻ hoạt động của doanh nghiệp.
+              </p>
+            </div>
+            <Button asChild>
+              <Link href="/companies/new">
+                <Plus className="w-4 h-4 mr-2" />
+                Tạo công ty mới
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Collapsed state
+  if (!isExpanded) {
+    return (
+      <Card className="overflow-hidden border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            {selectedCompany?.company.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={selectedCompany.company.logoUrl}
+                alt={selectedCompany.company.name}
+                className="h-10 w-10 rounded-full object-cover border border-[var(--border)]"
+              />
+            ) : user.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.avatar}
+                alt={user.name || "User"}
+                className="h-10 w-10 rounded-full object-cover border border-[var(--border)]"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-[var(--muted)] flex items-center justify-center text-sm font-semibold text-[var(--muted-foreground)]">
+                {(selectedCompany?.company.name || user.name || "U")[0]?.toUpperCase()}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={handleTextareaFocus}
+              className="flex-1 text-left px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--muted-foreground)] hover:border-[var(--brand)]/50 hover:bg-[var(--muted)]/30 transition-colors"
+            >
+              Bạn đang nghĩ gì?
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Expanded state
   return (
     <Card className="overflow-hidden border border-[var(--border)] bg-[var(--card)] shadow-sm">
       <CardContent className="p-4">
         <div className="space-y-4">
+          {/* Company Selector */}
+          {memberships.length > 1 && (
+            <div className="flex items-center gap-2 pb-2 border-b border-[var(--border)]">
+              <span className="text-xs text-[var(--muted-foreground)]">Đăng với tư cách:</span>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--muted)] transition-colors text-sm"
+                  >
+                    {selectedCompany?.company.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={selectedCompany.company.logoUrl}
+                        alt={selectedCompany.company.name}
+                        className="h-5 w-5 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-5 w-5 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold">
+                        {selectedCompany?.company.name[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <span className="font-medium">{selectedCompany?.company.name}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--brand)]/10 text-[var(--brand)]">
+                      {selectedCompany?.role}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-[var(--muted-foreground)]" />
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    className="min-w-[200px] rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg p-1 z-50"
+                    align="start"
+                  >
+                    {memberships.map((membership) => (
+                      <DropdownMenu.Item
+                        key={membership.company.id}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors",
+                          selectedCompanyId === membership.company.id
+                            ? "bg-[var(--brand)]/10 text-[var(--brand)]"
+                            : "hover:bg-[var(--muted)] text-[var(--foreground)]"
+                        )}
+                        onSelect={() => setSelectedCompanyId(membership.company.id)}
+                      >
+                        {membership.company.logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={membership.company.logoUrl}
+                            alt={membership.company.name}
+                            className="h-6 w-6 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-6 w-6 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold">
+                            {membership.company.name[0]?.toUpperCase()}
+                          </div>
+                        )}
+                        <span className="flex-1 font-medium truncate">{membership.company.name}</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--muted)] text-[var(--muted-foreground)]">
+                          {membership.role}
+                        </span>
+                      </DropdownMenu.Item>
+                    ))}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            </div>
+          )}
+
+          {/* Auto-select if only one company */}
+          {memberships.length === 1 && !selectedCompanyId && (
+            <div className="text-xs text-[var(--muted-foreground)] pb-2 border-b border-[var(--border)]">
+              Đăng với tư cách: <span className="font-medium text-[var(--foreground)]">{memberships[0]!.company.name}</span>
+            </div>
+          )}
+
           <Textarea
             placeholder="Chia sẻ hoạt động mới..."
             rows={3}
@@ -369,6 +556,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
             onChange={(e) => setContent(e.target.value)}
             maxLength={5000}
             className="min-h-[80px] resize-none border-none bg-transparent px-0 py-0 text-base focus-visible:ring-0"
+            autoFocus
           />
 
           {mediaItems.length > 0 && (
@@ -386,21 +574,21 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                     className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition hover:bg-black/80 group-hover:opacity-100"
                     onClick={() => void handleRemoveMedia(item.id)}
                     aria-label="Xóa ảnh"
-            >
+                  >
                     <X className="h-3 w-3" />
                   </button>
                   {item.status === "uploading" && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                       <Loader2 className="h-5 w-5 animate-spin text-white" />
-          </div>
+                    </div>
                   )}
                   {item.status === "error" && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 p-2 text-center text-[10px] text-white">
                       <span className="mb-1">Lỗi</span>
                       <span className="line-clamp-2">{item.errorMessage}</span>
-          </div>
+                    </div>
                   )}
-        </div>
+                </div>
               ))}
             </div>
           )}
@@ -444,26 +632,26 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
             </div>
           )}
 
-          {/* Job Selector - Improved UI */}
-          {showJobSelector && (
+          {/* Job Selector */}
+          {showJobSelector && selectedCompanyId && (
             <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-               <div className="flex items-center gap-1 border-b border-[var(--border)] bg-[var(--muted)]/50 p-2">
-                  <Input
-                    value={jobQuery}
-                    onChange={(e) => setJobQuery(e.target.value)}
-                    placeholder="Tìm kiếm công việc..."
-                    className="h-8 flex-1 border-none bg-transparent focus-visible:ring-0 px-2 shadow-none"
-                    autoFocus
-                  />
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => setShowJobSelector(false)}
-                    className="h-7 px-3 text-xs font-medium hover:bg-[var(--background)] hover:text-[var(--foreground)] text-[var(--muted-foreground)]"
-                  >
-                    Xong
-                  </Button>
-               </div>
+              <div className="flex items-center gap-1 border-b border-[var(--border)] bg-[var(--muted)]/50 p-2">
+                <Input
+                  value={jobQuery}
+                  onChange={(e) => setJobQuery(e.target.value)}
+                  placeholder="Tìm kiếm công việc..."
+                  className="h-8 flex-1 border-none bg-transparent focus-visible:ring-0 px-2 shadow-none"
+                  autoFocus
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowJobSelector(false)}
+                  className="h-7 px-3 text-xs font-medium hover:bg-[var(--background)] hover:text-[var(--foreground)] text-[var(--muted-foreground)]"
+                >
+                  Xong
+                </Button>
+              </div>
               <div className="max-h-56 overflow-auto bg-[var(--background)] p-1">
                 {isFetchingJobs ? (
                   <div className="flex items-center justify-center py-6 text-[var(--muted-foreground)]">
@@ -488,16 +676,16 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                           <div className="flex flex-col min-w-0">
                             <span className="font-medium truncate">{job.title}</span>
                             <div className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]/80">
-                               <span className={cn("inline-block w-1.5 h-1.5 rounded-full", job.isActive ? "bg-emerald-500" : "bg-gray-300")} />
-                               <span>{job.isActive ? "Đang mở" : "Đã đóng"}</span>
-                               <span>·</span>
-                               <span>{job.employmentType}</span>
-                               {job.location && (
+                              <span className={cn("inline-block w-1.5 h-1.5 rounded-full", job.isActive ? "bg-emerald-500" : "bg-gray-300")} />
+                              <span>{job.isActive ? "Đang mở" : "Đã đóng"}</span>
+                              <span>·</span>
+                              <span>{job.employmentType}</span>
+                              {job.location && (
                                 <>
-                                   <span>·</span>
-                                   <span className="truncate">{job.location}</span>
+                                  <span>·</span>
+                                  <span className="truncate">{job.location}</span>
                                 </>
-                               )}
+                              )}
                             </div>
                           </div>
                           {checked && <Check className="h-4 w-4 shrink-0 text-[var(--brand)]" />}
@@ -532,7 +720,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                 variant="ghost"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={mediaItems.length >= MAX_IMAGES || createPost.isPending}
+                disabled={!selectedCompanyId || mediaItems.length >= MAX_IMAGES || createPost.isPending}
                 className="h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               >
                 <ImagePlus className="h-4 w-4" />
@@ -543,7 +731,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowJobSelector((prev) => !prev)}
-                disabled={selectedJobIds.length >= 2 && !showJobSelector}
+                disabled={!selectedCompanyId || (selectedJobIds.length >= 2 && !showJobSelector)}
                 className={cn(
                   "h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]",
                   (showJobSelector || selectedJobIds.length > 0) && "text-[var(--brand)] bg-[var(--brand)]/10 hover:bg-[var(--brand)]/20",
@@ -559,11 +747,26 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                   )}
                 </span>
               </Button>
-        </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsExpanded(false);
+                  setContent("");
+                  setSelectedJobIds([]);
+                  setHashtags([]);
+                  dispatch({ type: "RESET" });
+                }}
+                className="h-8 px-2 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              >
+                Hủy
+              </Button>
+            </div>
 
-          <Button
-            type="button"
-              onClick={handleSubmit} 
+            <Button
+              type="button"
+              onClick={handleSubmit}
               disabled={!canSubmit || createPost.isPending}
               size="sm"
               className="h-8 px-4"
@@ -576,10 +779,11 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
               ) : (
                 "Đăng tin"
               )}
-          </Button>
+            </Button>
           </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+

@@ -222,7 +222,7 @@ export default function CompanyMembersList({ companyId, members, invitations = [
                            // Actions on others
                            <>
                         <div className="py-1">
-                          {member.role === "MEMBER" && (
+                          {member.role === "MEMBER" && currentUserRole === "OWNER" && (
                             <Menu.Item>
                               {({ active }) => (
                                 <button

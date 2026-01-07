@@ -12,6 +12,7 @@ import EmptyState from "@/components/ui/empty-state";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CompanySearch from "@/components/feed/CompanySearch";
 import PostCard, { type PostCardData } from "@/components/feed/PostCard";
+import FeedPostComposer from "@/components/feed/FeedPostComposer";
 import { useEffect, useMemo, useState } from "react";
 import useInView from "@/hooks/useInView";
 import { toast } from "sonner";
@@ -92,6 +93,9 @@ function FeedPageContent() {
 
   return (
     <div className="space-y-4">
+      {/* Post Composer */}
+      <FeedPostComposer />
+
       <div className="sticky top-[64px] z-10 -mx-2 bg-[var(--background)]/80 px-2 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/60">
         <div className="flex items-center justify-between py-2">
           <Tabs
