@@ -76,6 +76,7 @@ export default function Header() {
               src="/JW-mid.png"
               alt="JoyWork Logo"
               fill
+              sizes="128px"
               className="object-contain"
               priority
             />

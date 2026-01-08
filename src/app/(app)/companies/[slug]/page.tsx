@@ -192,7 +192,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
                             <div key={member.id} className="bg-[var(--card)] p-6 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-4">
                                 <div className="w-16 h-16 relative rounded-full overflow-hidden bg-[var(--muted)] border border-[var(--border)] flex-shrink-0">
                                     {member.user.avatar ? (
-                                        <Image src={member.user.avatar} alt={member.user.name || "Member"} fill className="object-cover" />
+                                        <Image src={member.user.avatar} alt={member.user.name || "Member"} fill sizes="64px" className="object-cover" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-[var(--muted-foreground)] font-bold text-xl">
                                             {(member.user.name || member.user.email).charAt(0).toUpperCase()}

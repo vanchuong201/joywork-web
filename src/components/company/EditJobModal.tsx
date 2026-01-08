@@ -256,6 +256,42 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     }
   };
 
+  const translateEmploymentType = (t: (typeof employmentTypes)[number]) => {
+    switch (t) {
+      case "FULL_TIME":
+        return "Toàn thời gian";
+      case "PART_TIME":
+        return "Bán thời gian";
+      case "CONTRACT":
+        return "Hợp đồng";
+      case "INTERNSHIP":
+        return "Thực tập";
+      case "FREELANCE":
+        return "Tự do";
+      default:
+        return t;
+    }
+  };
+
+  const translateExperienceLevel = (l: (typeof experienceLevels)[number]) => {
+    switch (l) {
+      case "ENTRY":
+        return "Mới tốt nghiệp";
+      case "JUNIOR":
+        return "Nhân viên";
+      case "MID":
+        return "Chuyên viên";
+      case "SENIOR":
+        return "Chuyên viên cao cấp";
+      case "LEAD":
+        return "Trưởng nhóm";
+      case "EXECUTIVE":
+        return "Điều hành";
+      default:
+        return l;
+    }
+  };
+
   return (
     <Dialog open={open} onClose={handleClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
@@ -327,7 +363,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                   >
                     {employmentTypes.map((t) => (
                       <option key={t} value={t}>
-                        {t === "FULL_TIME" ? "Toàn thời gian" : t === "PART_TIME" ? "Bán thời gian" : t === "CONTRACT" ? "Hợp đồng" : t === "INTERNSHIP" ? "Thực tập" : t === "FREELANCE" ? "Tự do" : t}
+                        {translateEmploymentType(t)}
                       </option>
                     ))}
                   </select>
@@ -339,7 +375,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                   >
                     {experienceLevels.map((l) => (
                       <option key={l} value={l}>
-                        {l === "ENTRY" ? "Mới tốt nghiệp" : l === "JUNIOR" ? "Junior" : l === "MID" ? "Mid" : l === "SENIOR" ? "Senior" : l === "LEAD" ? "Lead" : l === "EXECUTIVE" ? "Executive" : l}
+                        {translateExperienceLevel(l)}
                       </option>
                     ))}
                   </select>

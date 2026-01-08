@@ -107,6 +107,7 @@ function RegisterPageContent() {
                 src="/JW-mid.png"
                 alt="JoyWork Logo"
                 fill
+                sizes="192px"
                 className="object-contain"
                 priority
               />
@@ -250,6 +251,7 @@ export default function RegisterPage() {
                   src="/JW-mid.png"
                   alt="JoyWork Logo"
                   fill
+                  sizes="192px"
                   className="object-contain"
                   priority
                 />

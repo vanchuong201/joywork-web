@@ -92,7 +92,7 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
                         </div>
                         {companyLogoUrl && (
                           <div className="w-12 h-12 relative bg-[var(--card)] rounded-lg border border-[var(--border)] p-1 flex-shrink-0">
-                            <Image src={companyLogoUrl} alt={companyName} fill className="object-contain p-1" />
+                            <Image src={companyLogoUrl} alt={companyName} fill sizes="48px" className="object-contain p-1" />
                           </div>
                         )}
                       </div>
@@ -129,7 +129,7 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
                     </h4>
                     {companyLogoUrl && (
                       <div className="w-10 h-10 relative bg-[var(--card)] rounded-lg border border-[var(--border)] p-1 flex-shrink-0">
-                        <Image src={companyLogoUrl} alt={companyName} fill className="object-contain p-1" />
+                        <Image src={companyLogoUrl} alt={companyName} fill sizes="40px" className="object-contain p-1" />
                       </div>
                     )}
                   </div>

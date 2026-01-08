@@ -92,6 +92,7 @@ function ForgotPasswordContent() {
                 src="/JW-mid.png"
                 alt="JoyWork Logo"
                 fill
+                sizes="192px"
                 className="object-contain"
                 priority
               />
@@ -159,6 +160,7 @@ export default function ForgotPasswordPage() {
                     src="/JW-mid.png"
                     alt="JoyWork Logo"
                     fill
+                    sizes="192px"
                     className="object-contain"
                     priority
                   />

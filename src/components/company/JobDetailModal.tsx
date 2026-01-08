@@ -143,15 +143,15 @@ function translateExperienceLevel(level?: string) {
     case "ENTRY":
       return "Mới tốt nghiệp";
     case "JUNIOR":
-      return "Junior";
+      return "Nhân viên";
     case "MID":
-      return "Mid";
+      return "Chuyên viên";
     case "SENIOR":
-      return "Senior";
+      return "Chuyên viên cao cấp";
     case "LEAD":
-      return "Lead";
+      return "Trưởng nhóm";
     case "EXECUTIVE":
-      return "Executive";
+      return "Điều hành";
     default:
       return level ?? "";
   }

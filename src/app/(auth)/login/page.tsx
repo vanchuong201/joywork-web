@@ -177,6 +177,7 @@ function LoginPageContent() {
                 src="/JW-mid.png"
                 alt="JoyWork Logo"
                 fill
+                sizes="192px"
                 className="object-contain"
                 priority
               />
@@ -321,6 +322,7 @@ export default function LoginPage() {
                   src="/JW-mid.png"
                   alt="JoyWork Logo"
                   fill
+                  sizes="192px"
                   className="object-contain"
                   priority
                 />

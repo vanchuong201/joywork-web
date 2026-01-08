@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { deleteUploadedObject, uploadCompanyPostImage } from "@/lib/uploads";
 import api from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, X, Loader2, Briefcase, Check, ChevronDown, Building2, Plus } from "lucide-react";
+import { ImagePlus, X, Loader2, Briefcase, Check, ChevronDown, Building2, Plus, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import HashtagInput from "@/components/shared/HashtagInput";
@@ -16,6 +16,7 @@ import { useAuthStore } from "@/store/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import PostPreviewModal from "@/components/feed/PostPreviewModal";
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -142,6 +143,7 @@ export default function FeedPostComposer() {
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [showJobSelector, setShowJobSelector] = useState(false);
   const [hashtags, setHashtags] = useState<string[]>([]);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
   // Auto-select first company if only one
   useEffect(() => {
@@ -751,6 +753,18 @@ export default function FeedPostComposer() {
                 type="button"
                 variant="ghost"
                 size="sm"
+                onClick={() => setPreviewModalOpen(true)}
+                disabled={!selectedCompanyId || (!content.trim() && mediaItems.length === 0)}
+                className="h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                title="Xem trước bài đăng"
+              >
+                <Eye className="h-4 w-4" />
+                <span className="text-xs font-medium">Xem trước</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setIsExpanded(false);
                   setContent("");
@@ -783,6 +797,27 @@ export default function FeedPostComposer() {
           </div>
         </div>
       </CardContent>
+
+      {/* Preview Modal */}
+      {selectedCompany && (
+        <PostPreviewModal
+          open={previewModalOpen}
+          onOpenChange={setPreviewModalOpen}
+          previewData={{
+            content,
+            mediaItems,
+            hashtags,
+            selectedJobIds,
+            jobs,
+            company: {
+              id: selectedCompany.company.id,
+              name: selectedCompany.company.name,
+              slug: selectedCompany.company.slug,
+              logoUrl: selectedCompany.company.logoUrl,
+            },
+          }}
+        />
+      )}
     </Card>
   );
 }

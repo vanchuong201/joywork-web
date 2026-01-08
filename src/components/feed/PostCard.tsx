@@ -281,11 +281,91 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
         await api.delete(`/api/posts/${post.id}/favorite`);
       }
     },
-    onSuccess: () => {
-      // Invalidate any list/detail caches
-      qc.invalidateQueries({ queryKey: ["feed"] });
-      qc.invalidateQueries({ queryKey: ["company-posts"] });
-      qc.invalidateQueries({ queryKey: ["post"] });
+    onSuccess: (_, nextSaved) => {
+      // Update all feed queries (with any params) directly without refetching
+      qc.setQueriesData(
+        { queryKey: ["feed"], exact: false },
+        (oldData: any) => {
+          if (!oldData || !oldData.pages) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              posts: (page.posts || []).map((p: PostCardData) =>
+                p.id === post.id ? { ...p, isSaved: nextSaved } : p
+              ),
+            })),
+          };
+        }
+      );
+
+      // Update company-posts cache (all variants)
+      qc.setQueriesData(
+        { queryKey: ["company-posts"], exact: false },
+        (oldData: any) => {
+          if (!oldData || !oldData.pages) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              posts: (page.posts || []).map((p: PostCardData) =>
+                p.id === post.id ? { ...p, isSaved: nextSaved } : p
+              ),
+            })),
+          };
+        }
+      );
+
+      // Update company-posts-feed cache
+      qc.setQueriesData(
+        { queryKey: ["company-posts-feed"], exact: false },
+        (oldData: any) => {
+          if (!oldData || !oldData.pages) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              posts: (page.posts || []).map((p: PostCardData) =>
+                p.id === post.id ? { ...p, isSaved: nextSaved } : p
+              ),
+            })),
+          };
+        }
+      );
+
+      // Update tag-feed cache
+      qc.setQueriesData(
+        { queryKey: ["tag-feed"], exact: false },
+        (oldData: any) => {
+          if (!oldData || !oldData.pages) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              posts: (page.posts || []).map((p: PostCardData) =>
+                p.id === post.id ? { ...p, isSaved: nextSaved } : p
+              ),
+            })),
+          };
+        }
+      );
+
+      // Update single post cache
+      qc.setQueriesData<{ data: { post: PostCardData } }>(
+        { queryKey: ["post", post.id] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            data: {
+              ...oldData.data,
+              post: { ...oldData.data.post, isSaved: nextSaved },
+            },
+          };
+        }
+      );
+
+      // Only invalidate saved-posts to refresh the saved list
       qc.invalidateQueries({ queryKey: ["saved-posts"] });
     },
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Không thể lưu bài viết"),

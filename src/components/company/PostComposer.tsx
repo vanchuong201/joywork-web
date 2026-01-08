@@ -8,10 +8,12 @@ import { toast } from "sonner";
 import { deleteUploadedObject, uploadCompanyPostImage } from "@/lib/uploads";
 import api from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, X, Loader2, Briefcase, Check } from "lucide-react";
+import { ImagePlus, X, Loader2, Briefcase, Check, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import HashtagInput from "@/components/shared/HashtagInput";
+import PostPreviewModal from "@/components/feed/PostPreviewModal";
+import { useQuery } from "@tanstack/react-query";
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -140,6 +142,25 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [showJobSelector, setShowJobSelector] = useState(false);
   const [hashtags, setHashtags] = useState<string[]>([]);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+
+  // Fetch company info for preview (companyId might be slug, try by-id endpoint first)
+  const { data: company } = useQuery({
+    queryKey: ["company-for-preview", companyId],
+    queryFn: async () => {
+      try {
+        // Try by-id endpoint first
+        const res = await api.get(`/api/companies/by-id/${companyId}`);
+        return res.data.data.company as { id: string; name: string; slug: string; logoUrl?: string | null };
+      } catch {
+        // Fallback to slug endpoint
+        const res = await api.get(`/api/companies/${companyId}`);
+        return res.data.data.company as { id: string; name: string; slug: string; logoUrl?: string | null };
+      }
+    },
+    enabled: Boolean(companyId),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
   useEffect(() => {
     mountedRef.current = true; // ensure true after StrictMode remount in dev
@@ -559,6 +580,18 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                   )}
                 </span>
               </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setPreviewModalOpen(true)}
+                disabled={!content.trim() && mediaItems.length === 0}
+                className="h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                title="Xem trước bài đăng"
+              >
+                <Eye className="h-4 w-4" />
+                <span className="text-xs font-medium">Xem trước</span>
+              </Button>
         </div>
 
           <Button
@@ -580,6 +613,22 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
           </div>
         </div>
       </CardContent>
+
+      {/* Preview Modal */}
+      {company && (
+        <PostPreviewModal
+          open={previewModalOpen}
+          onOpenChange={setPreviewModalOpen}
+          previewData={{
+            content,
+            mediaItems,
+            hashtags,
+            selectedJobIds,
+            jobs,
+            company,
+          }}
+        />
+      )}
     </Card>
   );
 }

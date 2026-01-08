@@ -231,15 +231,22 @@ export default function LeftNav() {
     );
   }
 
-  const companyItems: CompanyNavItem[] = memberships.map((membership) => {
-    // Tất cả member đều có thể truy cập trang quản lý
-    return {
-    icon: Building2,
-    label: membership.company.name,
-    href: `/companies/${membership.company.slug}`,
-      manageHref: `/companies/${membership.company.slug}/manage`,
-    };
-  });
+  const companyItems: CompanyNavItem[] = memberships
+    .filter((membership) => {
+      // Filter out companies without valid slug
+      const slug = membership.company.slug;
+      return slug && typeof slug === 'string' && slug.trim() !== '' && !slug.includes('[') && !slug.includes(']');
+    })
+    .map((membership) => {
+      // Tất cả member đều có thể truy cập trang quản lý
+      const slug = membership.company.slug!; // Safe to use ! here because we filtered above
+      return {
+        icon: Building2,
+        label: membership.company.name,
+        href: `/companies/${slug}`,
+        manageHref: `/companies/${slug}/manage`,
+      };
+    });
 
   return (
     <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">

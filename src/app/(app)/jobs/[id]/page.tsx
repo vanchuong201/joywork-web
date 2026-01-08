@@ -12,6 +12,7 @@ import JobSaveButton from "@/components/jobs/JobSaveButton";
 import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
+import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -67,12 +68,21 @@ export default function JobDetailPage() {
   return (
     <Card className="space-y-6">
       <CardHeader className="space-y-2">
-        <div className="text-sm text-[var(--muted-foreground)]">
+        <div className="flex items-center gap-2 flex-wrap">
           <CompanyHoverCard companyId={job.company.id} slug={job.company.slug} companyName={job.company.name}>
-          <Link href={`/companies/${job.company.slug}`} className="font-medium hover:text-[var(--brand)]">
-            {job.company.name}
-          </Link>
+            <Link href={`/companies/${job.company.slug}`} className="text-base font-semibold text-[var(--foreground)] hover:text-[var(--brand)] hover:underline">
+              {job.company.name}
+            </Link>
           </CompanyHoverCard>
+          {user && (
+            <CompanyFollowButton
+              companyId={job.company.id}
+              companySlug={job.company.slug}
+              variant="link"
+              size="sm"
+              className="text-[#2563eb] hover:text-[#1d4ed8] hover:underline p-0 h-auto font-normal text-sm"
+            />
+          )}
         </div>
         <h1 className="text-2xl font-semibold text-[var(--foreground)]">{job.title}</h1>
         <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
@@ -89,9 +99,9 @@ export default function JobDetailPage() {
         <section className="grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--card)]/60 p-4 text-sm text-[var(--muted-foreground)]">
           <InfoRow label="Mức lương" value={salary} />
           <InfoRow label="Hạn nộp" value={deadline} />
-          <InfoRow label="Hình thức" value={job.employmentType} />
-          <InfoRow label="Cấp độ" value={job.experienceLevel} />
-          <InfoRow label="Địa điểm" value={job.remote ? "Remote" : job.location ?? "Không ghi rõ"} />
+          <InfoRow label="Hình thức" value={translateEmploymentType(job.employmentType)} />
+          <InfoRow label="Cấp độ" value={translateExperienceLevel(job.experienceLevel)} />
+          <InfoRow label="Địa điểm" value={job.remote ? "Làm việc từ xa" : job.location ?? "Không ghi rõ"} />
           {job.tags?.length ? <InfoRow label="Kỹ năng" value={job.tags.join(", ")} /> : null}
         </section>
 
@@ -126,7 +136,7 @@ export default function JobDetailPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--muted)]/20 p-4 text-sm text-[var(--muted-foreground)]">
           <div>
             <p className="font-medium text-[var(--foreground)]">Quan tâm đến vị trí này?</p>
-            <p>Nhấn Apply để gửi hồ sơ cho {job.company.name}.</p>
+            <p>Nhấn vào <strong>Ứng tuyển ngay</strong> để gửi hồ sơ cho {job.company.name}.</p>
           </div>
           <div className="flex items-center gap-2">
             <JobSaveButton jobId={job.id} />
@@ -162,15 +172,15 @@ function translateExperienceLevel(level?: string) {
     case "ENTRY":
       return "Mới tốt nghiệp";
     case "JUNIOR":
-      return "Junior";
+      return "Nhân viên";
     case "MID":
-      return "Mid";
+      return "Chuyên viên";
     case "SENIOR":
-      return "Senior";
+      return "Chuyên viên cao cấp";
     case "LEAD":
-      return "Lead";
+      return "Trưởng nhóm";
     case "EXECUTIVE":
-      return "Executive";
+      return "Điều hành";
     default:
       return level ?? "";
   }

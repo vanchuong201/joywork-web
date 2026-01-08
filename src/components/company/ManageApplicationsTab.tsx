@@ -298,6 +298,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                               src={avatar}
                               alt={userName}
                               fill
+                              sizes="64px"
                               className="object-cover"
                             />
                           ) : (

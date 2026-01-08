@@ -65,13 +65,13 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
              <div className="h-4 w-px bg-[var(--border)]" />
              <span className="font-bold text-[var(--foreground)]">Trang quản trị</span>
         </div>
-         <div className="flex items-center gap-2">
+         {/* <div className="flex items-center gap-2">
              <Button variant="outline" size="sm" asChild>
                  <Link href={`/companies/${company.slug}/settings`}>
-                     <Settings className="w-4 h-4 mr-2" /> Cài đặt
+                     <Settings className="w-4 h-4 mr-2" /> Cài đặt---
                  </Link>
             </Button>
-          </div>
+          </div> */}
       </div>
 
       {/* Hero Section (Read-only view for context, editing via Settings or specific Edit Hero modal later) */}
