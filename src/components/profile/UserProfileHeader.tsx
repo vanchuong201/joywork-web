@@ -12,9 +12,9 @@ interface UserProfileHeaderProps {
 }
 
 const statusLabels: Record<string, string> = {
-  OPEN_TO_WORK: 'Open to Work',
-  NOT_AVAILABLE: 'Not Available',
-  LOOKING: 'Looking',
+  OPEN_TO_WORK: 'Đang tìm việc',
+  NOT_AVAILABLE: 'Không có sẵn',
+  LOOKING: 'Đang tìm kiếm',
 };
 
 export default function UserProfileHeader({ profile }: UserProfileHeaderProps) {

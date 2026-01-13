@@ -1043,8 +1043,18 @@ function EditPostModal({
     setImages(next.map((img, i) => ({ ...img, order: i })));
   };
 
-  const toggleJob = (id: string) =>
-    setJobIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const toggleJob = (id: string) => {
+    setJobIds((prev) => {
+      if (prev.includes(id)) {
+        // Remove job
+        return prev.filter((x) => x !== id);
+      } else {
+        // Add job - but only if under limit
+        if (prev.length >= 2) return prev;
+        return [...prev, id];
+      }
+    });
+  };
 
   const modalContent = (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40">
@@ -1099,13 +1109,21 @@ function EditPostModal({
           {/* Jobs */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-[var(--foreground)]">Việc làm đính kèm</span>
+              <span className="text-sm font-medium text-[var(--foreground)]">
+                Việc làm đính kèm {jobIds.length > 0 && <span className="text-[var(--muted-foreground)]">({jobIds.length}/2)</span>}
+              </span>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowJobSelector(!showJobSelector)}
-                className="h-6 gap-1 px-2 text-xs text-[var(--brand)] hover:bg-[var(--brand)]/10"
+                disabled={jobIds.length >= 2 && !showJobSelector}
+                className={cn(
+                  "h-6 gap-1 px-2 text-xs text-[var(--brand)] hover:bg-[var(--brand)]/10",
+                  (showJobSelector || jobIds.length > 0) && "bg-[var(--brand)]/10 hover:bg-[var(--brand)]/20",
+                  jobIds.length >= 2 && !showJobSelector && "opacity-50 cursor-not-allowed"
+                )}
+                title={jobIds.length >= 2 && !showJobSelector ? "Đã đạt giới hạn tối đa 2 việc làm" : undefined}
               >
                 <Briefcase className="h-3 w-3" />
                 {showJobSelector ? "Đóng danh sách" : "Thêm/Xóa việc làm"}
@@ -1156,14 +1174,16 @@ function EditPostModal({
                         <ul className="divide-y divide-[var(--border)]">
                         {availableJobs.map((j) => {
                             const checked = jobIds.includes(j.id);
+                            const isDisabled = !checked && jobIds.length >= 2;
                             return (
                             <li 
                                 key={j.id} 
                                 className={cn(
                                     "group flex cursor-pointer items-center justify-between gap-3 px-3 py-2.5 transition-colors text-sm",
-                                    checked ? "bg-[var(--brand)]/5 text-[var(--brand)]" : "hover:bg-[var(--muted)] text-[var(--foreground)]"
+                                    checked ? "bg-[var(--brand)]/5 text-[var(--brand)]" : "hover:bg-[var(--muted)] text-[var(--foreground)]",
+                                    isDisabled && "opacity-50 cursor-not-allowed"
                                 )}
-                                onClick={() => toggleJob(j.id)}
+                                onClick={() => !isDisabled && toggleJob(j.id)}
                             >
                                 <div className="flex flex-col min-w-0">
                                     <span className="font-medium truncate">{j.title}</span>

@@ -846,12 +846,152 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     }
   };
 
+  // Helper function to get sample data for a section if no real data exists
+  const getSampleDataIfNeeded = (section: string, initialData: any): any => {
+    if (!initialData) return {};
+    
+    // Check if section has real data, if not, fill with sample data
+    switch (section) {
+      case 'stats':
+        if (!initialData.stats || initialData.stats.length === 0) {
+          return { ...initialData, stats: SAMPLE_STATS };
+        }
+        break;
+      case 'products':
+        if (!initialData.products || initialData.products.length === 0) {
+          return { ...initialData, products: SAMPLE_PRODUCTS };
+        }
+        break;
+      case 'recruitmentPrinciples':
+        if (!initialData.recruitmentPrinciples || initialData.recruitmentPrinciples.length === 0) {
+          return { ...initialData, recruitmentPrinciples: SAMPLE_RECRUITMENT_PRINCIPLES };
+        }
+        break;
+      case 'benefits':
+        const hasFinancial = initialData.benefits?.financial && initialData.benefits.financial.length > 0;
+        const hasNonFinancial = initialData.benefits?.nonFinancial && initialData.benefits.nonFinancial.length > 0;
+        if (!hasFinancial && !hasNonFinancial) {
+          return { ...initialData, benefits: SAMPLE_BENEFITS };
+        }
+        break;
+      case 'hrJourney':
+        if (!initialData.hrJourney || initialData.hrJourney.length === 0) {
+          return { ...initialData, hrJourney: SAMPLE_HR_JOURNEY };
+        }
+        break;
+      case 'careerPath':
+        if (!initialData.careerPath || initialData.careerPath.length === 0) {
+          return { ...initialData, careerPath: SAMPLE_CAREER_PATH };
+        }
+        break;
+      case 'salaryAndBonus':
+        const hasSalary = initialData.salaryAndBonus?.salary && initialData.salaryAndBonus.salary.length > 0;
+        const hasBonus = initialData.salaryAndBonus?.bonus && initialData.salaryAndBonus.bonus.length > 0;
+        if (!hasSalary && !hasBonus) {
+          return { ...initialData, salaryAndBonus: SAMPLE_SALARY_AND_BONUS };
+        }
+        break;
+      case 'training':
+        const hasTrainingDesc = initialData.training?.description;
+        const hasTrainingBudget = initialData.training?.budget;
+        const hasTrainingPrograms = initialData.training?.programs && initialData.training.programs.length > 0;
+        if (!hasTrainingDesc && !hasTrainingBudget && !hasTrainingPrograms) {
+          return { ...initialData, training: SAMPLE_TRAINING };
+        }
+        break;
+      case 'leaders':
+        if (!initialData.leaders || initialData.leaders.length === 0) {
+          return { ...initialData, leaders: SAMPLE_LEADERS };
+        }
+        break;
+      case 'culture-typical-day':
+        if (!initialData.culture?.typicalDay || initialData.culture.typicalDay.length === 0) {
+          return { 
+            ...initialData, 
+            culture: { 
+              ...initialData.culture, 
+              typicalDay: SAMPLE_TYPICAL_DAY 
+            } 
+          };
+        }
+        break;
+      case 'awards':
+        if (!initialData.awards || initialData.awards.length === 0) {
+          return { ...initialData, awards: SAMPLE_AWARDS };
+        }
+        break;
+      case 'story-founder':
+        if (!initialData.story?.founderStory?.title) {
+          return { 
+            ...initialData, 
+            story: { 
+              ...initialData.story, 
+              founderStory: SAMPLE_FOUNDER_STORY 
+            } 
+          };
+        }
+        break;
+      case 'story-milestones':
+        if (!initialData.story?.milestones || initialData.story.milestones.length === 0) {
+          return { 
+            ...initialData, 
+            story: { 
+              ...initialData.story, 
+              milestones: SAMPLE_MILESTONES 
+            } 
+          };
+        }
+        break;
+      case 'culture-testimonials':
+        if (!initialData.culture?.testimonials || initialData.culture.testimonials.length === 0) {
+          return { 
+            ...initialData, 
+            culture: { 
+              ...initialData.culture, 
+              testimonials: SAMPLE_TESTIMONIALS 
+            } 
+          };
+        }
+        break;
+      case 'leadershipPhilosophy':
+        if (!initialData.leadershipPhilosophy || 
+            (!initialData.leadershipPhilosophy.quote && 
+             !initialData.leadershipPhilosophy.description && 
+             !initialData.leadershipPhilosophy.image)) {
+          // For leadershipPhilosophy, we don't have a sample, so just return as is
+          return initialData;
+        }
+        break;
+      case 'vision':
+        if (!initialData.vision || initialData.vision.trim() === '') {
+          return { ...initialData, vision: SAMPLE_VISION };
+        }
+        break;
+      case 'mission':
+        if (!initialData.mission || initialData.mission.trim() === '') {
+          return { ...initialData, mission: SAMPLE_MISSION };
+        }
+        break;
+      case 'coreValues':
+        if (!initialData.coreValues || initialData.coreValues.trim() === '') {
+          return { ...initialData, coreValues: SAMPLE_CORE_VALUES };
+        }
+        break;
+    }
+    
+    return initialData;
+  };
+
   const handleEdit = (section: string, initialData: any) => {
     setEditingSection(section);
     const sectionKey = getSectionKey(section);
     const sectionVisible = sectionKey ? isSectionVisible(sectionKey) : true;
+    
+    // Auto-fill sample data if no real data exists
+    const dataWithSamples = getSampleDataIfNeeded(section, initialData || {});
+    
     setFormData({
-      ...(initialData || {}),
+      ...dataWithSamples,
       sectionVisible: Boolean(sectionVisible), // Ensure boolean
     });
   };

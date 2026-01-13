@@ -35,10 +35,10 @@ export default function JobDetailPage() {
       await api.post("/api/jobs/apply", { jobId });
     },
     onSuccess: () => {
-      toast.success("Application submitted");
+      toast.success("Ứng tuyển thành công");
       qc.invalidateQueries({ queryKey: ["job", jobId] });
     },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Failed to apply"),
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Ứng tuyển thất bại"),
   });
 
   const handleApply = () => {
@@ -52,7 +52,7 @@ export default function JobDetailPage() {
   if (isLoading) return <div className="h-40 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--card)]" />;
 
   const job = data?.job;
-  if (!job) return <div>Job not found</div>;
+  if (!job) return <div>Không tìm thấy việc làm</div>;
 
   const salary =
     job.salaryMin || job.salaryMax
