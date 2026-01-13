@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, CheckCircle, Edit3 } from 'lucide-react';
+import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText } from 'lucide-react';
 import { PublicUserProfile } from '@/types/user';
 import { useAuthStore } from '@/store/useAuth';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,8 @@ interface UserProfileHeaderProps {
 
 const statusLabels: Record<string, string> = {
   OPEN_TO_WORK: 'Đang tìm việc',
-  NOT_AVAILABLE: 'Không có sẵn',
-  LOOKING: 'Đang tìm kiếm',
+  NOT_AVAILABLE: 'Không tìm việc',
+  LOOKING: 'Xem xét cơ hội',
 };
 
 export default function UserProfileHeader({ profile }: UserProfileHeaderProps) {
@@ -46,13 +46,65 @@ export default function UserProfileHeader({ profile }: UserProfileHeaderProps) {
               {profile.profile?.title && (
                 <p className="text-lg text-slate-600 font-medium mb-2">{profile.profile.title}</p>
               )}
+              {profile.profile?.headline && (
+                <p className="text-base text-slate-500 mb-3">{profile.profile.headline}</p>
+              )}
               <div className="flex flex-wrap gap-4 text-sm text-slate-500">
                 {profile.profile?.location && (
                   <span className="flex items-center gap-1">
                     <MapPin size={16} /> {profile.profile.location}
                   </span>
                 )}
-                {/* Email/Phone always hidden on public profile */}
+                {profile.profile?.contactEmail && (
+                  <span className="flex items-center gap-1">
+                    <Mail size={16} /> {profile.profile.contactEmail}
+                  </span>
+                )}
+                {profile.profile?.contactPhone && (
+                  <span className="flex items-center gap-1">
+                    <Phone size={16} /> {profile.profile.contactPhone}
+                  </span>
+                )}
+                {profile.profile?.website && (
+                  <a 
+                    href={profile.profile.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-[var(--brand)] transition-colors"
+                  >
+                    <Globe size={16} /> Website
+                  </a>
+                )}
+                {profile.profile?.linkedin && (
+                  <a 
+                    href={profile.profile.linkedin} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-[var(--brand)] transition-colors"
+                  >
+                    <Linkedin size={16} /> LinkedIn
+                  </a>
+                )}
+                {profile.profile?.github && (
+                  <a 
+                    href={profile.profile.github} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-[var(--brand)] transition-colors"
+                  >
+                    <Github size={16} /> GitHub
+                  </a>
+                )}
+                {profile.profile?.cvUrl && (
+                  <a 
+                    href={profile.profile.cvUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-[var(--brand)] transition-colors"
+                  >
+                    <FileText size={16} /> CV
+                  </a>
+                )}
               </div>
             </div>
             <div className="flex flex-col gap-2 shrink-0">

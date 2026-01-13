@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { UserExperience } from "@/types/user";
@@ -20,6 +20,10 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  useEffect(() => {
+    setExperiences(initialExperiences);
+  }, [initialExperiences]);
+
   const createExperience = useMutation({
     mutationFn: async (data: Omit<UserExperience, "id" | "order">) => {
       const res = await api.post("/api/users/me/experiences", data);
@@ -28,7 +32,11 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
     onSuccess: (newExp) => {
       toast.success("Thêm kinh nghiệm thành công");
       queryClient.invalidateQueries({ queryKey: ["own-profile"] });
-      setExperiences([...experiences, newExp]);
+      
+      // Update local state immediately for better UX, but handle potential missing ID
+      if (newExp && newExp.id) {
+        setExperiences((prev) => [...prev, newExp]);
+      }
       setIsDialogOpen(false);
     },
     onError: () => {
@@ -44,7 +52,7 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
     onSuccess: (updatedExp) => {
       toast.success("Cập nhật kinh nghiệm thành công");
       queryClient.invalidateQueries({ queryKey: ["own-profile"] });
-      setExperiences(experiences.map((exp) => (exp.id === updatedExp.id ? updatedExp : exp)));
+      setExperiences((prev) => prev.map((exp) => (exp.id === updatedExp.id ? updatedExp : exp)));
       setEditingId(null);
       setIsDialogOpen(false);
     },
@@ -60,7 +68,7 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
     onSuccess: (_, id) => {
       toast.success("Xóa kinh nghiệm thành công");
       queryClient.invalidateQueries({ queryKey: ["own-profile"] });
-      setExperiences(experiences.filter((exp) => exp.id !== id));
+      setExperiences((prev) => prev.filter((exp) => exp.id !== id));
     },
     onError: () => {
       toast.error("Xóa thất bại");

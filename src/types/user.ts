@@ -77,6 +77,9 @@ export interface PublicUserProfile {
     website?: string | null;
     linkedin?: string | null;
     github?: string | null;
+    cvUrl?: string | null;
+    contactEmail?: string | null;
+    contactPhone?: string | null;
     status?: UserStatus | null;
     bio?: string | null;
     knowledge?: string[];

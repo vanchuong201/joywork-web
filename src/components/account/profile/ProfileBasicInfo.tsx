@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { OwnUserProfile, UserStatus } from "@/types/user";
@@ -14,25 +14,21 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { uploadProfileAvatar } from "@/lib/uploads";
+import { uploadProfileAvatar, uploadProfileCV } from "@/lib/uploads";
 import Image from "next/image";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, FileText, X } from "lucide-react";
 
 // Helper for optional URL fields - accepts empty string
-const optionalUrl = z
-  .string()
-  .refine((val) => val === "" || z.string().url().safeParse(val).success, {
-    message: "URL không hợp lệ",
-  })
-  .optional();
+const optionalUrl = z.union([
+  z.literal(""),
+  z.string().url({ message: "URL không hợp lệ. Vui lòng nhập URL đầy đủ bắt đầu bằng http:// hoặc https://" })
+]).optional();
 
 // Helper for optional email field - accepts empty string
-const optionalEmail = z
-  .string()
-  .refine((val) => val === "" || z.string().email().safeParse(val).success, {
-    message: "Email không hợp lệ",
-  })
-  .optional();
+const optionalEmail = z.union([
+  z.literal(""),
+  z.string().email({ message: "Email không hợp lệ. Vui lòng nhập địa chỉ email đúng định dạng" })
+]).optional();
 
 const schema = z.object({
   fullName: z.string().max(200, "Họ tên đầy đủ tối đa 200 ký tự").optional(),
@@ -46,6 +42,7 @@ const schema = z.object({
   website: optionalUrl,
   linkedin: optionalUrl,
   github: optionalUrl,
+  cvUrl: optionalUrl,
   status: z.enum(["OPEN_TO_WORK", "NOT_AVAILABLE", "LOOKING"]).optional().nullable(),
   isPublic: z.boolean().optional(),
 });
@@ -69,6 +66,11 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const [avatar, setAvatar] = useState<string | null>(defaultAvatar);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // CV file upload
+  const [cvUrl, setCvUrl] = useState<string | null>(profile.profile?.cvUrl || null);
+  const [uploadingCV, setUploadingCV] = useState(false);
+  const cvFileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -76,6 +78,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     reset,
     watch,
     setValue,
+    setError,
     formState: { errors, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -91,6 +94,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       website: profile.profile?.website || "",
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
+      cvUrl: profile.profile?.cvUrl || "",
       // Default to OPEN_TO_WORK if status is null or LOOKING (migrate old data)
       status: profile.profile?.status === "OPEN_TO_WORK" || profile.profile?.status === "LOOKING" 
         ? "OPEN_TO_WORK" 
@@ -116,6 +120,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       website: profile.profile?.website || "",
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
+      cvUrl: profile.profile?.cvUrl || "",
       // Default to OPEN_TO_WORK if status is null or LOOKING (migrate old data)
       status: profile.profile?.status === "OPEN_TO_WORK" || profile.profile?.status === "LOOKING" 
         ? "OPEN_TO_WORK" 
@@ -126,6 +131,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     });
     // Fallback: profile.avatar || user.avatar || null
     setAvatar(profile.profile?.avatar || profile.avatar || null);
+    setCvUrl(profile.profile?.cvUrl || null);
   }, [profile, reset]);
 
   const updateProfile = useMutation({
@@ -146,6 +152,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       const payload = {
         ...cleanedData,
         avatar,
+        cvUrl: cvUrl || cleanedData.cvUrl || null,
       };
       console.log('[ProfileBasicInfo] Submitting payload:', payload);
       await api.patch("/api/users/me/profile", payload);
@@ -156,7 +163,38 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       queryClient.invalidateQueries({ queryKey: ["own-profile"] });
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.error?.message || "Cập nhật thất bại");
+      const err = error?.response?.data?.error;
+      const errorMessage = err?.message || error?.message || "Cập nhật thất bại";
+      const errorDetails = err?.details;
+      
+      // Show main error message
+      toast.error(errorMessage);
+      
+      // Map server validation errors to form fields
+      if (errorDetails && Array.isArray(errorDetails)) {
+        let focused = false;
+        errorDetails.forEach((detail: any) => {
+          const path = Array.isArray(detail?.path) ? detail.path : Array.isArray(detail?.instancePath) ? String(detail.instancePath).split("/").filter(Boolean) : [];
+          const field = path[0] || path[path.length - 1];
+          const msg = detail?.message || errorMessage;
+          
+          // Map common field names
+          if (field) {
+            setError(field as keyof FormValues, { 
+              type: "server", 
+              message: msg 
+            });
+            
+            // Focus on first error field
+            if (!focused) {
+              const input = document.querySelector(`input[name="${field}"], textarea[name="${field}"]`) as HTMLInputElement | null;
+              input?.focus();
+              input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              focused = true;
+            }
+          }
+        });
+      }
     },
   });
 
@@ -208,8 +246,125 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     return undefined;
   };
 
+  const handleCVUpload = async (file: File) => {
+    // Check file type - allow PDF, DOC, DOCX
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Chỉ chấp nhận file PDF, DOC hoặc DOCX");
+      return;
+    }
+
+    // Check file size - max 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File CV vượt quá giới hạn 10MB");
+      return;
+    }
+
+    setUploadingCV(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const response = await uploadProfileCV({
+        fileName: file.name,
+        fileType: file.type,
+        fileData: base64.split(",")[1],
+        previousKey: cvUrl ? extractS3Key(cvUrl) : undefined,
+      });
+
+      setCvUrl(response.assetUrl);
+      setValue("cvUrl", response.assetUrl, { shouldDirty: true });
+      toast.success("Tải CV thành công");
+    } catch (error: any) {
+      toast.error(error?.message || "Upload CV thất bại");
+    } finally {
+      setUploadingCV(false);
+    }
+  };
+
   const onSubmit = (values: FormValues) => {
     updateProfile.mutate(values);
+  };
+
+  const onInvalid = (errors: any) => {
+    // Show toast for each validation error
+    const errorMessages: string[] = [];
+    
+    Object.keys(errors).forEach((fieldName) => {
+      const error = errors[fieldName];
+      if (error?.message) {
+        errorMessages.push(`${getFieldLabel(fieldName)}: ${error.message}`);
+      }
+    });
+
+    if (errorMessages.length > 0) {
+      // Show first error as main toast
+      toast.error(errorMessages[0]);
+      
+      // Show remaining errors if any
+      if (errorMessages.length > 1) {
+        setTimeout(() => {
+          errorMessages.slice(1).forEach((msg) => {
+            toast.error(msg);
+          });
+        }, 100);
+      }
+    } else {
+      toast.error("Vui lòng kiểm tra lại thông tin đã nhập");
+    }
+  };
+
+  const getFieldLabel = (fieldName: string): string => {
+    const labels: Record<string, string> = {
+      fullName: "Họ tên đầy đủ",
+      title: "Tiêu đề nghề nghiệp",
+      headline: "Tiêu đề ngắn",
+      bio: "Giới thiệu",
+      contactEmail: "Email liên hệ",
+      contactPhone: "Số điện thoại",
+      location: "Địa điểm",
+      website: "Website",
+      linkedin: "LinkedIn",
+      github: "GitHub",
+      cvUrl: "File CV",
+    };
+    return labels[fieldName] || fieldName;
+  };
+
+  // Some resolver versions can throw ZodError (unhandled promise) instead of returning field errors.
+  // Wrap submit to ensure user always sees toast errors (bottom-right, same as success).
+  const onFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      await handleSubmit(onSubmit, onInvalid)(e);
+    } catch (err: any) {
+      // Catch unhandled ZodError thrown by resolver
+      const zodErr: ZodError | null =
+        err instanceof ZodError ? err : err?.name === "ZodError" ? err : null;
+
+      if (zodErr) {
+        const issues = (zodErr as any).issues || (zodErr as any).errors || [];
+        if (Array.isArray(issues) && issues.length > 0) {
+          const msgs = issues
+            .map((i: any) => {
+              const field = Array.isArray(i?.path) ? i.path[0] : undefined;
+              const label = field ? getFieldLabel(String(field)) : "Dữ liệu";
+              return `${label}: ${i?.message || "Không hợp lệ"}`;
+            })
+            .filter(Boolean);
+
+          toast.error(msgs[0] || "Vui lòng kiểm tra lại thông tin đã nhập");
+          msgs.slice(1).forEach((m: string) => toast.error(m));
+          return;
+        }
+      }
+
+      toast.error("Vui lòng kiểm tra lại thông tin đã nhập");
+    }
   };
 
   return (
@@ -219,7 +374,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
         <CardDescription>Cập nhật thông tin cá nhân và liên hệ</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={onFormSubmit} className="space-y-6">
           {/* Avatar */}
           <div className="flex items-center gap-6">
             <div className="relative">
@@ -362,6 +517,80 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               <Input id="github" {...register("github")} placeholder="https://github.com/username" />
               {errors.github && <p className="mt-1 text-sm text-red-500">{errors.github.message}</p>}
             </div>
+          </div>
+
+          {/* CV File */}
+          <div>
+            <Label htmlFor="cvUrl">File CV</Label>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input 
+                  id="cvUrl" 
+                  {...register("cvUrl")} 
+                  placeholder="https://drive.google.com/... hoặc https://your-cv.com/cv.pdf" 
+                  className="flex-1"
+                />
+                <input
+                  ref={cvFileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleCVUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => cvFileInputRef.current?.click()}
+                  disabled={uploadingCV}
+                  className="shrink-0"
+                >
+                  {uploadingCV ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang tải...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Tải file CV
+                    </>
+                  )}
+                </Button>
+              </div>
+              {cvUrl && (
+                <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                  <FileText className="h-4 w-4 text-green-600" />
+                  <a 
+                    href={cvUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-green-700 hover:underline flex-1 truncate"
+                  >
+                    CV đã tải lên
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCvUrl(null);
+                      setValue("cvUrl", "", { shouldDirty: true });
+                    }}
+                    className="text-red-600 hover:text-red-700"
+                    title="Xóa CV"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+            {errors.cvUrl && <p className="mt-1 text-sm text-red-500">{errors.cvUrl.message}</p>}
+            <p className="mt-1 text-xs text-slate-500">
+              Bạn có thể tải file CV trực tiếp (PDF, DOC, DOCX - tối đa 10MB) hoặc dán link từ Google Drive, Dropbox, v.v.
+            </p>
           </div>
 
           {/* Status & Privacy */}

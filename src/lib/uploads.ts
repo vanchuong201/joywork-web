@@ -50,3 +50,12 @@ export async function uploadCompanyCover(payload: {
   return data.data as { key: string; assetUrl: string };
 }
 
+export async function uploadProfileCV(payload: {
+  fileName: string;
+  fileType: string;
+  fileData: string;
+  previousKey?: string;
+}): Promise<{ key: string; assetUrl: string }> {
+  const { data } = await api.post("/api/uploads/profile/cv", payload);
+  return data.data as { key: string; assetUrl: string };
+}

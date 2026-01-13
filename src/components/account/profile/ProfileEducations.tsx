@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { UserEducation } from "@/types/user";
@@ -20,6 +20,10 @@ export default function ProfileEducations({ educations: initialEducations }: Pro
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  useEffect(() => {
+    setEducations(initialEducations);
+  }, [initialEducations]);
+
   const createEducation = useMutation({
     mutationFn: async (data: Omit<UserEducation, "id" | "order">) => {
       const res = await api.post("/api/users/me/educations", data);
@@ -28,7 +32,11 @@ export default function ProfileEducations({ educations: initialEducations }: Pro
     onSuccess: (newEdu) => {
       toast.success("Thêm học vấn thành công");
       queryClient.invalidateQueries({ queryKey: ["own-profile"] });
-      setEducations([...educations, newEdu]);
+      
+      // Update local state immediately for better UX, but handle potential missing ID
+      if (newEdu && newEdu.id) {
+        setEducations((prev) => [...prev, newEdu]);
+      }
       setIsDialogOpen(false);
     },
     onError: () => {
@@ -44,7 +52,7 @@ export default function ProfileEducations({ educations: initialEducations }: Pro
     onSuccess: (updatedEdu) => {
       toast.success("Cập nhật học vấn thành công");
       queryClient.invalidateQueries({ queryKey: ["own-profile"] });
-      setEducations(educations.map((edu) => (edu.id === updatedEdu.id ? updatedEdu : edu)));
+      setEducations((prev) => prev.map((edu) => (edu.id === updatedEdu.id ? updatedEdu : edu)));
       setEditingId(null);
       setIsDialogOpen(false);
     },
@@ -60,7 +68,7 @@ export default function ProfileEducations({ educations: initialEducations }: Pro
     onSuccess: (_, id) => {
       toast.success("Xóa học vấn thành công");
       queryClient.invalidateQueries({ queryKey: ["own-profile"] });
-      setEducations(educations.filter((edu) => edu.id !== id));
+      setEducations((prev) => prev.filter((edu) => edu.id !== id));
     },
     onError: () => {
       toast.error("Xóa thất bại");
