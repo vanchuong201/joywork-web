@@ -9,7 +9,7 @@ import {
   Target, Award, Zap, GraduationCap, MapPin, 
   Calendar, DollarSign, Star, CheckCircle, ArrowRight,
   Clock, Coffee, Layout, ChevronRight, ChevronLeft, Gem, Rocket, ShieldCheck,
-  Loader2, ImagePlus
+  Loader2, ImagePlus, Package
 } from "lucide-react";
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -271,7 +272,7 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-const ImageUpload = ({ value, onChange, companyId }: { value: string, onChange: (url: string) => void, companyId: string }) => {
+const ImageUpload = ({ value, onChange, companyId, aspectRatio }: { value: string, onChange: (url: string) => void, companyId: string, aspectRatio?: string }) => {
     const [uploading, setUploading] = useState(false);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -299,39 +300,44 @@ const ImageUpload = ({ value, onChange, companyId }: { value: string, onChange: 
     };
 
     return (
-        <div className="flex gap-4 items-center">
-            {value && (
-                <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 shrink-0 group/img bg-slate-100">
-                    <img src={value} alt="Preview" className="w-full h-full object-cover" />
-                    <button 
-                        type="button"
-                        onClick={() => onChange("")}
-                        className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-white"
+        <div className="space-y-2">
+            <div className="flex gap-4 items-center">
+                {value && (
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 shrink-0 group/img bg-slate-100">
+                        <img src={value} alt="Preview" className="w-full h-full object-cover" />
+                        <button 
+                            type="button"
+                            onClick={() => onChange("")}
+                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-white"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+                <div className="grow">
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        ref={inputRef}
+                        onChange={handleFileChange}
+                    />
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full border-dashed text-slate-500 hover:text-slate-900"
+                        onClick={() => inputRef.current?.click()}
+                        disabled={uploading}
                     >
-                        <X className="w-4 h-4" />
-                    </button>
+                        {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImagePlus className="w-4 h-4 mr-2" />}
+                        {uploading ? "Đang tải..." : (value ? "Thay đổi ảnh" : "Tải ảnh lên")}
+                    </Button>
                 </div>
-            )}
-            <div className="grow">
-                <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    ref={inputRef}
-                    onChange={handleFileChange}
-                />
-                <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full border-dashed text-slate-500 hover:text-slate-900"
-                    onClick={() => inputRef.current?.click()}
-                    disabled={uploading}
-                >
-                    {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImagePlus className="w-4 h-4 mr-2" />}
-                    {uploading ? "Đang tải..." : (value ? "Thay đổi ảnh" : "Tải ảnh lên")}
-                </Button>
             </div>
+            {aspectRatio && (
+                <p className="text-xs text-slate-500">Tỷ lệ đề xuất: {aspectRatio}</p>
+            )}
         </div>
     )
 }
@@ -373,10 +379,10 @@ const Badge = ({ children }: { children?: React.ReactNode }) => {
   );
 };
 
-const SectionCarousel = ({ children, className, itemClassName = "flex-[0_0_auto]" }: { children: React.ReactNode, className?: string, itemClassName?: string }) => {
+const SectionCarousel = ({ children, className, itemClassName = "flex-[0_0_auto]", centerItems = false }: { children: React.ReactNode, className?: string, itemClassName?: string, centerItems?: boolean }) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: false, 
-    align: 'start',
+    align: centerItems ? 'center' : 'start',
     dragFree: true,
     containScroll: 'trimSnaps'
   });
@@ -419,7 +425,7 @@ const SectionCarousel = ({ children, className, itemClassName = "flex-[0_0_auto]
         )}
 
         <div className="overflow-hidden cursor-grab active:cursor-grabbing py-4 -mx-4 px-4 md:mx-0 md:px-0" ref={emblaRef}>
-            <div className="flex gap-4 md:gap-6 touch-pan-y">
+            <div className={cn("flex gap-4 md:gap-6 touch-pan-y", centerItems && "justify-center")}>
                 {React.Children.map(children, (child) => (
                     <div className={itemClassName}>{child}</div>
                 ))}
@@ -428,6 +434,97 @@ const SectionCarousel = ({ children, className, itemClassName = "flex-[0_0_auto]
     </div>
   )
 }
+
+// Component để hiển thị text với giới hạn và nút "Xem thêm"
+const TruncatedText = ({ 
+  content, 
+  maxLines = 5, 
+  onViewMore, 
+  type 
+}: { 
+  content: string; 
+  maxLines?: number; 
+  onViewMore: (type: 'vision' | 'mission' | 'coreValues', content: string) => void;
+  type: 'vision' | 'mission' | 'coreValues';
+}) => {
+  const textRef = React.useRef<HTMLParagraphElement>(null);
+  const [needsTruncate, setNeedsTruncate] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (textRef.current) {
+      // Kiểm tra xem chiều cao thực tế có vượt quá maxLines không
+      const lineHeight = parseFloat(getComputedStyle(textRef.current).lineHeight);
+      const maxHeight = lineHeight * maxLines;
+      const actualHeight = textRef.current.scrollHeight;
+      setNeedsTruncate(actualHeight > maxHeight);
+    }
+  }, [content, maxLines]);
+  
+  if (!content || content.trim() === '') return null;
+  
+  return (
+    <div>
+      <p 
+        ref={textRef}
+        className={`text-slate-600 leading-relaxed text-lg whitespace-pre-line ${needsTruncate ? 'line-clamp-5' : ''}`}
+        style={needsTruncate ? {
+          display: '-webkit-box',
+          WebkitLineClamp: maxLines,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        } : {}}
+      >
+        {content}
+      </p>
+      {needsTruncate && (
+        <button
+          onClick={() => onViewMore(type, content)}
+          className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+        >
+          Xem thêm
+        </button>
+      )}
+    </div>
+  );
+};
+
+// Component để hiển thị Core Values với giới hạn
+const TruncatedCoreValues = ({ 
+  content, 
+  maxItems = 5,
+  onViewMore 
+}: { 
+  content: string; 
+  maxItems?: number;
+  onViewMore: (content: string) => void;
+}) => {
+  if (!content || content.trim() === '') return null;
+  
+  const values = content.split('\n').filter((val) => val.trim().length > 0);
+  const needsTruncate = values.length > maxItems;
+  const displayValues = needsTruncate ? values.slice(0, maxItems) : values;
+  
+  return (
+    <div className="space-y-4">
+      {displayValues.map((val: string, i: number) => (
+        <div key={i} className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-900 font-bold shrink-0 mt-1">
+            {i+1}
+          </div>
+          <div className="text-slate-700 font-medium leading-relaxed">{val}</div>
+        </div>
+      ))}
+      {needsTruncate && (
+        <button
+          onClick={() => onViewMore(content)}
+          className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+        >
+          Xem thêm ({values.length - maxItems} giá trị khác)
+        </button>
+      )}
+    </div>
+  );
+};
 
 const SortableStatementItem = ({ id, statement, toggleStatementPublic }: { id: string, statement: any, toggleStatementPublic: (s: any, checked: boolean) => void }) => {
   const {
@@ -489,6 +586,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const router = useRouter();
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>({});
+  const [viewMoreModal, setViewMoreModal] = useState<{ type: 'vision' | 'mission' | 'coreValues' | null, content: string }>({ type: null, content: '' });
 
   // Company statements (Triết lý quản trị) & verification lists
   const [statements, setStatements] = useState<any[] | null>(null);
@@ -750,7 +848,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
   const handleEdit = (section: string, initialData: any) => {
     setEditingSection(section);
-    setFormData(initialData || {});
+    const sectionKey = getSectionKey(section);
+    const sectionVisible = sectionKey ? isSectionVisible(sectionKey) : true;
+    setFormData({
+      ...(initialData || {}),
+      sectionVisible: Boolean(sectionVisible), // Ensure boolean
+    });
   };
 
   const handleSave = () => {
@@ -777,6 +880,18 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     }
     if (editingSection === 'story-milestones') {
         payload.story = { ...(profile?.story as any), milestones: formData.story?.milestones };
+    }
+
+    // Update section visibility if changed
+    const sectionKey = getSectionKey(editingSection);
+    if (sectionKey && formData.sectionVisible !== undefined) {
+        // Ensure all values in sectionVisibility are booleans
+        const normalizedVisibility: Record<string, boolean> = {};
+        Object.entries(sectionVisibility).forEach(([key, value]) => {
+            normalizedVisibility[key] = Boolean(value);
+        });
+        normalizedVisibility[sectionKey] = Boolean(formData.sectionVisible);
+        payload.sectionVisibility = normalizedVisibility;
     }
 
     mutation.mutate(payload);
@@ -917,9 +1032,125 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const usingSampleMission = isEditable && !profile?.mission;
   const usingSampleCoreValues = isEditable && !profile?.coreValues;
 
+  // Section visibility state - normalize all values to boolean
+  const sectionVisibilityRaw = profile?.sectionVisibility || {};
+  const sectionVisibility: Record<string, boolean> = {};
+  Object.entries(sectionVisibilityRaw).forEach(([key, value]) => {
+    // Normalize: convert string "true"/"false" or boolean to boolean
+    if (typeof value === 'string') {
+      sectionVisibility[key] = value === 'true' || value === '1';
+    } else {
+      sectionVisibility[key] = Boolean(value);
+    }
+  });
+  const defaultVisibility = true; // Default to visible if not set
+
+  // Map editingSection to sectionKey for visibility
+  const getSectionKey = (editingSection: string | null): string | null => {
+    if (!editingSection) return null;
+    const mapping: Record<string, string> = {
+      'training': 'introduction',
+      'stats': 'stats',
+      'vision': 'visionMissionValues',
+      'mission': 'visionMissionValues',
+      'coreValues': 'visionMissionValues',
+      'leadershipPhilosophy': 'leadershipPhilosophy',
+      'products': 'products',
+      'recruitmentPrinciples': 'recruitmentPrinciples',
+      'benefits': 'benefits',
+      'hrJourney': 'hrJourney',
+      'careerPath': 'careerPath',
+      'salaryAndBonus': 'salaryAndBonus',
+      'leaders': 'leaders',
+      'culture-typical-day': 'typicalDay',
+      'culture-testimonials': 'testimonials',
+      'awards': 'awards',
+      'story-founder': 'founderStory',
+      'story-milestones': 'milestones',
+    };
+    return mapping[editingSection] || null;
+  };
+
+  // On manage page (isEditable=true): always show all sections so admin can edit
+  // On public page (isEditable=false): only show visible sections
+  const shouldShowSection = (sectionKey: string) => {
+    if (isEditable) return true; // Always show on manage page
+    return sectionVisibility[sectionKey] ?? defaultVisibility; // Check visibility on public page
+  };
+  
+  // Helper to check actual visibility setting (for the switch in edit form)
+  const isSectionVisible = (sectionKey: string) => {
+    return sectionVisibility[sectionKey] ?? defaultVisibility;
+  };
+
   return (
      <div className="space-y-32 py-12">
+        {/* SECTION 1: COMPANY INTRODUCTION */}
+        {shouldShowSection('introduction') && (
+        <section className="max-w-7xl mx-auto px-6 space-y-12 relative group/training">
+            {isEditable && (
+                <div className="absolute top-6 right-6 opacity-0 group-hover/training:opacity-100 transition-opacity z-20">
+                     <Button onClick={() => handleEdit('training', { training })} variant="secondary" size="sm" className="bg-white/10 hover:bg-white/20 text-white backdrop-blur shadow-sm border border-white/20">
+                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
+                    </Button>
+                </div>
+            )}
+            <div className="bg-slate-900 rounded-[3rem] p-8 md:p-16 text-white flex flex-col md:flex-row items-center gap-12 relative overflow-hidden">
+                <div className="md:w-1/2 relative z-10 space-y-8">
+                  <Badge>COMPANY OVERVIEW</Badge>
+                  <h2 className="text-4xl md:text-5xl font-black leading-tight">Giới thiệu chung <br/><span className="text-blue-500">về Doanh nghiệp</span></h2>
+                  <p className="text-slate-300 text-lg leading-relaxed whitespace-pre-line">
+                      {trainingDescriptionToRender || `Tại ${company.name}, việc học chưa bao giờ dừng lại. Chúng tôi cung cấp tài nguyên học tập không giới hạn và thư viện sách chuyên ngành phong phú.`}
+                  </p>
+                  {trainingBudgetToRender && (
+                      <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 flex items-center gap-6">
+                          <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shrink-0 animate-pulse">
+                            <GraduationCap size={32} />
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-300 uppercase font-bold tracking-wider mb-1">Ngân sách đào tạo</p>
+                            <p className="text-2xl md:text-3xl font-bold">{trainingBudgetToRender} <span className="text-sm font-normal text-slate-300">/nhân sự/năm</span></p>
+                          </div>
+                      </div>
+                  )}
+                </div>
+                <div className="md:w-1/2 relative z-10">
+                  <img 
+                    src={trainingImageToRender} 
+                    alt="Company Introduction" 
+                    className="rounded-3xl shadow-2xl rotate-3 border-8 border-white/10 grayscale-[50%] object-cover aspect-video w-full" 
+                  />
+                </div>
+            </div>
+
+             <div className="mt-12">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-slate-800 border-l-4 border-slate-900 pl-4">
+                    Chương Trình Đào Tạo
+                  </h3>
+                </div>
+                <SectionCarousel>
+                  {trainingProgramsToRender.map((prog: any, i: number) => (
+                    <div
+                      key={i}
+                      className="bg-white p-8 rounded-3xl border border-slate-200 hover:shadow-lg transition-shadow w-[85vw] md:w-[350px] shrink-0"
+                    >
+                      <h4 className="text-xl font-bold text-slate-900 mb-3">{prog.title}</h4>
+                      <p className="text-slate-600">{prog.desc}</p>
+                    </div>
+                  ))}
+                </SectionCarousel>
+              </div>
+        </section>
+        )}
+        {isEditable && usingSampleTraining && shouldShowSection('introduction') && (
+          <p className="!mt-2 text-xs text-slate-400 italic text-center md:text-left">
+            {SAMPLE_NOTE}
+          </p>
+        )}
+
         {/* SECTION 2: STATS */}
+        {shouldShowSection('stats') && (
         <section className="max-w-7xl mx-auto px-6 animate-fade-in-up relative group/section">
           <div className="relative rounded-3xl border border-[var(--border)]/60 bg-[var(--card)]/5 px-6 md:px-10 py-10 md:py-12 overflow-hidden">
             <div className="pointer-events-none absolute inset-x-10 -top-20 h-40 bg-gradient-to-r from-[var(--brand)]/10 via-transparent to-[var(--brand-secondary)]/10 blur-3xl" />
@@ -932,7 +1163,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                   size="sm"
                   className="bg-[var(--card)]/90 backdrop-blur border-[var(--border)]"
                 >
-                  <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa số liệu
+                  <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                 </Button>
               </div>
             )}
@@ -944,7 +1175,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               } năm phát triển`}
             />
 
-            <SectionCarousel className="mt-4">
+            <SectionCarousel className="mt-4" centerItems={true}>
               {statsToRender.map((stat: any, idx: number) => {
                 const Icon = iconMap[stat.icon] || TrendingUp;
                 return (
@@ -973,18 +1204,27 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
             )}
           </div>
         </section>
+        )}
 
         {/* SECTION 3: VISION - MISSION - VALUES */}
-        <section className="max-w-7xl mx-auto px-6">
+        {shouldShowSection('visionMissionValues') && (
+        <section className="max-w-7xl mx-auto px-6 relative group/visionMission">
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Vision */}
               <div className="bg-white rounded-3xl p-10 shadow-2xl border border-slate-200 relative overflow-hidden border-t-4 border-blue-600 group">
                  <EditBtn section="vision" initialData={{ vision: profile?.vision || "" }} />
                  <Target className="w-16 h-16 mb-6 text-blue-600" />
                  <h3 className="text-3xl font-bold mb-4 text-slate-900">Tầm Nhìn</h3>
-                 <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-line">
-                    {profile?.vision || (isEditable ? SAMPLE_VISION : "Chưa cập nhật")}
-                 </p>
+                 {profile?.vision || (isEditable ? SAMPLE_VISION : null) ? (
+                   <TruncatedText
+                     content={profile?.vision || (isEditable ? SAMPLE_VISION : "")}
+                     maxLines={5}
+                     type="vision"
+                     onViewMore={(type, content) => setViewMoreModal({ type, content })}
+                   />
+                 ) : (
+                   <p className="text-slate-600 leading-relaxed text-lg">Chưa cập nhật</p>
+                 )}
               </div>
 
               {/* Mission */}
@@ -992,9 +1232,16 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                  <EditBtn section="mission" initialData={{ mission: profile?.mission || "" }} />
                  <Globe className="w-16 h-16 mb-6 text-blue-600" />
                  <h3 className="text-3xl font-bold mb-4 text-slate-900">Sứ Mệnh</h3>
-                 <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-line">
-                    {profile?.mission || (isEditable ? SAMPLE_MISSION : "Chưa cập nhật")}
-                 </p>
+                 {profile?.mission || (isEditable ? SAMPLE_MISSION : null) ? (
+                   <TruncatedText
+                     content={profile?.mission || (isEditable ? SAMPLE_MISSION : "")}
+                     maxLines={5}
+                     type="mission"
+                     onViewMore={(type, content) => setViewMoreModal({ type, content })}
+                   />
+                 ) : (
+                   <p className="text-slate-600 leading-relaxed text-lg">Chưa cập nhật</p>
+                 )}
               </div>
 
               {/* Core Values */}
@@ -1002,20 +1249,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                  <EditBtn section="coreValues" initialData={{ coreValues: profile?.coreValues || "" }} />
                  <Gem className="w-16 h-16 mb-6 text-blue-600" />
                  <h3 className="text-3xl font-bold mb-6 text-slate-900">Giá Trị Cốt Lõi</h3>
-                 <div className="space-y-4">
-                    {/* Parse core values string to list if possible, else display text */}
-                    {(profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : ""))
-                      .split('\n')
-                      .filter((val) => val.trim().length > 0)
-                      .map((val: string, i: number) => (
-                        <div key={i} className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-900 font-bold shrink-0 mt-1">
-                            {i+1}
-                          </div>
-                          <div className="text-slate-700 font-medium leading-relaxed">{val}</div>
-                        </div>
-                      ))}
-                 </div>
+                 {profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : null) ? (
+                   <TruncatedCoreValues
+                     content={profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : "")}
+                     maxItems={5}
+                     onViewMore={(content) => setViewMoreModal({ type: 'coreValues', content })}
+                   />
+                 ) : (
+                   <p className="text-slate-600 leading-relaxed text-lg">Chưa cập nhật</p>
+                 )}
               </div>
            </div>
            {isEditable && (usingSampleVision || usingSampleMission || usingSampleCoreValues) && (
@@ -1024,8 +1266,10 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
              </p>
            )}
         </section>
+        )}
 
         {/* SECTION 4: PHILOSOPHY (Leadership & Management) (MANDATORY) */}
+        {shouldShowSection('leadershipPhilosophy') && (
         <section className="max-w-7xl mx-auto px-6 relative group/philosophy">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 {/* Left: Media & Quote */}
@@ -1033,7 +1277,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     {isEditable && (
                         <div className="absolute top-4 right-4 z-30 opacity-0 group-hover/leadership:opacity-100 transition-opacity">
                              <Button onClick={() => handleEdit('leadershipPhilosophy', { leadershipPhilosophy: profile?.leadershipPhilosophy || {} })} variant="secondary" size="sm" className="bg-white/90 hover:bg-white shadow-sm border">
-                                <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa Lãnh đạo
+                                <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                             </Button>
                         </div>
                     )}
@@ -1059,8 +1303,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                         )}
                     </div>
                     
-                    <div className="absolute -bottom-10 -right-10 z-20 bg-white p-6 rounded-2xl shadow-xl border-l-8 border-slate-800 hidden md:block max-w-sm pointer-events-none">
-                        <p className="text-xl font-serif italic text-slate-800">"{profile?.leadershipPhilosophy?.quote || "Lãnh đạo không phải là chức danh, mà là trách nhiệm phụng sự."}"</p>
+                    <div className="absolute -bottom-10 -right-10 z-20 bg-white py-2 px-6 rounded-2xl shadow-xl border-l-8 border-slate-800 hidden md:block max-w-sm pointer-events-none">
+                        <p className="text-lg font-serif italic text-slate-800">"{profile?.leadershipPhilosophy?.quote || "Lãnh đạo không phải là chức danh, mà là trách nhiệm phụng sự."}"</p>
                     </div>
                 </div>
 
@@ -1353,28 +1597,30 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </div>
             </div>
         </section>
+        )}
 
         {/* SECTION 5: PRODUCTS (MANDATORY) */}
+        {shouldShowSection('products') && (
         <section className="bg-slate-900 py-20 overflow-hidden relative rounded-[3rem] mx-6 group/products">
             {isEditable && (
                 <div className="absolute top-6 right-6 z-30 opacity-0 group-hover/products:opacity-100 transition-opacity">
                     <Button onClick={() => handleEdit('products', { products })} variant="secondary" size="sm" className="bg-white/90 hover:bg-white text-slate-900 font-medium shadow-lg">
-                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa sản phẩm
+                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
                 </div>
             )}
             <div className="max-w-7xl mx-auto px-6 relative z-10">
                 <div className="text-center mb-12">
-                  <h3 className="text-3xl font-bold text-white mb-2">HỆ SINH THÁI CÔNG NGHỆ</h3>
-                  <p className="text-slate-400">Các sản phẩm cốt lõi phục vụ hàng triệu người dùng</p>
+                  <h3 className="text-3xl font-bold text-white mb-2">SẢN PHẨM VÀ DỊCH VỤ CỐT LÕI</h3>
+                  <p className="text-slate-400">Những giá trị doanh nghiệp mang lại cho khách hàng</p>
                 </div>
                 
                 {productsToRender.length > 0 ? (
-                    <SectionCarousel>
+                    <SectionCarousel centerItems={true}>
                       {productsToRender.map((prod: any, i: number) => (
                           <div key={i} className="group flex flex-col items-center gap-3 p-4 md:p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 transition-all cursor-pointer w-32 md:w-40 min-w-[140px] md:min-w-[180px]">
                             <div className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                <Zap className="text-blue-400" size={28} />
+                                <Package className="text-blue-400" size={28} />
                             </div>
                             <span className="text-white font-semibold tracking-wide text-sm text-center">{prod.name}</span>
                           </div>
@@ -1392,14 +1638,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               </p>
             )}
         </section>
+        )}
 
         {/* SECTION 6: RECRUITMENT PRINCIPLES */}
-        {(recruitmentPrinciples.length > 0 || isEditable) && (
+        {shouldShowSection('recruitmentPrinciples') && (recruitmentPrinciples.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/recruit">
                 {isEditable && (
                     <div className="absolute top-0 right-6 opacity-0 group-hover/recruit:opacity-100 transition-opacity z-20">
                          <Button onClick={() => handleEdit('recruitmentPrinciples', { recruitmentPrinciples })} variant="outline" size="sm" className="bg-white shadow-sm">
-                            <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa nguyên tắc
+                            <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                         </Button>
                     </div>
                 )}
@@ -1434,11 +1681,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         )}
 
         {/* SECTION 7: BENEFITS */}
+        {shouldShowSection('benefits') && (
         <section className="max-w-7xl mx-auto px-6 relative group/benefits">
             {isEditable && (
                 <div className="absolute top-0 right-6 opacity-0 group-hover/benefits:opacity-100 transition-opacity z-20">
                         <Button onClick={() => handleEdit('benefits', { benefits })} variant="outline" size="sm" className="bg-white shadow-sm">
-                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa phúc lợi
+                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
                 </div>
             )}
@@ -1494,13 +1742,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               </p>
             )}
         </section>
+        )}
 
         {/* SECTION 8: HR JOURNEY */}
+        {shouldShowSection('hrJourney') && (
         <section className="bg-white py-10 rounded-[3rem] mx-6 shadow-sm border border-slate-100 relative group/hr">
             {isEditable && (
                 <div className="absolute top-6 right-6 opacity-0 group-hover/hr:opacity-100 transition-opacity z-20">
                      <Button onClick={() => handleEdit('hrJourney', { hrJourney })} variant="secondary" size="sm" className="bg-white shadow-sm border">
-                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa hành trình
+                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
                 </div>
             )}
@@ -1531,14 +1781,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               </p>
             )}
         </section>
+        )}
 
         {/* SECTION 15: CAREER PATH */}
-        {(careerPath.length > 0 || isEditable) && (
+        {shouldShowSection('careerPath') && (careerPath.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/career">
                 {isEditable && (
                     <div className="absolute top-6 right-6 opacity-0 group-hover/career:opacity-100 transition-opacity z-20">
                          <Button onClick={() => handleEdit('careerPath', { careerPath })} variant="secondary" size="sm" className="bg-white/90 hover:bg-white shadow-sm border">
-                            <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa lộ trình
+                            <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                         </Button>
                     </div>
                 )}
@@ -1575,11 +1826,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         )}
 
         {/* SECTION 16: SALARY MECHANISM */}
+        {shouldShowSection('salaryAndBonus') && (
         <section className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8 relative group/salary">
             {isEditable && (
                 <div className="absolute top-0 right-6 opacity-0 group-hover/salary:opacity-100 transition-opacity z-20">
-                     <Button onClick={() => handleEdit('salaryAndBonus', { salaryAndBonus })} variant="outline" size="sm" className="bg-white shadow-sm border">
-                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa lương thưởng
+                    <Button onClick={() => handleEdit('salaryAndBonus', { salaryAndBonus })} variant="outline" size="sm" className="bg-white shadow-sm border">
+                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
                 </div>
             )}
@@ -1616,81 +1868,22 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </div>
             </div>
         </section>
-        {isEditable && usingSampleSalaryAndBonus && (
+        )}
+        {isEditable && usingSampleSalaryAndBonus && shouldShowSection('salaryAndBonus') && (
           <p className="!mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
             {SAMPLE_NOTE}
           </p>
         )}
 
         {/* SECTION 9 & 12: TRAINING */}
-        <section className="max-w-7xl mx-auto px-6 space-y-12 relative group/training">
-            {isEditable && (
-                <div className="absolute top-6 right-6 opacity-0 group-hover/training:opacity-100 transition-opacity z-20">
-                     <Button onClick={() => handleEdit('training', { training })} variant="secondary" size="sm" className="bg-white/10 hover:bg-white/20 text-white backdrop-blur shadow-sm border border-white/20">
-                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa đào tạo
-                    </Button>
-                </div>
-            )}
-            <div className="bg-slate-900 rounded-[3rem] p-8 md:p-16 text-white flex flex-col md:flex-row items-center gap-12 relative overflow-hidden">
-                <div className="md:w-1/2 relative z-10 space-y-8">
-                  <Badge>LEARNING & DEVELOPMENT</Badge>
-                  <h2 className="text-4xl md:text-5xl font-black leading-tight">Văn Hóa <br/><span className="text-blue-500">Học Tập</span></h2>
-                  <p className="text-slate-300 text-lg leading-relaxed whitespace-pre-line">
-                      {trainingDescriptionToRender || `Tại ${company.name}, việc học chưa bao giờ dừng lại. Chúng tôi cung cấp tài nguyên học tập không giới hạn và thư viện sách chuyên ngành phong phú.`}
-                  </p>
-                  {trainingBudgetToRender && (
-                      <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 flex items-center gap-6">
-                          <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shrink-0 animate-pulse">
-                            <GraduationCap size={32} />
-                          </div>
-                          <div>
-                            <p className="text-sm text-slate-300 uppercase font-bold tracking-wider mb-1">Ngân sách đào tạo</p>
-                            <p className="text-2xl md:text-3xl font-bold">{trainingBudgetToRender} <span className="text-sm font-normal text-slate-300">/nhân sự/năm</span></p>
-                          </div>
-                      </div>
-                  )}
-                </div>
-                <div className="md:w-1/2 relative z-10">
-                  <img 
-                    src={trainingImageToRender} 
-                    alt="Training" 
-                    className="rounded-3xl shadow-2xl rotate-3 border-8 border-white/10 grayscale-[50%] object-cover aspect-video w-full" 
-                  />
-                </div>
-            </div>
-
-             <div className="mt-12">
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-slate-800 border-l-4 border-slate-900 pl-4">
-                    Chương Trình Đào Tạo
-                  </h3>
-                </div>
-                <SectionCarousel>
-                  {trainingProgramsToRender.map((prog: any, i: number) => (
-                    <div
-                      key={i}
-                      className="bg-white p-8 rounded-3xl border border-slate-200 hover:shadow-lg transition-shadow w-[85vw] md:w-[350px] shrink-0"
-                    >
-                      <h4 className="text-xl font-bold text-slate-900 mb-3">{prog.title}</h4>
-                      <p className="text-slate-600">{prog.desc}</p>
-                    </div>
-                  ))}
-                </SectionCarousel>
-              </div>
-        </section>
-        {isEditable && usingSampleTraining && (
-          <p className="!mt-2 text-xs text-slate-400 italic text-center md:text-left">
-            {SAMPLE_NOTE}
-          </p>
-        )}
 
         {/* SECTION 10: LEADERS */}
-        {(leadersToRender.length > 0 || isEditable) && (
+        {shouldShowSection('leaders') && (leadersToRender.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/leaders">
                 {isEditable && (
                     <div className="absolute top-0 right-6 opacity-0 group-hover/leaders:opacity-100 transition-opacity z-20">
-                         <Button onClick={() => handleEdit('leaders', { leaders })} variant="outline" size="sm" className="bg-white shadow-sm border">
-                            <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa lãnh đạo
+                        <Button onClick={() => handleEdit('leaders', { leaders })} variant="outline" size="sm" className="bg-white shadow-sm border">
+                            <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                         </Button>
                     </div>
                 )}
@@ -1703,7 +1896,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                             className="bg-white rounded-[2rem] p-8 pt-0 shadow-xl border border-slate-100 text-center relative mt-12 group hover:border-blue-300 transition-all min-w-[300px] md:min-w-[350px]"
                           >
                               <div className="w-32 h-32 mx-auto -mt-16 rounded-full p-1 bg-slate-800 mb-6 relative z-10 group-hover:scale-105 transition-transform">
-                                <img src={leader.image} alt={leader.name} className="w-full h-full rounded-full object-cover border-4 border-white grayscale group-hover:grayscale-0 transition-all duration-300" />
+                                <img src={leader.image} alt={leader.name} className="w-full h-full rounded-full object-cover border-4 border-white transition-all duration-300" />
                               </div>
                               <div className="absolute top-0 left-0 w-full h-32 bg-slate-50 rounded-t-[2rem] -z-0 group-hover:bg-slate-100 transition-colors"></div>
                               
@@ -1731,11 +1924,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         )}
 
         {/* SECTION 11: TYPICAL DAY */}
+        {shouldShowSection('typicalDay') && (
         <section className="bg-slate-50 pt-10 rounded-[3rem] mx-6 relative group/culture-day">
             {isEditable && (
                 <div className="absolute top-6 right-6 opacity-0 group-hover/culture-day:opacity-100 transition-opacity z-20">
-                     <Button onClick={() => handleEdit('culture-typical-day', { culture })} variant="secondary" size="sm" className="bg-white shadow-sm border">
-                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa lịch trình
+                    <Button onClick={() => handleEdit('culture-typical-day', { culture })} variant="secondary" size="sm" className="bg-white shadow-sm border">
+                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
                 </div>
             )}
@@ -1758,19 +1952,20 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </SectionCarousel>
             </div>
         </section>
-        {isEditable && usingSampleTypicalDay && (
+        )}
+        {isEditable && usingSampleTypicalDay && shouldShowSection('typicalDay') && (
           <p className="!mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
             {SAMPLE_NOTE}
           </p>
         )}
 
         {/* SECTION 14: AWARDS */}
-        {(awardsToRender.length > 0 || isEditable) && (
+        {shouldShowSection('awards') && (awardsToRender.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/awards">
                 {isEditable && (
                     <div className="absolute top-0 right-6 opacity-0 group-hover/awards:opacity-100 transition-opacity z-20">
-                         <Button onClick={() => handleEdit('awards', { awards })} variant="outline" size="sm" className="bg-white shadow-sm border">
-                            <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa giải thưởng
+                        <Button onClick={() => handleEdit('awards', { awards })} variant="outline" size="sm" className="bg-white shadow-sm border">
+                            <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                         </Button>
                     </div>
                 )}
@@ -1803,11 +1998,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         )}
 
         {/* SECTION 18: FOUNDER STORY */}
+        {shouldShowSection('founderStory') && (
         <section className="relative group/founder space-y-20">
              {isEditable && (
                 <div className="absolute top-6 right-6 opacity-0 group-hover/founder:opacity-100 transition-opacity z-20">
-                     <Button onClick={() => handleEdit('story-founder', { story })} variant="secondary" size="sm" className="bg-white shadow-sm border">
-                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa câu chuyện
+                    <Button onClick={() => handleEdit('story-founder', { story })} variant="secondary" size="sm" className="bg-white shadow-sm border">
+                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
                 </div>
             )}
@@ -1821,7 +2017,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                              <div className="flex flex-col md:flex-row gap-12 items-start">
                                 {founderStoryToRender.image && (
                                     <div className="md:w-1/3 shrink-0">
-                                        <img src={founderStoryToRender.image} alt="Founders" className="rounded-3xl shadow-xl w-full rotate-2 hover:rotate-0 transition-transform duration-500 grayscale" />
+                                        <img src={founderStoryToRender.image} alt="Founders" className="rounded-3xl shadow-xl w-full rotate-2 hover:rotate-0 transition-transform duration-500" />
                                     </div>
                                 )}
                                 <div className="md:w-2/3 space-y-6">
@@ -1841,18 +2037,20 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </section>
             )}
         </section>
-        {isEditable && usingSampleFounderStory && (
+        )}
+        {isEditable && usingSampleFounderStory && shouldShowSection('founderStory') && (
           <p className="!mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
             {SAMPLE_NOTE}
           </p>
         )}
 
         {/* SECTION 19: MILESTONES */}
+        {shouldShowSection('milestones') && (
         <section className="relative group/milestones">
             {isEditable && (
                 <div className="absolute top-0 right-6 opacity-0 group-hover/milestones:opacity-100 transition-opacity z-20">
-                     <Button onClick={() => handleEdit('story-milestones', { story })} variant="outline" size="sm" className="bg-white shadow-sm border">
-                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa cột mốc
+                    <Button onClick={() => handleEdit('story-milestones', { story })} variant="outline" size="sm" className="bg-white shadow-sm border">
+                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
                 </div>
             )}
@@ -1891,18 +2089,20 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </section>
             )}
         </section>
-        {isEditable && usingSampleMilestones && (
+        )}
+        {isEditable && usingSampleMilestones && shouldShowSection('milestones') && (
           <p className="!mt-4 px-6 text-xs text-slate-400 italic text-center md:text-left">
             {SAMPLE_NOTE}
           </p>
         )}
 
         {/* SECTION 20: TESTIMONIALS */}
+        {shouldShowSection('testimonials') && (
         <section className="max-w-7xl mx-auto px-6 pb-20 relative group/testimonials">
              {isEditable && (
                 <div className="absolute top-0 right-6 opacity-0 group-hover/testimonials:opacity-100 transition-opacity z-20">
                      <Button onClick={() => handleEdit('culture-testimonials', { culture })} variant="outline" size="sm" className="bg-white shadow-sm border">
-                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa đánh giá
+                        <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
                 </div>
             )}
@@ -1939,12 +2139,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </>
             )}
         </section>
-        
+        )}
 
         {/* Edit Dialogs (Only basic text for now to keep file size manageable) */}
         <Dialog open={!!editingSection} onOpenChange={(open) => !open && setEditingSection(null)}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
+                    <DialogDescription className="sr-only">
+                        Chỉnh sửa nội dung section và cài đặt hiển thị
+                    </DialogDescription>
                     <DialogTitle>
                         {editingSection === 'vision' && "Chỉnh sửa Tầm nhìn"}
                         {editingSection === 'mission' && "Chỉnh sửa Sứ mệnh"}
@@ -1968,6 +2171,20 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4">
+                    {/* Section Visibility Toggle */}
+                    {getSectionKey(editingSection) && (
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
+                            <div className="space-y-0.5">
+                                <Label className="text-sm font-medium">Hiển thị section này</Label>
+                                <p className="text-xs text-slate-500">Bật/tắt để ẩn hoặc hiện section trên trang profile công khai</p>
+                            </div>
+                            <Switch
+                                checked={formData.sectionVisible ?? true}
+                                onCheckedChange={(checked) => setFormData({...formData, sectionVisible: checked})}
+                            />
+                        </div>
+                    )}
+
                     {editingSection === 'vision' && (
                         <div className="space-y-2">
                             <Label>Nội dung Tầm nhìn</Label>
@@ -2033,6 +2250,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                         value={formData.leadershipPhilosophy?.media || ''} 
                                         companyId={company.id}
                                         onChange={url => setFormData({...formData, leadershipPhilosophy: {...formData.leadershipPhilosophy, media: url}})}
+                                        aspectRatio="16:9 hoặc 4:3"
                                     />
                                 ) : (
                                     <Input 
@@ -2476,6 +2694,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                     value={formData.training?.image || ''} 
                                     companyId={company.id}
                                     onChange={url => setFormData({...formData, training: {...formData.training, image: url}})}
+                                    aspectRatio="16:9"
                                 />
                             </div>
 
@@ -2574,6 +2793,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                                     newArr[idx].image = url;
                                                     setFormData({...formData, leaders: newArr});
                                                 }}
+                                                aspectRatio="1:1 (vuông)"
                                             />
                                         </div>
                                         <div className="col-span-2">
@@ -2726,6 +2946,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                                         newArr[idx].image = url;
                                                         setFormData({...formData, culture: {...formData.culture, testimonials: newArr}});
                                                     }}
+                                                    aspectRatio="1:1 (vuông)"
                                                 />
                                             </div>
                                             <Textarea 
@@ -2849,6 +3070,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                         value={formData.story?.founderStory?.image || ''} 
                                         companyId={company.id}
                                         onChange={url => setFormData({...formData, story: {...formData.story, founderStory: {...formData.story?.founderStory, image: url}}})} 
+                                        aspectRatio="4:3 hoặc 16:9"
                                     />
                                 </div>
                             </div>
@@ -2936,6 +3158,44 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     </Button>
                 </DialogFooter>
             </DialogContent>
+        </Dialog>
+
+        {/* View More Modal for Vision/Mission/Core Values */}
+        <Dialog open={viewMoreModal.type !== null} onOpenChange={(open) => !open && setViewMoreModal({ type: null, content: '' })}>
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {viewMoreModal.type === 'vision' && 'Tầm Nhìn'}
+                {viewMoreModal.type === 'mission' && 'Sứ Mệnh'}
+                {viewMoreModal.type === 'coreValues' && 'Giá Trị Cốt Lõi'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              {viewMoreModal.type === 'coreValues' ? (
+                <div className="space-y-4">
+                  {viewMoreModal.content.split('\n')
+                    .filter((val) => val.trim().length > 0)
+                    .map((val: string, i: number) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-900 font-bold shrink-0 mt-1">
+                          {i+1}
+                        </div>
+                        <div className="text-slate-700 font-medium leading-relaxed">{val}</div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-line">
+                  {viewMoreModal.content}
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setViewMoreModal({ type: null, content: '' })}>
+                Đóng
+              </Button>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
 
      </div>

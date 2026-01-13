@@ -181,16 +181,21 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             ref={coverInputRef}
                             onChange={handleUploadCover}
                         />
-                        <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            className="bg-[var(--card)]/90 hover:bg-[var(--card)] shadow-lg" 
-                            onClick={() => coverInputRef.current?.click()}
-                            disabled={uploadingCover}
-                        >
-                            {uploadingCover ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
-                            Chỉnh sửa ảnh bìa
-                        </Button>
+                        <div className="flex flex-col items-end gap-2">
+                            <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                className="bg-[var(--card)]/90 hover:bg-[var(--card)] shadow-lg" 
+                                onClick={() => coverInputRef.current?.click()}
+                                disabled={uploadingCover}
+                            >
+                                {uploadingCover ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
+                                Chỉnh sửa ảnh bìa
+                            </Button>
+                            <div className="bg-black/70 text-white text-xs px-2 py-1 rounded text-right backdrop-blur-sm">
+                                Tỷ lệ đề xuất: 21:9 hoặc 16:9
+                            </div>
+                        </div>
                     </div>
                  )}
              </div>
@@ -244,6 +249,9 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                     ) : (
                                         <Camera className="w-8 h-8 text-white" />
                                     )}
+                                </div>
+                                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/avatar:opacity-100 transition-opacity pointer-events-none backdrop-blur-sm z-20">
+                                    Tỷ lệ đề xuất: 1:1 (vuông)
                                 </div>
                             </>
                         )}

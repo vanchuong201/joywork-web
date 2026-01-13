@@ -535,30 +535,31 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
             </div>
           )}
 
-          <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
-            <div className="flex items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPTED_TYPES.join(",")}
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  void handleFiles(e.target.files);
-                  e.target.value = "";
-                }}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={mediaItems.length >= MAX_IMAGES || createPost.isPending}
-                className="h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-              >
-                <ImagePlus className="h-4 w-4" />
-                <span className="text-xs font-medium">Thêm ảnh</span>
-              </Button>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPTED_TYPES.join(",")}
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    void handleFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={mediaItems.length >= MAX_IMAGES || createPost.isPending}
+                  className="h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  <span className="text-xs font-medium">Thêm ảnh</span>
+                </Button>
               <Button
                 type="button"
                 variant="ghost"
@@ -592,7 +593,11 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
                 <Eye className="h-4 w-4" />
                 <span className="text-xs font-medium">Xem trước</span>
               </Button>
-        </div>
+            </div>
+            <p className="text-xs text-[var(--muted-foreground)] pl-2">
+              Tỷ lệ ảnh đề xuất: 16:9 hoặc 4:3 (tối đa 8 ảnh, mỗi ảnh tối đa 8MB)
+            </p>
+          </div>
 
           <Button
             type="button"

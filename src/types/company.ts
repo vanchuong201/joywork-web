@@ -64,6 +64,7 @@ export interface CompanyProfileData {
   story?: any;
   culture?: any;
   awards?: any;
+  sectionVisibility?: Record<string, boolean>;
 }
 
 export interface Company {

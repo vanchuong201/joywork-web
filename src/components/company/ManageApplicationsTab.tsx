@@ -9,6 +9,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Users, User, FileText, ExternalLink, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Users, User, FileText, ExternalLink, ChevronLeft, ChevronRight, X, MoreVertical, Edit, List, Grid } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ type Props = {
   company: Company;
 };
 
+type ViewMode = "list" | "grid";
 type StatusFilter = "all" | "PENDING" | "REVIEWING" | "SHORTLISTED" | "REJECTED" | "HIRED";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -55,6 +57,7 @@ export default function ManageApplicationsTab({ company }: Props) {
   const qc = useQueryClient();
   
   const jobId = searchParams.get("jobId") || undefined;
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
@@ -161,81 +164,105 @@ export default function ManageApplicationsTab({ company }: Props) {
             )}
           </p>
         </div>
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-2 border border-slate-200 rounded-lg p-1 bg-white">
+          <Button
+            variant={viewMode === "list" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+            className="h-8 px-3"
+          >
+            <List className="w-4 h-4 mr-2" />
+            Danh sách
+          </Button>
+          <Button
+            variant={viewMode === "grid" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("grid")}
+            className="h-8 px-3"
+          >
+            <Grid className="w-4 h-4 mr-2" />
+            Lưới
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Job Filter */}
-        <div className="flex items-center gap-2">
-          <Label htmlFor="job-filter" className="text-sm font-medium text-slate-700 whitespace-nowrap">
-            Lọc theo vị trí:
-          </Label>
-          <select
-            id="job-filter"
-            value={jobId || "all"}
-            onChange={(e) => handleJobFilterChange(e.target.value)}
-            className="h-10 w-[250px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)]"
-          >
-            <option value="all">Tất cả vị trí</option>
-            {jobsQuery.data?.map((job: any) => (
-              <option key={job.id} value={job.id}>
-                {job.title}
-              </option>
-            ))}
-          </select>
-        </div>
+      <Card className="p-4 bg-slate-50/50">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Job Filter */}
+          <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
+            <Label htmlFor="job-filter" className="text-sm font-medium text-slate-700 whitespace-nowrap shrink-0">
+              Vị trí:
+            </Label>
+            <select
+              id="job-filter"
+              value={jobId || "all"}
+              onChange={(e) => handleJobFilterChange(e.target.value)}
+              className="h-9 flex-1 sm:w-[250px] rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-colors"
+            >
+              <option value="all">Tất cả vị trí</option>
+              {jobsQuery.data?.map((job: any) => (
+                <option key={job.id} value={job.id}>
+                  {job.title}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {/* Status Filter */}
-        <div className="flex items-center gap-2">
-          <Label htmlFor="status-filter" className="text-sm font-medium text-slate-700 whitespace-nowrap">
-            Trạng thái:
-          </Label>
-          <select
-            id="status-filter"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="h-10 w-[180px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)]"
-          >
-            <option value="all">Tất cả</option>
-            <option value="PENDING">Đang chờ</option>
-            <option value="REVIEWING">Đang xem xét</option>
-            <option value="SHORTLISTED">Đã shortlist</option>
-            <option value="REJECTED">Từ chối</option>
-            <option value="HIRED">Đã tuyển</option>
-          </select>
-        </div>
+          {/* Status Filter */}
+          <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
+            <Label htmlFor="status-filter" className="text-sm font-medium text-slate-700 whitespace-nowrap shrink-0">
+              Trạng thái:
+            </Label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              className="h-9 flex-1 sm:w-[180px] rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-colors"
+            >
+              <option value="all">Tất cả</option>
+              <option value="PENDING">Đang chờ</option>
+              <option value="REVIEWING">Đang xem xét</option>
+              <option value="SHORTLISTED">Đã shortlist</option>
+              <option value="REJECTED">Từ chối</option>
+              <option value="HIRED">Đã tuyển</option>
+            </select>
+          </div>
 
-        {/* Clear filters */}
-        {(jobId || statusFilter !== "all") && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const params = new URLSearchParams(searchParams.toString());
-              params.delete("jobId");
-              router.push(`${pathname}?${params.toString()}`, { scroll: false });
-              setStatusFilter("all");
-            }}
-          >
-            <X className="w-4 h-4 mr-2" />
-            Xóa bộ lọc
-          </Button>
-        )}
-      </div>
-
-      {/* Selected Job Info */}
-      {selectedJob && (
-        <Card className="bg-blue-50 border-blue-200">
-          <div className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-blue-700 font-medium">Đang lọc theo vị trí:</p>
-              <p className="text-base font-semibold text-blue-900">{selectedJob.title}</p>
-            </div>
+          {/* Clear filters */}
+          {(jobId || statusFilter !== "all") && (
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("jobId");
+                router.push(`${pathname}?${params.toString()}`, { scroll: false });
+                setStatusFilter("all");
+              }}
+              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            >
+              <X className="w-4 h-4 mr-1.5" />
+              Xóa bộ lọc
+            </Button>
+          )}
+        </div>
+      </Card>
+
+      {/* Selected Job Info */}
+      {selectedJob && (
+        <Card className="bg-blue-50/80 border-blue-200">
+          <div className="p-4 flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-blue-600 font-medium mb-1">Đang lọc theo vị trí:</p>
+              <p className="text-sm font-semibold text-blue-900 truncate">{selectedJob.title}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => handleJobFilterChange("all")}
-              className="text-blue-700 hover:text-blue-900"
+              className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-100 shrink-0"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -278,21 +305,162 @@ export default function ManageApplicationsTab({ company }: Props) {
         </Card>
       ) : (
         <>
-          <div className="space-y-4">
-            {applications.map((application: any) => {
-              const user = application.user;
-              const profile = user?.profile;
-              const avatar = profile?.avatar || user?.avatar;
-              const userName = user?.name || user?.email || "Ứng viên";
-              const headline = profile?.headline;
+          {viewMode === "list" ? (
+            <div className="space-y-4">
+              {applications.map((application: any) => {
+                const user = application.user;
+                const profile = user?.profile;
+                const avatar = profile?.avatar || user?.avatar;
+                const userName = user?.name || user?.email || "Ứng viên";
+                const headline = profile?.headline;
 
-              return (
-                <Card key={application.id} className="hover:border-[var(--brand)]/50 transition-colors">
-                  <div className="p-6">
-                    <div className="flex flex-col lg:flex-row gap-6">
-                      {/* User Info */}
-                      <div className="flex items-start gap-4 flex-1 min-w-0">
-                        <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
+                return (
+                  <Card key={application.id} className="hover:shadow-md transition-all border-slate-200">
+                    <div className="p-6">
+                      <div className="flex items-start gap-4">
+                        {/* User Avatar */}
+                        <div className="relative w-14 h-14 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border-2 border-slate-200">
+                          {avatar ? (
+                            <Image
+                              src={avatar}
+                              alt={userName}
+                              fill
+                              sizes="56px"
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-50">
+                              <User className="w-7 h-7" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Main Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4 mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-1">
+                                <Link
+                                  href={`/profile/${user?.slug || user?.id}`}
+                                  className="font-semibold text-base text-slate-900 hover:text-[var(--brand)] transition-colors"
+                                >
+                                  {userName}
+                                </Link>
+                                <Badge 
+                                  className={cn(
+                                    "text-xs font-medium px-2.5 py-0.5 border",
+                                    STATUS_COLORS[application.status] || "bg-slate-100 text-slate-700 border-slate-200"
+                                  )}
+                                >
+                                  {STATUS_LABEL[application.status] || application.status}
+                                </Badge>
+                              </div>
+                              {headline && (
+                                <p className="text-sm text-slate-500 line-clamp-1">{headline}</p>
+                              )}
+                            </div>
+
+                            {/* Actions Dropdown */}
+                            <DropdownMenu.Root>
+                              <DropdownMenu.Trigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenu.Trigger>
+                              <DropdownMenu.Portal>
+                                <DropdownMenu.Content
+                                  align="end"
+                                  className="min-w-[180px] rounded-lg border border-slate-200 bg-white shadow-lg p-1 z-50"
+                                  sideOffset={5}
+                                >
+                                  <DropdownMenu.Item
+                                    onClick={() => handleStatusChange(application)}
+                                    className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                    Cập nhật trạng thái
+                                  </DropdownMenu.Item>
+                                  <DropdownMenu.Item asChild>
+                                    <Link 
+                                      href={`/profile/${user?.slug || user?.id}`} 
+                                      className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                    >
+                                      <ExternalLink className="w-4 h-4" />
+                                      Xem hồ sơ
+                                    </Link>
+                                  </DropdownMenu.Item>
+                                  {profile?.cvUrl && (
+                                    <DropdownMenu.Item asChild>
+                                      <a 
+                                        href={profile.cvUrl} 
+                                        target="_blank" 
+                                        rel="noreferrer"
+                                        className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                      >
+                                        <FileText className="w-4 h-4" />
+                                        Xem CV
+                                      </a>
+                                    </DropdownMenu.Item>
+                                  )}
+                                </DropdownMenu.Content>
+                              </DropdownMenu.Portal>
+                            </DropdownMenu.Root>
+                          </div>
+
+                          {/* Application Details */}
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center gap-2 text-slate-600">
+                              <span className="font-medium text-slate-500">Vị trí:</span>
+                              <Link
+                                href={`/jobs/${application.job.id}`}
+                                className="text-[var(--brand)] hover:underline font-medium"
+                              >
+                                {application.job.title}
+                              </Link>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-600">
+                              <span className="font-medium text-slate-500">Ứng tuyển:</span>
+                              <span>{formatDate(application.appliedAt)}</span>
+                            </div>
+                            {application.coverLetter && (
+                              <div className="pt-2 border-t border-slate-100">
+                                <p className="text-xs font-medium text-slate-500 mb-1">Thư giới thiệu:</p>
+                                <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">{application.coverLetter}</p>
+                              </div>
+                            )}
+                            {application.notes && (
+                              <div className="pt-2 border-t border-slate-100">
+                                <p className="text-xs font-medium text-slate-500 mb-1">Ghi chú:</p>
+                                <p className="text-sm text-slate-600 leading-relaxed">{application.notes}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {applications.map((application: any) => {
+                const user = application.user;
+                const profile = user?.profile;
+                const avatar = profile?.avatar || user?.avatar;
+                const userName = user?.name || user?.email || "Ứng viên";
+                const headline = profile?.headline;
+
+                return (
+                  <Card key={application.id} className="hover:shadow-lg transition-all border-slate-200 flex flex-col">
+                    <div className="p-5 flex flex-col h-full">
+                      {/* Header with Avatar and Actions */}
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border-2 border-slate-200">
                           {avatar ? (
                             <Image
                               src={avatar}
@@ -302,99 +470,110 @@ export default function ManageApplicationsTab({ company }: Props) {
                               className="object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400">
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-50">
                               <User className="w-8 h-8" />
                             </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4 mb-2">
-                            <div className="flex-1 min-w-0">
-                              <Link
-                                href={`/profile/${user?.slug || user?.id}`}
-                                className="font-bold text-lg text-slate-900 hover:text-[var(--brand)] transition-colors block truncate"
+                        <DropdownMenu.Root>
+                          <DropdownMenu.Trigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenu.Trigger>
+                          <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                              align="end"
+                              className="min-w-[180px] rounded-lg border border-slate-200 bg-white shadow-lg p-1 z-50"
+                              sideOffset={5}
+                            >
+                              <DropdownMenu.Item
+                                onClick={() => handleStatusChange(application)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
                               >
-                                {userName}
-                              </Link>
-                              {headline && (
-                                <p className="text-sm text-slate-500 mt-1 line-clamp-1">{headline}</p>
+                                <Edit className="w-4 h-4" />
+                                Cập nhật trạng thái
+                              </DropdownMenu.Item>
+                              <DropdownMenu.Item asChild>
+                                <Link 
+                                  href={`/profile/${user?.slug || user?.id}`} 
+                                  className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                  Xem hồ sơ
+                                </Link>
+                              </DropdownMenu.Item>
+                              {profile?.cvUrl && (
+                                <DropdownMenu.Item asChild>
+                                  <a 
+                                    href={profile.cvUrl} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    Xem CV
+                                  </a>
+                                </DropdownMenu.Item>
                               )}
-                            </div>
-                            <Badge className={cn("border", STATUS_COLORS[application.status] || "bg-slate-100 text-slate-700")}>
-                              {STATUS_LABEL[application.status] || application.status}
-                            </Badge>
-                          </div>
-                          <div className="space-y-2 text-sm text-slate-600">
-                            <div>
-                              <span className="font-medium">Vị trí ứng tuyển: </span>
-                              <Link
-                                href={`/jobs/${application.job.id}`}
-                                className="text-[var(--brand)] hover:underline"
-                              >
-                                {application.job.title}
-                              </Link>
-                            </div>
-                            <div>
-                              <span className="font-medium">Ứng tuyển ngày: </span>
-                              {formatDate(application.appliedAt)}
-                            </div>
-                            {application.coverLetter && (
-                              <div>
-                                <span className="font-medium">Thư giới thiệu: </span>
-                                <p className="text-slate-500 mt-1 line-clamp-2">{application.coverLetter}</p>
-                              </div>
-                            )}
-                            {application.notes && (
-                              <div>
-                                <span className="font-medium">Ghi chú: </span>
-                                <p className="text-slate-500 mt-1">{application.notes}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                            </DropdownMenu.Content>
+                          </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex flex-col gap-2 lg:w-48 flex-shrink-0">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStatusChange(application)}
-                          className="w-full"
+                      {/* Name and Status */}
+                      <div className="mb-3">
+                        <Link
+                          href={`/profile/${user?.slug || user?.id}`}
+                          className="font-semibold text-base text-slate-900 hover:text-[var(--brand)] transition-colors block mb-2"
                         >
-                          Cập nhật trạng thái
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                          className="w-full"
+                          {userName}
+                        </Link>
+                        {headline && (
+                          <p className="text-xs text-slate-500 line-clamp-2 mb-2">{headline}</p>
+                        )}
+                        <Badge 
+                          className={cn(
+                            "text-xs font-medium px-2.5 py-0.5 border",
+                            STATUS_COLORS[application.status] || "bg-slate-100 text-slate-700 border-slate-200"
+                          )}
                         >
-                          <Link href={`/profile/${user?.slug || user?.id}`}>
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Xem hồ sơ
-                          </Link>
-                        </Button>
-                        {profile?.cvUrl && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            asChild
-                            className="w-full"
+                          {STATUS_LABEL[application.status] || application.status}
+                        </Badge>
+                      </div>
+
+                      {/* Application Details */}
+                      <div className="space-y-2 text-sm flex-1">
+                        <div className="text-slate-600">
+                          <span className="text-xs font-medium text-slate-500 block mb-1">Vị trí:</span>
+                          <Link
+                            href={`/jobs/${application.job.id}`}
+                            className="text-[var(--brand)] hover:underline font-medium text-sm line-clamp-1"
                           >
-                            <a href={profile.cvUrl} target="_blank" rel="noreferrer">
-                              <FileText className="w-4 h-4 mr-2" />
-                              Xem CV
-                            </a>
-                          </Button>
+                            {application.job.title}
+                          </Link>
+                        </div>
+                        <div className="text-slate-600">
+                          <span className="text-xs font-medium text-slate-500 block mb-1">Ứng tuyển:</span>
+                          <span className="text-sm">{formatDate(application.appliedAt)}</span>
+                        </div>
+                        {application.coverLetter && (
+                          <div className="pt-2 border-t border-slate-100">
+                            <p className="text-xs font-medium text-slate-500 mb-1">Thư giới thiệu:</p>
+                            <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">{application.coverLetter}</p>
+                          </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (
