@@ -15,6 +15,7 @@ type MediaItem = {
   key?: string;
   width?: number;
   height?: number;
+  type?: "IMAGE" | "VIDEO";
 };
 
 type PreviewData = {
@@ -43,20 +44,43 @@ function MediaGrid({ images }: { images: MediaItem[] }) {
   
   if (uploadedImages.length === 0) return null;
 
+  const renderMediaItem = (item: typeof uploadedImages[number], className: string) => {
+    // Check if it's a video by type or file extension
+    const isVideo = item.type === "VIDEO" || 
+                    item.displayUrl.match(/\.(mp4|webm|mov)(\?|$)/i) !== null;
+    
+    if (isVideo) {
+      return (
+        <div className={className}>
+          <video
+            src={item.displayUrl}
+            controls
+            className="h-full w-full object-cover"
+            playsInline
+            preload="metadata"
+          />
+        </div>
+      );
+    }
+    return (
+      <PhotoView src={item.displayUrl}>
+        <div className={className}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.displayUrl}
+            alt="preview"
+            className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+          />
+        </div>
+      </PhotoView>
+    );
+  };
+
   if (uploadedImages.length === 1) {
     const img = uploadedImages[0]!;
     return (
       <PhotoProvider maskOpacity={0.8}>
-        <PhotoView src={img.displayUrl}>
-          <div className="mt-3 w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={img.displayUrl}
-              alt="preview"
-              className="h-auto w-full object-cover transition-transform duration-200 hover:scale-105"
-            />
-          </div>
-        </PhotoView>
+        {renderMediaItem(img, "mt-3 w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
       </PhotoProvider>
     );
   }
@@ -65,17 +89,10 @@ function MediaGrid({ images }: { images: MediaItem[] }) {
     return (
       <PhotoProvider maskOpacity={0.8}>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          {uploadedImages.map((img, idx) => (
-            <PhotoView key={img.id} src={img.displayUrl}>
-              <div className="aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.displayUrl}
-                  alt={`preview ${idx + 1}`}
-                  className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-                />
-              </div>
-            </PhotoView>
+          {uploadedImages.map((img) => (
+            <div key={img.id}>
+              {renderMediaItem(img, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+            </div>
           ))}
         </div>
       </PhotoProvider>
@@ -86,36 +103,14 @@ function MediaGrid({ images }: { images: MediaItem[] }) {
     return (
       <PhotoProvider maskOpacity={0.8}>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <PhotoView src={uploadedImages[0]!.displayUrl}>
-            <div className="row-span-2 aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={uploadedImages[0]!.displayUrl}
-                alt="preview 1"
-                className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-              />
+          <div className="row-span-2">
+            {renderMediaItem(uploadedImages[0]!, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+          </div>
+          {uploadedImages.slice(1).map((img) => (
+            <div key={img.id}>
+              {renderMediaItem(img, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
             </div>
-          </PhotoView>
-          <PhotoView src={uploadedImages[1]!.displayUrl}>
-            <div className="aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={uploadedImages[1]!.displayUrl}
-                alt="preview 2"
-                className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-              />
-            </div>
-          </PhotoView>
-          <PhotoView src={uploadedImages[2]!.displayUrl}>
-            <div className="aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={uploadedImages[2]!.displayUrl}
-                alt="preview 3"
-                className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-              />
-            </div>
-          </PhotoView>
+          ))}
         </div>
       </PhotoProvider>
     );
@@ -127,21 +122,14 @@ function MediaGrid({ images }: { images: MediaItem[] }) {
     <PhotoProvider maskOpacity={0.8}>
       <div className={cn("mt-3 grid gap-2", gridCols)}>
         {uploadedImages.slice(0, 9).map((img, idx) => (
-          <PhotoView key={img.id} src={img.displayUrl}>
-            <div className="aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img.displayUrl}
-                alt={`preview ${idx + 1}`}
-                className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-              />
-              {idx === 8 && uploadedImages.length > 9 && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white font-semibold">
-                  +{uploadedImages.length - 9}
-                </div>
-              )}
-            </div>
-          </PhotoView>
+          <div key={img.id} className="relative">
+            {renderMediaItem(img, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+            {idx === 8 && uploadedImages.length > 9 && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white font-semibold pointer-events-none">
+                +{uploadedImages.length - 9}
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </PhotoProvider>
@@ -172,6 +160,7 @@ export default function PostPreviewModal({ open, onOpenChange, previewData }: Pr
         width: img.width,
         height: img.height,
         order: idx,
+        type: img.type ?? "IMAGE",
       }));
 
     const selectedJobs = previewData.selectedJobIds

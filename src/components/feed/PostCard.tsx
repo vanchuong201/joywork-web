@@ -112,7 +112,7 @@ export type PostCardData = {
   sharesCount?: number | null;
   isLiked?: boolean | null;
   isSaved?: boolean | null;
-  images?: { id?: string; url: string; width?: number | null; height?: number | null; order?: number }[] | null;
+  images?: { id?: string; url: string; width?: number | null; height?: number | null; order?: number; type?: string }[] | null;
   jobs?: { id: string; title: string; location?: string | null; employmentType: string; isActive: boolean }[] | null;
   reactions?: { JOY: number; TRUST: number; SKEPTIC: number } | null;
   userReaction?: "JOY" | "TRUST" | "SKEPTIC" | null;
@@ -123,59 +123,63 @@ function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) 
   const primary = hiddenCount > 0 ? images.slice(0, 4) : images.slice(0, images.length);
   const backup = images.slice(primary.length);
 
+  const renderMediaItem = (media: (typeof images)[number], className: string) => {
+    // Check if it's a video by type or file extension
+    const isVideo = media.type === "VIDEO" || 
+                    media.url.match(/\.(mp4|webm|mov)(\?|$)/i) !== null;
+    
+    if (isVideo) {
+      return (
+        <div className={className}>
+          <video
+            src={media.url}
+            controls
+            className="h-full w-full object-cover"
+            playsInline
+            preload="metadata"
+          />
+        </div>
+      );
+    }
+    return (
+      <PhotoView key={media.id ?? media.url} src={media.url}>
+        <div className={className}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={media.url}
+            alt="media"
+            className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+          />
+        </div>
+      </PhotoView>
+    );
+  };
+
   const renderSingle = (image: (typeof images)[number]) => (
-    <PhotoView key={image.id ?? image.url} src={image.url}>
-      <div className="mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={image.url}
-          alt="media"
-          className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-        />
-      </div>
-    </PhotoView>
+    <div key={image.id ?? image.url}>
+      {renderMediaItem(image, "mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+    </div>
   );
 
   const renderPair = () => (
     <div className="mt-3 grid grid-cols-2 gap-2">
       {primary.map((m) => (
-        <PhotoView key={m.id ?? m.url} src={m.url}>
-          <div className="aspect-video overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={m.url}
-              alt="media"
-              className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-            />
-          </div>
-        </PhotoView>
+        <div key={m.id ?? m.url}>
+          {renderMediaItem(m, "aspect-video overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+        </div>
       ))}
     </div>
   );
 
   const renderTriple = () => (
     <div className="mt-3 grid grid-cols-3 gap-2">
-      <PhotoView key={primary[0].id ?? primary[0].url} src={primary[0].url}>
-        <div className="col-span-2 row-span-2 aspect-[2/1] overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={primary[0].url}
-            alt="media"
-            className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-          />
-        </div>
-      </PhotoView>
+      <div key={primary[0].id ?? primary[0].url} className="col-span-2 row-span-2">
+        {renderMediaItem(primary[0]!, "aspect-[2/1] overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+      </div>
       {primary.slice(1).map((m) => (
-        <PhotoView key={m.id ?? m.url} src={m.url}>
-          <div className="aspect-video overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={m.url}
-              alt="media"
-              className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-            />
-          </div>
-        </PhotoView>
+        <div key={m.id ?? m.url}>
+          {renderMediaItem(m, "aspect-video overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+        </div>
       ))}
     </div>
   );
@@ -183,21 +187,14 @@ function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) 
   const renderQuad = () => (
     <div className="mt-3 grid grid-cols-2 gap-2">
       {primary.map((m, idx) => (
-        <PhotoView key={m.id ?? m.url} src={m.url}>
-          <div className="relative aspect-video overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={m.url}
-              alt="media"
-              className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-            />
-            {idx === primary.length - 1 && hiddenCount > 0 ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">
-                +{hiddenCount}
-              </div>
-            ) : null}
-          </div>
-        </PhotoView>
+        <div key={m.id ?? m.url} className="relative">
+          {renderMediaItem(m, "aspect-video overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+          {idx === primary.length - 1 && hiddenCount > 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white pointer-events-none">
+              +{hiddenCount}
+            </div>
+          ) : null}
+        </div>
       ))}
     </div>
   );
@@ -212,11 +209,16 @@ function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) 
         ? renderTriple()
         : renderQuad()}
 
-      {backup.map((m) => (
-        <PhotoView key={m.id ?? m.url} src={m.url}>
-          <div className="hidden" />
-        </PhotoView>
-      ))}
+      {backup.map((m) => {
+        const isVideo = m.type === "VIDEO" || m.url.match(/\.(mp4|webm|mov)(\?|$)/i) !== null;
+        return isVideo ? (
+          <video key={m.id ?? m.url} src={m.url} className="hidden" />
+        ) : (
+          <PhotoView key={m.id ?? m.url} src={m.url}>
+            <div className="hidden" />
+          </PhotoView>
+        );
+      })}
     </PhotoProvider>
   );
 }
@@ -882,6 +884,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                 ...(typeof img.width === "number" ? { width: img.width } : {}),
                 ...(typeof img.height === "number" ? { height: img.height } : {}),
                 order: img.order,
+                type: img.type ?? "IMAGE",
               })),
               jobIds: payload.jobIds,
               hashtags: payload.hashtags,
@@ -916,7 +919,7 @@ function toBase64(file: File): Promise<string> {
   });
 }
 
-type EditableImage = { id?: string; key?: string; url: string; width?: number; height?: number; order: number };
+type EditableImage = { id?: string; key?: string; url: string; width?: number; height?: number; order: number; type?: "IMAGE" | "VIDEO" };
 
 function EditPostModal({
   open,
@@ -936,7 +939,12 @@ function EditPostModal({
   const [title, setTitle] = useState(post.title ?? "");
   const [content, setContent] = useState(post.content ?? "");
   const [images, setImages] = useState<EditableImage[]>(
-    (post.images ?? []).map((img, idx) => ({ id: img.id, url: img.url, order: img.order ?? idx }))
+    (post.images ?? []).map((img, idx) => ({ 
+      id: img.id, 
+      url: img.url, 
+      order: img.order ?? idx,
+      type: (img.type as "IMAGE" | "VIDEO") ?? "IMAGE"
+    }))
   );
   const [jobIds, setJobIds] = useState<string[]>(
     (post.jobs ?? []).map((j) => j.id)
@@ -954,7 +962,12 @@ function EditPostModal({
     if (open) {
       setTitle(post.title ?? "");
       setContent(post.content ?? "");
-      setImages((post.images ?? []).map((img, idx) => ({ id: img.id, url: img.url, order: img.order ?? idx })));
+      setImages((post.images ?? []).map((img, idx) => ({ 
+        id: img.id, 
+        url: img.url, 
+        order: img.order ?? idx,
+        type: (img.type as "IMAGE" | "VIDEO") ?? "IMAGE"
+      })));
       setJobIds((post.jobs ?? []).map((j) => j.id));
       setHashtags((post.hashtags ?? []).map((h) => h.label));
       // Prefill available jobs từ post hiện tại để luôn hiển thị tối thiểu các job đã gắn
@@ -1008,23 +1021,40 @@ function EditPostModal({
   const pickFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
+    const MAX_MEDIA = 16;
+    const availableSlots = MAX_MEDIA - images.length;
+    if (availableSlots <= 0) {
+      toast.info(`Bạn đã đạt giới hạn ${MAX_MEDIA} media cho một bài viết`);
+      return;
+    }
+    const selected = files.slice(0, availableSlots);
+    if (selected.length < files.length) {
+      toast.info(`Một số file bị bỏ qua vì vượt quá giới hạn ${MAX_MEDIA} media.`);
+    }
+    
     let next = [...images];
-    for (const file of files) {
+    for (const file of selected) {
       try {
         const dataUrl = await toBase64(file);
         const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
-        const { key, assetUrl } = await uploadCompanyPostImage({
+        const isVideo = file.type.startsWith("video/");
+        const { key, assetUrl, type } = await uploadCompanyPostImage({
           companyId,
           fileName: file.name,
           fileType: file.type,
           fileData: base64,
         });
-        next.push({ key, url: assetUrl, order: next.length });
+        next.push({ 
+          key, 
+          url: assetUrl, 
+          order: next.length,
+          type: type ?? (isVideo ? "VIDEO" : "IMAGE")
+        });
       } catch {
-        toast.error(`Tải ảnh thất bại: ${file.name}`);
+        toast.error(`Tải media thất bại: ${file.name}`);
       }
     }
-    setImages(next.slice(0, 8));
+    setImages(next);
     e.target.value = "";
   };
 
@@ -1070,32 +1100,44 @@ function EditPostModal({
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-[var(--foreground)]">Ảnh (tối đa 8)</span>
+              <span className="text-sm font-medium text-[var(--foreground)]">Ảnh/video (tối đa 16)</span>
               <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-[var(--brand)]">
-                <input type="file" accept="image/*" multiple hidden onChange={pickFiles} />
-                Thêm ảnh
+                <input type="file" accept="image/*,video/*" multiple hidden onChange={pickFiles} />
+                Thêm ảnh/video
               </label>
             </div>
             {images.length ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {images.map((img, idx) => (
-                  <div key={(img.id ?? img.key ?? img.url) + idx} className="relative overflow-hidden rounded-md border">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.url} alt="" className="h-32 w-full object-cover" />
-                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/40 px-2 py-1 text-xs text-white">
-                      <span>#{idx + 1}</span>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => move(idx, -1)} className="rounded bg-white/20 px-1">↑</button>
-                        <button onClick={() => move(idx, +1)} className="rounded bg-white/20 px-1">↓</button>
-                        <button onClick={() => removeAt(idx)} className="rounded bg-red-500/80 px-1">Xóa</button>
+                {images.map((img, idx) => {
+                  const isVideo = img.type === "VIDEO" || img.url.match(/\.(mp4|webm|mov)(\?|$)/i) !== null;
+                  return (
+                    <div key={(img.id ?? img.key ?? img.url) + idx} className="relative overflow-hidden rounded-md border">
+                      {isVideo ? (
+                        <video
+                          src={img.url}
+                          className="h-32 w-full object-cover"
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={img.url} alt="" className="h-32 w-full object-cover" />
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/40 px-2 py-1 text-xs text-white">
+                        <span>#{idx + 1}</span>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => move(idx, -1)} className="rounded bg-white/20 px-1">↑</button>
+                          <button onClick={() => move(idx, +1)} className="rounded bg-white/20 px-1">↓</button>
+                          <button onClick={() => removeAt(idx)} className="rounded bg-red-500/80 px-1">Xóa</button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-md border border-dashed p-4 text-center text-sm text-[var(--muted-foreground)]">
-                Chưa có ảnh. Nhấn “Thêm ảnh” để tải lên.
+                Chưa có ảnh/video. Nhấn "Thêm ảnh/video" để tải lên.
               </div>
             )}
           </div>

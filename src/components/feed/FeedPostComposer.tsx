@@ -20,7 +20,10 @@ import PostPreviewModal from "@/components/feed/PostPreviewModal";
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB for videos
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+const ACCEPTED_TYPES = [...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_VIDEO_TYPES];
 
 type MediaItemBase = {
   id: string;
@@ -28,6 +31,7 @@ type MediaItemBase = {
   previewUrl: string;
   status: "uploading" | "uploaded" | "error";
   errorMessage?: string;
+  type?: "IMAGE" | "VIDEO";
 };
 
 type MediaItem =
@@ -38,8 +42,9 @@ type MediaItem =
       url: string;
       width?: number;
       height?: number;
+      type?: "IMAGE" | "VIDEO";
     })
-  | (MediaItemBase & { status: "error"; key?: string; url?: string });
+  | (MediaItemBase & { status: "error"; key?: string; url?: string; type?: "IMAGE" | "VIDEO" });
 
 type UploadingPayload = {
   id: string;
@@ -49,7 +54,7 @@ type UploadingPayload = {
 
 type MediaAction =
   | { type: "ADD"; payload: UploadingPayload }
-  | { type: "SUCCESS"; payload: { id: string; key: string; url: string; width?: number; height?: number } }
+  | { type: "SUCCESS"; payload: { id: string; key: string; url: string; width?: number; height?: number; type?: "IMAGE" | "VIDEO" } }
   | { type: "ERROR"; payload: { id: string; message: string } }
   | { type: "REMOVE"; payload: { id: string } }
   | { type: "RESET" };
@@ -57,6 +62,7 @@ type MediaAction =
 function mediaReducer(state: MediaItem[], action: MediaAction): MediaItem[] {
   switch (action.type) {
     case "ADD":
+      const isVideo = ACCEPTED_VIDEO_TYPES.includes(action.payload.file.type);
       return [
         ...state,
         {
@@ -64,6 +70,7 @@ function mediaReducer(state: MediaItem[], action: MediaAction): MediaItem[] {
           file: action.payload.file,
           previewUrl: action.payload.previewUrl,
           status: "uploading",
+          type: isVideo ? "VIDEO" : "IMAGE",
         },
       ];
     case "SUCCESS":
@@ -76,6 +83,7 @@ function mediaReducer(state: MediaItem[], action: MediaAction): MediaItem[] {
               url: action.payload.url,
               width: action.payload.width,
               height: action.payload.height,
+              type: action.payload.type ?? "IMAGE",
               errorMessage: undefined,
             }
           : item,
@@ -190,6 +198,7 @@ export default function FeedPostComposer() {
           width: item.width,
           height: item.height,
           order: index,
+          type: item.type ?? "IMAGE",
         }));
 
       const title = content.slice(0, 50).trim() || "New Post";
@@ -244,8 +253,11 @@ export default function FeedPostComposer() {
         toast.error(`Định dạng ${file.type} không được hỗ trợ.`);
         continue;
       }
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`Ảnh ${file.name} vượt quá giới hạn 8MB.`);
+      const isVideo = ACCEPTED_VIDEO_TYPES.includes(file.type);
+      const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_FILE_SIZE;
+      if (file.size > maxSize) {
+        const sizeLimit = isVideo ? "50MB" : "8MB";
+        toast.error(`${isVideo ? "Video" : "Ảnh"} ${file.name} vượt quá giới hạn ${sizeLimit}.`);
         continue;
       }
       const id = crypto.randomUUID();
@@ -264,21 +276,24 @@ export default function FeedPostComposer() {
           }),
         );
         if (!mountedRef.current) return;
+        const mediaType = uploadResult.type ?? (isVideo ? "VIDEO" : "IMAGE");
         dispatch({
           type: "SUCCESS",
-          payload: { id, key: uploadResult.key, url: uploadResult.assetUrl },
+          payload: { id, key: uploadResult.key, url: uploadResult.assetUrl, type: mediaType },
         });
-        void getImageDimensions(previewUrl)
-          .then(({ width, height }) => {
-            if (!mountedRef.current) return;
-            dispatch({
-              type: "SUCCESS",
-              payload: { id, key: uploadResult.key, url: uploadResult.assetUrl, width, height },
-            });
-          })
-          .catch(() => {});
+        if (!isVideo) {
+          void getImageDimensions(previewUrl)
+            .then(({ width, height }) => {
+              if (!mountedRef.current) return;
+              dispatch({
+                type: "SUCCESS",
+                payload: { id, key: uploadResult.key, url: uploadResult.assetUrl, width, height, type: mediaType },
+              });
+            })
+            .catch(() => {});
+        }
       } catch (error: any) {
-        const message = error instanceof Error ? error.message : "Tải ảnh thất bại";
+        const message = error instanceof Error ? error.message : "Tải media thất bại";
         if (!mountedRef.current) return;
         dispatch({ type: "ERROR", payload: { id, message } });
         toast.error(message);
@@ -563,35 +578,47 @@ export default function FeedPostComposer() {
 
           {mediaItems.length > 0 && (
             <div className="grid gap-2 sm:grid-cols-3 md:grid-cols-4">
-              {mediaItems.map((item) => (
-                <div key={item.id} className="group relative aspect-square overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--muted)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.previewUrl}
-                    alt="preview"
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition hover:bg-black/80 group-hover:opacity-100"
-                    onClick={() => void handleRemoveMedia(item.id)}
-                    aria-label="Xóa ảnh"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                  {item.status === "uploading" && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <Loader2 className="h-5 w-5 animate-spin text-white" />
-                    </div>
-                  )}
-                  {item.status === "error" && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 p-2 text-center text-[10px] text-white">
-                      <span className="mb-1">Lỗi</span>
-                      <span className="line-clamp-2">{item.errorMessage}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+              {mediaItems.map((item) => {
+                const isVideo = ACCEPTED_VIDEO_TYPES.includes(item.file.type) || item.type === "VIDEO";
+                return (
+                  <div key={item.id} className="group relative aspect-square overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--muted)]">
+                    {isVideo ? (
+                      <video
+                        src={item.previewUrl}
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={item.previewUrl}
+                        alt="preview"
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition hover:bg-black/80 group-hover:opacity-100"
+                      onClick={() => void handleRemoveMedia(item.id)}
+                      aria-label={isVideo ? "Xóa video" : "Xóa ảnh"}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                    {item.status === "uploading" && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <Loader2 className="h-5 w-5 animate-spin text-white" />
+                      </div>
+                    )}
+                    {item.status === "error" && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 p-2 text-center text-[10px] text-white">
+                        <span className="mb-1">Lỗi</span>
+                        <span className="line-clamp-2">{item.errorMessage}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -726,7 +753,7 @@ export default function FeedPostComposer() {
                 className="h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               >
                 <ImagePlus className="h-4 w-4" />
-                <span className="text-xs font-medium">Thêm ảnh</span>
+                <span className="text-xs font-medium">Thêm ảnh/video</span>
               </Button>
               <Button
                 type="button"

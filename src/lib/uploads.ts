@@ -23,9 +23,9 @@ export async function uploadCompanyPostImage(payload: {
   fileType: string;
   fileData: string;
   previousKey?: string;
-}): Promise<{ key: string; assetUrl: string }> {
+}): Promise<{ key: string; assetUrl: string; type?: "IMAGE" | "VIDEO" }> {
   const { data } = await api.post("/api/uploads/company/post-image", payload);
-  return data.data as { key: string; assetUrl: string };
+  return data.data as { key: string; assetUrl: string; type?: "IMAGE" | "VIDEO" };
 }
 
 export async function uploadCompanyLogo(payload: {
