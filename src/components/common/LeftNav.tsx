@@ -32,9 +32,7 @@ type NavItem = {
   badge?: string;
 };
 
-type CompanyNavItem = NavItem & {
-  manageHref?: string;
-};
+type CompanyNavItem = NavItem;
 
 const primaryNav: NavItem[] = [
   { icon: Home, label: "Bảng tin", href: "/" },
@@ -92,8 +90,6 @@ function NavSection({ title, items, pathname }: { title: string; items: NavItem[
 }
 
 function CompanyNavSection({ title, items, pathname }: { title: string; items: CompanyNavItem[]; pathname: string }) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-
   return (
     <div>
       <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{title}</div>
@@ -105,15 +101,9 @@ function CompanyNavSection({ title, items, pathname }: { title: string; items: C
             : item.href === "/"
             ? pathname === "/"
             : pathname.startsWith(item.href);
-          const isHovered = hoveredId === item.href;
           
           return (
-            <li 
-              key={item.href}
-              onMouseEnter={() => setHoveredId(item.href)}
-              onMouseLeave={() => setHoveredId(null)}
-              className="relative"
-            >
+            <li key={item.href}>
               <Link
                 href={item.href}
                 className={cn(
@@ -126,19 +116,6 @@ function CompanyNavSection({ title, items, pathname }: { title: string; items: C
                 <Icon size={16} />
                 <span className="flex-1 font-medium truncate">{item.label}</span>
               </Link>
-              
-              {item.manageHref && isHovered && (
-                <Link
-                  href={item.manageHref}
-                  className={cn(
-                    "absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                    "bg-[var(--brand)] text-white hover:opacity-90"
-                  )}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Quản lý
-                </Link>
-              )}
             </li>
           );
         })}
@@ -238,13 +215,12 @@ export default function LeftNav() {
       return slug && typeof slug === 'string' && slug.trim() !== '' && !slug.includes('[') && !slug.includes(']');
     })
     .map((membership) => {
-      // Tất cả member đều có thể truy cập trang quản lý
+      // Click vào tên công ty sẽ vào luôn trang quản lý
       const slug = membership.company.slug!; // Safe to use ! here because we filtered above
       return {
         icon: Building2,
         label: membership.company.name,
-        href: `/companies/${slug}`,
-        manageHref: `/companies/${slug}/manage`,
+        href: `/companies/${slug}/manage`,
       };
     });
 
