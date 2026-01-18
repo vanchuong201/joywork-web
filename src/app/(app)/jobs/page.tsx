@@ -22,12 +22,25 @@ import { cn } from "@/lib/utils";
 type Job = {
   id: string;
   title: string;
-  description: string;
   location?: string;
   remote: boolean;
   employmentType: string;
   experienceLevel: string;
   company: { id: string; name: string; slug: string };
+  // JD chuẩn fields
+  generalInfo?: string;
+  mission?: string;
+  tasks?: string;
+  knowledge?: string;
+  skills?: string;
+  attitude?: string;
+  kpis?: string;
+  authority?: string;
+  relationships?: string;
+  careerPath?: string;
+  benefitsIncome?: string;
+  benefitsPerks?: string;
+  contact?: string;
 };
 
 type ViewMode = "list" | "grid";
@@ -321,7 +334,7 @@ function JobsPageContent() {
                   <CardContent className="space-y-3">
                     <div
                       className="prose prose-sm max-w-none text-[var(--muted-foreground)] leading-6 max-h-[4.5rem] overflow-hidden"
-                      dangerouslySetInnerHTML={{ __html: j.description ?? "" }}
+                      dangerouslySetInnerHTML={{ __html: j.mission || j.generalInfo || "" }}
                     />
                     <div className="flex items-center gap-2">
                       <Button asChild size="sm">
@@ -359,7 +372,7 @@ function JobsPageContent() {
                   <CardContent className="space-y-3">
                     <div
                       className="prose prose-sm max-w-none text-[var(--muted-foreground)] leading-6 max-h-[4.5rem] overflow-hidden"
-                      dangerouslySetInnerHTML={{ __html: j.description ?? "" }}
+                      dangerouslySetInnerHTML={{ __html: j.mission || j.generalInfo || "" }}
                     />
                     <div className="flex flex-col gap-2 pt-2 border-t border-[var(--border)]">
                       <Button asChild size="sm" className="w-full">

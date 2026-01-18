@@ -12,7 +12,6 @@ import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import CreateJobModal from "./CreateJobModal";
 import EditJobModal from "./EditJobModal";
-import JobDetailModal from "./JobDetailModal";
 import { Company } from "@/types/company";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +32,6 @@ export default function ManageJobsTab({ company }: Props) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [createJobOpen, setCreateJobOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<any>(null);
-  const [viewingJobId, setViewingJobId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -244,7 +242,7 @@ export default function ManageJobsTab({ company }: Props) {
                             <button
                               className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                               onClick={() => {
-                                setViewingJobId(job.id);
+                                window.open(`/jobs/${job.id}`, "_blank", "noopener,noreferrer");
                                 setOpenMenuId(null);
                               }}
                             >
@@ -335,7 +333,7 @@ export default function ManageJobsTab({ company }: Props) {
                           <button
                             className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                             onClick={() => {
-                              setViewingJobId(job.id);
+                              window.open(`/jobs/${job.id}`, "_blank", "noopener,noreferrer");
                               setOpenMenuId(null);
                             }}
                           >
@@ -440,13 +438,6 @@ export default function ManageJobsTab({ company }: Props) {
         />
       )}
 
-      {viewingJobId && (
-        <JobDetailModal
-          open={!!viewingJobId}
-          onOpenChange={(open) => !open && setViewingJobId(null)}
-          jobId={viewingJobId}
-        />
-      )}
     </div>
   );
 }
