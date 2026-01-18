@@ -258,6 +258,19 @@ const SAMPLE_CORE_VALUES = [
 
 const SAMPLE_NOTE = 'Đây là dữ liệu mẫu, sẽ được thay thế khi bạn cập nhật dữ liệu chính thức.';
 
+const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+
+function inferMediaTypeFromUrl(url?: string | null): 'image' | 'video' | undefined {
+  const u = (url ?? '').trim();
+  if (!u) return undefined;
+  // Prefer explicit video extensions when guessing
+  if (/\.(mp4|webm|mov)(\?|#|$)/i.test(u)) return 'video';
+  return 'image';
+}
+
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -282,6 +295,14 @@ const ImageUpload = ({ value, onChange, companyId, aspectRatio }: { value: strin
 
         try {
             setUploading(true);
+            if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+                toast.error("Định dạng tệp không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WEBP, MP4, WEBM, MOV");
+                return;
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                toast.error(`Ảnh ${file.name} vượt quá giới hạn 8MB.`);
+                return;
+            }
             const base64 = await fileToBase64(file);
             const { assetUrl } = await uploadCompanyPostImage({
                 companyId,
@@ -291,11 +312,17 @@ const ImageUpload = ({ value, onChange, companyId, aspectRatio }: { value: strin
             });
             onChange(assetUrl);
             toast.success("Tải ảnh thành công");
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Tải ảnh thất bại");
+            const message =
+              error?.response?.data?.error?.message ??
+              error?.message ??
+              "Tải ảnh thất bại";
+            toast.error(message);
         } finally {
             setUploading(false);
+            // allow re-uploading the same file
+            if (inputRef.current) inputRef.current.value = "";
         }
     };
 
@@ -317,7 +344,7 @@ const ImageUpload = ({ value, onChange, companyId, aspectRatio }: { value: strin
                 <div className="grow">
                     <input 
                         type="file" 
-                        accept="image/*" 
+                        accept={ACCEPTED_IMAGE_TYPES.join(",")}
                         className="hidden" 
                         ref={inputRef}
                         onChange={handleFileChange}
@@ -341,6 +368,99 @@ const ImageUpload = ({ value, onChange, companyId, aspectRatio }: { value: strin
         </div>
     )
 }
+
+const VideoUpload = ({
+  value,
+  onChange,
+  companyId,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  companyId: string;
+}) => {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      if (!ACCEPTED_VIDEO_TYPES.includes(file.type)) {
+        toast.error("Định dạng video không hợp lệ. Vui lòng chọn MP4/WEBM/MOV.");
+        return;
+      }
+      if (file.size > MAX_VIDEO_SIZE) {
+        toast.error(`Video ${file.name} vượt quá giới hạn 50MB.`);
+        return;
+      }
+
+      setUploading(true);
+      const base64 = await fileToBase64(file);
+      const { assetUrl } = await uploadCompanyPostImage({
+        companyId,
+        fileName: file.name,
+        fileType: file.type,
+        fileData: base64,
+      });
+      onChange(assetUrl);
+      toast.success("Tải video thành công");
+    } catch (error) {
+      console.error(error);
+      toast.error("Tải video thất bại");
+    } finally {
+      setUploading(false);
+      // allow re-uploading the same file
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-4 items-start">
+        {value && (
+          <div className="relative w-28 h-16 rounded-lg overflow-hidden border border-slate-200 shrink-0 group/vid bg-slate-100">
+            <video src={value} className="w-full h-full object-cover" muted playsInline />
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/vid:opacity-100 transition-opacity text-white"
+              aria-label="Xóa video"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        <div className="grow space-y-2">
+          <input
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime"
+            className="hidden"
+            ref={inputRef}
+            onChange={handleFileChange}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full border-dashed text-slate-500 hover:text-slate-900"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <ImagePlus className="w-4 h-4 mr-2" />
+            )}
+            {uploading ? "Đang tải..." : value ? "Thay đổi video" : "Tải video lên"}
+          </Button>
+          <p className="text-xs text-slate-500">Định dạng: MP4/WEBM/MOV (tối đa 50MB)</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface Props {
   company: Company;
@@ -989,6 +1109,14 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     
     // Auto-fill sample data if no real data exists
     const dataWithSamples = getSampleDataIfNeeded(section, initialData || {});
+
+    // Normalize leadershipPhilosophy mediaType for edit form preview
+    if (section === 'leadershipPhilosophy' && dataWithSamples?.leadershipPhilosophy) {
+      const lp = dataWithSamples.leadershipPhilosophy;
+      if (!lp.mediaType) {
+        lp.mediaType = inferMediaTypeFromUrl(lp.media) ?? 'image';
+      }
+    }
     
     setFormData({
       ...dataWithSamples,
@@ -2377,27 +2505,67 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                 <select 
                                     className="w-full border rounded-md p-2 bg-white"
                                     value={formData.leadershipPhilosophy?.mediaType || 'image'}
-                                    onChange={e => setFormData({...formData, leadershipPhilosophy: {...formData.leadershipPhilosophy, mediaType: e.target.value as any}})}
+                                    onChange={(e) => {
+                                      const nextType = e.target.value as any;
+                                      const prevType = formData.leadershipPhilosophy?.mediaType || 'image';
+                                      setFormData({
+                                        ...formData,
+                                        leadershipPhilosophy: {
+                                          ...formData.leadershipPhilosophy,
+                                          mediaType: nextType,
+                                          // Prevent wrong preview (img/video) by clearing old URL when switching type
+                                          media: nextType !== prevType ? "" : (formData.leadershipPhilosophy?.media ?? ""),
+                                        },
+                                      });
+                                    }}
                                 >
                                     <option value="image">Hình ảnh</option>
-                                    <option value="video">Video (URL)</option>
+                                    <option value="video">Video</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Media {formData.leadershipPhilosophy?.mediaType === 'video' ? '(Video URL)' : '(Ảnh)'}</Label>
+                                <Label>Media {formData.leadershipPhilosophy?.mediaType === 'video' ? '(Video)' : '(Ảnh)'}</Label>
                                 {formData.leadershipPhilosophy?.mediaType === 'image' || !formData.leadershipPhilosophy?.mediaType ? (
                                     <ImageUpload 
                                         value={formData.leadershipPhilosophy?.media || ''} 
                                         companyId={company.id}
-                                        onChange={url => setFormData({...formData, leadershipPhilosophy: {...formData.leadershipPhilosophy, media: url}})}
+                                        onChange={(url) =>
+                                          setFormData({
+                                            ...formData,
+                                            leadershipPhilosophy: {
+                                              ...formData.leadershipPhilosophy,
+                                              mediaType: 'image',
+                                              media: url,
+                                            },
+                                          })
+                                        }
                                         aspectRatio="16:9 hoặc 4:3"
                                     />
                                 ) : (
-                                    <Input 
-                                        value={formData.leadershipPhilosophy?.media || ''} 
-                                        onChange={e => setFormData({...formData, leadershipPhilosophy: {...formData.leadershipPhilosophy, media: e.target.value}})}
-                                        placeholder="https://..." 
-                                    />
+                                    <div className="space-y-3">
+                                        <VideoUpload
+                                            value={formData.leadershipPhilosophy?.media || ''}
+                                            companyId={company.id}
+                                            onChange={(url) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    leadershipPhilosophy: {
+                                                        ...formData.leadershipPhilosophy,
+                                                        mediaType: 'video',
+                                                        media: url,
+                                                    },
+                                                })
+                                            }
+                                        />
+                                        <div className="space-y-2">
+                                            <Label className="text-xs text-slate-600">Hoặc dán link video</Label>
+                                            <Input
+                                                value={formData.leadershipPhilosophy?.media || ''} 
+                                                onChange={e => setFormData({...formData, leadershipPhilosophy: {...formData.leadershipPhilosophy, media: e.target.value}})}
+                                                placeholder="https://..." 
+                                            />
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </div>

@@ -1021,6 +1021,11 @@ function EditPostModal({
   const pickFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
+    const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+    const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+    const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+    const ACCEPTED_TYPES = [...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_VIDEO_TYPES];
     const MAX_MEDIA = 16;
     const availableSlots = MAX_MEDIA - images.length;
     if (availableSlots <= 0) {
@@ -1035,9 +1040,19 @@ function EditPostModal({
     let next = [...images];
     for (const file of selected) {
       try {
+        if (!ACCEPTED_TYPES.includes(file.type)) {
+          toast.error(`Định dạng ${file.type} không được hỗ trợ.`);
+          continue;
+        }
+        const isVideo = ACCEPTED_VIDEO_TYPES.includes(file.type);
+        const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_FILE_SIZE;
+        if (file.size > maxSize) {
+          const sizeLimit = isVideo ? "50MB" : "8MB";
+          toast.error(`${isVideo ? "Video" : "Ảnh"} ${file.name} vượt quá giới hạn ${sizeLimit}.`);
+          continue;
+        }
         const dataUrl = await toBase64(file);
         const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
-        const isVideo = file.type.startsWith("video/");
         const { key, assetUrl, type } = await uploadCompanyPostImage({
           companyId,
           fileName: file.name,
@@ -1050,8 +1065,12 @@ function EditPostModal({
           order: next.length,
           type: type ?? (isVideo ? "VIDEO" : "IMAGE")
         });
-      } catch {
-        toast.error(`Tải media thất bại: ${file.name}`);
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.error?.message ??
+          err?.message ??
+          `Tải media thất bại: ${file.name}`;
+        toast.error(message);
       }
     }
     setImages(next);
@@ -1102,7 +1121,7 @@ function EditPostModal({
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-medium text-[var(--foreground)]">Ảnh/video (tối đa 16)</span>
               <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-[var(--brand)]">
-                <input type="file" accept="image/*,video/*" multiple hidden onChange={pickFiles} />
+                <input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" multiple hidden onChange={pickFiles} />
                 Thêm ảnh/video
               </label>
             </div>

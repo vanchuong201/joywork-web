@@ -240,12 +240,12 @@ export default function FeedPostComposer() {
     if (!files || !selectedCompanyId) return;
     const availableSlots = MAX_IMAGES - mediaItems.length;
     if (availableSlots <= 0) {
-      toast.info("Bạn đã đạt giới hạn 8 ảnh cho một bài viết");
+      toast.info("Bạn đã đạt giới hạn 8 ảnh/video cho một bài viết");
       return;
     }
     const selected = Array.from(files).slice(0, availableSlots);
     if (selected.length < files.length) {
-      toast.info("Một số ảnh bị bỏ qua vì vượt quá giới hạn 8 ảnh.");
+      toast.info("Một số file bị bỏ qua vì vượt quá giới hạn 8 ảnh/video.");
     }
 
     for (const file of selected) {

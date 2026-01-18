@@ -239,12 +239,12 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
     if (!files) return;
     const availableSlots = MAX_IMAGES - mediaItems.length;
     if (availableSlots <= 0) {
-      toast.info("Bạn đã đạt giới hạn 8 ảnh cho một bài viết");
+      toast.info("Bạn đã đạt giới hạn 8 ảnh/video cho một bài viết");
       return;
     }
     const selected = Array.from(files).slice(0, availableSlots);
     if (selected.length < files.length) {
-      toast.info("Một số ảnh bị bỏ qua vì vượt quá giới hạn 8 ảnh.");
+      toast.info("Một số file bị bỏ qua vì vượt quá giới hạn 8 ảnh/video.");
     }
 
     for (const file of selected) {
@@ -629,7 +629,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
               </Button>
             </div>
             <p className="text-xs text-[var(--muted-foreground)] pl-2">
-              Tỷ lệ ảnh đề xuất: 16:9 hoặc 4:3 (tối đa 8 ảnh, mỗi ảnh tối đa 8MB)
+              Tỷ lệ ảnh đề xuất: 16:9 hoặc 4:3 (tối đa 8 ảnh/video; ảnh tối đa 8MB, video tối đa 50MB)
             </p>
           </div>
 
