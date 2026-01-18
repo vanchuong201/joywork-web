@@ -11,9 +11,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import RichTextEditor from "@/components/ui/rich-text-editor";
 import { Plus, X } from "lucide-react";
 
 interface ExperienceDialogProps {
@@ -52,6 +52,23 @@ export default function ExperienceDialog({
       setAchievements([]);
     }
   }, [experience, open]);
+
+  // Ensure scroll is unlocked when modal closes
+  useEffect(() => {
+    if (!open) {
+      // Force unlock scroll after modal closes (with small delay to ensure Radix UI has finished)
+      const timer = setTimeout(() => {
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        // Also remove any potential scroll lock from MDEditor
+        const htmlElement = document.documentElement;
+        if (htmlElement) {
+          htmlElement.style.overflow = '';
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   const handleSave = () => {
     if (!role.trim() || !company.trim()) {
@@ -125,14 +142,15 @@ export default function ExperienceDialog({
 
           <div>
             <Label htmlFor="desc">Mô tả</Label>
-            <Textarea
-              id="desc"
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              placeholder="Mô tả công việc và trách nhiệm..."
-              rows={4}
-              className="mt-2"
-            />
+            <div className="mt-2">
+              <RichTextEditor
+                value={desc}
+                onChange={setDesc}
+                placeholder="Mô tả công việc và trách nhiệm... (hỗ trợ Markdown)"
+                className="bg-white"
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
           <div>

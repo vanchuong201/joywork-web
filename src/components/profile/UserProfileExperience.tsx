@@ -1,10 +1,37 @@
 "use client";
 
+"use client";
+
 import { Briefcase, Building2, BarChart3, CheckCircle } from 'lucide-react';
 import { UserExperience } from '@/types/user';
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 interface UserProfileExperienceProps {
   experiences: UserExperience[];
+}
+
+const EXPERIENCE_SANITIZE_CONFIG = {
+  ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "a", "code", "pre"],
+  ALLOWED_ATTR: ["href", "target", "rel"],
+};
+
+function markdownToHtml(markdown?: string | null) {
+  if (!markdown) return "";
+  const html = marked.parse(markdown, { breaks: true });
+  return typeof html === "string" ? html : "";
+}
+
+function sanitizeHtmlFromMarkdown(markdown: string | undefined | null) {
+  if (!markdown) return "";
+  const rawHtml = markdownToHtml(markdown);
+  const sanitized = DOMPurify.sanitize(rawHtml, EXPERIENCE_SANITIZE_CONFIG as any);
+  const sanitizedString = typeof sanitized === "string" ? sanitized : sanitized.toString();
+  const normalized = sanitizedString.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
+  if (!normalized || normalized === "<p></p>") {
+    return "";
+  }
+  return sanitizedString;
 }
 
 export default function UserProfileExperience({ experiences }: UserProfileExperienceProps) {
@@ -33,7 +60,12 @@ export default function UserProfileExperience({ experiences }: UserProfileExperi
               <Building2 size={16} />
               {exp.company}
             </div>
-            {exp.desc && <p className="text-slate-600 mb-4 whitespace-pre-line">{exp.desc}</p>}
+            {exp.desc && (
+              <div
+                className="text-slate-600 mb-4 prose prose-slate max-w-none [&_p]:my-0 [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-1"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtmlFromMarkdown(exp.desc) }}
+              />
+            )}
 
             {/* Achievements / KPIs */}
             {exp.achievements && exp.achievements.length > 0 && (
