@@ -19,10 +19,11 @@ export const metadata: Metadata = {
   description: "Nền tảng kết nối doanh nghiệp và ứng viên",
   icons: {
     icon: [
-      { url: "/JW-1x1-small.png", type: "image/png" },
+      { url: "/JW-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/JW-32x32.png", sizes: "16x16", type: "image/png" },
     ],
-    shortcut: "/JW-1x1-small.png",
-    apple: "/JW-1x1-small.png",
+    shortcut: "/JW-32x32.png",
+    apple: "/JW-32x32.png",
   },
 };
 
