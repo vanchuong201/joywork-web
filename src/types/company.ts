@@ -89,6 +89,13 @@ export interface Company {
   profileStory?: CompanyStoryBlock[];
   highlights?: CompanyHighlight[];
   isVerified: boolean;
+  verificationStatus?: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
+  verificationFileKey?: string | null;
+  verificationFileUrl?: string | null;
+  verificationSubmittedAt?: string | null;
+  verificationReviewedAt?: string | null;
+  verificationReviewedById?: string | null;
+  verificationRejectReason?: string | null;
   createdAt: string;
   updatedAt: string;
   members?: Array<{

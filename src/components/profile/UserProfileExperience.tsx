@@ -1,11 +1,9 @@
 "use client";
 
-"use client";
-
+import { useState, useEffect } from "react";
 import { Briefcase, Building2, BarChart3, CheckCircle } from 'lucide-react';
 import { UserExperience } from '@/types/user';
 import { marked } from "marked";
-import DOMPurify from "dompurify";
 
 interface UserProfileExperienceProps {
   experiences: UserExperience[];
@@ -22,16 +20,35 @@ function markdownToHtml(markdown?: string | null) {
   return typeof html === "string" ? html : "";
 }
 
-function sanitizeHtmlFromMarkdown(markdown: string | undefined | null) {
-  if (!markdown) return "";
-  const rawHtml = markdownToHtml(markdown);
-  const sanitized = DOMPurify.sanitize(rawHtml, EXPERIENCE_SANITIZE_CONFIG as any);
-  const sanitizedString = typeof sanitized === "string" ? sanitized : sanitized.toString();
-  const normalized = sanitizedString.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
-  if (!normalized || normalized === "<p></p>") {
-    return "";
-  }
-  return sanitizedString;
+// Component to render sanitized HTML only on client
+function SanitizedHtml({ markdown, className }: { markdown: string; className?: string }) {
+  const [html, setHtml] = useState<string>("");
+
+  useEffect(() => {
+    const sanitize = async () => {
+      const rawHtml = markdownToHtml(markdown);
+      // Dynamic import DOMPurify only on client
+      const DOMPurify = (await import("dompurify")).default;
+      const sanitized = DOMPurify.sanitize(rawHtml, EXPERIENCE_SANITIZE_CONFIG as any);
+      const sanitizedString = typeof sanitized === "string" ? sanitized : sanitized.toString();
+      const normalized = sanitizedString.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
+      if (!normalized || normalized === "<p></p>") {
+        setHtml("");
+      } else {
+        setHtml(sanitizedString);
+      }
+    };
+    sanitize();
+  }, [markdown]);
+
+  if (!html) return null;
+
+  return (
+    <div
+      className={className}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
 export default function UserProfileExperience({ experiences }: UserProfileExperienceProps) {
@@ -45,7 +62,7 @@ export default function UserProfileExperience({ experiences }: UserProfileExperi
         <Briefcase className="text-blue-600" size={20} /> Kinh Nghiệm Làm Việc (Nhiệm Vụ)
       </h3>
       <div className="space-y-8">
-        {experiences.map((exp, i) => (
+        {experiences.map((exp) => (
           <div key={exp.id} className="relative pl-8 border-l-2 border-slate-100 last:border-0 pb-2">
             <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-sm"></div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
@@ -61,9 +78,9 @@ export default function UserProfileExperience({ experiences }: UserProfileExperi
               {exp.company}
             </div>
             {exp.desc && (
-              <div
+              <SanitizedHtml
+                markdown={exp.desc}
                 className="text-slate-600 mb-4 prose prose-slate max-w-none [&_p]:my-0 [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-1"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtmlFromMarkdown(exp.desc) }}
               />
             )}
 
@@ -89,4 +106,3 @@ export default function UserProfileExperience({ experiences }: UserProfileExperi
     </div>
   );
 }
-

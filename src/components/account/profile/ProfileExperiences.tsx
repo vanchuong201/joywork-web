@@ -10,10 +10,50 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import ExperienceDialog from "./ExperienceDialog";
 import { marked } from "marked";
-import DOMPurify from "dompurify";
 
 interface ProfileExperiencesProps {
   experiences: UserExperience[];
+}
+
+const EXPERIENCE_SANITIZE_CONFIG = {
+  ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "a", "code", "pre"],
+  ALLOWED_ATTR: ["href", "target", "rel"],
+};
+
+// Component to render sanitized HTML only on client
+function SanitizedHtml({ markdown, className }: { markdown: string; className?: string }) {
+  const [html, setHtml] = useState<string>("");
+
+  useEffect(() => {
+    const sanitize = async () => {
+      if (!markdown) {
+        setHtml("");
+        return;
+      }
+      const rawHtml = marked.parse(markdown, { breaks: true });
+      const rawHtmlStr = typeof rawHtml === "string" ? rawHtml : "";
+      // Dynamic import DOMPurify only on client
+      const DOMPurify = (await import("dompurify")).default;
+      const sanitized = DOMPurify.sanitize(rawHtmlStr, EXPERIENCE_SANITIZE_CONFIG as any);
+      const sanitizedString = typeof sanitized === "string" ? sanitized : sanitized.toString();
+      const normalized = sanitizedString.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
+      if (!normalized || normalized === "<p></p>") {
+        setHtml("");
+      } else {
+        setHtml(sanitizedString);
+      }
+    };
+    sanitize();
+  }, [markdown]);
+
+  if (!html) return null;
+
+  return (
+    <div
+      className={className}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
 export default function ProfileExperiences({ experiences: initialExperiences }: ProfileExperiencesProps) {
@@ -21,22 +61,6 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
   const [experiences, setExperiences] = useState<UserExperience[]>(initialExperiences);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const EXPERIENCE_SANITIZE_CONFIG = {
-    ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "a", "code", "pre"],
-    ALLOWED_ATTR: ["href", "target", "rel"],
-  };
-
-  const sanitizeHtmlFromMarkdown = (markdown: string | undefined | null) => {
-    if (!markdown) return "";
-    const html = marked.parse(markdown, { breaks: true });
-    const rawHtml = typeof html === "string" ? html : "";
-    const sanitized = DOMPurify.sanitize(rawHtml, EXPERIENCE_SANITIZE_CONFIG as any);
-    const sanitizedString = typeof sanitized === "string" ? sanitized : sanitized.toString();
-    const normalized = sanitizedString.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
-    if (!normalized || normalized === "<p></p>") return "";
-    return sanitizedString;
-  };
 
   useEffect(() => {
     setExperiences(initialExperiences);
@@ -140,9 +164,9 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
                     <p className="text-sm text-slate-600">{exp.company}</p>
                     {exp.period && <p className="text-xs text-slate-500">{exp.period}</p>}
                     {exp.desc && (
-                      <div
+                      <SanitizedHtml
+                        markdown={exp.desc}
                         className="mt-2 text-sm text-slate-700 markdown-content [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:leading-relaxed [&_strong]:font-semibold [&_strong]:text-slate-900 [&_em]:italic [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_code]:text-slate-800 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:mb-2 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:mb-2 [&_ol]:space-y-1 [&_li]:leading-relaxed [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700 [&_pre]:bg-slate-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-x-auto [&_pre]:text-xs [&_pre]:mb-2"
-                        dangerouslySetInnerHTML={{ __html: sanitizeHtmlFromMarkdown(exp.desc) }}
                       />
                     )}
                     {exp.achievements && exp.achievements.length > 0 && (
