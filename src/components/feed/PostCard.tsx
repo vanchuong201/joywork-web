@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2, Briefcase, X, Check, MessageCircle } from "lucide-react";
+import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2, Briefcase, X, Check, MessageCircle, Play, Maximize2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
@@ -22,6 +22,57 @@ import { uploadCompanyPostImage } from "@/lib/uploads";
 import { createPortal } from "react-dom";
 import HashtagInput from "@/components/shared/HashtagInput";
 import CreateTicketModal from "@/components/tickets/CreateTicketModal";
+
+// Video Modal for fullscreen video viewing
+function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // Lock body scroll
+    document.body.style.overflow = "hidden";
+    // Play video when modal opens
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  // Close on escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+        aria-label="Đóng"
+      >
+        <X className="h-6 w-6" />
+      </button>
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        controls
+        autoPlay
+        playsInline
+        className="max-h-[90vh] max-w-[90vw] object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>,
+    document.body
+  );
+}
 
 type LikeButtonProps = {
   liked: boolean;
@@ -119,6 +170,7 @@ export type PostCardData = {
 };
 
 function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) {
+  const [fullscreenVideoUrl, setFullscreenVideoUrl] = useState<string | null>(null);
   const hiddenCount = Math.max(0, images.length - 4);
   const primary = hiddenCount > 0 ? images.slice(0, 4) : images.slice(0, images.length);
   const backup = images.slice(primary.length);
@@ -130,14 +182,24 @@ function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) 
     
     if (isVideo) {
       return (
-        <div className={className}>
+        <div className={cn(className, "group relative cursor-pointer")} onClick={() => setFullscreenVideoUrl(media.url)}>
           <video
             src={media.url}
-            controls
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover pointer-events-none"
             playsInline
+            muted
             preload="metadata"
           />
+          {/* Play overlay */}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/60 text-white group-hover:scale-110 transition-transform">
+              <Play className="h-6 w-6 ml-1" fill="white" />
+            </div>
+          </div>
+          {/* Fullscreen hint */}
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-black/60 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+            <Maximize2 className="h-3 w-3" /> Xem toàn màn hình
+          </div>
         </div>
       );
     }
@@ -200,26 +262,33 @@ function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) 
   );
 
   return (
-    <PhotoProvider maskOpacity={0.8}>
-      {primary.length === 1
-        ? renderSingle(primary[0]!)
-        : primary.length === 2
-        ? renderPair()
-        : primary.length === 3
-        ? renderTriple()
-        : renderQuad()}
+    <>
+      <PhotoProvider maskOpacity={0.8}>
+        {primary.length === 1
+          ? renderSingle(primary[0]!)
+          : primary.length === 2
+          ? renderPair()
+          : primary.length === 3
+          ? renderTriple()
+          : renderQuad()}
 
-      {backup.map((m) => {
-        const isVideo = m.type === "VIDEO" || m.url.match(/\.(mp4|webm|mov)(\?|$)/i) !== null;
-        return isVideo ? (
-          <video key={m.id ?? m.url} src={m.url} className="hidden" />
-        ) : (
-          <PhotoView key={m.id ?? m.url} src={m.url}>
-            <div className="hidden" />
-          </PhotoView>
-        );
-      })}
-    </PhotoProvider>
+        {backup.map((m) => {
+          const isVideo = m.type === "VIDEO" || m.url.match(/\.(mp4|webm|mov)(\?|$)/i) !== null;
+          return isVideo ? (
+            <video key={m.id ?? m.url} src={m.url} className="hidden" />
+          ) : (
+            <PhotoView key={m.id ?? m.url} src={m.url}>
+              <div className="hidden" />
+            </PhotoView>
+          );
+        })}
+      </PhotoProvider>
+      
+      {/* Video fullscreen modal */}
+      {fullscreenVideoUrl && (
+        <VideoModal videoUrl={fullscreenVideoUrl} onClose={() => setFullscreenVideoUrl(null)} />
+      )}
+    </>
   );
 }
 

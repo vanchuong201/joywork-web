@@ -1,11 +1,61 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Play, Maximize2, X } from "lucide-react";
+import { createPortal } from "react-dom";
+
+// Video Modal for fullscreen video viewing
+function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+        aria-label="Đóng"
+      >
+        <X className="h-6 w-6" />
+      </button>
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        controls
+        autoPlay
+        playsInline
+        className="max-h-[90vh] max-w-[90vw] object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>,
+    document.body
+  );
+}
 
 type MediaItem = {
   id: string;
@@ -34,6 +84,8 @@ type Props = {
 };
 
 function MediaGrid({ images }: { images: MediaItem[] }) {
+  const [fullscreenVideoUrl, setFullscreenVideoUrl] = useState<string | null>(null);
+  
   // Use uploaded URL if available, otherwise fallback to previewUrl
   const uploadedImages = images
     .filter((img) => img.status === "uploaded")
@@ -51,14 +103,24 @@ function MediaGrid({ images }: { images: MediaItem[] }) {
     
     if (isVideo) {
       return (
-        <div className={className}>
+        <div className={cn(className, "group relative cursor-pointer")} onClick={() => setFullscreenVideoUrl(item.displayUrl)}>
           <video
             src={item.displayUrl}
-            controls
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover pointer-events-none"
             playsInline
+            muted
             preload="metadata"
           />
+          {/* Play overlay */}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white group-hover:scale-110 transition-transform">
+              <Play className="h-5 w-5 ml-0.5" fill="white" />
+            </div>
+          </div>
+          {/* Fullscreen hint */}
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-black/60 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+            <Maximize2 className="h-3 w-3" /> Xem toàn màn hình
+          </div>
         </div>
       );
     }
@@ -76,63 +138,74 @@ function MediaGrid({ images }: { images: MediaItem[] }) {
     );
   };
 
-  if (uploadedImages.length === 1) {
-    const img = uploadedImages[0]!;
-    return (
-      <PhotoProvider maskOpacity={0.8}>
-        {renderMediaItem(img, "mt-3 w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
-      </PhotoProvider>
-    );
-  }
+  const renderContent = () => {
+    if (uploadedImages.length === 1) {
+      const img = uploadedImages[0]!;
+      return (
+        <PhotoProvider maskOpacity={0.8}>
+          {renderMediaItem(img, "mt-3 w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+        </PhotoProvider>
+      );
+    }
 
-  if (uploadedImages.length === 2) {
-    return (
-      <PhotoProvider maskOpacity={0.8}>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {uploadedImages.map((img) => (
-            <div key={img.id}>
-              {renderMediaItem(img, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
-            </div>
-          ))}
-        </div>
-      </PhotoProvider>
-    );
-  }
-
-  if (uploadedImages.length === 3) {
-    return (
-      <PhotoProvider maskOpacity={0.8}>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <div className="row-span-2">
-            {renderMediaItem(uploadedImages[0]!, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
-          </div>
-          {uploadedImages.slice(1).map((img) => (
-            <div key={img.id}>
-              {renderMediaItem(img, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
-            </div>
-          ))}
-        </div>
-      </PhotoProvider>
-    );
-  }
-
-  // 4+ images: grid layout
-  const gridCols = uploadedImages.length === 4 ? "grid-cols-2" : "grid-cols-3";
-  return (
-    <PhotoProvider maskOpacity={0.8}>
-      <div className={cn("mt-3 grid gap-2", gridCols)}>
-        {uploadedImages.slice(0, 9).map((img, idx) => (
-          <div key={img.id} className="relative">
-            {renderMediaItem(img, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
-            {idx === 8 && uploadedImages.length > 9 && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white font-semibold pointer-events-none">
-                +{uploadedImages.length - 9}
+    if (uploadedImages.length === 2) {
+      return (
+        <PhotoProvider maskOpacity={0.8}>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {uploadedImages.map((img) => (
+              <div key={img.id}>
+                {renderMediaItem(img, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
               </div>
-            )}
+            ))}
           </div>
-        ))}
-      </div>
-    </PhotoProvider>
+        </PhotoProvider>
+      );
+    }
+
+    if (uploadedImages.length === 3) {
+      return (
+        <PhotoProvider maskOpacity={0.8}>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="row-span-2">
+              {renderMediaItem(uploadedImages[0]!, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+            </div>
+            {uploadedImages.slice(1).map((img) => (
+              <div key={img.id}>
+                {renderMediaItem(img, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+              </div>
+            ))}
+          </div>
+        </PhotoProvider>
+      );
+    }
+
+    // 4+ images: grid layout
+    const gridCols = uploadedImages.length === 4 ? "grid-cols-2" : "grid-cols-3";
+    return (
+      <PhotoProvider maskOpacity={0.8}>
+        <div className={cn("mt-3 grid gap-2", gridCols)}>
+          {uploadedImages.slice(0, 9).map((img, idx) => (
+            <div key={img.id} className="relative">
+              {renderMediaItem(img, "aspect-square overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in")}
+              {idx === 8 && uploadedImages.length > 9 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white font-semibold pointer-events-none">
+                  +{uploadedImages.length - 9}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </PhotoProvider>
+    );
+  };
+
+  return (
+    <>
+      {renderContent()}
+      {fullscreenVideoUrl && (
+        <VideoModal videoUrl={fullscreenVideoUrl} onClose={() => setFullscreenVideoUrl(null)} />
+      )}
+    </>
   );
 }
 

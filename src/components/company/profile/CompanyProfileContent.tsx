@@ -2,14 +2,15 @@
 
 import { Company } from "@/types/company";
 import { cn } from "@/lib/utils";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { 
   Pencil, Save, X, Plus, Trash,
   Building2, Users, TrendingUp, Heart, Globe, Phone, Mail, 
   Target, Award, Zap, GraduationCap, MapPin, 
   Calendar, DollarSign, Star, CheckCircle, ArrowRight,
   Clock, Coffee, Layout, ChevronRight, ChevronLeft, Gem, Rocket, ShieldCheck,
-  Loader2, ImagePlus, Package
+  Loader2, ImagePlus, Package, Play, Maximize2
 } from "lucide-react";
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,263 @@ const iconMap: any = {
   TrendingUp, Users, Heart, Zap, DollarSign, Target, Globe, Gem, Star, ShieldCheck, 
   Coffee, Layout, Rocket, GraduationCap, Building2, MapPin, Calendar, CheckCircle, ArrowRight, Clock, ChevronRight
 };
+
+// Video Modal for fullscreen video viewing
+function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+        aria-label="Đóng"
+      >
+        <X className="h-6 w-6" />
+      </button>
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        controls
+        autoPlay
+        playsInline
+        className="max-h-[90vh] max-w-[90vw] object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>,
+    document.body
+  );
+}
+
+// Helper: Parse YouTube URL to get video ID
+function getYouTubeVideoId(url: string): string | null {
+  if (!url) return null;
+  // Match various YouTube URL formats
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/,
+    /youtube\.com\/shorts\/([^&\n?#]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// Helper: Check if URL is YouTube
+function isYouTubeUrl(url: string): boolean {
+  return !!getYouTubeVideoId(url);
+}
+
+// Helper: Get YouTube thumbnail URL
+function getYouTubeThumbnail(videoId: string): string {
+  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+}
+
+// Helper: Get YouTube embed URL
+function getYouTubeEmbedUrl(videoId: string): string {
+  return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+}
+
+// Leadership Media Section with responsive aspect ratio
+function LeadershipMediaSection({ 
+  profile, 
+  isEditable, 
+  onEdit 
+}: { 
+  profile: any; 
+  isEditable: boolean; 
+  onEdit: () => void;
+}) {
+  const [fullscreenVideoUrl, setFullscreenVideoUrl] = useState<string | null>(null);
+  const [isYouTubeModal, setIsYouTubeModal] = useState(false);
+  const mediaUrl = profile?.leadershipPhilosophy?.media;
+  const isVideo = profile?.leadershipPhilosophy?.mediaType === 'video';
+  const defaultImage = "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1000";
+  const defaultVideo = "https://videos.pexels.com/video-files/3252757/3252757-hd_1920_1080_25fps.mp4";
+  const quote = profile?.leadershipPhilosophy?.quote || "Lãnh đạo không phải là chức danh, mà là trách nhiệm phụng sự.";
+
+  // Check if media is YouTube
+  const youtubeVideoId = mediaUrl ? getYouTubeVideoId(mediaUrl) : null;
+  const isYouTube = !!youtubeVideoId;
+
+  const handleVideoClick = () => {
+    if (isYouTube && youtubeVideoId) {
+      setFullscreenVideoUrl(getYouTubeEmbedUrl(youtubeVideoId));
+      setIsYouTubeModal(true);
+    } else {
+      setFullscreenVideoUrl(mediaUrl || defaultVideo);
+      setIsYouTubeModal(false);
+    }
+  };
+
+  return (
+    <div className="relative group/leadership">
+      {isEditable && (
+        <div className="absolute top-4 right-4 z-30 opacity-0 group-hover/leadership:opacity-100 transition-opacity">
+          <Button onClick={onEdit} variant="secondary" size="sm" className="bg-white/90 hover:bg-white shadow-sm border">
+            <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
+          </Button>
+        </div>
+      )}
+      <div className="absolute -inset-4 bg-slate-200 opacity-50 blur-xl rounded-[3rem]"></div>
+      
+      {/* Media container - width 100%, height auto based on media aspect ratio */}
+      <div className="relative rounded-[2rem] shadow-2xl w-full overflow-hidden z-10 bg-slate-900">
+        {isVideo ? (
+          isYouTube && youtubeVideoId ? (
+            /* YouTube video - show thumbnail with play button */
+            <div 
+              className="relative cursor-pointer group/video aspect-video"
+              onClick={handleVideoClick}
+            >
+              <img 
+                src={getYouTubeThumbnail(youtubeVideoId)} 
+                alt="Video thumbnail"
+                className="block w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to hqdefault if maxresdefault doesn't exist
+                  (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`;
+                }}
+              />
+              {/* Play overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/video:bg-black/50 transition-colors">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-600 text-white group-hover/video:scale-110 transition-transform shadow-xl">
+                  <Play className="h-8 w-8 ml-1" fill="currentColor" />
+                </div>
+              </div>
+              {/* YouTube badge */}
+              <div className="absolute top-4 left-4 flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                YouTube
+              </div>
+              {/* Fullscreen hint */}
+              <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-black/70 px-3 py-2 text-sm text-white opacity-0 group-hover/video:opacity-100 transition-opacity">
+                <Maximize2 className="h-4 w-4" /> Xem video
+              </div>
+            </div>
+          ) : (
+            /* Regular video file - show video with thumbnail from first frame */
+            <div 
+              className="relative cursor-pointer group/video"
+              onClick={handleVideoClick}
+            >
+              <video 
+                className="block w-full"
+                playsInline
+                muted
+                preload="auto"
+                style={{ height: 'auto' }}
+              >
+                <source src={mediaUrl || defaultVideo} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              {/* Play overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/video:bg-black/50 transition-colors">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/90 text-slate-900 group-hover/video:scale-110 transition-transform shadow-xl">
+                  <Play className="h-8 w-8 ml-1" fill="currentColor" />
+                </div>
+              </div>
+              {/* Fullscreen hint */}
+              <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-black/70 px-3 py-2 text-sm text-white opacity-0 group-hover/video:opacity-100 transition-opacity">
+                <Maximize2 className="h-4 w-4" /> Xem toàn màn hình
+              </div>
+            </div>
+          )
+        ) : (
+          /* Image with width 100% and auto height - displays at natural aspect ratio */
+          <img 
+            src={mediaUrl || defaultImage} 
+            alt="Leadership Philosophy" 
+            className="block w-full"
+            style={{ height: 'auto' }}
+          />
+        )}
+      </div>
+      
+      <div className="absolute -bottom-10 -right-10 z-20 bg-white py-2 px-6 rounded-2xl shadow-xl border-l-8 border-slate-800 hidden md:block max-w-sm pointer-events-none">
+        <p className="text-lg font-serif italic text-slate-800">"{quote}"</p>
+      </div>
+
+      {/* Video fullscreen modal */}
+      {fullscreenVideoUrl && (
+        isYouTubeModal ? (
+          <YouTubeModal embedUrl={fullscreenVideoUrl} onClose={() => setFullscreenVideoUrl(null)} />
+        ) : (
+          <VideoModal videoUrl={fullscreenVideoUrl} onClose={() => setFullscreenVideoUrl(null)} />
+        )
+      )}
+    </div>
+  );
+}
+
+// YouTube Modal for fullscreen YouTube embed
+function YouTubeModal({ embedUrl, onClose }: { embedUrl: string; onClose: () => void }) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+        aria-label="Đóng"
+      >
+        <X className="h-6 w-6" />
+      </button>
+      <div 
+        className="w-[90vw] max-w-5xl aspect-video"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <iframe
+          src={embedUrl}
+          className="w-full h-full rounded-lg"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 // Sample data from template-profile/App.tsx, used as demo content in manage mode
 const SAMPLE_STATS = [
@@ -1541,40 +1799,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         <section className="max-w-7xl mx-auto px-6 relative group/philosophy">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 {/* Left: Media & Quote */}
-                <div className="relative group/leadership">
-                    {isEditable && (
-                        <div className="absolute top-4 right-4 z-30 opacity-0 group-hover/leadership:opacity-100 transition-opacity">
-                             <Button onClick={() => handleEdit('leadershipPhilosophy', { leadershipPhilosophy: profile?.leadershipPhilosophy || {} })} variant="secondary" size="sm" className="bg-white/90 hover:bg-white shadow-sm border">
-                                <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
-                            </Button>
-                        </div>
-                    )}
-                    <div className="absolute -inset-4 bg-slate-200 opacity-50 blur-xl rounded-[3rem]"></div>
-                    
-                    <div className="relative rounded-[2rem] shadow-2xl w-full overflow-hidden z-10 bg-slate-900 aspect-video">
-                        {profile?.leadershipPhilosophy?.mediaType === 'video' ? (
-                            <video 
-                                className="w-full h-full object-cover"
-                                controls
-                                playsInline
-                                poster={profile?.leadershipPhilosophy?.media || "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1000"}
-                            >
-                                <source src={profile?.leadershipPhilosophy?.media || "https://videos.pexels.com/video-files/3252757/3252757-hd_1920_1080_25fps.mp4"} type="video/mp4" />
-                                Your browser does not support the video tag.
-                            </video>
-                        ) : (
-                            <img 
-                                src={profile?.leadershipPhilosophy?.media || "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1000"} 
-                                alt="Leadership Philosophy" 
-                                className="w-full h-full object-cover"
-                            />
-                        )}
-                    </div>
-                    
-                    <div className="absolute -bottom-10 -right-10 z-20 bg-white py-2 px-6 rounded-2xl shadow-xl border-l-8 border-slate-800 hidden md:block max-w-sm pointer-events-none">
-                        <p className="text-lg font-serif italic text-slate-800">"{profile?.leadershipPhilosophy?.quote || "Lãnh đạo không phải là chức danh, mà là trách nhiệm phụng sự."}"</p>
-                    </div>
-                </div>
+                <LeadershipMediaSection 
+                    profile={profile}
+                    isEditable={isEditable}
+                    onEdit={() => handleEdit('leadershipPhilosophy', { leadershipPhilosophy: profile?.leadershipPhilosophy || {} })}
+                />
 
                 {/* Right: Management Stats - verified by employees */}
                 <div className="relative">
