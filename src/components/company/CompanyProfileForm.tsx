@@ -9,19 +9,11 @@ import api from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import RichTextEditor from "@/components/ui/rich-text-editor";
-import DOMPurify from "dompurify";
-import TurndownService from "turndown";
-import { marked } from "marked";
+import TiptapEditor from "@/components/ui/tiptap-editor";
 import { uploadCompanyLogo, uploadCompanyCover } from "@/lib/uploads";
 import Image from "next/image";
 
 const sizeOptions = ["STARTUP", "SMALL", "MEDIUM", "LARGE", "ENTERPRISE"] as const;
-
-const turndown = new TurndownService({
-  headingStyle: "atx",
-  codeBlockStyle: "fenced",
-});
 
 const DESCRIPTION_SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
@@ -50,26 +42,13 @@ const DESCRIPTION_SANITIZE_CONFIG = {
   ALLOWED_ATTR: ["href", "target", "rel", "style", "class", "src", "alt", "title", "width", "height", "loading"],
 };
 
-function htmlToMarkdown(html?: string | null) {
+// Sanitize HTML directly (TiptapEditor outputs HTML)
+function sanitizeHtml(html: string | undefined | null): string {
   if (!html) return "";
-  try {
-    return turndown.turndown(html);
-  } catch (error) {
-    console.warn("Failed to convert HTML to markdown", error);
-    return html;
-  }
-}
-
-function markdownToHtml(markdown?: string | null) {
-  if (!markdown) return "";
-  const html = marked.parse(markdown, { breaks: true });
-  return typeof html === "string" ? html : "";
-}
-
-function sanitizeDescription(markdown: string | undefined | null) {
-  if (!markdown) return "";
-  const rawHtml = markdownToHtml(markdown);
-  const sanitized = DOMPurify.sanitize(rawHtml, DESCRIPTION_SANITIZE_CONFIG);
+  // Dynamic import DOMPurify only on client
+  if (typeof window === "undefined") return html;
+  const DOMPurify = require("dompurify");
+  const sanitized = DOMPurify.sanitize(html, DESCRIPTION_SANITIZE_CONFIG);
   const normalized = sanitized.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
   if (!normalized || normalized === "<p></p>") {
     return "";
@@ -183,7 +162,7 @@ export default function CompanyProfileForm({
     defaultValues: {
       name: initialData.name,
       tagline: initialData.tagline ?? "",
-      description: htmlToMarkdown(initialData.description),
+      description: initialData.description ?? "",
       website: initialData.website ?? "",
       location: initialData.location ?? "",
       industry: initialData.industry ?? "",
@@ -203,7 +182,7 @@ export default function CompanyProfileForm({
     reset({
       name: initialData.name,
       tagline: initialData.tagline ?? "",
-      description: htmlToMarkdown(initialData.description),
+      description: initialData.description ?? "",
       website: initialData.website ?? "",
       location: initialData.location ?? "",
       industry: initialData.industry ?? "",
@@ -303,7 +282,7 @@ export default function CompanyProfileForm({
 
   const updateCompany = useMutation({
     mutationFn: async (values: FormValues) => {
-      const sanitizedDescription = sanitizeDescription(values.description);
+      const sanitizedDescription = sanitizeHtml(values.description);
       const payload = {
         name: values.name.trim(),
         tagline: values.tagline?.trim() || undefined,
@@ -351,7 +330,7 @@ export default function CompanyProfileForm({
           control={control}
           name="description"
           render={({ field }) => (
-            <RichTextEditor
+            <TiptapEditor
               value={field.value || ""}
               onChange={(content) => field.onChange(content)}
               placeholder="Mô tả ngắn về công ty..."

@@ -1,20 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import RichTextEditor from "@/components/ui/rich-text-editor";
+import TiptapEditor from "@/components/ui/tiptap-editor";
 import { X } from "lucide-react";
-import DOMPurify from "dompurify";
-import TurndownService from "turndown";
-import { marked } from "marked";
-
-const turndown = new TurndownService({
-  headingStyle: "atx",
-  codeBlockStyle: "fenced",
-});
 
 const DESCRIPTION_SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
@@ -43,26 +35,13 @@ const DESCRIPTION_SANITIZE_CONFIG = {
   ALLOWED_ATTR: ["href", "target", "rel", "style", "class", "src", "alt", "title", "width", "height", "loading"],
 };
 
-function htmlToMarkdown(html?: string | null) {
+// Sanitize HTML directly (TiptapEditor outputs HTML)
+function sanitizeHtml(html: string | undefined | null): string {
   if (!html) return "";
-  try {
-    return turndown.turndown(html);
-  } catch (error) {
-    console.warn("Failed to convert HTML to markdown", error);
-    return html;
-  }
-}
-
-function markdownToHtml(markdown?: string | null) {
-  if (!markdown) return "";
-  const html = marked.parse(markdown, { breaks: true });
-  return typeof html === "string" ? html : "";
-}
-
-function sanitizeDescription(markdown: string | undefined | null) {
-  if (!markdown) return "";
-  const rawHtml = markdownToHtml(markdown);
-  const sanitized = DOMPurify.sanitize(rawHtml, DESCRIPTION_SANITIZE_CONFIG);
+  // Dynamic import DOMPurify only on client
+  if (typeof window === "undefined") return html;
+  const DOMPurify = require("dompurify");
+  const sanitized = DOMPurify.sanitize(html, DESCRIPTION_SANITIZE_CONFIG);
   const normalized = sanitized.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
   if (!normalized || normalized === "<p></p>") {
     return "";
@@ -86,12 +65,19 @@ export default function EditDescriptionModal({
   onSuccess,
 }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [description, setDescription] = useState(htmlToMarkdown(currentDescription) || "");
+  const [description, setDescription] = useState(currentDescription || "");
+
+  // Sync description when modal opens with new data
+  useEffect(() => {
+    if (isOpen) {
+      setDescription(currentDescription || "");
+    }
+  }, [isOpen, currentDescription]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const sanitizedDescription = sanitizeDescription(description);
+      const sanitizedDescription = sanitizeHtml(description);
       await api.patch(`/api/companies/${companyId}`, {
         description: sanitizedDescription || undefined,
       });
@@ -108,7 +94,7 @@ export default function EditDescriptionModal({
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setDescription(htmlToMarkdown(currentDescription) || "");
+      setDescription(currentDescription || "");
       onClose();
     }
   };
@@ -132,11 +118,11 @@ export default function EditDescriptionModal({
           </div>
 
           <Dialog.Description className="mb-4 text-sm text-[var(--muted-foreground)]">
-            Viết mô tả chi tiết về công ty. Hỗ trợ Markdown để định dạng văn bản (tiêu đề, danh sách, liên kết...).
+            Viết mô tả chi tiết về công ty (tiêu đề, danh sách, liên kết...).
           </Dialog.Description>
 
           <div className="space-y-4">
-            <RichTextEditor
+            <TiptapEditor
               value={description}
               onChange={setDescription}
               placeholder="Nhập mô tả về công ty..."

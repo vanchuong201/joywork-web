@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Briefcase, Building2, BarChart3, CheckCircle } from 'lucide-react';
 import { UserExperience } from '@/types/user';
-import { marked } from "marked";
 
 interface UserProfileExperienceProps {
   experiences: UserExperience[];
@@ -14,22 +13,19 @@ const EXPERIENCE_SANITIZE_CONFIG = {
   ALLOWED_ATTR: ["href", "target", "rel"],
 };
 
-function markdownToHtml(markdown?: string | null) {
-  if (!markdown) return "";
-  const html = marked.parse(markdown, { breaks: true });
-  return typeof html === "string" ? html : "";
-}
-
-// Component to render sanitized HTML only on client
-function SanitizedHtml({ markdown, className }: { markdown: string; className?: string }) {
+// Component to render sanitized HTML only on client (TiptapEditor outputs HTML directly)
+function SanitizedHtml({ content, className }: { content: string; className?: string }) {
   const [html, setHtml] = useState<string>("");
 
   useEffect(() => {
     const sanitize = async () => {
-      const rawHtml = markdownToHtml(markdown);
+      if (!content) {
+        setHtml("");
+        return;
+      }
       // Dynamic import DOMPurify only on client
       const DOMPurify = (await import("dompurify")).default;
-      const sanitized = DOMPurify.sanitize(rawHtml, EXPERIENCE_SANITIZE_CONFIG as any);
+      const sanitized = DOMPurify.sanitize(content, EXPERIENCE_SANITIZE_CONFIG as any);
       const sanitizedString = typeof sanitized === "string" ? sanitized : sanitized.toString();
       const normalized = sanitizedString.replace(/(<p><br><\/p>|\s|&nbsp;)+$/gi, "").trim();
       if (!normalized || normalized === "<p></p>") {
@@ -39,7 +35,7 @@ function SanitizedHtml({ markdown, className }: { markdown: string; className?: 
       }
     };
     sanitize();
-  }, [markdown]);
+  }, [content]);
 
   if (!html) return null;
 
@@ -79,7 +75,7 @@ export default function UserProfileExperience({ experiences }: UserProfileExperi
             </div>
             {exp.desc && (
               <SanitizedHtml
-                markdown={exp.desc}
+                content={exp.desc}
                 className="text-slate-600 mb-4 prose prose-slate max-w-none [&_p]:my-0 [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-1"
               />
             )}

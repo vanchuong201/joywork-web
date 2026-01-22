@@ -3,14 +3,14 @@
 import { Company } from "@/types/company";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Globe, MapPin, Users, CheckCircle, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera } from "lucide-react";
+import { Globe, MapPin, Users, CheckCircle, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle } from "lucide-react";
 import CompanyMessageButton from "@/components/company/CompanyMessageButton";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { Badge } from "@/components/ui/badge";
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { uploadCompanyCover, uploadCompanyLogo } from "@/lib/uploads";
 import { Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 export default function CompanyProfileHero({ company, isEditable = false }: { company: Company, isEditable?: boolean }) {
     const router = useRouter();
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [uploadingVerification, setUploadingVerification] = useState(false);
@@ -30,6 +31,9 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const verificationInputRef = useRef<HTMLInputElement>(null);
 
+    // Track original legal name for re-verification detection
+    const originalLegalName = useMemo(() => company.legalName || "", [company.legalName]);
+
     const [formData, setFormData] = useState({
         name: company.name,
         legalName: company.legalName || "",
@@ -38,6 +42,22 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         email: company.email || "",
         phone: company.phone || "",
     });
+
+    // Get owner email for verification notification
+    const ownerMember = useMemo(() => {
+        return company.members?.find(m => m.role === "OWNER");
+    }, [company.members]);
+    const ownerEmail = ownerMember?.user?.email;
+
+    const verificationStatus = company.verificationStatus ?? (company.isVerified ? "VERIFIED" : "UNVERIFIED");
+    const verificationLabel =
+        verificationStatus === "VERIFIED"
+            ? "Đã xác thực"
+            : verificationStatus === "PENDING"
+            ? "Đang chờ duyệt"
+            : verificationStatus === "REJECTED"
+            ? "Bị từ chối"
+            : "Chưa xác thực";
 
     const mutation = useMutation({
         mutationFn: async (data: any) => {
@@ -54,23 +74,30 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     });
 
     const handleSave = () => {
-        // Chỉ validate trường "name" là required
+        // Validate required field
         if (!formData.name || formData.name.trim() === "") {
             toast.error("Vui lòng nhập tên công ty (Thương hiệu)");
             return;
         }
         
-        // Clean data: chuyển empty strings thành null cho các trường optional
+        // Check if legal name changed for verified company
+        const legalNameChanged = verificationStatus === "VERIFIED" && 
+            formData.legalName.trim() !== originalLegalName.trim() &&
+            formData.legalName.trim() !== "";
+        
         const payload: any = {
             name: formData.name.trim(),
+            legalName: formData.legalName?.trim() || null,
+            location: formData.location?.trim() || null,
+            website: formData.website?.trim() || null,
+            email: formData.email?.trim() || null,
+            phone: formData.phone?.trim() || null,
         };
-        
-        // Gửi tất cả các trường, chuyển empty string thành null
-        payload.legalName = formData.legalName?.trim() || null;
-        payload.location = formData.location?.trim() || null;
-        payload.website = formData.website?.trim() || null;
-        payload.email = formData.email?.trim() || null;
-        payload.phone = formData.phone?.trim() || null;
+
+        // If legal name changed on verified company, trigger re-verification
+        if (legalNameChanged) {
+            payload.requestReVerification = true;
+        }
         
         mutation.mutate(payload);
     };
@@ -107,6 +134,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             if (verificationInputRef.current) {
                 verificationInputRef.current.value = "";
             }
+            setVerificationDialogOpen(false);
             router.refresh();
         } catch (error: any) {
             const message = error?.response?.data?.error?.message ?? "Tải file xác thực thất bại";
@@ -116,15 +144,6 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         }
     };
 
-    const verificationStatus = company.verificationStatus ?? (company.isVerified ? "VERIFIED" : "UNVERIFIED");
-    const verificationLabel =
-        verificationStatus === "VERIFIED"
-            ? "Đã xác thực"
-            : verificationStatus === "PENDING"
-            ? "Đang chờ duyệt"
-            : verificationStatus === "REJECTED"
-            ? "Bị từ chối"
-            : "Chưa xác thực";
     const openVerificationDownload = async () => {
         try {
             const res = await api.get("/api/uploads/company/verification-document/download", {
@@ -203,6 +222,11 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             setUploadingAvatar(false);
         }
     };
+
+    // Check if legal name changed for verified company (show warning)
+    const showReVerificationWarning = verificationStatus === "VERIFIED" && 
+        formData.legalName.trim() !== originalLegalName.trim() &&
+        formData.legalName.trim() !== "";
 
     return (
         <section className="relative max-w-7xl mx-auto px-4 sm:px-6 mb-20 pt-8 group/hero">
@@ -342,12 +366,16 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         </h2>
                       </div>
 
+                      {/* Verification Banner - Only show for non-verified companies in edit mode */}
                       {isEditable && verificationStatus !== "VERIFIED" && (
                           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-sm text-amber-900">
                               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                                   <div>
-                                      <p className="font-semibold">Xác thực doanh nghiệp: {verificationLabel}</p>
-                                      <p className="text-xs text-amber-800">
+                                      <p className="font-semibold flex items-center gap-2">
+                                          <FileCheck className="w-4 h-4" />
+                                          Xác thực doanh nghiệp: {verificationLabel}
+                                      </p>
+                                      <p className="text-xs text-amber-800 mt-1">
                                           Vui lòng tải giấy phép ĐKKD để xác thực doanh nghiệp của bạn.
                                       </p>
                                   </div>
@@ -355,9 +383,9 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                       variant="outline"
                                       size="sm"
                                       className="border-amber-300 text-amber-900 hover:bg-amber-100"
-                                      onClick={() => setEditDialogOpen(true)}
+                                      onClick={() => setVerificationDialogOpen(true)}
                                   >
-                                      Tải file để xác thực
+                                      Xác thực ngay
                                   </Button>
                               </div>
                           </div>
@@ -425,10 +453,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                 </div>
              </div>
 
+             {/* Dialog: Chỉnh sửa thông tin cơ bản */}
              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Chỉnh sửa thông tin cơ bản</DialogTitle>
+                        <DialogDescription>Cập nhật thông tin hiển thị của doanh nghiệp</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
@@ -446,38 +476,16 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                 onChange={(e) => setFormData({...formData, legalName: e.target.value})} 
                                 placeholder="VD: Công ty Cổ phần Công nghệ..."
                             />
-                            {verificationStatus !== "VERIFIED" && (
-                                <p className="text-xs text-[var(--muted-foreground)]">
-                                    Trạng thái xác thực: {verificationLabel}
-                                </p>
+                            {/* Warning when changing legal name on verified company */}
+                            {showReVerificationWarning && (
+                                <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-semibold">Lưu ý: Thay đổi tên pháp lý sẽ yêu cầu xác thực lại</p>
+                                        <p className="mt-1">Doanh nghiệp của bạn đã được xác thực. Nếu thay đổi tên pháp lý, bạn sẽ cần tải lại hồ sơ ĐKKD để xác thực lại.</p>
+                                    </div>
+                                </div>
                             )}
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Hồ sơ ĐKKD (PDF/JPG/PNG/DOC/DOCX)</Label>
-                            <input
-                                ref={verificationInputRef}
-                                type="file"
-                                accept=".pdf,.doc,.docx,image/jpeg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                onChange={(e) => setVerificationFile(e.target.files?.[0] ?? null)}
-                                className="block w-full text-sm text-[var(--muted-foreground)] file:mr-4 file:rounded-md file:border-0 file:bg-[var(--muted)] file:px-4 file:py-2 file:text-sm file:font-medium file:text-[var(--foreground)] hover:file:bg-[var(--muted)]/80"
-                            />
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={handleUploadVerification} disabled={uploadingVerification}>
-                                    {uploadingVerification ? "Đang tải..." : "Gửi hồ sơ xác thực"}
-                                </Button>
-                                {company.verificationFileUrl && (
-                                    <button
-                                        type="button"
-                                        onClick={openVerificationDownload}
-                                        className="text-xs text-[var(--brand)] hover:underline"
-                                    >
-                                        Tải DKKD
-                                    </button>
-                                )}
-                            </div>
-                            <p className="text-xs text-[var(--muted-foreground)]">
-                                Hỗ trợ PDF/JPG/PNG/DOC/DOCX, tối đa 15MB.
-                            </p>
                         </div>
                         <div className="space-y-2">
                             <Label>Địa chỉ trụ sở</Label>
@@ -512,7 +520,114 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Hủy</Button>
                         <Button onClick={handleSave} disabled={mutation.isPending}>
-                            {mutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+                            {mutation.isPending ? "Đang lưu..." : showReVerificationWarning ? "Lưu & Yêu cầu xác thực lại" : "Lưu thay đổi"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+             </Dialog>
+
+             {/* Dialog: Xác thực doanh nghiệp */}
+             <Dialog open={verificationDialogOpen} onOpenChange={setVerificationDialogOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <FileCheck className="w-5 h-5 text-[var(--brand)]" />
+                            Xác thực doanh nghiệp
+                        </DialogTitle>
+                        <DialogDescription>
+                            Tải lên giấy phép ĐKKD để xác thực doanh nghiệp của bạn
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {/* Current verification status */}
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--muted)]">
+                            <span className="text-sm font-medium">Trạng thái hiện tại:</span>
+                            <span className={`text-sm font-semibold ${
+                                verificationStatus === "VERIFIED" ? "text-green-600" :
+                                verificationStatus === "PENDING" ? "text-amber-600" :
+                                verificationStatus === "REJECTED" ? "text-red-600" :
+                                "text-[var(--muted-foreground)]"
+                            }`}>
+                                {verificationLabel}
+                            </span>
+                        </div>
+
+                        {/* Rejection reason if applicable */}
+                        {verificationStatus === "REJECTED" && company.verificationRejectReason && (
+                            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-900 text-sm">
+                                <p className="font-semibold mb-1">Lý do từ chối:</p>
+                                <p>{company.verificationRejectReason}</p>
+                            </div>
+                        )}
+
+                        {/* Legal name display */}
+                        <div className="space-y-2">
+                            <Label>Tên pháp lý đầy đủ</Label>
+                            <div className="p-3 rounded-lg bg-[var(--muted)] text-sm">
+                                {company.legalName || <span className="text-[var(--muted-foreground)] italic">Chưa có - vui lòng cập nhật trong thông tin cơ bản</span>}
+                            </div>
+                            {!company.legalName && (
+                                <p className="text-xs text-amber-600">
+                                    Vui lòng nhập tên pháp lý trước khi xác thực.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* File upload */}
+                        <div className="space-y-2">
+                            <Label>Hồ sơ ĐKKD</Label>
+                            <input
+                                ref={verificationInputRef}
+                                type="file"
+                                accept=".pdf,.doc,.docx,image/jpeg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                onChange={(e) => setVerificationFile(e.target.files?.[0] ?? null)}
+                                className="block w-full text-sm text-[var(--muted-foreground)] file:mr-4 file:rounded-md file:border-0 file:bg-[var(--muted)] file:px-4 file:py-2 file:text-sm file:font-medium file:text-[var(--foreground)] hover:file:bg-[var(--muted)]/80"
+                            />
+                            <p className="text-xs text-[var(--muted-foreground)]">
+                                Hỗ trợ PDF/JPG/PNG/DOC/DOCX, tối đa 15MB.
+                            </p>
+                        </div>
+
+                        {/* Previously uploaded file */}
+                        {company.verificationFileUrl && (
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--muted)]">
+                                <span className="text-sm">Hồ sơ đã tải:</span>
+                                <button
+                                    type="button"
+                                    onClick={openVerificationDownload}
+                                    className="text-sm text-[var(--brand)] hover:underline"
+                                >
+                                    Xem/Tải xuống
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Email notification info */}
+                        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-sm">
+                            <p className="font-semibold mb-1 flex items-center gap-2">
+                                <Mail className="w-4 h-4" />
+                                Thông báo kết quả
+                            </p>
+                            <p>
+                                Kết quả xác thực sẽ được gửi về email:{" "}
+                                <span className="font-semibold">{ownerEmail || company.email || "N/A"}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setVerificationDialogOpen(false)}>Đóng</Button>
+                        <Button 
+                            onClick={handleUploadVerification} 
+                            disabled={uploadingVerification || !verificationFile || !company.legalName}
+                        >
+                            {uploadingVerification ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Đang gửi...
+                                </>
+                            ) : (
+                                "Gửi hồ sơ xác thực"
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -520,4 +635,3 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         </section>
     );
 }
-

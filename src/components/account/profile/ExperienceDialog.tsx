@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import RichTextEditor from "@/components/ui/rich-text-editor";
+import TiptapEditor from "@/components/ui/tiptap-editor";
 import { Plus, X } from "lucide-react";
 
 interface ExperienceDialogProps {
@@ -143,10 +143,10 @@ export default function ExperienceDialog({
           <div>
             <Label htmlFor="desc">Mô tả</Label>
             <div className="mt-2">
-              <RichTextEditor
+              <TiptapEditor
                 value={desc}
                 onChange={setDesc}
-                placeholder="Mô tả công việc và trách nhiệm... (hỗ trợ Markdown)"
+                placeholder="Mô tả công việc và trách nhiệm..."
                 className="bg-white"
                 disabled={isLoading}
               />
