@@ -132,11 +132,13 @@ function getYouTubeEmbedUrl(videoId: string): string {
 function LeadershipMediaSection({ 
   profile, 
   isEditable, 
-  onEdit 
+  onEdit,
+  isHidden,
 }: { 
   profile: any; 
   isEditable: boolean; 
   onEdit: () => void;
+  isHidden?: boolean;
 }) {
   const [fullscreenVideoUrl, setFullscreenVideoUrl] = useState<string | null>(null);
   const [isYouTubeModal, setIsYouTubeModal] = useState(false);
@@ -163,10 +165,15 @@ function LeadershipMediaSection({
   return (
     <div className="relative group/leadership">
       {isEditable && (
-        <div className="absolute top-4 right-4 z-30 opacity-0 group-hover/leadership:opacity-100 transition-opacity">
+        <div className="absolute top-4 right-4 z-30 opacity-0 group-hover/leadership:opacity-100 transition-opacity flex items-center gap-2">
           <Button onClick={onEdit} variant="secondary" size="sm" className="bg-white/90 hover:bg-white shadow-sm border">
             <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
           </Button>
+          {isHidden && (
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+              Đã ẩn
+            </span>
+          )}
         </div>
       )}
       <div className="absolute -inset-4 bg-slate-200 opacity-50 blur-xl rounded-[3rem]"></div>
@@ -507,12 +514,13 @@ const SAMPLE_VISION =
 const SAMPLE_MISSION =
   'Dùng công nghệ để giải quyết các bài toán xã hội, nâng cao chất lượng cuộc sống và tối ưu hóa năng suất lao động.';
 
-const SAMPLE_CORE_VALUES = [
-  'Tận Tâm - Khách hàng là trọng tâm',
-  'Sáng Tạo - Đổi mới không ngừng nghỉ',
-  'Chính Trực - Minh bạch trong mọi hành động',
-  'Hợp Tác - Sức mạnh của sự đoàn kết',
-].join('\n');
+const SAMPLE_CORE_VALUES = `Tận Tâm - Khách hàng là trọng tâm của mọi hoạt động. Chúng tôi luôn lắng nghe và đặt lợi ích khách hàng lên hàng đầu.
+
+Sáng Tạo - Không ngừng đổi mới và tìm kiếm giải pháp tốt hơn cho mọi thách thức.
+
+Chính Trực - Minh bạch trong mọi hành động, xây dựng niềm tin từ sự trung thực.
+
+Hợp Tác - Sức mạnh của sự đoàn kết, cùng nhau tạo nên những giá trị vượt trội.`;
 
 const SAMPLE_NOTE = 'Đây là dữ liệu mẫu, sẽ được thay thế khi bạn cập nhật dữ liệu chính thức.';
 
@@ -866,38 +874,51 @@ const TruncatedText = ({
   );
 };
 
-// Component để hiển thị Core Values với giới hạn
+// Component để hiển thị Core Values với giới hạn (plain text, 5 dòng như Vision/Mission)
 const TruncatedCoreValues = ({ 
   content, 
-  maxItems = 5,
+  maxLines = 5,
   onViewMore 
 }: { 
   content: string; 
-  maxItems?: number;
+  maxLines?: number;
   onViewMore: (content: string) => void;
 }) => {
+  const textRef = React.useRef<HTMLParagraphElement>(null);
+  const [needsTruncate, setNeedsTruncate] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (textRef.current) {
+      // Kiểm tra xem chiều cao thực tế có vượt quá maxLines không
+      const lineHeight = parseFloat(getComputedStyle(textRef.current).lineHeight);
+      const maxHeight = lineHeight * maxLines;
+      const actualHeight = textRef.current.scrollHeight;
+      setNeedsTruncate(actualHeight > maxHeight);
+    }
+  }, [content, maxLines]);
+  
   if (!content || content.trim() === '') return null;
   
-  const values = content.split('\n').filter((val) => val.trim().length > 0);
-  const needsTruncate = values.length > maxItems;
-  const displayValues = needsTruncate ? values.slice(0, maxItems) : values;
-  
   return (
-    <div className="space-y-4">
-      {displayValues.map((val: string, i: number) => (
-        <div key={i} className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-900 font-bold shrink-0 mt-1">
-            {i+1}
-          </div>
-          <div className="text-slate-700 font-medium leading-relaxed">{val}</div>
-        </div>
-      ))}
+    <div>
+      <p 
+        ref={textRef}
+        className={`text-slate-600 leading-relaxed text-lg whitespace-pre-line ${needsTruncate ? 'line-clamp-5' : ''}`}
+        style={needsTruncate ? {
+          display: '-webkit-box',
+          WebkitLineClamp: maxLines,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        } : {}}
+      >
+        {content}
+      </p>
       {needsTruncate && (
         <button
           onClick={() => onViewMore(content)}
           className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
         >
-          Xem thêm ({values.length - maxItems} giá trị khác)
+          Xem thêm
         </button>
       )}
     </div>
@@ -1423,14 +1444,27 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     mutation.mutate(payload);
   };
 
+  const HiddenBadge = ({ sectionKey }: { sectionKey: string }) => {
+    if (!isEditable) return null;
+    const isHidden = !isSectionVisible(sectionKey);
+    if (!isHidden) return null;
+    return (
+      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+        Đã ẩn
+      </span>
+    );
+  };
+
   // Helper render Edit Button (Currently mainly for Stats/VMV)
   const EditBtn = ({ section, initialData }: { section: string, initialData?: any }) => {
     if (!isEditable) return null;
+    const sectionKey = getSectionKey(section);
+    const isHidden = sectionKey ? !isSectionVisible(sectionKey) : false;
     return (
       <Button
         size="icon"
         variant="secondary"
-        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/80 backdrop-blur shadow-sm hover:bg-white"
+        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/80 backdrop-blur shadow-sm hover:bg-white relative"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1438,6 +1472,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         }}
       >
         <Pencil className="w-4 h-4 text-slate-600" />
+        {isHidden && (
+          <span className="absolute left-full ml-2 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+            Đã ẩn
+          </span>
+        )}
       </Button>
     );
   };
@@ -1615,10 +1654,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('introduction') && (
         <section className="max-w-7xl mx-auto px-6 space-y-12 relative group/training">
             {isEditable && (
-                <div className="absolute top-6 right-6 opacity-0 group-hover/training:opacity-100 transition-opacity z-20">
+                <div className="absolute top-6 right-6 opacity-0 group-hover/training:opacity-100 transition-opacity z-20 flex items-center gap-2">
                      <Button onClick={() => handleEdit('training', { training })} variant="secondary" size="sm" className="bg-white/10 hover:bg-white/20 text-white backdrop-blur shadow-sm border border-white/20">
                         <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
+                    <HiddenBadge sectionKey="introduction" />
                 </div>
             )}
             <div className="bg-slate-900 rounded-[3rem] p-8 md:p-16 text-white flex flex-col md:flex-row items-center gap-12 relative overflow-hidden">
@@ -1682,7 +1722,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
             <div className="pointer-events-none absolute inset-x-10 -top-20 h-40 bg-gradient-to-r from-[var(--brand)]/10 via-transparent to-[var(--brand-secondary)]/10 blur-3xl" />
 
             {isEditable && (
-              <div className="absolute top-6 right-6 opacity-0 group-hover/section:opacity-100 transition-opacity z-30">
+              <div className="absolute top-6 right-6 opacity-0 group-hover/section:opacity-100 transition-opacity z-30 flex items-center gap-2">
                 <Button
                   onClick={() => handleEdit('stats', { stats })}
                   variant="outline"
@@ -1691,14 +1731,13 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 >
                   <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                 </Button>
+                <HiddenBadge sectionKey="stats" />
               </div>
             )}
 
             <SectionTitle
               title="NHỮNG CON SỐ BIẾT NÓI"
-              subtitle={`Thành tựu ấn tượng khẳng định vị thế dẫn đầu sau ${
-                new Date().getFullYear() - (company.foundedYear || 2015)
-              } năm phát triển`}
+              subtitle={`Những con số nói lên thành tựu và văn hóa nổi bật của doanh nghiệp`}
             />
 
             <SectionCarousel className="mt-4" centerItems={true}>
@@ -1774,11 +1813,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               <div className="bg-white rounded-3xl p-10 shadow-2xl border border-slate-200 relative overflow-hidden border-t-4 border-blue-600 group">
                  <EditBtn section="coreValues" initialData={{ coreValues: profile?.coreValues || "" }} />
                  <Gem className="w-16 h-16 mb-6 text-blue-600" />
-                 <h3 className="text-3xl font-bold mb-6 text-slate-900">Giá Trị Cốt Lõi</h3>
+                 <h3 className="text-3xl font-bold mb-4 text-slate-900">Giá Trị Cốt Lõi</h3>
                  {profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : null) ? (
                    <TruncatedCoreValues
                      content={profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : "")}
-                     maxItems={5}
+                     maxLines={5}
                      onViewMore={(content) => setViewMoreModal({ type: 'coreValues', content })}
                    />
                  ) : (
@@ -1803,6 +1842,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     profile={profile}
                     isEditable={isEditable}
                     onEdit={() => handleEdit('leadershipPhilosophy', { leadershipPhilosophy: profile?.leadershipPhilosophy || {} })}
+                    isHidden={!isSectionVisible('leadershipPhilosophy')}
                 />
 
                 {/* Right: Management Stats - verified by employees */}
@@ -2100,10 +2140,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('products') && (
         <section className="bg-slate-900 py-20 overflow-hidden relative rounded-[3rem] mx-6 group/products">
             {isEditable && (
-                <div className="absolute top-6 right-6 z-30 opacity-0 group-hover/products:opacity-100 transition-opacity">
+                <div className="absolute top-6 right-6 z-30 opacity-0 group-hover/products:opacity-100 transition-opacity flex items-center gap-2">
                     <Button onClick={() => handleEdit('products', { products })} variant="secondary" size="sm" className="bg-white/90 hover:bg-white text-slate-900 font-medium shadow-lg">
                         <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
+                    <HiddenBadge sectionKey="products" />
                 </div>
             )}
             <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -2141,10 +2182,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('recruitmentPrinciples') && (recruitmentPrinciples.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/recruit">
                 {isEditable && (
-                    <div className="absolute top-0 right-6 opacity-0 group-hover/recruit:opacity-100 transition-opacity z-20">
+                    <div className="absolute top-0 right-6 opacity-0 group-hover/recruit:opacity-100 transition-opacity z-20 flex items-center gap-2">
                          <Button onClick={() => handleEdit('recruitmentPrinciples', { recruitmentPrinciples })} variant="outline" size="sm" className="bg-white shadow-sm">
                             <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                         </Button>
+                        <HiddenBadge sectionKey="recruitmentPrinciples" />
                     </div>
                 )}
                 <SectionTitle title="NGUYÊN TẮC TUYỂN DỤNG" subtitle="Chúng tôi tìm kiếm những người bạn đồng hành, không chỉ là nhân viên" />
@@ -2181,10 +2223,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('benefits') && (
         <section className="max-w-7xl mx-auto px-6 relative group/benefits">
             {isEditable && (
-                <div className="absolute top-0 right-6 opacity-0 group-hover/benefits:opacity-100 transition-opacity z-20">
+                <div className="absolute top-0 right-6 opacity-0 group-hover/benefits:opacity-100 transition-opacity z-20 flex items-center gap-2">
                         <Button onClick={() => handleEdit('benefits', { benefits })} variant="outline" size="sm" className="bg-white shadow-sm">
                         <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
+                    <HiddenBadge sectionKey="benefits" />
                 </div>
             )}
             <SectionTitle title="PHÚC LỢI TOÀN DIỆN" subtitle="Chăm sóc tốt nhất để bạn an tâm cống hiến" />
@@ -2245,10 +2288,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('hrJourney') && (
         <section className="bg-white py-10 rounded-[3rem] mx-6 shadow-sm border border-slate-100 relative group/hr">
             {isEditable && (
-                <div className="absolute top-6 right-6 opacity-0 group-hover/hr:opacity-100 transition-opacity z-20">
+                <div className="absolute top-6 right-6 opacity-0 group-hover/hr:opacity-100 transition-opacity z-20 flex items-center gap-2">
                      <Button onClick={() => handleEdit('hrJourney', { hrJourney })} variant="secondary" size="sm" className="bg-white shadow-sm border">
                         <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
+                    <HiddenBadge sectionKey="hrJourney" />
                 </div>
             )}
             <div className="max-w-7xl mx-auto px-6">
@@ -2284,10 +2328,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('careerPath') && (careerPath.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/career">
                 {isEditable && (
-                    <div className="absolute top-6 right-6 opacity-0 group-hover/career:opacity-100 transition-opacity z-20">
+                    <div className="absolute top-6 right-6 opacity-0 group-hover/career:opacity-100 transition-opacity z-20 flex items-center gap-2">
                          <Button onClick={() => handleEdit('careerPath', { careerPath })} variant="secondary" size="sm" className="bg-white/90 hover:bg-white shadow-sm border">
                             <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                         </Button>
+                        <HiddenBadge sectionKey="careerPath" />
                     </div>
                 )}
                 {careerPathToRender.length > 0 ? (
@@ -2326,10 +2371,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('salaryAndBonus') && (
         <section className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8 relative group/salary">
             {isEditable && (
-                <div className="absolute top-0 right-6 opacity-0 group-hover/salary:opacity-100 transition-opacity z-20">
+                <div className="absolute top-0 right-6 opacity-0 group-hover/salary:opacity-100 transition-opacity z-20 flex items-center gap-2">
                     <Button onClick={() => handleEdit('salaryAndBonus', { salaryAndBonus })} variant="outline" size="sm" className="bg-white shadow-sm border">
                         <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
+                    <HiddenBadge sectionKey="salaryAndBonus" />
                 </div>
             )}
             <div className="bg-white p-8 rounded-3xl shadow-lg border-l-8 border-slate-800">
@@ -2378,10 +2424,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('leaders') && (leadersToRender.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/leaders">
                 {isEditable && (
-                    <div className="absolute top-0 right-6 opacity-0 group-hover/leaders:opacity-100 transition-opacity z-20">
+                    <div className="absolute top-0 right-6 opacity-0 group-hover/leaders:opacity-100 transition-opacity z-20 flex items-center gap-2">
                         <Button onClick={() => handleEdit('leaders', { leaders })} variant="outline" size="sm" className="bg-white shadow-sm border">
                             <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                         </Button>
+                        <HiddenBadge sectionKey="leaders" />
                     </div>
                 )}
                 <SectionTitle title="BAN LÃNH ĐẠO" subtitle="Những người thuyền trưởng tài năng và tâm huyết" />
@@ -2424,10 +2471,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('typicalDay') && (
         <section className="bg-slate-50 pt-10 rounded-[3rem] mx-6 relative group/culture-day">
             {isEditable && (
-                <div className="absolute top-6 right-6 opacity-0 group-hover/culture-day:opacity-100 transition-opacity z-20">
+                <div className="absolute top-6 right-6 opacity-0 group-hover/culture-day:opacity-100 transition-opacity z-20 flex items-center gap-2">
                     <Button onClick={() => handleEdit('culture-typical-day', { culture })} variant="secondary" size="sm" className="bg-white shadow-sm border">
                         <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
+                    <HiddenBadge sectionKey="typicalDay" />
                 </div>
             )}
             <div className="max-w-7xl mx-auto px-6">
@@ -2460,10 +2508,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('awards') && (awardsToRender.length > 0 || isEditable) && (
             <section className="max-w-7xl mx-auto px-6 relative group/awards">
                 {isEditable && (
-                    <div className="absolute top-0 right-6 opacity-0 group-hover/awards:opacity-100 transition-opacity z-20">
+                    <div className="absolute top-0 right-6 opacity-0 group-hover/awards:opacity-100 transition-opacity z-20 flex items-center gap-2">
                         <Button onClick={() => handleEdit('awards', { awards })} variant="outline" size="sm" className="bg-white shadow-sm border">
                             <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                         </Button>
+                        <HiddenBadge sectionKey="awards" />
                     </div>
                 )}
                 <SectionTitle title="GIẢI THƯỞNG & VINH DANH" />
@@ -2497,11 +2546,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {/* SECTION 18: FOUNDER STORY */}
         {shouldShowSection('founderStory') && (
         <section className="relative group/founder space-y-20">
-             {isEditable && (
-                <div className="absolute top-6 right-6 opacity-0 group-hover/founder:opacity-100 transition-opacity z-20">
+            {isEditable && (
+                <div className="absolute top-6 right-6 opacity-0 group-hover/founder:opacity-100 transition-opacity z-20 flex items-center gap-2">
                     <Button onClick={() => handleEdit('story-founder', { story })} variant="secondary" size="sm" className="bg-white shadow-sm border">
                         <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
+                    <HiddenBadge sectionKey="founderStory" />
                 </div>
             )}
             
@@ -2545,10 +2595,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('milestones') && (
         <section className="relative group/milestones">
             {isEditable && (
-                <div className="absolute top-0 right-6 opacity-0 group-hover/milestones:opacity-100 transition-opacity z-20">
+                <div className="absolute top-0 right-6 opacity-0 group-hover/milestones:opacity-100 transition-opacity z-20 flex items-center gap-2">
                     <Button onClick={() => handleEdit('story-milestones', { story })} variant="outline" size="sm" className="bg-white shadow-sm border">
                         <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
+                    <HiddenBadge sectionKey="milestones" />
                 </div>
             )}
 
@@ -2597,10 +2648,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         {shouldShowSection('testimonials') && (
         <section className="max-w-7xl mx-auto px-6 pb-20 relative group/testimonials">
              {isEditable && (
-                <div className="absolute top-0 right-6 opacity-0 group-hover/testimonials:opacity-100 transition-opacity z-20">
+                <div className="absolute top-0 right-6 opacity-0 group-hover/testimonials:opacity-100 transition-opacity z-20 flex items-center gap-2">
                      <Button onClick={() => handleEdit('culture-testimonials', { culture })} variant="outline" size="sm" className="bg-white shadow-sm border">
                         <Pencil className="w-3 h-3 mr-2" /> Chỉnh sửa
                     </Button>
+                    <HiddenBadge sectionKey="testimonials" />
                 </div>
             )}
             
@@ -2611,7 +2663,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                         {testimonialsToRender.map((t: any, i: number) => (
                           <div key={i} className="bg-white rounded-3xl p-8 shadow-xl border border-slate-50 relative mt-10 w-[85vw] md:w-[350px] shrink-0">
                               <div className="absolute -top-10 left-8">
-                                <img src={t.image} alt={t.name} className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-lg grayscale" />
+                                <img src={t.image} alt={t.name} className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-lg" />
                               </div>
                               <div className="mt-8">
                                 <div className="text-6xl font-serif text-slate-200 absolute top-4 right-6 opacity-50">”</div>
@@ -2712,9 +2764,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                             <Textarea 
                                 value={formData.coreValues || ''} 
                                 onChange={e => setFormData({...formData, coreValues: e.target.value})}
-                                rows={8}
-                                placeholder="Nhập giá trị cốt lõi..."
+                                rows={6}
+                                placeholder="Viết các giá trị cốt lõi của doanh nghiệp..."
                             />
+                            <p className="text-xs text-[var(--muted-foreground)]">
+                                Viết văn bản tự do, hiển thị tối đa 5 dòng (có nút xem thêm nếu dài hơn)
+                            </p>
                         </div>
                     )}
 
@@ -3708,24 +3763,9 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               </DialogTitle>
             </DialogHeader>
             <div className="py-4">
-              {viewMoreModal.type === 'coreValues' ? (
-                <div className="space-y-4">
-                  {viewMoreModal.content.split('\n')
-                    .filter((val) => val.trim().length > 0)
-                    .map((val: string, i: number) => (
-                      <div key={i} className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-900 font-bold shrink-0 mt-1">
-                          {i+1}
-                        </div>
-                        <div className="text-slate-700 font-medium leading-relaxed">{val}</div>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-line">
-                  {viewMoreModal.content}
-                </p>
-              )}
+              <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-line">
+                {viewMoreModal.content}
+              </p>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setViewMoreModal({ type: null, content: '' })}>
