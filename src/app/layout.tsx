@@ -1,17 +1,31 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Noto_Serif } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import GoogleOneTap from "@/components/auth/GoogleOneTap";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// Inter: Font hiện đại, hỗ trợ tốt tiếng Việt, phù hợp với ứng dụng doanh nghiệp
+// Dùng cho UI elements: buttons, forms, navigation, headings
+const inter = Inter({
+  variable: "--font-sans",
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+  preload: true,
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+// Noto Serif: Font có chân, hỗ trợ tốt tiếng Việt
+// Dùng cho nội dung dài: mô tả công ty, job description, bài viết
+const notoSerif = Noto_Serif({
+  variable: "--font-serif",
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+});
+
+// JetBrains Mono: Font monospace cho code, hỗ trợ tốt tiếng Việt
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -35,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="light">
       <body suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--background)] text-[var(--foreground)]`}
+        className={`${inter.variable} ${notoSerif.variable} ${jetbrainsMono.variable} font-sans antialiased bg-[var(--background)] text-[var(--foreground)]`}
       >
         <Providers>
           {children}

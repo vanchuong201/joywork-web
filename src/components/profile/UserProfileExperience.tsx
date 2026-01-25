@@ -9,7 +9,7 @@ interface UserProfileExperienceProps {
 }
 
 const EXPERIENCE_SANITIZE_CONFIG = {
-  ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "a", "code", "pre"],
+  ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "a", "code", "pre", "blockquote"],
   ALLOWED_ATTR: ["href", "target", "rel"],
 };
 
@@ -76,7 +76,7 @@ export default function UserProfileExperience({ experiences }: UserProfileExperi
             {exp.desc && (
               <SanitizedHtml
                 content={exp.desc}
-                className="text-slate-600 mb-4 prose prose-slate max-w-none [&_p]:my-0 [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-1"
+                className="text-slate-600 mb-4 prose prose-slate max-w-none [&_p]:my-0 [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-1 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700"
               />
             )}
 

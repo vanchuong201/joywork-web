@@ -15,7 +15,7 @@ interface ProfileExperiencesProps {
 }
 
 const EXPERIENCE_SANITIZE_CONFIG = {
-  ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "a", "code", "pre"],
+  ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "a", "code", "pre", "blockquote"],
   ALLOWED_ATTR: ["href", "target", "rel"],
 };
 
@@ -163,7 +163,7 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
                     {exp.desc && (
                       <SanitizedHtml
                         content={exp.desc}
-                        className="mt-2 text-sm text-slate-700 prose prose-sm max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:leading-relaxed [&_strong]:font-semibold [&_strong]:text-slate-900 [&_em]:italic [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_code]:text-slate-800 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:mb-2 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:mb-2 [&_ol]:space-y-1 [&_li]:leading-relaxed [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700 [&_pre]:bg-slate-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-x-auto [&_pre]:text-xs [&_pre]:mb-2"
+                        className="mt-2 text-sm text-slate-700 prose prose-sm max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:leading-relaxed [&_strong]:font-semibold [&_strong]:text-slate-900 [&_em]:italic [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_code]:text-slate-800 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:mb-2 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:mb-2 [&_ol]:space-y-1 [&_li]:leading-relaxed [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700 [&_pre]:bg-slate-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-x-auto [&_pre]:text-xs [&_pre]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700"
                       />
                     )}
                     {exp.achievements && exp.achievements.length > 0 && (

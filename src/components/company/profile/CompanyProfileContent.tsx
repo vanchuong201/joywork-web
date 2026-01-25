@@ -254,7 +254,7 @@ function LeadershipMediaSection({
       </div>
       
       <div className="absolute -bottom-10 -right-10 z-20 bg-white py-2 px-6 rounded-2xl shadow-xl border-l-8 border-slate-800 hidden md:block max-w-sm pointer-events-none">
-        <p className="text-lg font-serif italic text-slate-800">"{quote}"</p>
+        <p className="text-lg font-serif italic text-slate-800 leading-relaxed">"{quote}"</p>
       </div>
 
       {/* Video fullscreen modal */}

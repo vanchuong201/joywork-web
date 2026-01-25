@@ -90,7 +90,7 @@ export default function JobDetailModal({ open, onOpenChange, jobId }: Props) {
             <section className="space-y-4">
               <h2 className="text-lg font-semibold text-[var(--foreground)]">Mô tả công việc</h2>
               <div
-                className="prose prose-sm max-w-none text-[var(--muted-foreground)]"
+                className="prose prose-sm max-w-none text-[var(--muted-foreground)] [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700"
                 dangerouslySetInnerHTML={{ __html: job.description ?? "" }}
               />
               {job.requirements ? (

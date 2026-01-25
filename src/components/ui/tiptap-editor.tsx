@@ -8,6 +8,7 @@ import Link from "@tiptap/extension-link";
 import { cn } from "@/lib/utils";
 import { Bold, Italic, List, ListOrdered, Quote, Undo, Redo, Link as LinkIcon } from "lucide-react";
 import { Button } from "./button";
+import { toast } from "sonner";
 
 type TiptapEditorProps = {
   value: string;
@@ -163,9 +164,13 @@ export default function TiptapEditor({
             variant="ghost"
             size="sm"
             onClick={() => {
-              const url = window.prompt("Nhập URL:");
-              if (url) {
+              const url = window.prompt("Nhập URL: Ví dụ: https://www.google.com");
+              // Nếu bấm Cancel thì url === null -> không làm gì cả (không hiện toast)
+              if (url === null) return;
+              if (url && url.startsWith("http")) {
                 editor.chain().focus().setLink({ href: url }).run();
+              } else {
+                toast.error("Vui lòng nhập URL hợp lệ");
               }
             }}
             className={cn(

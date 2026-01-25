@@ -75,8 +75,8 @@ export default function JobDetailPage() {
       ALLOWED_ATTR: ["href", "target", "rel", "style", "class"],
     });
   };
-  const richTextClass = "prose prose-slate max-w-none text-slate-600 leading-relaxed [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item";
-  const richTextClassTight = "prose prose-slate max-w-none text-slate-600 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item";
+  const richTextClass = "prose prose-slate max-w-none text-slate-600 leading-relaxed [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700";
+  const richTextClassTight = "prose prose-slate max-w-none text-slate-600 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700";
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-24">
@@ -131,7 +131,7 @@ export default function JobDetailPage() {
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
             <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">1. Thông tin chung</h3>
             <div
-              className="prose prose-slate max-w-none text-slate-700 leading-relaxed [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item"
+              className="prose prose-slate max-w-none text-slate-700 leading-relaxed [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.generalInfo) }}
             />
           </div>
@@ -142,7 +142,7 @@ export default function JobDetailPage() {
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
             <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">2. Sứ mệnh / Vai trò tổng quát</h3>
             <div
-              className="bg-slate-50 p-6 rounded-2xl border-l-4 border-[var(--brand)] text-slate-700 leading-relaxed text-lg italic prose prose-slate max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item"
+              className="bg-slate-50 p-6 rounded-2xl border-l-4 border-[var(--brand)] text-slate-700 leading-relaxed text-lg italic prose prose-slate max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.mission) }}
             />
           </div>
