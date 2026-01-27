@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,14 @@ import CompanySearch from "@/components/feed/CompanySearch";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
-import { ChevronDown, List, Grid, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, List, Grid, ChevronLeft, ChevronRight, SlidersHorizontal, Building2 } from "lucide-react";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Pagination } from "@/components/ui/pagination";
 
 type Job = {
   id: string;
@@ -27,7 +29,16 @@ type Job = {
   remote: boolean;
   employmentType: string;
   experienceLevel: string;
-  company: { id: string; name: string; slug: string };
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  currency?: string;
+  company: { 
+    id: string; 
+    name: string; 
+    legalName?: string | null;
+    slug: string; 
+    logoUrl?: string | null;
+  };
   // JD chuẩn fields
   generalInfo?: string;
   mission?: string;
@@ -214,12 +225,41 @@ function JobsPageContent() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const page = Number(sp.get("page") || "1");
   const limit = 12;
+  const featuredPage = Number(sp.get("featuredPage") || "1");
+  const featuredLimit = 12;
+
+  // Refs for scroll behavior
+  const featuredSectionRef = useRef<HTMLElement>(null);
+  const jobsSectionRef = useRef<HTMLElement>(null);
+  const prevFeaturedPageRef = useRef<number>(featuredPage);
+  const prevPageRef = useRef<number>(page);
 
   useEffect(() => {
     if (hasActiveFilters) {
       setFiltersOpen(true);
     }
   }, [hasActiveFilters]);
+
+  // Scroll to section when page changes (only if page actually changed)
+  useEffect(() => {
+    if (prevFeaturedPageRef.current !== featuredPage && featuredSectionRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        featuredSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+      prevFeaturedPageRef.current = featuredPage;
+    }
+  }, [featuredPage]);
+
+  useEffect(() => {
+    if (prevPageRef.current !== page && jobsSectionRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        jobsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+      prevPageRef.current = page;
+    }
+  }, [page]);
 
   const { data, isLoading } = useQuery<{ jobs: Job[]; pagination: any }>({
     queryKey: ["jobs", { remote, employmentType, experienceLevel, companyId, page }],
@@ -238,11 +278,11 @@ function JobsPageContent() {
     },
   });
 
-  const { data: featuredData, isLoading: featuredLoading } = useQuery<{ jobs: Job[] }>({
-    queryKey: ["jobs-featured"],
+  const { data: featuredData, isLoading: featuredLoading } = useQuery<{ jobs: Job[]; pagination: any }>({
+    queryKey: ["jobs-featured", featuredPage],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
-        params: { limit: 50, page: 1 },
+        params: { limit: featuredLimit, page: featuredPage },
       });
       return res.data.data;
     },
@@ -261,6 +301,14 @@ function JobsPageContent() {
       next.set(key, value);
     }
     applyParams(next);
+  };
+
+  const handleFeaturedPageChange = (newPage: number) => {
+    toggleParam("featuredPage", String(newPage));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    toggleParam("page", String(newPage));
   };
 
   const clearAllFilters = () => {
@@ -317,6 +365,27 @@ function JobsPageContent() {
   );
 
   const totalPages = data?.pagination?.totalPages ?? 1;
+  const featuredTotalPages = featuredData?.pagination?.totalPages ?? 1;
+
+  // Helper function to format salary
+  const formatSalary = (job: Job) => {
+    if (job.salaryMin || job.salaryMax) {
+      if (job.salaryMin && job.salaryMax) {
+        return `${job.salaryMin.toLocaleString("vi-VN")} - ${job.salaryMax.toLocaleString("vi-VN")} ${job.currency || "VND"}`;
+      } else if (job.salaryMin) {
+        return `${job.salaryMin.toLocaleString("vi-VN")} ${job.currency || "VND"}`;
+      } else if (job.salaryMax) {
+        return `${job.salaryMax.toLocaleString("vi-VN")} ${job.currency || "VND"}`;
+      }
+    }
+    return job.benefitsIncome || "Thương lượng";
+  };
+
+  // Helper function to format location
+  const formatLocation = (job: Job) => {
+    if (job.remote) return "Làm việc từ xa";
+    return job.location || "Không ghi rõ";
+  };
 
   return (
     <div className="space-y-8">
@@ -371,7 +440,7 @@ function JobsPageContent() {
         </SimpleCarousel>
       </section>
 
-      <section className="space-y-4">
+      <section ref={featuredSectionRef} className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Việc làm tốt nhất</h2>
           <Button asChild variant="ghost" size="sm">
@@ -381,31 +450,87 @@ function JobsPageContent() {
         {featuredLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, idx) => (
-              <Skeleton key={idx} className="h-28 rounded-lg" />
+              <Skeleton key={idx} className="h-32 rounded-lg" />
             ))}
           </div>
         ) : featuredData?.jobs?.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {featuredData.jobs.slice(0, 50).map((j) => (
-              <Card key={j.id} className="border border-[var(--border)] bg-white/70 shadow-sm transition hover:shadow-md">
-                <CardContent className="space-y-3 p-4">
-                  <div>
-                    <div className="text-sm font-semibold">{j.title}</div>
-                    <div className="text-xs text-[var(--muted-foreground)]">{j.company.name}</div>
-                  </div>
-                  <Link href={`/jobs/${j.id}`} className="text-xs font-medium text-[var(--brand)] hover:underline">
-                    Xem chi tiết
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <>
+            <TooltipProvider>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {featuredData.jobs.map((j) => (
+                  <Card 
+                    key={j.id}
+                    className="border border-[var(--border)] bg-white/70 shadow-sm transition hover:shadow-md hover:border-[var(--brand)]/40 cursor-pointer"
+                    onClick={() => router.push(`/jobs/${j.id}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex gap-3">
+                        {/* Company Avatar */}
+                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
+                          {j.company.logoUrl ? (
+                            <img 
+                              src={j.company.logoUrl} 
+                              alt={j.company.name} 
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
+                              <Building2 className="h-8 w-8" />
+                            </div>
+                          )}
+                        </div>
+                        {/* Job Info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          {/* Job Title with Tooltip */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <h3 className="text-sm font-semibold text-[var(--foreground)] line-clamp-1">
+                                {j.title}
+                              </h3>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{j.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          {/* Company Legal Name with HoverCard and Link */}
+                          <CompanyHoverCard companyId={j.company.id} slug={j.company.slug} companyName={j.company.name}>
+                            <Link 
+                              href={`/companies/${j.company.slug}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-[var(--muted-foreground)] line-clamp-1 hover:text-[var(--brand)] hover:underline"
+                            >
+                              {j.company.legalName || j.company.name}
+                            </Link>
+                          </CompanyHoverCard>
+                          <p className="text-xs font-medium text-red-600 line-clamp-1">
+                            {formatSalary(j)}
+                          </p>
+                          <p className="text-xs text-[var(--muted-foreground)] line-clamp-1">
+                            {formatLocation(j)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TooltipProvider>
+            {featuredTotalPages > 1 ? (
+              <div className="pt-4">
+                <Pagination
+                  currentPage={featuredPage}
+                  totalPages={featuredTotalPages}
+                  onPageChange={handleFeaturedPageChange}
+                />
+              </div>
+            ) : null}
+          </>
         ) : (
           <EmptyState title="Chưa có việc làm nổi bật" subtitle="Vui lòng quay lại sau." />
         )}
       </section>
 
-      <section className="space-y-4">
+      <section ref={jobsSectionRef} className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">Việc làm</h1>
@@ -561,116 +686,138 @@ function JobsPageContent() {
           </div>
         ) : data?.jobs?.length ? (
           viewMode === "list" ? (
-            <div className="space-y-3">
-              {data?.jobs?.map((j) => (
-                <Card key={j.id} className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <CompanyHoverCard companyId={j.company.id} slug={j.company.slug} companyName={j.company.name}>
-                        <Link href={`/companies/${j.company.slug}`} className="text-base font-semibold text-[var(--foreground)] hover:text-[var(--brand)] hover:underline">
-                          {j.company.name}
-                        </Link>
-                      </CompanyHoverCard>
-                      {user && (
-                        <CompanyFollowButton
-                          companyId={j.company.id}
-                          companySlug={j.company.slug}
-                          variant="link"
-                          size="sm"
-                          className="text-[#2563eb] hover:text-[#1d4ed8] hover:underline p-0 h-auto font-normal text-sm"
-                        />
-                      )}
-                    </div>
-                    <div className="text-lg font-semibold mt-1">{j.title}</div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div
-                      className="prose prose-sm max-w-none text-[var(--muted-foreground)] leading-6 max-h-[4.5rem] overflow-hidden"
-                      dangerouslySetInnerHTML={{ __html: j.mission || j.generalInfo || "" }}
-                    />
-                    <div className="flex items-center gap-3">
-                      <Link href={`/jobs/${j.id}`} className="text-sm font-medium text-[var(--brand)] hover:underline">
-                        Xem chi tiết
-                      </Link>
-                      <JobSaveButton jobId={j.id} />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <TooltipProvider>
+              <div className="space-y-3">
+                {data?.jobs?.map((j) => (
+                  <Card 
+                    key={j.id}
+                    className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/jobs/${j.id}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex gap-3">
+                        {/* Company Avatar */}
+                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
+                          {j.company.logoUrl ? (
+                            <img 
+                              src={j.company.logoUrl} 
+                              alt={j.company.name} 
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
+                              <Building2 className="h-8 w-8" />
+                            </div>
+                          )}
+                        </div>
+                        {/* Job Info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          {/* Job Title with Tooltip */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <h3 className="text-base font-semibold text-[var(--foreground)] line-clamp-1">
+                                {j.title}
+                              </h3>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{j.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          {/* Company Legal Name with HoverCard and Link */}
+                          <CompanyHoverCard companyId={j.company.id} slug={j.company.slug} companyName={j.company.name}>
+                            <Link 
+                              href={`/companies/${j.company.slug}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-[var(--muted-foreground)] line-clamp-1 hover:text-[var(--brand)] hover:underline"
+                            >
+                              {j.company.legalName || j.company.name}
+                            </Link>
+                          </CompanyHoverCard>
+                          <p className="text-xs font-medium text-red-600 line-clamp-1">
+                            {formatSalary(j)}
+                          </p>
+                          <p className="text-xs text-[var(--muted-foreground)] line-clamp-1">
+                            {formatLocation(j)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TooltipProvider>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {data?.jobs?.map((j) => (
-                <Card key={j.id} className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <CompanyHoverCard companyId={j.company.id} slug={j.company.slug} companyName={j.company.name}>
-                        <Link href={`/companies/${j.company.slug}`} className="text-sm font-semibold text-[var(--foreground)] hover:text-[var(--brand)] hover:underline">
-                          {j.company.name}
-                        </Link>
-                      </CompanyHoverCard>
-                      {user && (
-                        <CompanyFollowButton
-                          companyId={j.company.id}
-                          companySlug={j.company.slug}
-                          variant="link"
-                          size="sm"
-                          className="text-[#2563eb] hover:text-[#1d4ed8] hover:underline p-0 h-auto font-normal text-xs"
-                        />
-                      )}
-                    </div>
-                    <div className="text-base font-semibold mt-1 line-clamp-2">{j.title}</div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div
-                      className="prose prose-sm max-w-none text-[var(--muted-foreground)] leading-6 max-h-[4.5rem] overflow-hidden"
-                      dangerouslySetInnerHTML={{ __html: j.mission || j.generalInfo || "" }}
-                    />
-                    <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
-                      <Link href={`/jobs/${j.id}`} className="text-sm font-medium text-[var(--brand)] hover:underline">
-                        Xem chi tiết
-                      </Link>
-                      <JobSaveButton jobId={j.id} />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <TooltipProvider>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {data?.jobs?.map((j) => (
+                  <Card 
+                    key={j.id}
+                    className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/jobs/${j.id}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex gap-3">
+                        {/* Company Avatar */}
+                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
+                          {j.company.logoUrl ? (
+                            <img 
+                              src={j.company.logoUrl} 
+                              alt={j.company.name} 
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
+                              <Building2 className="h-8 w-8" />
+                            </div>
+                          )}
+                        </div>
+                        {/* Job Info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          {/* Job Title with Tooltip */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <h3 className="text-sm font-semibold text-[var(--foreground)] line-clamp-1">
+                                {j.title}
+                              </h3>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{j.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          {/* Company Legal Name with HoverCard and Link */}
+                          <CompanyHoverCard companyId={j.company.id} slug={j.company.slug} companyName={j.company.name}>
+                            <Link 
+                              href={`/companies/${j.company.slug}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-[var(--muted-foreground)] line-clamp-1 hover:text-[var(--brand)] hover:underline"
+                            >
+                              {j.company.legalName || j.company.name}
+                            </Link>
+                          </CompanyHoverCard>
+                          <p className="text-xs font-medium text-red-600 line-clamp-1">
+                            {formatSalary(j)}
+                          </p>
+                          <p className="text-xs text-[var(--muted-foreground)] line-clamp-1">
+                            {formatLocation(j)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TooltipProvider>
           )
         ) : (
           <EmptyState title="Không tìm thấy việc làm" subtitle="Thử điều chỉnh bộ lọc hoặc tiêu chí tìm kiếm" />
         )}
         {totalPages > 1 ? (
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => toggleParam("page", String(page - 1))}
-            >
-              Trước
-            </Button>
-            {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {
-              const p = idx + 1;
-              return (
-                <Button
-                  key={p}
-                  variant={p === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => toggleParam("page", String(p))}
-                >
-                  {p}
-                </Button>
-              );
-            })}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => toggleParam("page", String(page + 1))}
-            >
-              Sau
-            </Button>
+          <div className="pt-4">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
         ) : null}
       </section>

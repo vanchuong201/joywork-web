@@ -1668,17 +1668,6 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                   <p className="text-slate-300 text-lg leading-relaxed whitespace-pre-line">
                       {trainingDescriptionToRender || `Tại ${company.name}, việc học chưa bao giờ dừng lại. Chúng tôi cung cấp tài nguyên học tập không giới hạn và thư viện sách chuyên ngành phong phú.`}
                   </p>
-                  {trainingBudgetToRender && (
-                      <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 flex items-center gap-6">
-                          <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shrink-0 animate-pulse">
-                            <GraduationCap size={32} />
-                          </div>
-                          <div>
-                            <p className="text-sm text-slate-300 uppercase font-bold tracking-wider mb-1">Ngân sách đào tạo</p>
-                            <p className="text-2xl md:text-3xl font-bold">{trainingBudgetToRender} <span className="text-sm font-normal text-slate-300">/nhân sự/năm</span></p>
-                          </div>
-                      </div>
-                  )}
                 </div>
                 <div className="md:w-1/2 relative z-10">
                   <img 
@@ -1689,24 +1678,6 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 </div>
             </div>
 
-             <div className="mt-12">
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-slate-800 border-l-4 border-slate-900 pl-4">
-                    Chương Trình Đào Tạo
-                  </h3>
-                </div>
-                <SectionCarousel>
-                  {trainingProgramsToRender.map((prog: any, i: number) => (
-                    <div
-                      key={i}
-                      className="bg-white p-8 rounded-3xl border border-slate-200 hover:shadow-lg transition-shadow w-[85vw] md:w-[350px] shrink-0"
-                    >
-                      <h4 className="text-xl font-bold text-slate-900 mb-3">{prog.title}</h4>
-                      <p className="text-slate-600">{prog.desc}</p>
-                    </div>
-                  ))}
-                </SectionCarousel>
-              </div>
         </section>
         )}
         {isEditable && usingSampleTraining && shouldShowSection('introduction') && (
@@ -2709,7 +2680,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                         {editingSection === 'hrJourney' && "Chỉnh sửa Hành trình nhân sự"}
                         {editingSection === 'careerPath' && "Chỉnh sửa Lộ trình thăng tiến"}
                         {editingSection === 'salaryAndBonus' && "Chỉnh sửa Lương & Thưởng"}
-                        {editingSection === 'training' && "Chỉnh sửa Đào tạo & Phát triển"}
+                        {editingSection === 'training' && "Chỉnh sửa giới thiệu chung"}
                         {editingSection === 'leaders' && "Chỉnh sửa Ban lãnh đạo"}
                         {editingSection === 'culture-typical-day' && "Chỉnh sửa Một ngày làm việc"}
                         {editingSection === 'culture-testimonials' && "Chỉnh sửa Người trong cuộc nói gì"}
@@ -3290,59 +3261,6 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                 />
                             </div>
 
-                            <div>
-                                <Label>Ngân sách đào tạo (/nhân sự/năm)</Label>
-                                <Input 
-                                    value={formData.training?.budget || ''} 
-                                    onChange={e => setFormData({...formData, training: {...formData.training, budget: e.target.value}})}
-                                    placeholder="VD: $500"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <h4 className="font-bold border-b pb-2">Chương trình đào tạo</h4>
-                                {formData.training?.programs?.map((prog: any, idx: number) => (
-                                    <div key={idx} className="border p-3 rounded-lg space-y-2 relative bg-slate-50">
-                                        <Input 
-                                            value={prog.title} 
-                                            onChange={e => {
-                                                const newProgs = [...formData.training.programs];
-                                                newProgs[idx].title = e.target.value;
-                                                setFormData({...formData, training: {...formData.training, programs: newProgs}});
-                                            }}
-                                            placeholder="Tên chương trình"
-                                            className="bg-white"
-                                        />
-                                        <Textarea 
-                                            value={prog.desc} 
-                                            onChange={e => {
-                                                const newProgs = [...formData.training.programs];
-                                                newProgs[idx].desc = e.target.value;
-                                                setFormData({...formData, training: {...formData.training, programs: newProgs}});
-                                            }}
-                                            placeholder="Mô tả"
-                                            className="bg-white"
-                                        />
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="absolute top-1 right-1 h-6 w-6 text-red-400 hover:text-red-600"
-                                            onClick={() => {
-                                                const newProgs = formData.training.programs.filter((_: any, i: number) => i !== idx);
-                                                setFormData({...formData, training: {...formData.training, programs: newProgs}});
-                                            }}
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </Button>
-                                    </div>
-                                ))}
-                                <Button 
-                                    variant="outline" 
-                                    className="w-full"
-                                    onClick={() => setFormData({...formData, training: {...formData.training, programs: [...(formData.training?.programs || []), { title: "", desc: "" }]}})}
-                                >
-                                    <Plus className="w-4 h-4 mr-2" /> Thêm chương trình
-                                </Button>
-                            </div>
                         </div>
                     )}
 
