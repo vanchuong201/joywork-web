@@ -461,7 +461,7 @@ function JobsPageContent() {
                   <Card 
                     key={j.id}
                     className="border border-[var(--border)] bg-white/70 shadow-sm transition hover:shadow-md hover:border-[var(--brand)]/40 cursor-pointer"
-                    onClick={() => router.push(`/jobs/${j.id}`)}
+                    onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
                   >
                     <CardContent className="p-4">
                       <div className="flex gap-3">
@@ -692,7 +692,7 @@ function JobsPageContent() {
                   <Card 
                     key={j.id}
                     className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/jobs/${j.id}`)}
+                    onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
                   >
                     <CardContent className="p-4">
                       <div className="flex gap-3">
@@ -753,7 +753,7 @@ function JobsPageContent() {
                   <Card 
                     key={j.id}
                     className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/jobs/${j.id}`)}
+                    onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
                   >
                     <CardContent className="p-4">
                       <div className="flex gap-3">

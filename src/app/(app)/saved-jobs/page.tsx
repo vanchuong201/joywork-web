@@ -141,7 +141,7 @@ export default function SavedJobsPage() {
               </p>
             )}
             <div className="pt-2">
-              <Link href={`/jobs/${favorite.job.id}`} className="text-[var(--brand)] hover:underline">
+              <Link href={`/jobs/${favorite.job.id}`} target="_blank" className="text-[var(--brand)] hover:underline">
                 Xem chi tiết việc làm
               </Link>
             </div>

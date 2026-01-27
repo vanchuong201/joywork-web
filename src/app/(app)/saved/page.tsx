@@ -163,7 +163,7 @@ function SavedPageContent() {
                     : "Thoả thuận";
                 return (
                   <li key={fav.id} className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3">
-                    <Link href={`/jobs/${j.id}`} className="font-medium hover:underline text-[var(--foreground)]">
+                    <Link href={`/jobs/${j.id}`} target="_blank" className="font-medium hover:underline text-[var(--foreground)]">
                       {j.title}
                     </Link>
                     <div className="mt-1 text-sm text-[var(--muted-foreground)]">{j.company.name}</div>
@@ -172,7 +172,7 @@ function SavedPageContent() {
                     </div>
                     <div className="mt-3 flex justify-end gap-2">
                       <Button asChild size="sm">
-                        <Link href={`/jobs/${j.id}`}>Xem chi tiết</Link>
+                        <Link href={`/jobs/${j.id}`} target="_blank">Xem chi tiết</Link>
                       </Button>
                       <Button
                         size="sm"

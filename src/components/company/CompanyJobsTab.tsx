@@ -68,7 +68,7 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
       {viewMode === "list" ? (
         <div className="space-y-4">
           {jobs.map((job: any) => (
-            <Link href={`/jobs/${job.id}`} key={job.id} className="block group">
+            <Link href={`/jobs/${job.id}`} target="_blank" key={job.id} className="block group">
               <Card className="hover:border-[var(--brand)]/50 transition-colors">
                 <div className="p-6">
                   <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -120,7 +120,7 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {jobs.map((job: any) => (
-            <Link href={`/jobs/${job.id}`} key={job.id} className="block group">
+            <Link href={`/jobs/${job.id}`} target="_blank" key={job.id} className="block group">
               <Card className="hover:border-[var(--brand)]/50 transition-colors h-full">
                 <div className="p-6 space-y-4">
                   <div className="flex items-start justify-between gap-2">

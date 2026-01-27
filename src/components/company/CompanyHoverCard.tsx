@@ -118,7 +118,7 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
         <Popover.Portal>
           <Popover.Content
             sideOffset={8}
-            className="w-80 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-2xl outline-none"
+            className="w-80 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-2xl outline-none z-[9999]"
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
           >

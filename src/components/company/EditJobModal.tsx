@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dialog, DialogPanel, DialogTitle, Description } from "@headlessui/react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { z } from "zod";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import TiptapEditor from "@/components/ui/tiptap-editor";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { X, ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import DOMPurify from "dompurify";
 
 const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"] as const;
 const experienceLevels = ["ENTRY", "JUNIOR", "MID", "SENIOR", "LEAD", "EXECUTIVE"] as const;
+const jobLevels = ["STAFF", "TEAM_LEAD", "SUPERVISOR", "MANAGER", "DIRECTOR", "EXECUTIVE"] as const;
+const educationLevels = ["NONE", "HIGH_SCHOOL", "COLLEGE", "BACHELOR", "MASTER", "PHD"] as const;
 
 function getPlainTextLength(html: string): number {
   if (typeof window === "undefined") return html.length;
@@ -34,6 +36,10 @@ const schema = z
     currency: z.string().refine((v) => !v || /^[A-Z]{3}$/.test(v), "Mã tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)"),
     applicationDeadline: z.string().refine((val) => !val || !Number.isNaN(Date.parse(val)), { message: "Ngày không hợp lệ" }),
     tags: z.array(z.string()).max(10, "Tối đa 10 tags").optional(),
+    // Header fields
+    department: z.string().max(100, "Bộ phận tối đa 100 ký tự").optional().or(z.literal("")),
+    jobLevel: z.enum(jobLevels).optional(),
+    educationLevel: z.enum(educationLevels).optional(),
     generalInfo: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Thông tin chung tối thiểu 10 ký tự" }),
     mission: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Sứ mệnh/Vai trò tối thiểu 10 ký tự" }),
     tasks: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Nhiệm vụ chuyên môn tối thiểu 10 ký tự" }),
@@ -145,6 +151,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
       currency: "VND",
       applicationDeadline: "",
       tags: [],
+      department: "",
+      jobLevel: undefined,
+      educationLevel: undefined,
       generalInfo: "",
       mission: "",
       tasks: "",
@@ -174,6 +183,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
         currency: job.currency ?? "VND",
         applicationDeadline: job.applicationDeadline ? job.applicationDeadline.slice(0, 10) : "",
         tags: job.tags ?? [],
+        department: job.department ?? "",
+        jobLevel: job.jobLevel ?? undefined,
+        educationLevel: job.educationLevel ?? undefined,
         generalInfo: job.generalInfo ?? "",
         mission: job.mission ?? "",
         tasks: job.tasks ?? "",
@@ -204,6 +216,10 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
         salaryMax: values.salaryMax ? Number(values.salaryMax) : null,
         ...(values.currency?.trim() ? { currency: values.currency.trim().toUpperCase() } : {}),
         applicationDeadline: values.applicationDeadline ? new Date(values.applicationDeadline).toISOString() : null,
+        // Header fields
+        department: values.department?.trim() || null,
+        jobLevel: values.jobLevel || null,
+        educationLevel: values.educationLevel || null,
         generalInfo: sanitizeHtml(values.generalInfo),
         mission: sanitizeHtml(values.mission),
         tasks: sanitizeHtml(values.tasks),
@@ -276,6 +292,30 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     return map[l] || l;
   };
 
+  const translateJobLevel = (l: (typeof jobLevels)[number]) => {
+    const map: Record<string, string> = {
+      STAFF: "Nhân viên",
+      TEAM_LEAD: "Trưởng nhóm",
+      SUPERVISOR: "Giám sát",
+      MANAGER: "Quản lý",
+      DIRECTOR: "Giám đốc",
+      EXECUTIVE: "Điều hành",
+    };
+    return map[l] || l;
+  };
+
+  const translateEducationLevel = (l: (typeof educationLevels)[number]) => {
+    const map: Record<string, string> = {
+      NONE: "Không yêu cầu",
+      HIGH_SCHOOL: "Trung học phổ thông",
+      COLLEGE: "Cao đẳng",
+      BACHELOR: "Đại học",
+      MASTER: "Thạc sĩ",
+      PHD: "Tiến sĩ",
+    };
+    return map[l] || l;
+  };
+
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
@@ -289,36 +329,30 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto">
-        <DialogPanel className="mx-auto w-full max-w-4xl rounded-xl bg-[var(--card)] p-6 shadow-xl my-8 max-h-[90vh] overflow-y-auto scroll-smooth">
-          <div className="mb-4 flex items-center justify-between sticky top-0 bg-[var(--card)] z-10 pb-4 border-b border-[var(--border)] -mt-6 -mx-6 px-6 pt-6">
-            <DialogTitle className="text-xl font-semibold text-[var(--foreground)]">Chỉnh sửa job</DialogTitle>
-            <button
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="rounded-full p-1 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-50"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <Description className="mb-6 text-sm text-[var(--muted-foreground)]">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && !isSubmitting && handleClose()}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto bg-white sm:p-8">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Chỉnh sửa job</DialogTitle>
+          <DialogDescription className="text-slate-500">
             Cập nhật đầy đủ thông tin để JD chuẩn. Các trường có dấu <span className="text-red-500">*</span> là bắt buộc.
-          </Description>
+          </DialogDescription>
+        </DialogHeader>
 
+        <div className="space-y-4 py-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <FormSection title="1. Thông tin cơ bản" isExpanded={expandedSections.has("basic")} onToggle={() => toggleSection("basic")}>
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField label="Tiêu đề vị trí" error={errors.title?.message} required>
                   <Input placeholder="Ví dụ: Senior Frontend Developer" {...register("title")} />
                 </FormField>
+                <FormField label="Bộ phận" error={errors.department?.message}>
+                  <Input placeholder="Ví dụ: Kỹ thuật, Kinh doanh, Marketing..." {...register("department")} />
+                </FormField>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
                 <FormField label="Địa điểm" error={errors.location?.message}>
                   <Input placeholder="Hà Nội, TP.HCM, Remote..." {...register("location")} />
                 </FormField>
-              </div>
-              <div className="grid gap-4 md:grid-cols-3">
                 <FormField label="Hình thức làm việc">
                   <select {...register("employmentType")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
                     {employmentTypes.map((type) => (
@@ -328,11 +362,41 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     ))}
                   </select>
                 </FormField>
-                <FormField label="Cấp độ">
+              </div>
+              <div className="grid gap-4 md:grid-cols-4">
+                <FormField label="Lương tối thiểu" error={errors.salaryMin?.message}>
+                  <Input placeholder="15000000" inputMode="numeric" {...register("salaryMin")} />
+                </FormField>
+                <FormField label="Lương tối đa" error={errors.salaryMax?.message}>
+                  <Input placeholder="25000000" inputMode="numeric" {...register("salaryMax")} />
+                </FormField>
+                <FormField label="Kinh nghiệm">
                   <select {...register("experienceLevel")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
                     {experienceLevels.map((level) => (
                       <option key={level} value={level}>
                         {translateExperienceLevel(level)}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Cấp bậc">
+                  <select {...register("jobLevel")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
+                    <option value="">-- Chọn cấp bậc --</option>
+                    {jobLevels.map((level) => (
+                      <option key={level} value={level}>
+                        {translateJobLevel(level)}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField label="Học vấn">
+                  <select {...register("educationLevel")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
+                    <option value="">-- Chọn học vấn --</option>
+                    {educationLevels.map((level) => (
+                      <option key={level} value={level}>
+                        {translateEducationLevel(level)}
                       </option>
                     ))}
                   </select>
@@ -547,7 +611,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
               </FormField>
             </FormSection>
 
-            <div className="sticky bottom-0 bg-[var(--card)] border-t border-[var(--border)] pt-4 mt-6 flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
               <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
                 Huỷ
               </Button>
@@ -556,8 +620,8 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
               </Button>
             </div>
           </form>
-        </DialogPanel>
-      </div>
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }

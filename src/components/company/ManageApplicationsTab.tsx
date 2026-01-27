@@ -417,6 +417,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                               <span className="font-medium text-slate-500">Vị trí:</span>
                               <Link
                                 href={`/jobs/${application.job.id}`}
+                                target="_blank"
                                 className="text-[var(--brand)] hover:underline font-medium"
                               >
                                 {application.job.title}
@@ -552,6 +553,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                           <span className="text-xs font-medium text-slate-500 block mb-1">Vị trí:</span>
                           <Link
                             href={`/jobs/${application.job.id}`}
+                            target="_blank"
                             className="text-[var(--brand)] hover:underline font-medium text-sm line-clamp-1"
                           >
                             {application.job.title}
