@@ -92,7 +92,8 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
     followMutation.mutate(!isFollowing);
   };
 
-  const handleMessageClick = () => {
+  const handleMessageClick = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!user) {
       openPrompt("message-company");
       return;
@@ -110,6 +111,7 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
               setOpen(true);
             }}
             onMouseLeave={scheduleClose}
+            onClick={(e) => e.stopPropagation()}
             className="inline-flex"
           >
             {children}
@@ -121,6 +123,7 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
             className="w-80 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-2xl outline-none z-[9999]"
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
+            onClick={(e) => e.stopPropagation()}
           >
             {isLoading ? (
               <div className="space-y-3">
@@ -183,7 +186,7 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
                       </>
                     )}
                   </Button>
-                  <Button className="flex-1 gap-2" size="sm" onClick={handleMessageClick}>
+                  <Button className="flex-1 gap-2" size="sm" onClick={(e) => handleMessageClick(e)}>
                     <MessageCircleHeart className="h-4 w-4" /> Nhắn tin
                   </Button>
                 </div>

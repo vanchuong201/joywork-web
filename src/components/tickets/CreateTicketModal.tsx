@@ -1,6 +1,6 @@
 "use client";
 
-import * as Dialog from "@radix-ui/react-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X, AlertTriangle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -131,25 +131,16 @@ export default function CreateTicketModal({ open, onOpenChange, companyId, compa
   const canSubmit = title.trim().length >= 10 && content.trim().length >= 20 && !mutation.isPending;
 
   return (
-    <Dialog.Root open={open} onOpenChange={(next) => !mutation.isPending && onOpenChange(next)}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl focus:outline-none">
-          <div className="flex items-start justify-between gap-4">
-            <Dialog.Title className="text-lg font-semibold text-[var(--foreground)]">
-              Gửi tin nhắn tới {companyName}
-            </Dialog.Title>
-            <Dialog.Close
-              className="rounded-full p-1 text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]"
-              aria-label="Đóng"
-            >
-              <X className="h-5 w-5" />
-            </Dialog.Close>
-          </div>
-
-          <Dialog.Description className="mt-2 text-sm text-[var(--muted-foreground)]">
+    <Dialog open={open} onOpenChange={(next) => !mutation.isPending && onOpenChange(next)}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-white sm:p-8">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Gửi tin nhắn tới {companyName}</DialogTitle>
+          <DialogDescription className="text-slate-500">
             Hãy mô tả ngắn gọn yêu cầu hoặc câu hỏi của bạn. Doanh nghiệp sẽ nhận thông báo và phản hồi ngay khi có thể.
-          </Dialog.Description>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-6">
 
           {(hasReachedLimit || showLimitWarning) && (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
@@ -259,12 +250,10 @@ export default function CreateTicketModal({ open, onOpenChange, companyId, compa
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2">
-            <Dialog.Close asChild>
-              <Button variant="outline" disabled={mutation.isPending || closeTicketMutation.isPending}>
-                Huỷ
-              </Button>
-            </Dialog.Close>
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending || closeTicketMutation.isPending}>
+              Huỷ
+            </Button>
             <Button
               onClick={() => mutation.mutate()}
               disabled={!canSubmit || hasReachedLimit || closeTicketMutation.isPending}
@@ -272,9 +261,9 @@ export default function CreateTicketModal({ open, onOpenChange, companyId, compa
               {mutation.isPending ? "Đang gửi..." : "Gửi tin nhắn"}
             </Button>
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

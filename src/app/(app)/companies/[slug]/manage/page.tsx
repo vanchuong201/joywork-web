@@ -69,10 +69,10 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
              <Button variant="outline" size="sm" asChild>
                  <Link href={`/companies/${company.slug}/settings`}>
                      <Settings className="w-4 h-4 mr-2" /> Cài đặt---
-                 </Link>
-            </Button>
+                </Link>
+              </Button>
           </div> */}
-      </div>
+        </div>
 
       {/* Hero Section (Read-only view for context, editing via Settings or specific Edit Hero modal later) */}
       <CompanyProfileHero company={company} isEditable={true} />

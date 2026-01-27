@@ -443,9 +443,9 @@ function JobsPageContent() {
       <section ref={featuredSectionRef} className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Việc làm tốt nhất</h2>
-          <Button asChild variant="ghost" size="sm">
+          {/* <Button asChild variant="ghost" size="sm">
             <Link href="/jobs">Xem tất cả</Link>
-          </Button>
+          </Button> */}
         </div>
         {featuredLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -460,8 +460,7 @@ function JobsPageContent() {
                 {featuredData.jobs.map((j) => (
                   <Card 
                     key={j.id}
-                    className="border border-[var(--border)] bg-white/70 shadow-sm transition hover:shadow-md hover:border-[var(--brand)]/40 cursor-pointer"
-                    onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
+                    className="border border-[var(--border)] bg-white/70 shadow-sm transition hover:shadow-md hover:border-[var(--brand)]/40"
                   >
                     <CardContent className="p-4">
                       <div className="flex gap-3">
@@ -484,7 +483,10 @@ function JobsPageContent() {
                           {/* Job Title with Tooltip */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <h3 className="text-sm font-semibold text-[var(--foreground)] line-clamp-1">
+                              <h3 
+                                className="text-sm font-semibold text-[var(--foreground)] line-clamp-1 cursor-pointer hover:text-[var(--brand)] transition-colors"
+                                onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
+                              >
                                 {j.title}
                               </h3>
                             </TooltipTrigger>
@@ -691,8 +693,7 @@ function JobsPageContent() {
                 {data?.jobs?.map((j) => (
                   <Card 
                     key={j.id}
-                    className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors cursor-pointer"
-                    onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
+                    className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors"
                   >
                     <CardContent className="p-4">
                       <div className="flex gap-3">
@@ -715,7 +716,10 @@ function JobsPageContent() {
                           {/* Job Title with Tooltip */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <h3 className="text-base font-semibold text-[var(--foreground)] line-clamp-1">
+                              <h3 
+                                className="text-base font-semibold text-[var(--foreground)] line-clamp-1 cursor-pointer hover:text-[var(--brand)] transition-colors"
+                                onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
+                              >
                                 {j.title}
                               </h3>
                             </TooltipTrigger>
@@ -752,8 +756,7 @@ function JobsPageContent() {
                 {data?.jobs?.map((j) => (
                   <Card 
                     key={j.id}
-                    className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors cursor-pointer"
-                    onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
+                    className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors"
                   >
                     <CardContent className="p-4">
                       <div className="flex gap-3">
@@ -776,7 +779,10 @@ function JobsPageContent() {
                           {/* Job Title with Tooltip */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <h3 className="text-sm font-semibold text-[var(--foreground)] line-clamp-1">
+                              <h3 
+                                className="text-sm font-semibold text-[var(--foreground)] line-clamp-1 cursor-pointer hover:text-[var(--brand)] transition-colors"
+                                onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
+                              >
                                 {j.title}
                               </h3>
                             </TooltipTrigger>

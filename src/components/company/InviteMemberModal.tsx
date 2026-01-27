@@ -3,8 +3,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog } from "@headlessui/react";
-import { X, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -66,21 +66,16 @@ export default function InviteMemberModal({ isOpen, onClose, companyId, onSucces
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-          <div className="flex items-center justify-between mb-4">
-            <Dialog.Title className="text-lg font-semibold">Thêm thành viên</Dialog.Title>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <Dialog.Description className="mb-4 text-sm text-gray-500">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md bg-white sm:p-8">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Thêm thành viên</DialogTitle>
+          <DialogDescription className="text-slate-500">
             Nhập email của người dùng bạn muốn mời vào công ty. Họ sẽ nhận được email hướng dẫn tham gia.
-          </Dialog.Description>
+          </DialogDescription>
+        </DialogHeader>
 
+        <div className="space-y-4 py-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
@@ -112,7 +107,7 @@ export default function InviteMemberModal({ isOpen, onClose, companyId, onSucces
               </p>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
               <Button type="button" variant="outline" onClick={onClose} disabled={inviteMutation.isPending}>
                 Hủy
               </Button>
@@ -128,8 +123,8 @@ export default function InviteMemberModal({ isOpen, onClose, companyId, onSucces
               </Button>
             </div>
           </form>
-        </Dialog.Panel>
-      </div>
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }
