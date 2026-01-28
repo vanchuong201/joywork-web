@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, usePathname } from "next/navigation";
 import api from "@/lib/api";
@@ -22,8 +22,6 @@ type Props = {
 type ViewMode = "list" | "grid";
 type StatusFilter = "all" | "active" | "inactive";
 
-const ITEMS_PER_PAGE = 10;
-
 export default function ManageJobsTab({ company }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -34,67 +32,178 @@ export default function ManageJobsTab({ company }: Props) {
   const [editingJob, setEditingJob] = useState<any>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
-  // Fetch Jobs
+  // Fetch Jobs with pagination
   const jobsQuery = useQuery({
-    queryKey: ["company-jobs-manage", company.id],
+    queryKey: ["company-jobs-manage", company.id, currentPage, statusFilter],
     queryFn: async () => {
-      const res = await api.get("/api/jobs", { params: { companyId: company.id, limit: 50 } });
-      return res.data.data.jobs;
+      const params: any = {
+        companyId: company.id,
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+      };
+      // Add status filter if not "all"
+      if (statusFilter === "active") {
+        params.isActive = true;
+      } else if (statusFilter === "inactive") {
+        params.isActive = false;
+      }
+      const res = await api.get("/api/jobs", { params });
+      return res.data.data;
     },
+    // Disable auto-refetch to prevent flickering when toggling status
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    // Keep data fresh for 5 minutes, but don't auto-refetch on mount/focus
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Toggle job status mutation
+  // Toggle job status mutation with optimistic update
   const toggleStatusMutation = useMutation({
-    mutationFn: async ({ jobId, isActive }: { jobId: string; isActive: boolean }) => {
+    mutationFn: async ({ jobId, isActive, oldIsActive }: { jobId: string; isActive: boolean; oldIsActive: boolean }) => {
       await api.patch(`/api/jobs/${jobId}`, { isActive });
+      return { jobId, isActive, oldIsActive };
+    },
+    // Optimistic update: update cache immediately before API call
+    onMutate: async ({ jobId, isActive, oldIsActive }) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await qc.cancelQueries({ queryKey: ["company-jobs-manage", company.id, currentPage, statusFilter] });
+      
+      // Snapshot the previous value for rollback
+      const previousData = qc.getQueryData(["company-jobs-manage", company.id, currentPage, statusFilter]);
+      
+      // Optimistically update cache immediately
+      qc.setQueryData(
+        ["company-jobs-manage", company.id, currentPage, statusFilter],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          // Check if the job's new status matches the current filter
+          const shouldShowJob = 
+            statusFilter === "all" || 
+            (statusFilter === "active" && isActive) || 
+            (statusFilter === "inactive" && !isActive);
+          
+          if (shouldShowJob) {
+            // Update the job in place - keep same object reference for other jobs to prevent re-render
+            const jobIndex = oldData.jobs.findIndex((job: any) => job.id === jobId);
+            if (jobIndex === -1) return oldData;
+            
+            // Check if job actually needs update (avoid unnecessary object creation)
+            if (oldData.jobs[jobIndex].isActive === isActive) return oldData;
+            
+            // Only create new array and update the specific job
+            const updatedJobs = [...oldData.jobs];
+            updatedJobs[jobIndex] = { ...updatedJobs[jobIndex], isActive };
+            
+            // Keep pagination reference if unchanged
+            return {
+              ...oldData,
+              jobs: updatedJobs,
+              // Keep pagination object reference to prevent re-render
+              pagination: oldData.pagination,
+            };
+          } else {
+            // Remove the job from the current page if it doesn't match the filter
+            return {
+              ...oldData,
+              jobs: oldData.jobs.filter((job: any) => job.id !== jobId),
+              // Keep pagination object reference
+              pagination: oldData.pagination,
+            };
+          }
+        }
+      );
+      
+      // Optimistically update active count
+      qc.setQueryData(
+        ["company-jobs-active-count", company.id],
+        (oldCount: number | undefined) => {
+          const currentCount = oldCount ?? activeJobsCount;
+          if (oldIsActive && !isActive) {
+            return Math.max(0, currentCount - 1);
+          } else if (!oldIsActive && isActive) {
+            return currentCount + 1;
+          }
+          return currentCount;
+        }
+      );
+      
+      // Return context with previous data for rollback
+      return { previousData };
     },
     onSuccess: () => {
       toast.success("Đã cập nhật trạng thái");
-      jobsQuery.refetch();
+      // Cache already updated in onMutate, no need to update again
     },
-    onError: (e: any) => {
+    onError: (e: any, variables, context) => {
+      // Rollback to previous data on error
+      if (context?.previousData) {
+        qc.setQueryData(
+          ["company-jobs-manage", company.id, currentPage, statusFilter],
+          context.previousData
+        );
+      }
       toast.error(e?.response?.data?.error?.message ?? "Không thể cập nhật trạng thái");
     },
   });
 
-  const handleToggleStatus = (job: any) => {
-    toggleStatusMutation.mutate({ jobId: job.id, isActive: !job.isActive });
+  const handleToggleStatus = useCallback((job: any) => {
+    const oldIsActive = job.isActive;
+    setTogglingJobId(job.id); // Track which job is being toggled
+    toggleStatusMutation.mutate(
+      { 
+        jobId: job.id, 
+        isActive: !job.isActive,
+        oldIsActive 
+      },
+      {
+        onSettled: () => {
+          // Clear toggling state after mutation completes (success or error)
+          setTogglingJobId(null);
+        },
+      }
+    );
     setOpenMenuId(null); // Close menu after action
-  };
+  }, [toggleStatusMutation]);
 
   const handleViewApplicants = (jobId: string) => {
     router.push(`${pathname}?tab=applications&jobId=${jobId}`);
     setOpenMenuId(null);
   };
 
-  const allJobs = jobsQuery.data || [];
+  // Memoize jobs array to prevent unnecessary re-renders
+  // Only recreate if jobs array reference actually changes
+  const jobs = useMemo(() => {
+    const jobsData = jobsQuery.data?.jobs || [];
+    return jobsData;
+  }, [jobsQuery.data?.jobs]);
+  const pagination = jobsQuery.data?.pagination || { page: 1, limit: ITEMS_PER_PAGE, total: 0, totalPages: 1 };
+  const totalPages = pagination.totalPages;
+  const totalJobs = pagination.total;
   
-  // Filter jobs by status
-  const filteredJobs = allJobs.filter((job: any) => {
-    if (statusFilter === "active") return job.isActive === true;
-    if (statusFilter === "inactive") return job.isActive === false;
-    return true; // "all"
+  // Count active jobs - we need to fetch all jobs for this count, or use a separate query
+  // For now, we'll estimate based on current page or fetch separately
+  const activeJobsCountQuery = useQuery({
+    queryKey: ["company-jobs-active-count", company.id],
+    queryFn: async () => {
+      const res = await api.get("/api/jobs", { params: { companyId: company.id, isActive: true, limit: 1 } });
+      return res.data.data.pagination.total;
+    },
+    enabled: !!company.id,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
-
-  const totalPages = Math.ceil(filteredJobs.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+  const activeJobsCount = activeJobsCountQuery.data || 0;
   
-  // Count active jobs for display
-  const activeJobsCount = allJobs.filter((job: any) => job.isActive === true).length;
+  // Track which job is currently being toggled to disable only that switch
+  const [togglingJobId, setTogglingJobId] = useState<string | null>(null);
 
-  // Reset to page 1 when filter or jobs change
+  // Reset to page 1 when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter]);
-
-  useEffect(() => {
-    if (filteredJobs.length > 0 && currentPage > totalPages) {
-      setCurrentPage(1);
-    }
-  }, [filteredJobs.length, currentPage, totalPages]);
 
   return (
     <div className="space-y-6">
@@ -103,7 +212,7 @@ export default function ManageJobsTab({ company }: Props) {
         <div>
           <h3 className="text-xl font-bold text-slate-800">Quản lý tin tuyển dụng</h3>
           <p className="text-sm text-slate-500 mt-1">
-            Tổng cộng {allJobs.length} tin tuyển dụng ({activeJobsCount} đang mở)
+            Tổng cộng {totalJobs} tin tuyển dụng ({activeJobsCount} đang mở)
             {totalPages > 1 && ` • Trang ${currentPage}/${totalPages}`}
           </p>
         </div>
@@ -167,7 +276,7 @@ export default function ManageJobsTab({ company }: Props) {
             <div key={idx} className="h-32 bg-white rounded-xl border border-slate-200 animate-pulse" />
           ))}
         </div>
-      ) : filteredJobs.length === 0 ? (
+      ) : jobs.length === 0 ? (
         <Card className="border-2 border-dashed border-slate-200">
           <div className="text-center py-12 text-slate-500">
             <p className="mb-4 text-lg font-medium">Chưa có tin tuyển dụng nào</p>
@@ -178,7 +287,7 @@ export default function ManageJobsTab({ company }: Props) {
         </Card>
       ) : viewMode === "list" ? (
         <div className="space-y-4">
-          {paginatedJobs.map((job: any) => (
+          {jobs.map((job: any) => (
             <Card key={job.id} className="hover:border-[var(--brand)]/50 transition-colors">
               <div className="p-6">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -206,7 +315,7 @@ export default function ManageJobsTab({ company }: Props) {
                         <Switch
                           checked={job.isActive}
                           onCheckedChange={() => handleToggleStatus(job)}
-                          disabled={toggleStatusMutation.isPending}
+                          disabled={togglingJobId === job.id}
                           className="flex-shrink-0"
                         />
                       </div>
@@ -271,7 +380,7 @@ export default function ManageJobsTab({ company }: Props) {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {paginatedJobs.map((job: any) => (
+          {jobs.map((job: any) => (
             <Card key={job.id} className="hover:border-[var(--brand)]/50 transition-colors">
               <div className="p-6 space-y-4">
                 <div className="flex items-start justify-between gap-2">
@@ -298,7 +407,7 @@ export default function ManageJobsTab({ company }: Props) {
                     <Switch
                       checked={job.isActive}
                       onCheckedChange={() => handleToggleStatus(job)}
-                      disabled={toggleStatusMutation.isPending}
+                      disabled={togglingJobId === job.id}
                     />
                   </div>
                 </div>
@@ -365,7 +474,7 @@ export default function ManageJobsTab({ company }: Props) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-4 border-t border-slate-200">
           <div className="text-sm text-slate-500">
-            Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredJobs.length)} trong tổng số {filteredJobs.length} tin
+            Hiển thị {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, totalJobs)} trong tổng số {totalJobs} tin
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -421,7 +530,7 @@ export default function ManageJobsTab({ company }: Props) {
         onOpenChange={setCreateJobOpen}
         companyId={company.id}
         onSuccess={() => {
-          jobsQuery.refetch();
+          qc.invalidateQueries({ queryKey: ["company-jobs-manage", company.id] });
           setCurrentPage(1); // Reset to first page after creating new job
         }}
       />
@@ -433,7 +542,7 @@ export default function ManageJobsTab({ company }: Props) {
           job={editingJob}
           onSuccess={() => {
             setEditingJob(null);
-            jobsQuery.refetch();
+            qc.invalidateQueries({ queryKey: ["company-jobs-manage", company.id] });
           }}
         />
       )}

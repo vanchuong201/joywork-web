@@ -15,6 +15,7 @@ import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { Briefcase, MapPin, Clock, CheckCircle, CheckSquare, TrendingUp, Star, Send, BookOpen, Zap, Heart, DollarSign, GraduationCap, UserCheck, Calendar } from "lucide-react";
 import DOMPurify from "dompurify";
+import { cn } from "@/lib/utils";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -103,10 +104,24 @@ export default function JobDetailPage() {
             )}
           </div>
           <div className="mb-8">
-            <h1 className="text-3xl md:text-5xl font-black text-slate-900 uppercase leading-tight">
-              MÔ TẢ CÔNG VIỆC <br/>
-              <span className="text-[var(--brand)]">{job.title}</span>
-            </h1>
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h1 className="text-3xl md:text-5xl font-black text-slate-900 uppercase leading-tight flex-1">
+                MÔ TẢ CÔNG VIỆC <br/>
+                <span className="text-[var(--brand)]">{job.title}</span>
+              </h1>
+              {job.isActive !== undefined && (
+                <Badge 
+                  className={cn(
+                    "shrink-0 text-xs font-medium px-3 py-1.5 rounded-full",
+                    job.isActive 
+                      ? "bg-green-50 text-green-700 border border-green-200" 
+                      : "bg-slate-100 text-slate-600 border border-slate-200"
+                  )}
+                >
+                  {job.isActive ? "Đang tuyển" : "Đã đóng"}
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6 pt-8 border-t border-slate-100">
