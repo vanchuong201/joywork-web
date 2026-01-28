@@ -135,7 +135,8 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     reset,
     control,
     setError,
-    formState: { errors },
+    watch,
+    formState: { errors, submitCount, isSubmitted },
   } = useForm<FormValues>({
     resolver,
     mode: "onSubmit",
@@ -265,6 +266,8 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
 
   const handleClose = () => {
     if (!isSubmitting) {
+      reset();
+      setExpandedSections(new Set(["basic", "mission", "tasks", "ksa"]));
       onOpenChange(false);
     }
   };
@@ -316,6 +319,37 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     return map[l] || l;
   };
 
+  // Calculate validation errors for summary box
+  const validationErrorList = Object.keys(errors).map((field) => {
+    const error = errors[field as keyof typeof errors];
+    const fieldLabels: Record<string, string> = {
+      title: "Tiêu đề vị trí",
+      generalInfo: "Thông tin chung",
+      mission: "Sứ mệnh/Vai trò",
+      tasks: "Nhiệm vụ chuyên môn",
+      knowledge: "Kiến thức chuyên môn",
+      skills: "Kỹ năng cần thiết",
+      attitude: "Thái độ và phẩm chất",
+      kpis: "Kết quả chuyên môn",
+      authority: "Quyền hạn",
+      relationships: "Quan hệ công việc",
+      careerPath: "Lộ trình phát triển",
+      benefitsIncome: "Thu nhập",
+      benefitsPerks: "Phúc lợi",
+      contact: "Thông tin liên hệ",
+      salaryMin: "Lương tối thiểu",
+      salaryMax: "Lương tối đa",
+      currency: "Đơn vị tiền tệ",
+      applicationDeadline: "Hạn nộp hồ sơ",
+    };
+    return {
+      field,
+      label: fieldLabels[field] || field,
+      message: error?.message || "Dữ liệu không hợp lệ",
+    };
+  });
+  const showValidationSummary = submitCount > 0 && validationErrorList.length > 0;
+
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
@@ -328,6 +362,73 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     });
   };
 
+  // Scroll to top when modal opens
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        const scrollContainers = document.querySelectorAll('.overflow-y-auto');
+        scrollContainers.forEach((container) => {
+          const rect = container.getBoundingClientRect();
+          if (rect.top >= 0 && rect.top < window.innerHeight) {
+            (container as HTMLElement).scrollTop = 0;
+          }
+        });
+      }, 150);
+    }
+  }, [open]);
+
+  // Handle auto-scroll to error when form submit fails
+  useEffect(() => {
+    if (isSubmitted && !Object.keys(errors).length) return;
+    
+    if (Object.keys(errors).length > 0 && submitCount > 0) {
+      const errorFields = Object.keys(errors);
+      const firstErrorField = errorFields[0];
+      
+      const sectionMap: Record<string, string> = {
+        title: "basic", location: "basic", employmentType: "basic", experienceLevel: "basic",
+        salaryMin: "basic", salaryMax: "basic", currency: "basic", applicationDeadline: "basic", tags: "basic",
+        department: "basic", jobLevel: "basic", educationLevel: "basic",
+        mission: "mission",
+        tasks: "tasks",
+        kpis: "kpis",
+        knowledge: "ksa", skills: "ksa", attitude: "ksa",
+        authority: "authority",
+        relationships: "relationships",
+        careerPath: "careerPath",
+        benefitsIncome: "benefits", benefitsPerks: "benefits",
+        generalInfo: "general",
+        contact: "contact",
+      };
+      
+      const section = sectionMap[firstErrorField];
+      if (section) {
+        setExpandedSections((prev) => {
+          const next = new Set(prev);
+          next.add(section);
+          return next;
+        });
+      }
+
+      setTimeout(() => {
+        const errorElement = document.querySelector(`[name="${firstErrorField}"]`) || 
+                           document.querySelector(`[data-field="${firstErrorField}"]`);
+        
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (errorElement instanceof HTMLInputElement || errorElement instanceof HTMLTextAreaElement) {
+            errorElement.focus();
+          } else {
+             const contentEditable = errorElement.querySelector('[contenteditable="true"]');
+             if (contentEditable instanceof HTMLElement) {
+               contentEditable.focus();
+             }
+          }
+        }
+      }, 100);
+    }
+  }, [submitCount, errors, isSubmitted]);
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && !isSubmitting && handleClose()}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto bg-white sm:p-8">
@@ -339,19 +440,69 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
         </DialogHeader>
 
         <div className="space-y-4 py-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <FormSection title="1. Thông tin cơ bản" isExpanded={expandedSections.has("basic")} onToggle={() => toggleSection("basic")}>
+
+          {/* Validation Errors Summary */}
+          {showValidationSummary && (
+            <div className="mb-6 rounded-lg border-2 border-red-500 bg-red-50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-red-800 mb-2">Vui lòng kiểm tra lại các trường sau:</h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                    {validationErrorList.map((err, idx) => (
+                      <li key={idx}>
+                        <span className="font-medium">{err.label}:</span> {err.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+            <form 
+              onSubmit={handleSubmit(onSubmit)} 
+              className="space-y-4"
+            >
+            {/* Section 1: Thông tin cơ bản (Header Section) */}
+            <FormSection
+              title="1. Thông tin cơ bản"
+              description="Thông tin này sẽ hiển thị ở phần đầu của JD, giúp ứng viên nhanh chóng nắm bắt thông tin chính"
+              isExpanded={expandedSections.has("basic")}
+              onToggle={() => toggleSection("basic")}
+            >
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-700">
+                  <strong>💡 Gợi ý:</strong> Các thông tin này sẽ được hiển thị dạng badge/icons ở phần header của JD, giúp ứng viên dễ dàng tìm kiếm và lọc việc làm.
+                </p>
+              </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField label="Tiêu đề vị trí" error={errors.title?.message} required>
-                  <Input placeholder="Ví dụ: Senior Frontend Developer" {...register("title")} />
+                  <Input 
+                    placeholder="Ví dụ: Senior Frontend Developer" 
+                    {...register("title")} 
+                    className={errors.title ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
                 </FormField>
                 <FormField label="Bộ phận" error={errors.department?.message}>
-                  <Input placeholder="Ví dụ: Kỹ thuật, Kinh doanh, Marketing..." {...register("department")} />
+                  <Input 
+                    placeholder="Ví dụ: Kỹ thuật, Kinh doanh, Marketing..." 
+                    {...register("department")}
+                    className={errors.department ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
                 </FormField>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <FormField label="Địa điểm" error={errors.location?.message}>
-                  <Input placeholder="Hà Nội, TP.HCM, Remote..." {...register("location")} />
+                <FormField label="Địa điểm làm việc" error={errors.location?.message}>
+                  <Input 
+                    placeholder="Hà Nội, TP.HCM, Remote..." 
+                    {...register("location")}
+                    className={errors.location ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
                 </FormField>
                 <FormField label="Hình thức làm việc">
                   <select {...register("employmentType")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
@@ -363,14 +514,8 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                   </select>
                 </FormField>
               </div>
-              <div className="grid gap-4 md:grid-cols-4">
-                <FormField label="Lương tối thiểu" error={errors.salaryMin?.message}>
-                  <Input placeholder="15000000" inputMode="numeric" {...register("salaryMin")} />
-                </FormField>
-                <FormField label="Lương tối đa" error={errors.salaryMax?.message}>
-                  <Input placeholder="25000000" inputMode="numeric" {...register("salaryMax")} />
-                </FormField>
-                <FormField label="Kinh nghiệm">
+              <div className="grid gap-4 md:grid-cols-3">
+                <FormField label="Kinh nghiệm yêu cầu">
                   <select {...register("experienceLevel")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
                     {experienceLevels.map((level) => (
                       <option key={level} value={level}>
@@ -389,8 +534,6 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     ))}
                   </select>
                 </FormField>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
                 <FormField label="Học vấn">
                   <select {...register("educationLevel")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
                     <option value="">-- Chọn học vấn --</option>
@@ -401,19 +544,24 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     ))}
                   </select>
                 </FormField>
-                <FormField label="Làm việc từ xa">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" {...register("remote")} />
-                    Cho phép làm việc từ xa
-                  </label>
-                </FormField>
               </div>
+              
               <div className="grid gap-4 md:grid-cols-3">
-                <FormField label="Lương tối thiểu" error={errors.salaryMin?.message}>
-                  <Input placeholder="15000000" inputMode="numeric" {...register("salaryMin")} />
+                <FormField label="Mức lương tối thiểu" error={errors.salaryMin?.message}>
+                  <Input 
+                    type="number"
+                    placeholder="VD: 10000000" 
+                    {...register("salaryMin")}
+                    className={errors.salaryMin ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
                 </FormField>
-                <FormField label="Lương tối đa" error={errors.salaryMax?.message}>
-                  <Input placeholder="25000000" inputMode="numeric" {...register("salaryMax")} />
+                <FormField label="Mức lương tối đa" error={errors.salaryMax?.message}>
+                  <Input 
+                    type="number"
+                    placeholder="VD: 20000000" 
+                    {...register("salaryMax")}
+                    className={errors.salaryMax ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
                 </FormField>
                 <FormField label="Đơn vị tiền tệ" error={errors.currency?.message}>
                   <Input placeholder="VND" maxLength={3} {...register("currency")} onChange={(e) => {
@@ -422,60 +570,88 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                   }} />
                 </FormField>
               </div>
-              <FormField label="Hạn nộp hồ sơ" error={errors.applicationDeadline?.message}>
-                <Input type="date" {...register("applicationDeadline")} />
-              </FormField>
+              
+              <div className="grid gap-4 md:grid-cols-1">
+                <FormField label="Hạn nộp hồ sơ" error={errors.applicationDeadline?.message}>
+                  <Input type="date" {...register("applicationDeadline")} />
+                </FormField>
+              </div>
             </FormSection>
 
-            <FormSection title="2. Thông tin chung" isExpanded={expandedSections.has("general")} onToggle={() => toggleSection("general")} required>
-              <FormField label="Nhập thông tin chung (Bộ phận, Báo cáo cho...)" error={errors.generalInfo?.message} required>
-                <Controller
-                  name="generalInfo"
-                  control={control}
-                  render={({ field }) => (
-                    <TiptapEditor
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="● Tên vị trí: Senior Developer&#10;● Bộ phận: Engineering&#10;● Báo cáo cho: CTO"
-                    />
-                  )}
-                />
-              </FormField>
-            </FormSection>
-
-            <FormSection title="3. Sứ mệnh / Vai trò tổng quát" isExpanded={expandedSections.has("mission")} onToggle={() => toggleSection("mission")} required>
+            {/* Section 2: Sứ mệnh / Vai trò tổng quát */}
+            <FormSection
+              title="2. Sứ mệnh / Vai trò tổng quát"
+              description="Mô tả tổng quan về vai trò và đóng góp của vị trí này. Nội dung sẽ được hiển thị với background màu xám nhạt và chữ in nghiêng để nổi bật."
+              isExpanded={expandedSections.has("mission")}
+              onToggle={() => toggleSection("mission")}
+              required
+            >
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-700">
+                  <strong>💡 Gợi ý:</strong> Viết bằng văn phong tự nhiên, mô tả sứ mệnh và vai trò tổng quát. Ví dụ: "Đóng góp giá trị vào mục tiêu chung của công ty trong việc lan tỏa triết lý..."
+                </p>
+              </div>
               <FormField label="Mô tả sứ mệnh và vai trò của vị trí" error={errors.mission?.message} required>
-                <Controller
-                  name="mission"
-                  control={control}
-                  render={({ field }) => (
-                    <TiptapEditor
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Đóng góp giá trị vào mục tiêu chung của công ty..."
-                    />
-                  )}
-                />
+                <div data-field="mission">
+                  <Controller
+                    name="mission"
+                    control={control}
+                    render={({ field }) => (
+                      <TiptapEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Đóng góp giá trị vào mục tiêu chung của công ty trong việc lan tỏa triết lý &quot;Quản trị đúng&quot; và &quot;đi làm là phải vui&quot; đến doanh nghiệp Việt Nam.&#10;&#10;Lãnh đạo mảng cộng đồng, kết nối, chăm lo và phát triển cộng đồng các nhà quản lý, người đi làm - những người cùng niềm tin về công việc hạnh phúc."
+                        className={errors.mission ? "border-red-500" : ""}
+                      />
+                    )}
+                  />
+                </div>
               </FormField>
             </FormSection>
 
-            <FormSection title="4. Nhiệm vụ chuyên môn" isExpanded={expandedSections.has("tasks")} onToggle={() => toggleSection("tasks")} required>
+            {/* Section 3: Nhiệm vụ chuyên môn */}
+            <FormSection
+              title="3. Nhiệm vụ chuyên môn"
+              description="Liệt kê chi tiết các nhiệm vụ và trách nhiệm chính của vị trí. Có thể nhóm theo từng nhóm nhiệm vụ để dễ đọc."
+              isExpanded={expandedSections.has("tasks")}
+              onToggle={() => toggleSection("tasks")}
+              required
+            >
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-700">
+                  <strong>💡 Gợi ý:</strong> Sử dụng bullet points để liệt kê. Có thể nhóm nhiệm vụ theo từng nhóm (ví dụ: "Nhóm nhiệm vụ phát triển cộng đồng", "Nhóm nhiệm vụ vận hành cộng đồng").
+                </p>
+              </div>
               <FormField label="Mô tả chi tiết nhiệm vụ và trách nhiệm" error={errors.tasks?.message} required>
-                <Controller
-                  name="tasks"
-                  control={control}
-                  render={({ field }) => (
-                    <TiptapEditor
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="• Phát triển và duy trì các ứng dụng web&#10;• Code review và mentoring..."
-                    />
-                  )}
-                />
+                <div data-field="tasks">
+                  <Controller
+                    name="tasks"
+                    control={control}
+                    render={({ field }) => (
+                      <TiptapEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Nhóm nhiệm vụ phát triển cộng đồng:&#10;• Phát triển thành viên các cộng đồng&#10;• Tạo ra môi trường, hoạt động để thành viên có thể cùng tham gia&#10;&#10;Nhóm nhiệm vụ vận hành cộng đồng:&#10;• Xây dựng và thực hiện các hoạt động cộng đồng&#10;• Thúc đẩy tương tác, thảo luận trong cộng đồng"
+                        className={errors.tasks ? "border-red-500" : ""}
+                      />
+                    )}
+                  />
+                </div>
               </FormField>
             </FormSection>
 
-            <FormSection title="5. Kết quả chuyên môn cần đạt (Tùy chọn)" isExpanded={expandedSections.has("kpis")} onToggle={() => toggleSection("kpis")}>
+            {/* Section 4: Kết quả chuyên môn cần đạt */}
+            <FormSection
+              title="4. Kết quả chuyên môn cần đạt"
+              description="Mô tả các KPI/OKR mà vị trí này cần đạt được. Trên trang hiển thị sẽ có thông báo về quản trị bằng mục tiêu và OKRs."
+              isExpanded={expandedSections.has("kpis")}
+              onToggle={() => toggleSection("kpis")}
+            >
+              <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="text-xs text-slate-600">
+                  <strong>ℹ️ Lưu ý:</strong> Trên trang hiển thị JD sẽ tự động thêm dòng: "Công ty vận hành theo hướng quản trị bằng mục tiêu. Vị trí này sẽ cùng CEO/Quản lý xây dựng và thỏa thuận OKRs theo từng chu kỳ."
+                </p>
+              </div>
               <FormField label="Mô tả các KPI/OKR cần đạt" error={errors.kpis?.message}>
                 <Controller
                   name="kpis"
@@ -484,58 +660,87 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="• Số lượng và chất lượng thành viên các cộng đồng&#10;• Tỷ lệ thành viên hoạt động và tương tác..."
+                      placeholder="• Số lượng và chất lượng thành viên các cộng đồng&#10;• Tỷ lệ thành viên hoạt động và tương tác&#10;• Doanh thu từ cộng đồng&#10;• Số lượng và chất lượng sự kiện/hội thảo được tổ chức"
                     />
                   )}
                 />
               </FormField>
             </FormSection>
 
-            <FormSection title="6. Yêu cầu (KSA - Knowledge, Skills, Attitude)" isExpanded={expandedSections.has("ksa")} onToggle={() => toggleSection("ksa")} required>
+            {/* Section 5: Yêu cầu (KSA) */}
+            <FormSection
+              title="5. Yêu cầu (KSA - Knowledge, Skills, Attitude)"
+              description="Mô tả chi tiết các yêu cầu về Kiến thức, Kỹ năng và Thái độ. Trên trang hiển thị sẽ được chia thành 3 cột với icon tương ứng."
+              isExpanded={expandedSections.has("ksa")}
+              onToggle={() => toggleSection("ksa")}
+              required
+            >
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-700">
+                  <strong>💡 Gợi ý:</strong> Kiến thức sẽ hiển thị full width ở trên, Kỹ năng và Thái độ sẽ hiển thị 2 cột bên dưới. Sử dụng bullet points để liệt kê rõ ràng.
+                </p>
+              </div>
               <div className="space-y-4">
                 <FormField label="Kiến thức chuyên môn" error={errors.knowledge?.message} required>
-                  <Controller
-                    name="knowledge"
-                    control={control}
-                    render={({ field }) => (
-                      <TiptapEditor
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="• Có kinh nghiệm tối thiểu trong việc phát triển, quản lý cộng đồng&#10;• Hiểu biết về MBO, OKRs..."
-                      />
-                    )}
-                  />
+                  <div data-field="knowledge">
+                    <Controller
+                      name="knowledge"
+                      control={control}
+                      render={({ field }) => (
+                        <TiptapEditor
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="• Có kinh nghiệm tối thiểu trong việc phát triển, quản lý cộng đồng&#10;• Ưu tiên đã có kinh nghiệm quản lý cộng đồng kinh doanh, doanh nghiệp&#10;• Hiểu biết về điều phối, dẫn dắt thảo luận cộng đồng&#10;• Hiểu biết về MBO, OKRs là lợi thế"
+                          className={errors.knowledge ? "border-red-500" : ""}
+                        />
+                      )}
+                    />
+                  </div>
                 </FormField>
-                <FormField label="Kỹ năng cần thiết" error={errors.skills?.message} required>
-                  <Controller
-                    name="skills"
-                    control={control}
-                    render={({ field }) => (
-                      <TiptapEditor
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="• Khả năng lập và kiểm soát kế hoạch tốt&#10;• Tư duy chiến lược..."
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField label="Kỹ năng cần thiết" error={errors.skills?.message} required>
+                    <div data-field="skills">
+                      <Controller
+                        name="skills"
+                        control={control}
+                        render={({ field }) => (
+                          <TiptapEditor
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="• Khả năng lập và kiểm soát kế hoạch tốt&#10;• Làm việc đa tác vụ&#10;• Tư duy chiến lược, khả năng nhìn bao quát"
+                            className={errors.skills ? "border-red-500" : ""}
+                          />
+                        )}
                       />
-                    )}
-                  />
-                </FormField>
-                <FormField label="Thái độ và phẩm chất" error={errors.attitude?.message} required>
-                  <Controller
-                    name="attitude"
-                    control={control}
-                    render={({ field }) => (
-                      <TiptapEditor
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="• Phù hợp với văn hóa và giá trị cốt lõi công ty&#10;• Đam mê tạo ra giá trị..."
+                    </div>
+                  </FormField>
+                  <FormField label="Thái độ và phẩm chất" error={errors.attitude?.message} required>
+                    <div data-field="attitude">
+                      <Controller
+                        name="attitude"
+                        control={control}
+                        render={({ field }) => (
+                          <TiptapEditor
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="• Phù hợp với văn hóa và 5 giá trị cốt lõi công ty&#10;• Đam mê tạo ra giá trị, muốn mang lại điều tốt đẹp cho người khác&#10;• Tinh thần phụng sự"
+                            className={errors.attitude ? "border-red-500" : ""}
+                          />
+                        )}
                       />
-                    )}
-                  />
-                </FormField>
+                    </div>
+                  </FormField>
+                </div>
               </div>
             </FormSection>
 
-            <FormSection title="7. Quyền hạn và phạm vi ra quyết định (Tùy chọn)" isExpanded={expandedSections.has("authority")} onToggle={() => toggleSection("authority")}>
+            {/* Section 6: Quyền hạn và phạm vi ra quyết định */}
+            <FormSection
+              title="6. Quyền hạn và phạm vi ra quyết định"
+              description="Mô tả các quyền hạn và phạm vi ra quyết định của vị trí. Trên trang hiển thị sẽ có tiêu đề phụ 'Có thể tự quyết:'."
+              isExpanded={expandedSections.has("authority")}
+              onToggle={() => toggleSection("authority")}
+            >
               <FormField label="Mô tả quyền hạn" error={errors.authority?.message}>
                 <Controller
                   name="authority"
@@ -544,14 +749,20 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="• Kế hoạch hoạt động hàng ngày&#10;• Nội dung và hình thức tương tác..."
+                      placeholder="• Kế hoạch hoạt động hàng ngày của cộng đồng&#10;• Nội dung và hình thức tương tác với thành viên&#10;• Điều phối các hoạt động trong phạm vi được giao"
                     />
                   )}
                 />
               </FormField>
             </FormSection>
 
-            <FormSection title="8. Quan hệ công việc (Tùy chọn)" isExpanded={expandedSections.has("relationships")} onToggle={() => toggleSection("relationships")}>
+            {/* Section 7: Quan hệ công việc */}
+            <FormSection
+              title="7. Quan hệ công việc"
+              description="Mô tả các mối quan hệ nội bộ và bên ngoài mà vị trí này cần làm việc cùng."
+              isExpanded={expandedSections.has("relationships")}
+              onToggle={() => toggleSection("relationships")}
+            >
               <FormField label="Mô tả quan hệ nội bộ và bên ngoài" error={errors.relationships?.message}>
                 <Controller
                   name="relationships"
@@ -560,14 +771,25 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="Quan hệ nội bộ:&#10;• CEO - nhận định hướng và báo cáo trực tiếp&#10;&#10;Quan hệ bên ngoài:&#10;• Thành viên các cộng đồng..."
+                      placeholder="Quan hệ nội bộ:&#10;• CEO Mai Xuân Đạt - nhận định hướng và báo cáo trực tiếp&#10;• Nhóm chuyên môn (đào tạo, huấn luyện) - để tạo nội dung giá trị&#10;&#10;Quan hệ bên ngoài:&#10;• Thành viên các cộng đồng (Quản trị Quán, học viên/khách hàng, độc giả)"
                     />
                   )}
                 />
               </FormField>
             </FormSection>
 
-            <FormSection title="9. Lộ trình phát triển (Tùy chọn)" isExpanded={expandedSections.has("careerPath")} onToggle={() => toggleSection("careerPath")}>
+            {/* Section 8: Lộ trình phát triển */}
+            <FormSection
+              title="8. Lộ trình phát triển"
+              description="Mô tả các hướng phát triển nghề nghiệp cho vị trí này. Trên trang hiển thị sẽ có dòng giới thiệu về phát triển theo năng lực."
+              isExpanded={expandedSections.has("careerPath")}
+              onToggle={() => toggleSection("careerPath")}
+            >
+              <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="text-xs text-slate-600">
+                  <strong>ℹ️ Lưu ý:</strong> Trên trang hiển thị JD sẽ tự động thêm dòng: "Tùy thuộc vào năng lực và nguyện vọng cá nhân, có thể phát triển theo hướng:"
+                </p>
+              </div>
               <FormField label="Mô tả lộ trình phát triển" error={errors.careerPath?.message}>
                 <Controller
                   name="careerPath"
@@ -576,16 +798,23 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="• Xây dựng và quản lý team khi cộng đồng phát triển&#10;• Mở rộng phạm vi quản lý..."
+                      placeholder="• Xây dựng và quản lý team khi cộng đồng phát triển&#10;• Mở rộng phạm vi quản lý sang các mảng khác của công ty"
                     />
                   )}
                 />
               </FormField>
             </FormSection>
 
-            <FormSection title="10. Quyền lợi (Tùy chọn)" isExpanded={expandedSections.has("benefits")} onToggle={() => toggleSection("benefits")}>
+            {/* Section 9: Quyền lợi */}
+            <FormSection
+              title="9. Quyền lợi"
+              description="Mô tả thu nhập và các phúc lợi. Thu nhập sẽ được hiển thị nổi bật với font lớn và màu brand."
+              isExpanded={expandedSections.has("benefits")}
+              onToggle={() => toggleSection("benefits")}
+            >
               <FormField label="Thu nhập" error={errors.benefitsIncome?.message}>
-                <Input placeholder="Từ 15 triệu++, thỏa thuận..." {...register("benefitsIncome")} />
+                <Input placeholder="15 - 25 triệu++, sẵn sàng trả mức lương xứng đáng..." {...register("benefitsIncome")} />
+                <p className="text-xs text-slate-500 mt-1">Nếu không điền, hệ thống sẽ tự động hiển thị mức lương từ các trường trên hoặc "Thoả thuận"</p>
               </FormField>
               <FormField label="Chế độ, phúc lợi" error={errors.benefitsPerks?.message}>
                 <Controller
@@ -595,19 +824,52 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="• Làm việc linh hoạt ở bất cứ đâu&#10;• Được tiếp cận và học hỏi trực tiếp từ CEO..."
+                      placeholder="• Làm việc linh hoạt ở bất cứ đâu (Công ty vận hành theo hướng quản trị bằng mục tiêu)&#10;• Được tiếp cận và học hỏi trực tiếp từ CEO về quản trị&#10;• Môi trường làm việc với triết lý &quot;đi làm là phải vui&quot;"
                     />
                   )}
                 />
               </FormField>
             </FormSection>
 
-            <FormSection title="11. Thông tin liên hệ (Tùy chọn)" isExpanded={expandedSections.has("contact")} onToggle={() => toggleSection("contact")}>
+            {/* Section 10: Thông tin chung */}
+            <FormSection
+              title="10. Thông tin chung"
+              description="Thông tin bổ sung về vị trí (tên vị trí, báo cáo cho ai, v.v.). Section này sẽ hiển thị ở cuối trang JD."
+              isExpanded={expandedSections.has("general")}
+              onToggle={() => toggleSection("general")}
+              required
+            >
+              <FormField label="Nhập thông tin chung (Bộ phận, Báo cáo cho...)" error={errors.generalInfo?.message} required>
+                <div data-field="generalInfo">
+                  <Controller
+                    name="generalInfo"
+                    control={control}
+                    render={({ field }) => (
+                      <TiptapEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="● Tên vị trí: Phụ trách Phát triển Cộng đồng&#10;● Bộ phận: Cộng đồng&#10;● Báo cáo cho: CEO Mai Xuân Đạt (trực tiếp)"
+                        className={errors.generalInfo ? "border-red-500" : ""}
+                      />
+                    )}
+                  />
+                </div>
+              </FormField>
+            </FormSection>
+
+            {/* Section 11: Thông tin liên hệ */}
+            <FormSection
+              title="11. Thông tin liên hệ"
+              description="Thông tin để ứng viên nộp hồ sơ. Sẽ hiển thị ở phần bottom bar cố định của trang JD."
+              isExpanded={expandedSections.has("contact")}
+              onToggle={() => toggleSection("contact")}
+            >
               <FormField label="Thông tin liên hệ để ứng viên nộp hồ sơ" error={errors.contact?.message}>
                 <Input
-                  placeholder="Liên hệ Zalo: 096 1128912&#10;Gửi CV về mail: tuyendung@company.vn"
+                  placeholder="Email: tuyendung@company.vn | Phone: 0123456789"
                   {...register("contact")}
                 />
+                <p className="text-xs text-slate-500 mt-1">Nếu không điền, hệ thống sẽ hiển thị: "Gửi CV về: tuyendung@company.vn"</p>
               </FormField>
             </FormSection>
 
@@ -628,12 +890,14 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
 
 function FormSection({
   title,
+  description,
   isExpanded,
   onToggle,
   required,
   children,
 }: {
   title: string;
+  description?: string;
   isExpanded: boolean;
   onToggle: () => void;
   required?: boolean;
@@ -644,13 +908,18 @@ function FormSection({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-4 bg-[var(--muted)]/50 hover:bg-[var(--muted)] transition-colors"
+        className="w-full flex items-center justify-between p-4 bg-[var(--muted)]/50 hover:bg-[var(--muted)] transition-colors text-left"
       >
-        <span className="font-semibold text-[var(--foreground)]">
-          {title}
-          {required && <span className="ml-1 text-red-500">*</span>}
-        </span>
-        {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        <div className="flex-1">
+          <span className="font-semibold text-[var(--foreground)] block">
+            {title}
+            {required && <span className="ml-1 text-red-500">*</span>}
+          </span>
+          {description && (
+            <p className="text-xs text-[var(--muted-foreground)] mt-1">{description}</p>
+          )}
+        </div>
+        {isExpanded ? <ChevronDown className="h-5 w-5 shrink-0 ml-2" /> : <ChevronRight className="h-5 w-5 shrink-0 ml-2" />}
       </button>
       {isExpanded && <div className="p-4 space-y-4">{children}</div>}
     </div>
@@ -675,7 +944,7 @@ function FormField({
         {required && <span className="ml-1 text-red-500">*</span>}
       </span>
       {children}
-      {error ? <span className="text-xs text-red-500">{error}</span> : null}
+      {error && <span className="text-xs text-red-500">{error}</span>}
     </div>
   );
 }

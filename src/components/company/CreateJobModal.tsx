@@ -557,13 +557,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
                 </FormField>
               </div>
               
-              <div className="grid gap-4 md:grid-cols-2">
-                <FormField label="Làm việc từ xa">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" {...register("remote")} />
-                    Cho phép làm việc từ xa
-                  </label>
-                </FormField>
+              <div className="grid gap-4 md:grid-cols-1">
                 <FormField label="Hạn nộp hồ sơ" error={errors.applicationDeadline?.message}>
                   <Input type="date" {...register("applicationDeadline")} />
                 </FormField>
