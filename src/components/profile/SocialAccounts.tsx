@@ -6,6 +6,8 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2, Check, Plus } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
+import { useAuthStore } from "@/store/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
@@ -18,6 +20,7 @@ type SocialAccount = {
 export default function SocialAccounts() {
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const fetchAccounts = async () => {
     try {
@@ -44,6 +47,25 @@ export default function SocialAccounts() {
         if (data.success) {
           toast.success("Liên kết tài khoản thành công");
           fetchAccounts();
+          // Refresh user data to update emailVerified status (only /api/auth/me, not all APIs)
+          api.get("/api/auth/me")
+            .then((res) => {
+              const me = res.data.data.user;
+              const currentUser = useAuthStore.getState().user;
+              if (currentUser) {
+                // Only update emailVerified, don't clear user if API fails
+                useAuthStore.getState().setUser({
+                  ...currentUser,
+                  emailVerified: me.emailVerified,
+                });
+              }
+            })
+            .catch(() => {
+              // Silently fail - don't clear user data
+            });
+          // Invalidate React Query cache to refresh account data
+          queryClient.invalidateQueries({ queryKey: ["account"] });
+          queryClient.invalidateQueries({ queryKey: ["own-profile"] });
         } else {
           toast.error(data.message || "Liên kết thất bại");
         }
@@ -58,6 +80,25 @@ export default function SocialAccounts() {
             if (data.success) {
                 toast.success("Liên kết tài khoản thành công");
                 fetchAccounts();
+                // Refresh user data to update emailVerified status (only /api/auth/me, not all APIs)
+                api.get("/api/auth/me")
+                  .then((res) => {
+                    const me = res.data.data.user;
+                    const currentUser = useAuthStore.getState().user;
+                    if (currentUser) {
+                      // Only update emailVerified, don't clear user if API fails
+                      useAuthStore.getState().setUser({
+                        ...currentUser,
+                        emailVerified: me.emailVerified,
+                      });
+                    }
+                  })
+                  .catch(() => {
+                    // Silently fail - don't clear user data
+                  });
+                // Invalidate React Query cache to refresh account data
+                queryClient.invalidateQueries({ queryKey: ["account"] });
+                queryClient.invalidateQueries({ queryKey: ["own-profile"] });
             } else {
                 toast.error(data.message || "Liên kết thất bại");
             }

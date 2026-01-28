@@ -1,10 +1,6 @@
 import { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings } from "lucide-react";
-import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero";
-import ManageCompanyTabs from "@/components/company/ManageCompanyTabs";
+import { notFound } from "next/navigation";
+import ManageCompanyPageClient from "./ManageCompanyPageClient";
 import { headers } from "next/headers";
 
 type Props = {
@@ -54,33 +50,5 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
   const { tab: searchTab } = await searchParams;
   const tab = searchTab || "overview";
 
-  return (
-    <div className="min-h-screen bg-[var(--background)] font-sans pb-20">
-      {/* Top Bar for Manager */}
-      <div className="bg-[var(--card)] border-b border-[var(--border)] sticky top-0 z-30 px-6 py-3 flex items-center justify-between shadow-sm">
-         <div className="flex items-center gap-4">
-             <Link href={`/companies/${company.slug}`} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-2 text-sm font-medium">
-                 <ArrowLeft className="w-4 h-4" /> Xem trang công khai
-             </Link>
-             <div className="h-4 w-px bg-[var(--border)]" />
-             <span className="font-bold text-[var(--foreground)]">Trang quản trị</span>
-        </div>
-         {/* <div className="flex items-center gap-2">
-             <Button variant="outline" size="sm" asChild>
-                 <Link href={`/companies/${company.slug}/settings`}>
-                     <Settings className="w-4 h-4 mr-2" /> Cài đặt---
-                </Link>
-              </Button>
-          </div> */}
-        </div>
-
-      {/* Hero Section (Read-only view for context, editing via Settings or specific Edit Hero modal later) */}
-      <CompanyProfileHero company={company} isEditable={true} />
-
-      {/* Main Content & Tabs */}
-      <div className="max-w-7xl mx-auto px-6">
-        <ManageCompanyTabs company={company} initialTab={tab} />
-      </div>
-    </div>
-  );
+  return <ManageCompanyPageClient company={company} tab={tab} />;
 }

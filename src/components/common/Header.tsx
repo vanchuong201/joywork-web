@@ -12,6 +12,7 @@ import {
   Lock,
   type LucideIcon,
 } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuth";
 import Link from "next/link";
@@ -64,7 +65,7 @@ export default function Header() {
       accountRef.current.open = false;
     }
     await signOut();
-    router.refresh();
+    // signOut already redirects to home, no need for router.refresh()
   };
 
   return (
@@ -116,7 +117,9 @@ export default function Header() {
           {!isReady ? (
             <Skeleton className="h-8 w-32" />
           ) : user ? (
-            <details ref={accountRef} className="relative">
+            <>
+              <NotificationBell />
+              <details ref={accountRef} className="relative">
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1 text-sm text-[var(--foreground)] hover:bg-[var(--muted)]">
                 <span className="font-medium leading-tight">{user.name ?? user.email}</span>
                 <ChevronDown size={14} />
@@ -170,6 +173,7 @@ export default function Header() {
                 </div>
               </div>
             </details>
+            </>
           ) : (
             <div className="flex items-center gap-2 text-sm">
               <Link
