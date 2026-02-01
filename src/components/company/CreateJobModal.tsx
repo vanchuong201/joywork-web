@@ -25,6 +25,13 @@ function getPlainTextLength(html: string): number {
   return div.textContent?.length || 0;
 }
 
+function optionalEnum<T extends readonly [string, ...string[]]>(values: T, message: string) {
+  return z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.enum(values, { message }).optional(),
+  );
+}
+
 // Schema validation
 const schema = z
   .object({
@@ -41,8 +48,8 @@ const schema = z
     tags: z.array(z.string()).max(10, "Tối đa 10 tags").optional(),
     // Header fields
     department: z.string().max(100, "Bộ phận tối đa 100 ký tự").optional().or(z.literal("")),
-    jobLevel: z.enum(jobLevels).optional(),
-    educationLevel: z.enum(educationLevels).optional(),
+    jobLevel: optionalEnum(jobLevels, "Cấp bậc không hợp lệ"),
+    educationLevel: optionalEnum(educationLevels, "Học vấn không hợp lệ"),
     
     // Required JD fields (HTML from Tiptap)
     generalInfo: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Thông tin chung tối thiểu 10 ký tự" }),
@@ -59,7 +66,6 @@ const schema = z
     careerPath: z.string().optional(),
     benefitsIncome: z.string().max(200, "Thu nhập tối đa 200 ký tự").optional().or(z.literal("")),
     benefitsPerks: z.string().optional(),
-    contact: z.string().max(500, "Thông tin liên hệ tối đa 500 ký tự").optional().or(z.literal("")),
   })
   .superRefine((vals, ctx) => {
     // Validate text length limits (strip HTML)
@@ -174,7 +180,6 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       careerPath: "",
       benefitsIncome: "",
       benefitsPerks: "",
-      contact: "",
     },
   });
 
@@ -183,6 +188,9 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
     const error = errors[field as keyof typeof errors];
     const fieldLabels: Record<string, string> = {
       title: "Tiêu đề vị trí",
+      department: "Bộ phận",
+      jobLevel: "Cấp bậc",
+      educationLevel: "Học vấn",
       generalInfo: "Thông tin chung",
       mission: "Sứ mệnh/Vai trò",
       tasks: "Nhiệm vụ chuyên môn",
@@ -195,7 +203,6 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       careerPath: "Lộ trình phát triển",
       benefitsIncome: "Thu nhập",
       benefitsPerks: "Phúc lợi",
-      contact: "Thông tin liên hệ",
       salaryMin: "Lương tối thiểu",
       salaryMax: "Lương tối đa",
       currency: "Đơn vị tiền tệ",
@@ -236,6 +243,10 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
         currency: values.currency?.trim() ? values.currency.trim().toUpperCase() : "VND",
         applicationDeadline: values.applicationDeadline ? new Date(values.applicationDeadline).toISOString() : undefined,
         tags: values.tags || [],
+        // Header fields (optional)
+        department: values.department?.trim() || undefined,
+        jobLevel: values.jobLevel || undefined,
+        educationLevel: values.educationLevel || undefined,
         // Required fields - sanitize HTML
         generalInfo: sanitizeHtml(values.generalInfo),
         mission: sanitizeHtml(values.mission),
@@ -250,7 +261,6 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
         careerPath: values.careerPath ? sanitizeHtml(values.careerPath) : undefined,
         benefitsIncome: values.benefitsIncome?.trim() || undefined,
         benefitsPerks: values.benefitsPerks ? sanitizeHtml(values.benefitsPerks) : undefined,
-        contact: values.contact?.trim() || undefined,
       };
 
       // #region agent log
@@ -379,7 +389,6 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
         careerPath: "careerPath",
         benefitsIncome: "benefits", benefitsPerks: "benefits",
         generalInfo: "general",
-        contact: "contact",
       };
       
       const section = sectionMap[firstErrorField];
@@ -840,22 +849,6 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
                     )}
                   />
                 </div>
-              </FormField>
-            </FormSection>
-
-            {/* Section 11: Thông tin liên hệ */}
-            <FormSection
-              title="11. Thông tin liên hệ"
-              description="Thông tin để ứng viên nộp hồ sơ. Sẽ hiển thị ở phần bottom bar cố định của trang JD."
-              isExpanded={expandedSections.has("contact")}
-              onToggle={() => toggleSection("contact")}
-            >
-              <FormField label="Thông tin liên hệ để ứng viên nộp hồ sơ" error={errors.contact?.message}>
-                <Input
-                  placeholder="Email: tuyendung@company.vn | Phone: 0123456789"
-                  {...register("contact")}
-                />
-                <p className="text-xs text-slate-500 mt-1">Nếu không điền, hệ thống sẽ hiển thị: "Gửi CV về: tuyendung@company.vn"</p>
               </FormField>
             </FormSection>
 

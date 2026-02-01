@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { Suspense, useEffect, useMemo, useState, useRef } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/ui/empty-state";
 import CompanySearch from "@/components/feed/CompanySearch";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
@@ -214,12 +215,15 @@ function JobsPageContent() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
 
+  const q = sp.get("q") || undefined;
+  const location = sp.get("location") || undefined;
+  const skills = sp.get("skills") || undefined;
   const companyId = sp.get("companyId") || undefined;
   const remote = sp.get("remote") === "true" ? true : undefined;
   const employmentType = sp.get("employmentType") || undefined;
   const experienceLevel = sp.get("experienceLevel") || undefined;
 
-  const hasActiveFilters = Boolean(companyId || remote === true || employmentType || experienceLevel);
+  const hasActiveFilters = Boolean(q || location || skills || companyId || remote === true || employmentType || experienceLevel);
 
   const [filtersOpen, setFiltersOpen] = useState(hasActiveFilters);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -228,46 +232,22 @@ function JobsPageContent() {
   const featuredPage = Number(sp.get("featuredPage") || "1");
   const featuredLimit = 12;
 
-  // Refs for scroll behavior
-  const featuredSectionRef = useRef<HTMLElement>(null);
-  const jobsSectionRef = useRef<HTMLElement>(null);
-  const prevFeaturedPageRef = useRef<number>(featuredPage);
-  const prevPageRef = useRef<number>(page);
-
   useEffect(() => {
     if (hasActiveFilters) {
       setFiltersOpen(true);
     }
   }, [hasActiveFilters]);
 
-  // Scroll to section when page changes (only if page actually changed)
-  useEffect(() => {
-    if (prevFeaturedPageRef.current !== featuredPage && featuredSectionRef.current) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        featuredSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-      prevFeaturedPageRef.current = featuredPage;
-    }
-  }, [featuredPage]);
-
-  useEffect(() => {
-    if (prevPageRef.current !== page && jobsSectionRef.current) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        jobsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-      prevPageRef.current = page;
-    }
-  }, [page]);
-
-  const { data, isLoading } = useQuery<{ jobs: Job[]; pagination: any }>({
-    queryKey: ["jobs", { remote, employmentType, experienceLevel, companyId, page }],
+  const { data, isLoading, isFetching } = useQuery<{ jobs: Job[]; pagination: any }>({
+    queryKey: ["jobs", { q, location, skills, remote, employmentType, experienceLevel, companyId, page }],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
         params: {
           limit,
           page,
+          q,
+          location,
+          skills,
           companyId,
           remote,
           employmentType,
@@ -276,9 +256,11 @@ function JobsPageContent() {
       });
       return res.data.data;
     },
+    // Keep previous list while fetching new params (avoid full re-render + scroll jump)
+    placeholderData: (prev) => prev,
   });
 
-  const { data: featuredData, isLoading: featuredLoading } = useQuery<{ jobs: Job[]; pagination: any }>({
+  const { data: featuredData, isLoading: featuredLoading, isFetching: featuredFetching } = useQuery<{ jobs: Job[]; pagination: any }>({
     queryKey: ["jobs-featured", featuredPage],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
@@ -286,19 +268,24 @@ function JobsPageContent() {
       });
       return res.data.data;
     },
+    placeholderData: (prev) => prev,
   });
 
   const applyParams = (params: URLSearchParams) => {
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
+    // Don't scroll to top when changing query params
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
 
-  const toggleParam = (key: string, value?: string) => {
+  const toggleParam = (key: string, value?: string, opts?: { resetPage?: boolean }) => {
     const next = new URLSearchParams(sp.toString());
     if (!value) {
       next.delete(key);
     } else {
       next.set(key, value);
+    }
+    if (opts?.resetPage) {
+      next.delete("page");
     }
     applyParams(next);
   };
@@ -313,7 +300,9 @@ function JobsPageContent() {
 
   const clearAllFilters = () => {
     const next = new URLSearchParams(sp.toString());
-    ["companyId", "remote", "employmentType", "experienceLevel", "page"].forEach((key) => next.delete(key));
+    ["q", "location", "skills", "companyId", "remote", "employmentType", "experienceLevel", "page"].forEach((key) =>
+      next.delete(key),
+    );
     applyParams(next);
   };
 
@@ -356,12 +345,15 @@ function JobsPageContent() {
   const activeFilterLabels = useMemo(
     () =>
       [
+        q ? `Từ khoá: ${q}` : null,
+        location ? `Địa điểm: ${location}` : null,
+        skills ? `Kỹ năng: ${skills}` : null,
         companyId ? "Đang lọc theo doanh nghiệp" : null,
         remote === true ? "Làm việc từ xa" : null,
         employmentType ? `Loại: ${translateEmploymentType(employmentType)}` : null,
         experienceLevel ? `Cấp bậc: ${translateExperienceLevel(experienceLevel)}` : null,
       ].filter(Boolean) as string[],
-    [companyId, remote, employmentType, experienceLevel],
+    [q, location, skills, companyId, remote, employmentType, experienceLevel],
   );
 
   const totalPages = data?.pagination?.totalPages ?? 1;
@@ -440,7 +432,7 @@ function JobsPageContent() {
         </SimpleCarousel>
       </section>
 
-      <section ref={featuredSectionRef} className="space-y-4">
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Việc làm tốt nhất</h2>
           {/* <Button asChild variant="ghost" size="sm">
@@ -532,7 +524,7 @@ function JobsPageContent() {
         )}
       </section>
 
-      <section ref={jobsSectionRef} className="space-y-4">
+      <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">Việc làm</h1>
@@ -599,28 +591,95 @@ function JobsPageContent() {
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="space-y-2 text-sm">
+                <div className="font-medium">Từ khoá</div>
+                <Input
+                  defaultValue={q ?? ""}
+                  placeholder="Tìm theo tiêu đề và nội dung JD (sứ mệnh, nhiệm vụ, kỹ năng...)"
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    const value = (e.currentTarget.value ?? "").trim();
+                    toggleParam("q", value || undefined, { resetPage: true });
+                  }}
+                  onBlur={(e) => {
+                    const value = (e.currentTarget.value ?? "").trim();
+                    // tránh replace liên tục nếu không thay đổi
+                    if ((q ?? "") === value) return;
+                    toggleParam("q", value || undefined, { resetPage: true });
+                  }}
+                />
+                {q ? (
+                  <button className="text-xs text-[var(--brand)] hover:underline" onClick={() => toggleParam("q", undefined, { resetPage: true })}>
+                    Xoá từ khoá
+                  </button>
+                ) : null}
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="font-medium">Địa điểm</div>
+                <Input
+                  defaultValue={location ?? ""}
+                  placeholder="VD: Hà Nội, HCM, Đà Nẵng..."
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    const value = (e.currentTarget.value ?? "").trim();
+                    toggleParam("location", value || undefined, { resetPage: true });
+                  }}
+                  onBlur={(e) => {
+                    const value = (e.currentTarget.value ?? "").trim();
+                    if ((location ?? "") === value) return;
+                    toggleParam("location", value || undefined, { resetPage: true });
+                  }}
+                />
+                {location ? (
+                  <button className="text-xs text-[var(--brand)] hover:underline" onClick={() => toggleParam("location", undefined, { resetPage: true })}>
+                    Xoá địa điểm
+                  </button>
+                ) : null}
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="font-medium">Kỹ năng</div>
+                <Input
+                  defaultValue={skills ?? ""}
+                  placeholder="VD: react, nextjs, nodejs (ngăn cách bằng dấu phẩy)"
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    const value = (e.currentTarget.value ?? "").trim();
+                    toggleParam("skills", value || undefined, { resetPage: true });
+                  }}
+                  onBlur={(e) => {
+                    const value = (e.currentTarget.value ?? "").trim();
+                    if ((skills ?? "") === value) return;
+                    toggleParam("skills", value || undefined, { resetPage: true });
+                  }}
+                />
+                {skills ? (
+                  <button className="text-xs text-[var(--brand)] hover:underline" onClick={() => toggleParam("skills", undefined, { resetPage: true })}>
+                    Xoá kỹ năng
+                  </button>
+                ) : null}
+              </div>
+              <div className="space-y-2 text-sm">
                 <div className="font-medium">Doanh nghiệp</div>
-                <CompanySearch value={companyId} onSelect={(id) => toggleParam("companyId", id)} />
+                <CompanySearch value={companyId} onSelect={(id) => toggleParam("companyId", id, { resetPage: true })} />
                 {companyId ? (
                   <button
                     className="text-xs text-[var(--brand)] hover:underline"
-                    onClick={() => toggleParam("companyId", undefined)}
+                    onClick={() => toggleParam("companyId", undefined, { resetPage: true })}
                   >
                     Bỏ chọn doanh nghiệp
                   </button>
                 ) : null}
               </div>
-              <div className="space-y-2 text-sm">
+              {/* <div className="space-y-2 text-sm">
                 <div className="font-medium">Hình thức làm việc</div>
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={remote === true}
-                    onChange={(e) => toggleParam("remote", e.target.checked ? "true" : undefined)}
+                    onChange={(e) => toggleParam("remote", e.target.checked ? "true" : undefined, { resetPage: true })}
                   />
                   Làm việc từ xa
                 </label>
-              </div>
+              </div> */}
               <div className="space-y-2 text-sm">
                 <div className="font-medium">Loại hợp đồng</div>
                 <div className="space-y-1">
@@ -630,7 +689,7 @@ function JobsPageContent() {
                         type="radio"
                         name="employmentType"
                         checked={employmentType === t}
-                        onChange={() => toggleParam("employmentType", t)}
+                        onChange={() => toggleParam("employmentType", t, { resetPage: true })}
                       />
                       {translateEmploymentType(t)}
                     </label>
@@ -638,13 +697,13 @@ function JobsPageContent() {
                 </div>
                 <button
                   className="text-xs text-[var(--brand)] hover:underline"
-                  onClick={() => toggleParam("employmentType", undefined)}
+                  onClick={() => toggleParam("employmentType", undefined, { resetPage: true })}
                 >
                   Bỏ chọn
                 </button>
               </div>
               <div className="space-y-2 text-sm">
-                <div className="font-medium">Cấp bậc</div>
+                <div className="font-medium">Kinh nghiệm</div>
                 <div className="space-y-1">
                   {["ENTRY", "JUNIOR", "MID", "SENIOR", "LEAD", "EXECUTIVE"].map((t) => (
                     <label key={t} className="flex items-center gap-2">
@@ -652,15 +711,15 @@ function JobsPageContent() {
                         type="radio"
                         name="experienceLevel"
                         checked={experienceLevel === t}
-                        onChange={() => toggleParam("experienceLevel", t)}
+                        onChange={() => toggleParam("experienceLevel", t, { resetPage: true })}
                       />
-                      {translateEmploymentType(t)}
+                      {translateExperienceLevel(t)}
                     </label>
                   ))}
                 </div>
                 <button
                   className="text-xs text-[var(--brand)] hover:underline"
-                  onClick={() => toggleParam("experienceLevel", undefined)}
+                  onClick={() => toggleParam("experienceLevel", undefined, { resetPage: true })}
                 >
                   Bỏ chọn
                 </button>

@@ -347,9 +347,7 @@ export default function JobDetailPage() {
           <div className="text-sm text-slate-600 hidden md:block">
             {job.contact ? (
               <div className="whitespace-pre-line font-medium" dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.contact) }} />
-            ) : (
-              <span>Gửi CV về: tuyendung@company.vn</span>
-            )}
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <JobSaveButton jobId={job.id} />
