@@ -15,7 +15,7 @@ import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { Briefcase, MapPin, Clock, CheckCircle, CheckSquare, TrendingUp, Star, Send, BookOpen, Zap, Heart, DollarSign, GraduationCap, UserCheck, Calendar } from "lucide-react";
 import DOMPurify from "dompurify";
-import { cn } from "@/lib/utils";
+import { cn, formatDateUTC } from "@/lib/utils";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -66,7 +66,7 @@ export default function JobDetailPage() {
         : `${job.salaryMax.toLocaleString("vi-VN")} ${job.currency}`
       : job.benefitsIncome || "Thoả thuận";
 
-  const deadline = job.applicationDeadline ? formatDate(job.applicationDeadline) : "Không giới hạn";
+  const deadline = job.applicationDeadline ? formatDateUTC(job.applicationDeadline) : "Không giới hạn";
 
   // Sanitize HTML content
   const sanitizeHtml = (html: string | undefined | null) => {

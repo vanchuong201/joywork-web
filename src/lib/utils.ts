@@ -15,3 +15,17 @@ export function formatDate(date: string | Date | undefined | null): string {
     return "";
   }
 }
+
+/** Format date-only (e.g. applicationDeadline) theo ngày UTC để đồng bộ với ngày tạo, tránh lệch múi giờ (15/1 không thành 16/1). */
+export function formatDateUTC(date: string | Date | undefined | null): string {
+  if (!date) return "";
+  try {
+    const d = new Date(date);
+    const day = d.getUTCDate();
+    const month = d.getUTCMonth() + 1;
+    const year = d.getUTCFullYear();
+    return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
+  } catch (error) {
+    return "";
+  }
+}

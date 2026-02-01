@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2, Briefcase, X, Check, MessageCircle, Play, Maximize2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2, Briefcase, X, Check, MessageCircle, Play, Maximize2, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
@@ -157,6 +158,7 @@ export type PostCardData = {
   publishedAt?: string | null;
   createdBy?: { id: string; name?: string | null; email?: string } | null;
   coverUrl?: string | null;
+  type?: string | null;
   tags?: string[] | null;
   hashtags?: { id: string; slug: string; label: string }[] | null;
   likesCount?: number | null;
@@ -167,6 +169,8 @@ export type PostCardData = {
   jobs?: { id: string; title: string; location?: string | null; employmentType: string; isActive: boolean }[] | null;
   reactions?: { JOY: number; TRUST: number; SKEPTIC: number } | null;
   userReaction?: "JOY" | "TRUST" | "SKEPTIC" | null;
+  statementId?: string | null;
+  statementSnapshot?: { title: string; description?: string | null; percentYes: number; totalRecipients: number; yesCount: number; respondedCount: number; snapshotAt: string } | null;
 };
 
 function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) {
@@ -292,10 +296,114 @@ function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) 
   );
 }
 
+function stripHtml(input: string) {
+  return input.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function extractHtmlTagContent(content: string, tag: string) {
+  const regex = new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "i");
+  const match = content.match(regex);
+  return match ? stripHtml(match[1] ?? "") : null;
+}
+
+function extractStatementExtraText(content: string) {
+  if (!content) return "";
+  if (!content.includes("<")) return content.trim();
+  const matches = [...content.matchAll(/<div[^>]*margin-top:\s*16px[^>]*>(.*?)<\/div>/gi)];
+  if (matches.length > 0) {
+    const last = matches[matches.length - 1]?.[1] ?? "";
+    return stripHtml(last);
+  }
+  return stripHtml(content);
+}
+
+type StatementCardProps = {
+  title: string;
+  percentYes?: number | null;
+  totalRecipients?: number | null;
+  yesCount?: number | null;
+  verifiedAt?: string | null;
+  statementAt?: string | null;
+};
+
+function StatementCard({
+  title,
+  percentYes,
+  totalRecipients,
+  yesCount,
+  verifiedAt,
+  statementAt,
+}: StatementCardProps) {
+  const total = totalRecipients ?? 0;
+  const percent = percentYes ?? 0;
+  const hasVerification = total > 0;
+  const safeTitle = title?.trim() || "Tuyên bố công ty";
+  const verifiedLabel = verifiedAt ? format(new Date(verifiedAt), "HH:mm dd/MM/yyyy") : null;
+  const statementLabel = statementAt ? format(new Date(statementAt), "HH:mm dd/MM/yyyy") : null;
+  return (
+    <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/50 p-4 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+        <ShieldCheck size={120} />
+      </div>
+      
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 mb-2">
+          <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs font-medium px-2 py-0.5 flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3" />
+            Tuyên bố công ty
+          </Badge>
+          {hasVerification ? (
+            verifiedLabel ? (
+              <span className="text-xs text-slate-500">Được xác thực lúc {verifiedLabel}</span>
+            ) : null
+          ) : statementLabel ? (
+            <span className="text-xs text-slate-500">Tuyên bố lúc {statementLabel}</span>
+          ) : null}
+        </div>
+
+        <h3 className="text-lg font-bold text-slate-900 mb-2 leading-tight">
+          {safeTitle}
+        </h3>
+
+        {hasVerification && (
+          <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+            <div className="flex items-center justify-between mb-2 text-sm">
+              <span className="font-medium text-slate-700">Mức độ đồng thuận</span>
+              <span className="font-bold text-blue-700">
+                {Math.round(percent)}% ({yesCount ?? 0}/{total})
+              </span>
+            </div>
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mb-2">
+              <div 
+                className="h-full bg-blue-600 rounded-full" 
+                style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+              />
+            </div>
+            <div className="text-xs text-slate-500">
+              {yesCount ?? 0}/{total} người đồng ý với tuyên bố
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PostCard({ post, onLike }: { post: PostCardData; onLike?: (p: PostCardData) => void }) {
   const hasImages = (post.images?.length ?? 0) > 0;
   const likeCount = post.likesCount ?? (post as any)?._count?.likes ?? 0;
   const shareCount = post.sharesCount ?? (post as any)?._count?.shares ?? 0;
+  const isStatementPost = (post.type ?? "").toUpperCase() === "STATEMENT" || Boolean(post.statementId);
+  const rawSnapshot = post.statementSnapshot && Object.keys(post.statementSnapshot).length > 0 ? post.statementSnapshot : null;
+  const statementTitle =
+    rawSnapshot?.title ??
+    extractHtmlTagContent(post.content ?? "", "h3") ??
+    (post.title ? post.title.replace(/^Tuyên bố:\s*/i, "").trim() : "") ??
+    "";
+  const verifiedAt = (rawSnapshot?.totalRecipients ?? 0) > 0 ? rawSnapshot?.snapshotAt ?? null : null;
+  const statementAt = post.publishedAt ?? post.createdAt ?? null;
+  const statementExtraText = isStatementPost ? extractStatementExtraText(post.content ?? "") : post.content;
   const user = useAuthStore((s) => s.user);
   const memberships = useAuthStore((s) => s.memberships);
   const { openPrompt } = useAuthPrompt();
@@ -710,28 +818,54 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             ) : null}
           </div>
         </div>
-        {/* <h3 className="text-base font-semibold">
-          <Link href={`/posts/${post.id}`} className="hover:underline">
-            {post.title}
-          </Link>
-        </h3> */}
-        {hasImages ? (
-          <MediaGrid images={post.images!} />
-        ) : post.coverUrl ? (
-          <PhotoProvider maskOpacity={0.8}>
-            <PhotoView src={post.coverUrl}>
-              <div className="mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={post.coverUrl}
-                  alt="cover"
-                  className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-                />
-              </div>
-            </PhotoView>
-          </PhotoProvider>
-        ) : null}
-        <PostContent content={post.content} />
+        {isStatementPost ? (
+          <>
+            {/* User content (intro) */}
+            {statementExtraText ? <PostContent content={statementExtraText} /> : null}
+            
+            {/* Statement Card */}
+            <StatementCard
+              title={statementTitle}
+              percentYes={rawSnapshot?.percentYes ?? null}
+              totalRecipients={rawSnapshot?.totalRecipients ?? null}
+              yesCount={rawSnapshot?.yesCount ?? null}
+              verifiedAt={verifiedAt ? String(verifiedAt) : null}
+              statementAt={statementAt ? String(statementAt) : null}
+            />
+            
+            {/* Media if any */}
+            {hasImages ? (
+              <MediaGrid images={post.images!} />
+            ) : null}
+          </>
+        ) : (
+          <>
+            {post.title && (
+              <h3 className="text-base font-semibold mb-2">
+                <Link href={`/posts/${post.id}`} className="hover:underline">
+                  {post.title}
+                </Link>
+              </h3>
+            )}
+            {hasImages ? (
+              <MediaGrid images={post.images!} />
+            ) : post.coverUrl ? (
+              <PhotoProvider maskOpacity={0.8}>
+                <PhotoView src={post.coverUrl}>
+                  <div className="mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={post.coverUrl}
+                      alt="cover"
+                      className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+                    />
+                  </div>
+                </PhotoView>
+              </PhotoProvider>
+            ) : null}
+            <PostContent content={post.content} />
+          </>
+        )}
         {post.hashtags?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {post.hashtags.map((h) => (

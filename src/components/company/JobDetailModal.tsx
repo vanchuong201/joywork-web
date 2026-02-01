@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { formatDateUTC } from "@/lib/utils";
 import CompanyHoverCard from "./CompanyHoverCard";
 
 type Props = {
@@ -49,7 +50,7 @@ export default function JobDetailModal({ open, onOpenChange, jobId }: Props) {
         : `${job.salaryMax.toLocaleString("vi-VN")} ${job.currency}`
       : "Thoả thuận";
 
-  const deadline = job.applicationDeadline ? formatDate(job.applicationDeadline) : "Không giới hạn";
+  const deadline = job.applicationDeadline ? formatDateUTC(job.applicationDeadline) : "Không giới hạn";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
