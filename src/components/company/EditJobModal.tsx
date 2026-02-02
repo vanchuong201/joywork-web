@@ -24,6 +24,13 @@ function getPlainTextLength(html: string): number {
   return div.textContent?.length || 0;
 }
 
+function optionalEnum<T extends readonly [string, ...string[]]>(values: T, message: string) {
+  return z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.enum(values, { message }).optional(),
+  );
+}
+
 const schema = z
   .object({
     title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự").max(200, "Tiêu đề tối đa 200 ký tự"),
@@ -38,8 +45,8 @@ const schema = z
     tags: z.array(z.string()).max(10, "Tối đa 10 tags").optional(),
     // Header fields
     department: z.string().max(100, "Bộ phận tối đa 100 ký tự").optional().or(z.literal("")),
-    jobLevel: z.enum(jobLevels).optional(),
-    educationLevel: z.enum(educationLevels).optional(),
+    jobLevel: optionalEnum(jobLevels, "Cấp bậc không hợp lệ"),
+    educationLevel: optionalEnum(educationLevels, "Học vấn không hợp lệ"),
     generalInfo: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Thông tin chung tối thiểu 10 ký tự" }),
     mission: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Sứ mệnh/Vai trò tối thiểu 10 ký tự" }),
     tasks: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Nhiệm vụ chuyên môn tối thiểu 10 ký tự" }),
@@ -52,7 +59,6 @@ const schema = z
     careerPath: z.string().optional(),
     benefitsIncome: z.string().max(200, "Thu nhập tối đa 200 ký tự").optional().or(z.literal("")),
     benefitsPerks: z.string().optional(),
-    contact: z.string().max(500, "Thông tin liên hệ tối đa 500 ký tự").optional().or(z.literal("")),
   })
   .superRefine((vals, ctx) => {
     const fields = [
@@ -167,7 +173,6 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
       careerPath: "",
       benefitsIncome: "",
       benefitsPerks: "",
-      contact: "",
     },
   });
 
@@ -199,7 +204,6 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
         careerPath: job.careerPath ?? "",
         benefitsIncome: job.benefitsIncome ?? "",
         benefitsPerks: job.benefitsPerks ?? "",
-        contact: job.contact ?? "",
       });
     }
   }, [open, job, reset]);
@@ -233,7 +237,6 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
         careerPath: values.careerPath ? sanitizeHtml(values.careerPath) : null,
         benefitsIncome: values.benefitsIncome?.trim() || null,
         benefitsPerks: values.benefitsPerks ? sanitizeHtml(values.benefitsPerks) : null,
-        contact: values.contact?.trim() || null,
       };
 
       // #region agent log
@@ -324,6 +327,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     const error = errors[field as keyof typeof errors];
     const fieldLabels: Record<string, string> = {
       title: "Tiêu đề vị trí",
+      department: "Bộ phận",
+      jobLevel: "Cấp bậc",
+      educationLevel: "Học vấn",
       generalInfo: "Thông tin chung",
       mission: "Sứ mệnh/Vai trò",
       tasks: "Nhiệm vụ chuyên môn",
@@ -336,7 +342,6 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
       careerPath: "Lộ trình phát triển",
       benefitsIncome: "Thu nhập",
       benefitsPerks: "Phúc lợi",
-      contact: "Thông tin liên hệ",
       salaryMin: "Lương tối thiểu",
       salaryMax: "Lương tối đa",
       currency: "Đơn vị tiền tệ",
@@ -398,7 +403,6 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
         careerPath: "careerPath",
         benefitsIncome: "benefits", benefitsPerks: "benefits",
         generalInfo: "general",
-        contact: "contact",
       };
       
       const section = sectionMap[firstErrorField];
@@ -858,20 +862,6 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
             </FormSection>
 
             {/* Section 11: Thông tin liên hệ */}
-            <FormSection
-              title="11. Thông tin liên hệ"
-              description="Thông tin để ứng viên nộp hồ sơ. Sẽ hiển thị ở phần bottom bar cố định của trang JD."
-              isExpanded={expandedSections.has("contact")}
-              onToggle={() => toggleSection("contact")}
-            >
-              <FormField label="Thông tin liên hệ để ứng viên nộp hồ sơ" error={errors.contact?.message}>
-                <Input
-                  placeholder="Email: tuyendung@company.vn | Phone: 0123456789"
-                  {...register("contact")}
-                />
-                <p className="text-xs text-slate-500 mt-1">Nếu không điền, hệ thống sẽ hiển thị: "Gửi CV về: tuyendung@company.vn"</p>
-              </FormField>
-            </FormSection>
 
             <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
               <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
