@@ -325,18 +325,20 @@ function JobsPageContent() {
 
   const translateExperienceLevel = (level: string) => {
     switch (level) {
-      case "ENTRY":
-        return "Mới tốt nghiệp";
-      case "JUNIOR":
-        return "Nhân viên";
-      case "MID":
-        return "Chuyên viên";
-      case "SENIOR":
-        return "Chuyên viên cao cấp";
-      case "LEAD":
-        return "Trưởng nhóm";
-      case "EXECUTIVE":
-        return "Điều hành";
+      case "NO_EXPERIENCE":
+        return "Không yêu cầu kinh nghiệm";
+      case "LT_1_YEAR":
+        return "Dưới 1 năm";
+      case "Y1_2":
+        return "1 - 2 năm";
+      case "Y2_3":
+        return "2 - 3 năm";
+      case "Y3_5":
+        return "3 - 5 năm";
+      case "Y5_10":
+        return "5 - 10 năm";
+      case "GT_10":
+        return "Trên 10 năm";
       default:
         return level;
     }
@@ -351,7 +353,7 @@ function JobsPageContent() {
         companyId ? "Đang lọc theo doanh nghiệp" : null,
         remote === true ? "Làm việc từ xa" : null,
         employmentType ? `Loại: ${translateEmploymentType(employmentType)}` : null,
-        experienceLevel ? `Cấp bậc: ${translateExperienceLevel(experienceLevel)}` : null,
+        experienceLevel ? `Kinh nghiệm: ${translateExperienceLevel(experienceLevel)}` : null,
       ].filter(Boolean) as string[],
     [q, location, skills, companyId, remote, employmentType, experienceLevel],
   );
@@ -705,7 +707,7 @@ function JobsPageContent() {
               <div className="space-y-2 text-sm">
                 <div className="font-medium">Kinh nghiệm</div>
                 <div className="space-y-1">
-                  {["ENTRY", "JUNIOR", "MID", "SENIOR", "LEAD", "EXECUTIVE"].map((t) => (
+                  {["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"].map((t) => (
                     <label key={t} className="flex items-center gap-2">
                       <input
                         type="radio"

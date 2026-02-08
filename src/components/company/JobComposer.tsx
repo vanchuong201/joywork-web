@@ -12,7 +12,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 
 const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"] as const;
-const experienceLevels = ["ENTRY", "JUNIOR", "MID", "SENIOR", "LEAD", "EXECUTIVE"] as const;
+const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"] as const;
 
 const schema = z.object({
   title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự"),
@@ -20,7 +20,7 @@ const schema = z.object({
   location: z.string().optional().or(z.literal("")),
   remote: z.boolean().optional().default(false),
   employmentType: z.enum(employmentTypes).default("FULL_TIME"),
-  experienceLevel: z.enum(experienceLevels).default("MID"),
+  experienceLevel: z.enum(experienceLevels).default("NO_EXPERIENCE"),
   salaryMin: z
     .string()
     .optional()
@@ -63,7 +63,7 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
       location: "",
       remote: false,
       employmentType: "FULL_TIME",
-      experienceLevel: "MID",
+      experienceLevel: "NO_EXPERIENCE",
       salaryMin: "",
       salaryMax: "",
       currency: "VND",

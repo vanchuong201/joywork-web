@@ -13,8 +13,8 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 import DOMPurify from "dompurify";
 
 const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"] as const;
-const experienceLevels = ["ENTRY", "JUNIOR", "MID", "SENIOR", "LEAD", "EXECUTIVE"] as const;
-const jobLevels = ["STAFF", "TEAM_LEAD", "SUPERVISOR", "MANAGER", "DIRECTOR", "EXECUTIVE"] as const;
+const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"] as const;
+const jobLevels = ["INTERN_STUDENT", "FRESH_GRAD", "EMPLOYEE", "SPECIALIST_TEAM_LEAD", "MANAGER_HEAD", "DIRECTOR", "EXECUTIVE"] as const;
 const educationLevels = ["NONE", "HIGH_SCHOOL", "COLLEGE", "BACHELOR", "MASTER", "PHD"] as const;
 
 function getPlainTextLength(html: string): number {
@@ -37,7 +37,7 @@ const schema = z
     location: z.string().max(100, "Địa điểm tối đa 100 ký tự").optional().or(z.literal("")),
     remote: z.boolean().optional().default(false),
     employmentType: z.enum(employmentTypes).default("FULL_TIME"),
-    experienceLevel: z.enum(experienceLevels).default("MID"),
+    experienceLevel: z.enum(experienceLevels).default("NO_EXPERIENCE"),
     salaryMin: z.string().refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
     salaryMax: z.string().refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
     currency: z.string().refine((v) => !v || /^[A-Z]{3}$/.test(v), "Mã tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)"),
@@ -152,7 +152,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
       location: "",
       remote: false,
       employmentType: "FULL_TIME",
-      experienceLevel: "MID",
+      experienceLevel: "NO_EXPERIENCE",
       salaryMin: "",
       salaryMax: "",
       currency: "VND",
@@ -183,7 +183,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
         location: job.location ?? "",
         remote: job.remote ?? false,
         employmentType: job.employmentType ?? "FULL_TIME",
-        experienceLevel: job.experienceLevel ?? "MID",
+        experienceLevel: job.experienceLevel ?? "NO_EXPERIENCE",
         salaryMin: job.salaryMin != null ? String(job.salaryMin) : "",
         salaryMax: job.salaryMax != null ? String(job.salaryMax) : "",
         currency: job.currency ?? "VND",
@@ -239,10 +239,6 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
         benefitsPerks: values.benefitsPerks ? sanitizeHtml(values.benefitsPerks) : null,
       };
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/9026dbdf-4370-41c8-a2ad-ea341cdeab12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'job-edit-pre',hypothesisId:'H1',location:'EditJobModal.tsx:onSubmit',message:'edit submit payload summary',data:{jobId:job?.id,keys:Object.keys(payload),skillsType:typeof payload.skills,skillsIsArray:Array.isArray(payload.skills),skillsLen:(payload.skills as string | null | undefined)?.length ?? null},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-
       await api.patch(`/api/jobs/${job.id}`, payload);
       toast.success("Cập nhật job thành công");
       onSuccess?.();
@@ -288,22 +284,24 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
 
   const translateExperienceLevel = (l: (typeof experienceLevels)[number]) => {
     const map: Record<string, string> = {
-      ENTRY: "Mới tốt nghiệp",
-      JUNIOR: "Nhân viên",
-      MID: "Chuyên viên",
-      SENIOR: "Chuyên viên cao cấp",
-      LEAD: "Trưởng nhóm",
-      EXECUTIVE: "Điều hành",
+      NO_EXPERIENCE: "Không yêu cầu kinh nghiệm",
+      LT_1_YEAR: "Dưới 1 năm",
+      Y1_2: "1 - 2 năm",
+      Y2_3: "2 - 3 năm",
+      Y3_5: "3 - 5 năm",
+      Y5_10: "5 - 10 năm",
+      GT_10: "Trên 10 năm",
     };
     return map[l] || l;
   };
 
   const translateJobLevel = (l: (typeof jobLevels)[number]) => {
     const map: Record<string, string> = {
-      STAFF: "Nhân viên",
-      TEAM_LEAD: "Trưởng nhóm",
-      SUPERVISOR: "Giám sát",
-      MANAGER: "Quản lý",
+      INTERN_STUDENT: "Thực tập sinh / Sinh viên",
+      FRESH_GRAD: "Mới tốt nghiệp",
+      EMPLOYEE: "Nhân viên",
+      SPECIALIST_TEAM_LEAD: "Chuyên viên / Trưởng nhóm",
+      MANAGER_HEAD: "Quản lý / Trưởng phòng",
       DIRECTOR: "Giám đốc",
       EXECUTIVE: "Điều hành",
     };

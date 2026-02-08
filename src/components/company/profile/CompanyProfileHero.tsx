@@ -38,7 +38,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         name: company.name,
         legalName: company.legalName || "",
         location: company.location || "",
-        website: company.website || "",
+        // Let user type domain only; we'll normalize on blur/submit.
+        website: (company.website || "").replace(/^https?:\/\//i, ""),
         email: company.email || "",
         phone: company.phone || "",
     });
@@ -58,6 +59,15 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             : verificationStatus === "REJECTED"
             ? "Bị từ chối"
             : "Chưa xác thực";
+
+    const normalizeWebsite = (input?: string | null): string | null => {
+        const raw = (input ?? "").trim();
+        if (!raw) return null;
+        // If already has scheme, keep.
+        if (/^https?:\/\//i.test(raw)) return raw;
+        // Allow users to paste domain/path (example.com/path) -> prepend https://
+        return `https://${raw}`;
+    };
 
     const mutation = useMutation({
         mutationFn: async (data: any) => {
@@ -89,7 +99,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             name: formData.name.trim(),
             legalName: formData.legalName?.trim() || null,
             location: formData.location?.trim() || null,
-            website: formData.website?.trim() || null,
+            website: normalizeWebsite(formData.website),
             email: formData.email?.trim() || null,
             phone: formData.phone?.trim() || null,
         };
@@ -499,7 +509,21 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             <Input 
                                 value={formData.website} 
                                 onChange={(e) => setFormData({...formData, website: e.target.value})} 
+                                placeholder="VD: joywork.vn hoặc https://joywork.vn"
+                                onBlur={() => {
+                                    // Auto-prepend https:// for convenience, but keep input friendly (no scheme) if empty.
+                                    const normalized = normalizeWebsite(formData.website);
+                                    if (!normalized) return;
+                                    // Store without scheme for better UX in input
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        website: normalized.replace(/^https?:\/\//i, ""),
+                                    }));
+                                }}
                             />
+                            <p className="text-xs text-[var(--muted-foreground)]">
+                                Bạn có thể nhập mỗi domain, hệ thống sẽ tự thêm <span className="font-medium">https://</span>.
+                            </p>
                         </div>
                         <div className="space-y-2">
                             <Label>Email công ty</Label>

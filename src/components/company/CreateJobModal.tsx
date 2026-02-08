@@ -13,8 +13,8 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 import DOMPurify from "dompurify";
 
 const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"] as const;
-const experienceLevels = ["ENTRY", "JUNIOR", "MID", "SENIOR", "LEAD", "EXECUTIVE"] as const;
-const jobLevels = ["STAFF", "TEAM_LEAD", "SUPERVISOR", "MANAGER", "DIRECTOR", "EXECUTIVE"] as const;
+const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"] as const;
+const jobLevels = ["INTERN_STUDENT", "FRESH_GRAD", "EMPLOYEE", "SPECIALIST_TEAM_LEAD", "MANAGER_HEAD", "DIRECTOR", "EXECUTIVE"] as const;
 const educationLevels = ["NONE", "HIGH_SCHOOL", "COLLEGE", "BACHELOR", "MASTER", "PHD"] as const;
 
 // Helper function to strip HTML tags and get plain text length
@@ -40,7 +40,7 @@ const schema = z
     location: z.string().max(100, "Địa điểm tối đa 100 ký tự").optional().or(z.literal("")),
     remote: z.boolean().optional().default(false),
     employmentType: z.enum(employmentTypes).default("FULL_TIME"),
-    experienceLevel: z.enum(experienceLevels).default("MID"),
+    experienceLevel: z.enum(experienceLevels).default("NO_EXPERIENCE"),
     salaryMin: z.string().refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
     salaryMax: z.string().refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
     currency: z.string().refine((v) => !v || /^[A-Z]{3}$/.test(v), "Mã tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)"),
@@ -162,7 +162,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       location: "",
       remote: false,
       employmentType: "FULL_TIME",
-      experienceLevel: "MID",
+      experienceLevel: "NO_EXPERIENCE",
       salaryMin: "",
       salaryMax: "",
       currency: "VND",
@@ -263,18 +263,11 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
         benefitsPerks: values.benefitsPerks ? sanitizeHtml(values.benefitsPerks) : undefined,
       };
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/9026dbdf-4370-41c8-a2ad-ea341cdeab12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'job-create-pre',hypothesisId:'H1',location:'CreateJobModal.tsx:onSubmit',message:'submit payload summary',data:{keys:Object.keys(payload),hasDescription:Object.prototype.hasOwnProperty.call(payload,'description'),requiredPresence:{title:!!payload.title,generalInfo:!!payload.generalInfo,mission:!!payload.mission,tasks:!!payload.tasks,knowledge:!!payload.knowledge,skills:!!payload.skills,attitude:!!payload.attitude},sizes:{generalInfo:payload.generalInfo?.length||0,mission:payload.mission?.length||0,tasks:payload.tasks?.length||0,knowledge:payload.knowledge?.length||0,skills:payload.skills?.length||0,attitude:payload.attitude?.length||0}},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-
       await api.post(`/api/jobs/companies/${companyId}/jobs`, payload);
       toast.success("Đăng job mới thành công");
       onSuccess?.();
       handleClose();
     } catch (error: any) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/9026dbdf-4370-41c8-a2ad-ea341cdeab12',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'job-create-pre',hypothesisId:'H2',location:'CreateJobModal.tsx:onSubmit',message:'submit error summary',data:{status:error?.response?.status,code:error?.response?.data?.error?.code,message:error?.response?.data?.error?.message,details:error?.response?.data?.error?.details?.[0]},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       const err = error?.response?.data?.error;
       const details = err?.details;
       if (Array.isArray(details)) {
@@ -315,22 +308,24 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
 
   const translateExperienceLevel = (l: (typeof experienceLevels)[number]) => {
     const map: Record<string, string> = {
-      ENTRY: "Mới tốt nghiệp",
-      JUNIOR: "Nhân viên",
-      MID: "Chuyên viên",
-      SENIOR: "Chuyên viên cao cấp",
-      LEAD: "Trưởng nhóm",
-      EXECUTIVE: "Điều hành",
+      NO_EXPERIENCE: "Không yêu cầu kinh nghiệm",
+      LT_1_YEAR: "Dưới 1 năm",
+      Y1_2: "1 - 2 năm",
+      Y2_3: "2 - 3 năm",
+      Y3_5: "3 - 5 năm",
+      Y5_10: "5 - 10 năm",
+      GT_10: "Trên 10 năm",
     };
     return map[l] || l;
   };
 
   const translateJobLevel = (l: (typeof jobLevels)[number]) => {
     const map: Record<string, string> = {
-      STAFF: "Nhân viên",
-      TEAM_LEAD: "Trưởng nhóm",
-      SUPERVISOR: "Giám sát",
-      MANAGER: "Quản lý",
+      INTERN_STUDENT: "Thực tập sinh / Sinh viên",
+      FRESH_GRAD: "Mới tốt nghiệp",
+      EMPLOYEE: "Nhân viên",
+      SPECIALIST_TEAM_LEAD: "Chuyên viên / Trưởng nhóm",
+      MANAGER_HEAD: "Quản lý / Trưởng phòng",
       DIRECTOR: "Giám đốc",
       EXECUTIVE: "Điều hành",
     };

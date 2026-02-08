@@ -391,18 +391,20 @@ function formatDate(value?: string | null) {
 
 function translateExperienceLevel(level?: string) {
   switch (level) {
-    case "ENTRY":
-      return "Mới tốt nghiệp";
-    case "JUNIOR":
-      return "Nhân viên";
-    case "MID":
-      return "Chuyên viên";
-    case "SENIOR":
-      return "Chuyên viên cao cấp";
-    case "LEAD":
-      return "Trưởng nhóm";
-    case "EXECUTIVE":
-      return "Điều hành";
+    case "NO_EXPERIENCE":
+      return "Không yêu cầu kinh nghiệm";
+    case "LT_1_YEAR":
+      return "Dưới 1 năm";
+    case "Y1_2":
+      return "1 - 2 năm";
+    case "Y2_3":
+      return "2 - 3 năm";
+    case "Y3_5":
+      return "3 - 5 năm";
+    case "Y5_10":
+      return "5 - 10 năm";
+    case "GT_10":
+      return "Trên 10 năm";
     default:
       return level || "";
   }
@@ -410,14 +412,16 @@ function translateExperienceLevel(level?: string) {
 
 function translateJobLevel(level?: string) {
   switch (level) {
-    case "STAFF":
+    case "INTERN_STUDENT":
+      return "Thực tập sinh / Sinh viên";
+    case "FRESH_GRAD":
+      return "Mới tốt nghiệp";
+    case "EMPLOYEE":
       return "Nhân viên";
-    case "TEAM_LEAD":
-      return "Trưởng nhóm";
-    case "SUPERVISOR":
-      return "Giám sát";
-    case "MANAGER":
-      return "Quản lý";
+    case "SPECIALIST_TEAM_LEAD":
+      return "Chuyên viên / Trưởng nhóm";
+    case "MANAGER_HEAD":
+      return "Quản lý / Trưởng phòng";
     case "DIRECTOR":
       return "Giám đốc";
     case "EXECUTIVE":
