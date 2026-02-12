@@ -840,13 +840,13 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
           </>
         ) : (
           <>
-            {post.title && (
+            {/* {post.title && (
               <h3 className="text-base font-semibold mb-2">
                 <Link href={`/posts/${post.id}`} className="hover:underline">
                   {post.title}
                 </Link>
               </h3>
-            )}
+            )} */}
             {hasImages ? (
               <MediaGrid images={post.images!} />
             ) : post.coverUrl ? (

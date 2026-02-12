@@ -43,6 +43,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         email: company.email || "",
         phone: company.phone || "",
     });
+    const [emailError, setEmailError] = useState<string | null>(null);
 
     // Get owner email for verification notification
     const ownerMember = useMemo(() => {
@@ -69,6 +70,9 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         return `https://${raw}`;
     };
 
+    // RFC 5322-ish: local@domain.tld (simplified but covers common cases)
+    const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((value ?? "").trim());
+
     const mutation = useMutation({
         mutationFn: async (data: any) => {
             await api.patch(`/api/companies/${company.id}`, data);
@@ -89,6 +93,14 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             toast.error("Vui lòng nhập tên công ty (Thương hiệu)");
             return;
         }
+
+        // Validate email format if provided
+        const email = formData.email?.trim();
+        if (email && !isValidEmail(email)) {
+            setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
+            return;
+        }
+        setEmailError(null);
         
         // Check if legal name changed for verified company
         const legalNameChanged = verificationStatus === "VERIFIED" && 
@@ -464,7 +476,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
              </div>
 
              {/* Dialog: Chỉnh sửa thông tin cơ bản */}
-             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+             <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) setEmailError(null); }}>
                 <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Chỉnh sửa thông tin cơ bản</DialogTitle>
@@ -530,8 +542,19 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             <Input 
                                 type="email"
                                 value={formData.email} 
-                                onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                                onChange={(e) => {
+                                    setFormData({...formData, email: e.target.value});
+                                    if (emailError) setEmailError(null);
+                                }}
+                                onBlur={() => {
+                                    const v = formData.email?.trim();
+                                    if (v && !isValidEmail(v)) setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
+                                    else setEmailError(null);
+                                }}
+                                placeholder="contact@company.vn"
+                                className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
+                            {emailError && <p className="text-xs text-red-500">{emailError}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label>Số điện thoại</Label>

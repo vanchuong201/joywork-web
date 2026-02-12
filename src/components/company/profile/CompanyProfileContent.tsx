@@ -26,23 +26,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import React from "react";
 import { uploadCompanyPostImage } from "@/lib/uploads";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 // Icon Mapping
 const iconMap: any = {
@@ -925,81 +908,85 @@ const TruncatedCoreValues = ({
   );
 };
 
-const SortableStatementItem = ({ id, statement, toggleStatementPublic, onPublishToFeed, isPublishing }: { id: string, statement: any, toggleStatementPublic: (s: any, checked: boolean) => void, onPublishToFeed?: (statement: any) => void, isPublishing?: boolean }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id });
+const StatementManageItem = ({
+  statement,
+  onPublishToFeed,
+  onDelete,
+  isPublishing,
+  isDeleting,
+}: {
+  statement: any;
+  onPublishToFeed?: (statement: any) => void;
+  onDelete?: (statement: any) => void;
+  isPublishing?: boolean;
+  isDeleting?: boolean;
+}) => {
   const hasVerification = (statement.totalRecipients ?? statement.recipients?.length ?? 0) > 0;
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 999 : 'auto',
-  };
-
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-          "flex items-center justify-between p-3 rounded-lg border bg-white transition-all touch-none select-none",
-          isDragging ? "border-blue-500 shadow-lg scale-[1.02]" : "border-slate-200 hover:border-slate-300"
-      )}
-    >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-             <div {...attributes} {...listeners} className="cursor-grab text-slate-400 hover:text-slate-600 flex-shrink-0 p-1 hover:bg-slate-100 rounded active:cursor-grabbing">
-                 <Layout className="w-4 h-4" /> 
-             </div>
-             <div className="space-y-1 flex-1 min-w-0">
-                <div className="font-medium text-sm text-slate-900 line-clamp-2">{statement.title}</div>
-                {hasVerification && (
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
-                        <span>{statement.percentYes ?? 0}% xác thực</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                        <span>{statement.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã kết thúc'}</span>
-                    </div>
-                )}
-            </div>
-        </div>
-        
-        <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-            {onPublishToFeed && (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onPublishToFeed(statement)}
-                    disabled={isPublishing}
-                    className="text-xs h-7 px-2 border-slate-200 hover:bg-blue-50 hover:border-blue-300"
-                >
-                    {isPublishing ? (
-                        <>
-                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                            Đang xử lý...
-                        </>
-                    ) : (
-                        <>
-                            <Share2 className="w-3 h-3 mr-1" />
-                            Đăng lên bảng tin
-                        </>
-                    )}
-                </Button>
-            )}
-            <span className={cn("text-xs font-medium", statement.isPublic ? "text-blue-600" : "text-slate-400")}>
-                {statement.isPublic ? "Công khai" : "Ẩn"}
+    <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-white transition-all border-slate-200 hover:border-slate-300">
+      <div className="space-y-1 flex-1 min-w-0">
+        <div className="font-medium text-sm text-slate-900 line-clamp-2">{statement.title}</div>
+        {hasVerification ? (
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            <span>{statement.percentYes ?? 0}% xác thực</span>
+            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+            <span>{statement.status === "ACTIVE" ? "Đang hoạt động" : "Đã kết thúc"}</span>
+            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+            <span>
+              {(statement.yesCount ?? 0)}/{(statement.totalRecipients ?? 0)} đồng ý
             </span>
-            <input
-                type="checkbox"
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                checked={!!statement.isPublic}
-                onChange={(e) => toggleStatementPublic(statement, e.target.checked)}
-            />
-        </div>
+          </div>
+        ) : (
+          <div className="text-xs text-slate-500">Tuyên bố không gửi email xác thực</div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {onPublishToFeed ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPublishToFeed(statement)}
+            disabled={isPublishing || isDeleting}
+            className="text-xs h-7 px-2 border-slate-200 hover:bg-blue-50 hover:border-blue-300"
+          >
+            {isPublishing ? (
+              <>
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3 h-3 mr-1" />
+                Đăng lên bảng tin
+              </>
+            )}
+          </Button>
+        ) : null}
+
+        {onDelete ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(statement)}
+            disabled={isPublishing || isDeleting}
+            className="text-xs h-7 px-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                Đang xóa...
+              </>
+            ) : (
+              <>
+                <Trash className="w-3 h-3 mr-1" />
+                Xóa
+              </>
+            )}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 };
@@ -1029,44 +1016,10 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const [uploadingCsvList, setUploadingCsvList] = useState(false);
   const [manageStatementsOpen, setManageStatementsOpen] = useState(false);
   const [publishingStatementId, setPublishingStatementId] = useState<string | null>(null);
+  const [deletingStatementId, setDeletingStatementId] = useState<string | null>(null);
   const [publishStatementOpen, setPublishStatementOpen] = useState(false);
   const [publishStatement, setPublishStatement] = useState<any | null>(null);
   const [publishContent, setPublishContent] = useState("");
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setStatements((items) => {
-        if (!items) return items;
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        
-        // Call API to save order
-        const orders = newItems.map((item, index) => ({
-            id: item.id,
-            order: index
-        }));
-        
-        api.put(`/api/companies/${company.id}/statements/reorder`, { orders })
-           .catch(err => {
-               console.error("Failed to reorder statements", err);
-               toast.error("Không thể lưu thứ tự sắp xếp");
-           });
-
-        return newItems;
-      });
-    }
-  };
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -1282,29 +1235,23 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     }
   };
 
-  const toggleStatementPublic = async (statement: any, newStatus: boolean) => {
-    try {
-      // Optimistic update
-      setStatements((prev) =>
-        (prev || []).map((s: any) =>
-          s.id === statement.id ? { ...s, isPublic: newStatus } : s
-        )
-      );
+  const handleDeleteStatement = async (statement: any) => {
+    if (!statement?.id) return;
+    const ok = window.confirm(
+      "Bạn có chắc chắn muốn xóa tuyên bố này?\n\nLưu ý: Tuyên bố đã tạo không thể chỉnh sửa. Nếu cần thay đổi nội dung, hãy xóa và tạo tuyên bố mới.",
+    );
+    if (!ok) return;
 
-      await api.patch(
-        `/api/companies/${company.id}/statements/${statement.id}`,
-        { isPublic: newStatus }
-      );
-      toast.success("Đã cập nhật trạng thái hiển thị");
-    } catch (error) {
+    try {
+      setDeletingStatementId(statement.id);
+      await api.delete(`/api/companies/${company.id}/statements/${statement.id}`);
+      setStatements((prev) => (prev || []).filter((s: any) => s.id !== statement.id));
+      toast.success("Đã xóa tuyên bố");
+    } catch (error: any) {
       console.error(error);
-      toast.error("Cập nhật thất bại.");
-      // Revert on error
-      setStatements((prev) =>
-        (prev || []).map((s: any) =>
-          s.id === statement.id ? { ...s, isPublic: !newStatus } : s
-        )
-      );
+      toast.error(error?.response?.data?.error?.message ?? "Xóa tuyên bố thất bại");
+    } finally {
+      setDeletingStatementId(null);
     }
   };
 
@@ -1914,35 +1861,27 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                             <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">1</span>
                                             Quản lý tuyên bố hiện tại ({statements?.length || 0})
                                         </h4>
-                                        <p className="text-sm text-slate-500 italic pl-9">Kéo thả để sắp xếp thứ tự hiển thị, bật/tắt công khai cho từng tuyên bố</p>
+                                        <p className="text-sm text-slate-500 italic pl-9">
+                                          Tuyên bố đã tạo sẽ <span className="font-medium">không thể chỉnh sửa</span> hoặc gửi/gửi lại email xác thực.
+                                          Nếu cần thay đổi nội dung, hãy <span className="font-medium">xóa</span> và tạo tuyên bố mới.
+                                        </p>
                                     </div>
                                     <div className="pl-9 space-y-3">
                                         {!statements || statements.length === 0 ? (
                                             <p className="text-sm text-slate-400 italic">Chưa có tuyên bố nào.</p>
                                         ) : (
-                                            <DndContext
-                                              sensors={sensors}
-                                              collisionDetection={closestCenter}
-                                              onDragEnd={handleDragEnd}
-                                            >
-                                              <SortableContext
-                                                items={statements.map((s: any) => s.id)}
-                                                strategy={verticalListSortingStrategy}
-                                              >
-                                                  <div className="grid gap-3 max-h-[300px] overflow-y-auto pr-2">
-                                                      {statements.map((s: any) => (
-                                                          <SortableStatementItem
-                                                              key={s.id}
-                                                              id={s.id}
-                                                              statement={s}
-                                                              toggleStatementPublic={toggleStatementPublic}
-                                                              onPublishToFeed={openPublishStatementModal}
-                                                              isPublishing={publishingStatementId === s.id}
-                                                          />
-                                                      ))}
-                                                  </div>
-                                              </SortableContext>
-                                            </DndContext>
+                                          <div className="grid gap-3 max-h-[300px] overflow-y-auto pr-2">
+                                            {statements.map((s: any) => (
+                                              <StatementManageItem
+                                                key={s.id}
+                                                statement={s}
+                                                onPublishToFeed={openPublishStatementModal}
+                                                onDelete={handleDeleteStatement}
+                                                isPublishing={publishingStatementId === s.id}
+                                                isDeleting={deletingStatementId === s.id}
+                                              />
+                                            ))}
+                                          </div>
                                         )}
                                     </div>
                                 </div>
@@ -2618,7 +2557,22 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                             className="bg-white rounded-[2rem] p-8 pt-0 shadow-xl border border-slate-100 text-center relative mt-12 group hover:border-blue-300 transition-all min-w-[300px] md:min-w-[350px]"
                           >
                               <div className="w-32 h-32 mx-auto -mt-16 rounded-full p-1 bg-slate-800 mb-6 relative z-10 group-hover:scale-105 transition-transform">
-                                <img src={leader.image} alt={leader.name} className="w-full h-full rounded-full object-cover border-4 border-white transition-all duration-300" />
+                                {leader.image ? (
+                                  <img
+                                    src={leader.image}
+                                    alt={leader.name}
+                                    className="w-full h-full rounded-full object-cover border-4 border-white transition-all duration-300"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full rounded-full bg-slate-200 border-4 border-white flex items-center justify-center">
+                                    <span className="text-slate-700 text-2xl font-bold">
+                                      {String(leader.name || "?")
+                                        .trim()
+                                        .slice(0, 1)
+                                        .toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                               <div className="absolute top-0 left-0 w-full h-32 bg-slate-50 rounded-t-[2rem] -z-0 group-hover:bg-slate-100 transition-colors"></div>
                               

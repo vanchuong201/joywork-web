@@ -13,7 +13,6 @@ import { useMutation } from "@tanstack/react-query";
 
 const inviteSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
-  role: z.enum(["ADMIN", "MEMBER"]),
 });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
@@ -33,14 +32,11 @@ export default function InviteMemberModal({ isOpen, onClose, companyId, onSucces
     formState: { errors },
   } = useForm<InviteFormData>({
     resolver: zodResolver(inviteSchema),
-    defaultValues: {
-      role: "MEMBER",
-    },
   });
 
   const inviteMutation = useMutation({
     mutationFn: async (data: InviteFormData) => {
-      await api.post(`/api/companies/${companyId}/members`, data);
+      await api.post(`/api/companies/${companyId}/members`, { ...data, role: "ADMIN" });
     },
     onSuccess: () => {
       toast.success("Đã gửi lời mời thành công");
@@ -90,22 +86,7 @@ export default function InviteMemberModal({ isOpen, onClose, companyId, onSucces
               {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="role" className="text-sm font-medium">
-                Vai trò
-              </label>
-              <select
-                id="role"
-                {...register("role")}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="MEMBER">Thành viên (Member)</option>
-                <option value="ADMIN">Quản trị viên (Admin)</option>
-              </select>
-              <p className="text-xs text-gray-500">
-                Admin có quyền quản lý nội dung và thành viên. Member chỉ có quyền xem.
-              </p>
-            </div>
+            <p className="text-xs text-gray-500">Người được mời sẽ có vai trò Quản trị viên (Admin).</p>
 
             <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
               <Button type="button" variant="outline" onClick={onClose} disabled={inviteMutation.isPending}>
