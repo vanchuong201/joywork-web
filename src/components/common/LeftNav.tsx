@@ -1,17 +1,7 @@
 "use client";
 
 import {
-  Home,
-  Briefcase,
-  Building2,
-  MessageSquareText,
-  UserRound,
-  ClipboardList,
-  Bookmark,
-  Heart,
   LifeBuoy,
-  Settings,
-  type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,45 +13,33 @@ import { useState, useEffect } from "react";
 import CreateTicketModal from "@/components/tickets/CreateTicketModal";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import {
+  buildCompanyManageNav,
+  buildLeftAdminNav,
+  buildLeftExploreNav,
+  isNavItemActive,
+  leftPersonalNav,
+  type NavItem,
+} from "./navigation-config";
 
-type NavItem = {
-  icon: LucideIcon;
-  label: string;
-  href: string;
-  exact?: boolean;
-  badge?: string;
-};
-
-type CompanyNavItem = NavItem;
-
-const primaryNav: NavItem[] = [
-  { icon: Home, label: "Bảng tin", href: "/" },
-  { icon: Briefcase, label: "Việc làm", href: "/jobs" },
-  { icon: Building2, label: "Doanh nghiệp", href: "/companies" },
-  // Tạm ẩn Inbox (messaging cho applications)
-  // { icon: MessageSquareText, label: "Hộp thư", href: "/inbox" },
-];
-
-const personalNav: NavItem[] = [
-  { icon: UserRound, label: "Hồ sơ của tôi", href: "/account" },
-  { icon: ClipboardList, label: "Ứng tuyển của tôi", href: "/applications" },
-  { icon: Bookmark, label: "Đã lưu", href: "/saved" },
-  { icon: Heart, label: "Công ty theo dõi", href: "/following" },
-  { icon: MessageSquareText, label: "Trao đổi với DN", href: "/tickets" },
-];
-
-function NavSection({ title, items, pathname }: { title: string; items: NavItem[]; pathname: string }) {
+function NavSection({
+  title,
+  items,
+  pathname,
+  truncateLabel = false,
+}: {
+  title: string;
+  items: NavItem[];
+  pathname: string;
+  truncateLabel?: boolean;
+}) {
   return (
     <div>
       <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{title}</div>
       <ul className="space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
-          const isActive = item.exact
-            ? pathname === item.href
-            : item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
+          const isActive = isNavItemActive(pathname, item);
           return (
             <li key={item.href}>
               <Link
@@ -74,47 +52,12 @@ function NavSection({ title, items, pathname }: { title: string; items: NavItem[
                 )}
               >
                 <Icon size={16} />
-                <span className="flex-1 font-medium">{item.label}</span>
+                <span className={cn("flex-1 font-medium", truncateLabel && "truncate")}>{item.label}</span>
                 {item.badge ? (
                   <span className="rounded-full bg-[var(--brand)]/10 px-2 py-0.5 text-[11px] text-[var(--brand)]">
                     {item.badge}
                   </span>
                 ) : null}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-function CompanyNavSection({ title, items, pathname }: { title: string; items: CompanyNavItem[]; pathname: string }) {
-  return (
-    <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{title}</div>
-      <ul className="space-y-1">
-        {items.map((item) => {
-          const Icon = item.icon;
-          const isActive = item.exact
-            ? pathname === item.href
-            : item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
-          
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
-                  isActive
-                    ? "bg-[var(--muted)] text-[var(--foreground)]"
-                    : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-                )}
-              >
-                <Icon size={16} />
-                <span className="flex-1 font-medium truncate">{item.label}</span>
               </Link>
             </li>
           );
@@ -208,21 +151,10 @@ export default function LeftNav() {
     );
   }
 
-  const companyItems: CompanyNavItem[] = memberships
-    .filter((membership) => {
-      // Filter out companies without valid slug
-      const slug = membership.company.slug;
-      return slug && typeof slug === 'string' && slug.trim() !== '' && !slug.includes('[') && !slug.includes(']');
-    })
-    .map((membership) => {
-      // Click vào tên công ty sẽ vào luôn trang quản lý
-      const slug = membership.company.slug!; // Safe to use ! here because we filtered above
-      return {
-        icon: Building2,
-        label: membership.company.name,
-        href: `/companies/${slug}/manage`,
-      };
-    });
+  const primaryNav = buildLeftExploreNav();
+  const personalNav = leftPersonalNav;
+  const companyItems = buildCompanyManageNav(memberships);
+  const adminNav = buildLeftAdminNav(user);
 
   return (
     <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">
@@ -291,18 +223,10 @@ export default function LeftNav() {
         <NavSection title="Không gian của tôi" items={personalNav} pathname={pathname} />
 
         {companyItems.length > 0 ? (
-          <CompanyNavSection title="Công ty của tôi" items={companyItems} pathname={pathname} />
+          <NavSection title="Công ty của tôi" items={companyItems} pathname={pathname} truncateLabel />
         ) : null}
 
-        {user.role === "ADMIN" ? (
-          <NavSection
-            title="Hệ thống"
-            items={[
-              { icon: ClipboardList, label: "Kiểm duyệt", href: "/system" },
-            ]}
-            pathname={pathname}
-          />
-        ) : null}
+        {adminNav.length > 0 ? <NavSection title="Hệ thống" items={adminNav} pathname={pathname} /> : null}
 
         {/* Support Modal */}
         {joyworkCompanyId && joyworkCompany && (

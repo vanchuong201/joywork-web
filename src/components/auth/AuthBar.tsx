@@ -27,7 +27,7 @@ export default function AuthBar() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] bg-[var(--card)] shadow-lg">
+    <div className="fixed bottom-0 left-0 right-0 z-40 hidden border-t border-[var(--border)] bg-[var(--card)] shadow-lg md:block">
       <div className="mx-auto max-w-7xl px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
