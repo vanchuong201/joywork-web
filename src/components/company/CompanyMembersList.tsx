@@ -238,7 +238,7 @@ export default function CompanyMembersList({ companyId, members, invitations = [
                               )}
                             </Menu.Item>
                           )}
-                          {member.role === "ADMIN" && currentUserRole === "OWNER" && (
+                          {/* {member.role === "ADMIN" && currentUserRole === "OWNER" && (
                             <Menu.Item>
                               {({ active }) => (
                                 <button
@@ -253,7 +253,7 @@ export default function CompanyMembersList({ companyId, members, invitations = [
                                 </button>
                               )}
                             </Menu.Item>
-                          )}
+                          )} */}
                         </div>
                         <div className="py-1">
                           <Menu.Item>

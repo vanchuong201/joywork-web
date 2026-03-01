@@ -351,9 +351,15 @@ export default function JobDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <JobSaveButton jobId={job.id} />
-            <Button onClick={handleApply} disabled={applyMutation.isPending} className="px-8 py-3 text-lg">
-              {applyMutation.isPending ? "Đang gửi..." : "Ứng tuyển ngay"} <Send size={20} className="ml-2" />
-            </Button>
+            {job.isActive === false ? (
+              <Button disabled className="px-8 py-3 text-lg bg-slate-300 text-slate-500 cursor-not-allowed">
+                Đã ngừng tuyển
+              </Button>
+            ) : (
+              <Button onClick={handleApply} disabled={applyMutation.isPending} className="px-8 py-3 text-lg">
+                {applyMutation.isPending ? "Đang gửi..." : "Ứng tuyển ngay"} <Send size={20} className="ml-2" />
+              </Button>
+            )}
           </div>
         </div>
       </div>

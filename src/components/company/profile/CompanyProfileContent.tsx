@@ -751,7 +751,7 @@ const Badge = ({ children }: { children?: React.ReactNode }) => {
 const SectionCarousel = ({ children, className, itemClassName = "flex-[0_0_auto]", centerItems = false }: { children: React.ReactNode, className?: string, itemClassName?: string, centerItems?: boolean }) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: false, 
-    align: centerItems ? 'center' : 'start',
+    align: 'start',
     dragFree: true,
     containScroll: 'trimSnaps'
   });
@@ -794,7 +794,7 @@ const SectionCarousel = ({ children, className, itemClassName = "flex-[0_0_auto]
         )}
 
         <div className="overflow-hidden cursor-grab active:cursor-grabbing py-4 -mx-4 px-4 md:mx-0 md:px-0" ref={emblaRef}>
-            <div className={cn("flex gap-4 md:gap-6 touch-pan-y", centerItems && "justify-center")}>
+            <div className="flex gap-4 md:gap-6 touch-pan-y">
                 {React.Children.map(children, (child) => (
                     <div className={itemClassName}>{child}</div>
                 ))}
@@ -987,6 +987,145 @@ const StatementManageItem = ({
           </Button>
         ) : null}
       </div>
+    </div>
+  );
+};
+
+const STATEMENTS_VISIBLE_LIMIT = 4;
+
+const StatementsDisplay = ({
+  statements,
+  isEditable,
+  publishingStatementId,
+  onPublish,
+}: {
+  statements: any[];
+  isEditable: boolean;
+  publishingStatementId: string | null;
+  onPublish: (s: any) => void;
+}) => {
+  const [showAll, setShowAll] = React.useState(false);
+  const visible = showAll ? statements : statements.slice(0, STATEMENTS_VISIBLE_LIMIT);
+  const hasMore = statements.length > STATEMENTS_VISIBLE_LIMIT;
+
+  return (
+    <div className="space-y-4">
+      {visible.map((s: any) => {
+        const hasVerification = (s.totalRecipients ?? 0) > 0;
+        return (
+          <div
+            key={s.id}
+            className="relative group/statement rounded-xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold text-slate-900 line-clamp-2 flex-1">
+                  {s.title}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {hasVerification && (
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="text-xs text-slate-600 whitespace-nowrap font-medium bg-slate-100 px-2 py-1 rounded-full cursor-help">
+                            {Math.round(s.percentYes ?? 0)}%
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{(s.yesCount ?? 0)}/{s.totalRecipients ?? 0} nhân sự xác thực đúng</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  {isEditable && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onPublish(s)}
+                      disabled={publishingStatementId === s.id}
+                      className="text-xs h-7 px-2 border-slate-200 hover:bg-blue-50 hover:border-blue-300"
+                    >
+                      {publishingStatementId === s.id ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Đang xử lý...
+                        </>
+                      ) : (
+                        <>
+                          <Share2 className="w-3 h-3 mr-1" />
+                          Đăng lên bảng tin
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {hasVerification && (
+                <>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-slate-900 rounded-full"
+                      style={{ width: `${Math.min(100, Math.max(0, s.percentYes ?? 0))}%` }}
+                    />
+                  </div>
+                  {isEditable && (
+                    <div className="flex items-center justify-between text-[11px] text-slate-400">
+                      <div>
+                        {s.isExpired || s.status === "EXPIRED"
+                          ? "Đã kết thúc xác thực"
+                          : "Đang trong thời gian xác thực"}
+                      </div>
+                      <div className="flex gap-2">
+                        {s.sentAt && (
+                          <span>Gửi: {new Date(s.sentAt).toLocaleDateString("vi-VN")}</span>
+                        )}
+                        {s.expiresAt && (
+                          <span>
+                            Hết hạn: {new Date(s.expiresAt).toLocaleDateString("vi-VN")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      {hasMore && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline py-2"
+        >
+          {showAll ? "Thu gọn" : `Xem thêm ${statements.length - STATEMENTS_VISIBLE_LIMIT} tuyên bố`}
+        </button>
+      )}
+    </div>
+  );
+};
+
+const LeaderMessage = ({ message, onViewMore }: { message: string; onViewMore: (msg: string) => void }) => {
+  const ref = React.useRef<HTMLParagraphElement>(null);
+  const [clamped, setClamped] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (el) setClamped(el.scrollHeight > el.clientHeight + 2);
+  }, [message]);
+
+  return (
+    <div className="relative z-10">
+      <span className="text-4xl text-slate-200 font-serif absolute -top-4 left-0">&ldquo;</span>
+      <p ref={ref} className="text-slate-600 italic px-4 line-clamp-4 break-words">{message}</p>
+      {clamped && (
+        <button
+          onClick={() => onViewMore(message)}
+          className="mt-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+        >
+          Xem thêm
+        </button>
+      )}
     </div>
   );
 };
@@ -2161,91 +2300,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                         )}
 
                         {statements && statements.length > 0 && (
-                          <div className="space-y-4">
-                            {statements.map((s: any) => {
-                              const hasVerification = (s.totalRecipients ?? 0) > 0;
-                              return (
-                                <div
-                                  key={s.id}
-                                  className="relative group/statement rounded-xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm hover:shadow-md transition-shadow"
-                                >
-                                  <div className="space-y-2">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <div className="text-sm font-semibold text-slate-900 line-clamp-2 flex-1">
-                                        {s.title}
-                                      </div>
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                        {hasVerification && (
-                                          <TooltipProvider delayDuration={100}>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <div className="text-xs text-slate-600 whitespace-nowrap font-medium bg-slate-100 px-2 py-1 rounded-full cursor-help">
-                                                  {Math.round(s.percentYes ?? 0)}%
-                                                </div>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <p>{(s.yesCount ?? 0)}/{s.totalRecipients ?? 0} nhân sự xác thực đúng</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        )}
-                                        {isEditable && (
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => openPublishStatementModal(s)}
-                                            disabled={publishingStatementId === s.id}
-                                            className="text-xs h-7 px-2 border-slate-200 hover:bg-blue-50 hover:border-blue-300"
-                                          >
-                                            {publishingStatementId === s.id ? (
-                                              <>
-                                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                                Đang xử lý...
-                                              </>
-                                            ) : (
-                                              <>
-                                                <Share2 className="w-3 h-3 mr-1" />
-                                                Đăng lên bảng tin
-                                              </>
-                                            )}
-                                          </Button>
-                                        )}
-                                      </div>
-                                    </div>
-                                    {hasVerification && (
-                                      <>
-                                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                          <div
-                                            className="h-full bg-slate-900 rounded-full"
-                                            style={{ width: `${Math.min(100, Math.max(0, s.percentYes ?? 0))}%` }}
-                                          />
-                                        </div>
-                                        {isEditable && (
-                                          <div className="flex items-center justify-between text-[11px] text-slate-400">
-                                            <div>
-                                              {s.isExpired || s.status === "EXPIRED"
-                                                ? "Đã kết thúc xác thực"
-                                                : "Đang trong thời gian xác thực"}
-                                            </div>
-                                            <div className="flex gap-2">
-                                              {s.sentAt && (
-                                                <span>Gửi: {new Date(s.sentAt).toLocaleDateString("vi-VN")}</span>
-                                              )}
-                                              {s.expiresAt && (
-                                                <span>
-                                                  Hết hạn: {new Date(s.expiresAt).toLocaleDateString("vi-VN")}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                          <StatementsDisplay
+                            statements={statements}
+                            isEditable={isEditable}
+                            publishingStatementId={publishingStatementId}
+                            onPublish={openPublishStatementModal}
+                          />
                         )}
                       </div>
                 </div>
@@ -2554,7 +2614,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                         {leadersToRender.map((leader: any, i: number) => (
                           <div 
                             key={i} 
-                            className="bg-white rounded-[2rem] p-8 pt-0 shadow-xl border border-slate-100 text-center relative mt-12 group hover:border-blue-300 transition-all min-w-[300px] md:min-w-[350px]"
+                            className="bg-white rounded-[2rem] p-8 pt-0 shadow-xl border border-slate-100 text-center relative mt-12 group hover:border-blue-300 transition-all min-w-[280px] max-w-[320px] md:min-w-[320px] md:max-w-[380px] flex-shrink-0"
                           >
                               <div className="w-32 h-32 mx-auto -mt-16 rounded-full p-1 bg-slate-800 mb-6 relative z-10 group-hover:scale-105 transition-transform">
                                 {leader.image ? (
@@ -2578,10 +2638,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                               
                               <h4 className="text-xl font-bold text-slate-900 relative z-10">{leader.name}</h4>
                               <span className="text-blue-600 font-bold text-sm uppercase tracking-wider block mb-6 relative z-10">{leader.role}</span>
-                              <div className="relative z-10">
-                                <span className="text-4xl text-slate-200 font-serif absolute -top-4 left-0">"</span>
-                                <p className="text-slate-600 italic px-4">{leader.message}</p>
-                              </div>
+                              {leader.message && (
+                                <LeaderMessage
+                                  message={leader.message}
+                                  onViewMore={(msg) => setViewMoreModal({ type: null, content: msg })}
+                                />
+                              )}
                           </div>
                         ))}
                     </SectionCarousel>
@@ -3831,14 +3893,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
             </DialogContent>
         </Dialog>
 
-        {/* View More Modal for Vision/Mission/Core Values */}
-        <Dialog open={viewMoreModal.type !== null} onOpenChange={(open) => !open && setViewMoreModal({ type: null, content: '' })}>
+        {/* View More Modal for Vision/Mission/Core Values / Leader Message */}
+        <Dialog open={viewMoreModal.content !== ''} onOpenChange={(open) => !open && setViewMoreModal({ type: null, content: '' })}>
           <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {viewMoreModal.type === 'vision' && 'Tầm Nhìn'}
                 {viewMoreModal.type === 'mission' && 'Sứ Mệnh'}
                 {viewMoreModal.type === 'coreValues' && 'Giá Trị Cốt Lõi'}
+                {viewMoreModal.type === null && 'Lời nhắn'}
               </DialogTitle>
             </DialogHeader>
             <div className="py-4">
