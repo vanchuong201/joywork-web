@@ -124,7 +124,11 @@ export default function CompanyMembersList({ companyId, members, invitations = [
       case "ADMIN":
         return <span className="inline-flex items-center rounded-full bg-[var(--brand-light)] px-2.5 py-0.5 text-xs font-medium text-[var(--brand-dark)]"><Shield className="mr-1 h-3 w-3" /> Admin</span>;
       default:
-        return <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800"><User className="mr-1 h-3 w-3" /> Member</span>;
+        return (
+          <span className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--muted-foreground)]">
+            <User className="mr-1 h-3 w-3" /> Member
+          </span>
+        );
     }
   };
 
@@ -140,18 +144,20 @@ export default function CompanyMembersList({ companyId, members, invitations = [
     <div className="space-y-4">
       {canManage && (
         <div className="flex justify-end">
-          <Button onClick={() => setIsInviteOpen(true)}>Thêm thành viên</Button>
+          <Button onClick={() => setIsInviteOpen(true)} className="w-full sm:w-auto">
+            Thêm thành viên
+          </Button>
         </div>
       )}
 
-      <Card>
+      <Card className="border-[var(--border)] bg-[var(--card)]">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-lg font-semibold text-[var(--foreground)]">
               Danh sách thành viên ({members.length})
             </h3>
             {invitations.length > 0 && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[var(--muted-foreground)]">
                 Đang có {invitations.length} lời mời thành viên đang chờ
               </p>
             )}
@@ -159,8 +165,8 @@ export default function CompanyMembersList({ companyId, members, invitations = [
         </CardHeader>
         <CardContent className="divide-y divide-[var(--border)] p-0">
           {members.map((member) => (
-            <div key={member.id} className="flex items-center justify-between px-6 py-4">
-              <div className="flex items-center gap-3">
+            <div key={member.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex min-w-0 items-center gap-3">
                 {member.user.avatar ? (
                   <img
                     src={member.user.avatar}
@@ -174,17 +180,17 @@ export default function CompanyMembersList({ companyId, members, invitations = [
                 )}
                 <div>
                   <p className="font-medium text-[var(--foreground)]">{member.user.name ?? "Chưa đặt tên"}</p>
-                  <p className="text-sm text-[var(--muted-foreground)]">{member.user.email}</p>
+                  <p className="truncate text-sm text-[var(--muted-foreground)]">{member.user.email}</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-4">
                 {getRoleBadge(member.role)}
                 
                 {canActionOnMember(member) && (
                   <Menu as="div" className="relative inline-block text-left">
                     <div>
-                      <Menu.Button className="flex items-center rounded-full p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:ring-offset-2">
+                      <Menu.Button className="flex items-center rounded-full p-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:ring-offset-2">
                         <MoreVertical className="h-5 w-5" aria-hidden="true" />
                       </Menu.Button>
                     </div>
@@ -197,7 +203,7 @@ export default function CompanyMembersList({ companyId, members, invitations = [
                       leaveFrom="transform opacity-100 scale-100"
                       leaveTo="transform opacity-0 scale-95"
                     >
-                      <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-[var(--border)] rounded-md border border-[var(--border)] bg-[var(--card)] shadow-lg focus:outline-none">
                         {member.userId === currentUserId ? (
                            // Self actions (Leave company)
                            <div className="py-1">
@@ -228,7 +234,7 @@ export default function CompanyMembersList({ companyId, members, invitations = [
                                 <button
                                   onClick={() => handleUpdateRole(member.id, "ADMIN")}
                                   className={cn(
-                                    active ? "bg-gray-100 text-gray-900" : "text-gray-700",
+                                    active ? "bg-[var(--muted)] text-[var(--foreground)]" : "text-[var(--foreground)]",
                                     "group flex w-full items-center px-4 py-2 text-sm"
                                   )}
                                 >
@@ -282,28 +288,28 @@ export default function CompanyMembersList({ companyId, members, invitations = [
           ))}
           
           {invitations.length > 0 && (
-            <div className="bg-slate-50 px-6 py-3 border-t border-[var(--border)]">
-              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+            <div className="border-t border-[var(--border)] bg-[var(--muted)]/60 px-4 py-3 sm:px-6">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
                 Lời mời đang chờ ({invitations.length})
               </p>
             </div>
           )}
 
           {invitations.map((invitation) => (
-            <div key={invitation.id} className="flex items-center justify-between px-6 py-4 bg-slate-50/80">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-600">
+            <div key={invitation.id} className="flex flex-col gap-3 bg-[var(--muted)]/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--muted)] font-semibold text-[var(--muted-foreground)]">
                   {invitation.email.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <p className="font-medium text-slate-900">{invitation.email}</p>
-                  <p className="text-xs text-slate-500">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-[var(--foreground)]">{invitation.email}</p>
+                  <p className="text-xs text-[var(--muted-foreground)]">
                     Đã gửi lời mời • Hết hạn: {formatDateTime(invitation.expiresAt)}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end sm:gap-4">
                 {getRoleBadge(invitation.role)}
                 <div className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 border border-amber-200">
                   <Clock className="h-3 w-3" />

@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense } from "react";
-import { useMutation, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +15,6 @@ import PostCard, { type PostCardData } from "@/components/feed/PostCard";
 import FeedPostComposer from "@/components/feed/FeedPostComposer";
 import { useEffect, useMemo, useState } from "react";
 import useInView from "@/hooks/useInView";
-import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import FeedLayout from "./feed-layout";
@@ -30,7 +29,8 @@ function FeedPageContent() {
   const pathname = usePathname();
   const type = sp.get("type") || undefined; // STORY | ANNOUNCEMENT | EVENT
   const companyId = sp.get("companyId") || undefined;
-  const { ref, inView } = useInView<HTMLDivElement>({ rootMargin: "300px" });
+  const inViewOptions = useMemo(() => ({ rootMargin: "300px" }), []);
+  const { ref, inView } = useInView<HTMLDivElement>(inViewOptions);
   const pageSize = 6;
   const user = useAuthStore((state) => state.user);
   const following = tab === "following" ? true : undefined;
@@ -52,7 +52,7 @@ function FeedPageContent() {
     if (inView && query.hasNextPage && !query.isFetchingNextPage) {
       query.fetchNextPage();
     }
-  }, [inView, query]);
+  }, [inView, query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage]);
   const setType = (val?: string) => {
     const next = new URLSearchParams(sp.toString());
     if (!val) next.delete("type");
@@ -65,38 +65,26 @@ function FeedPageContent() {
     else next.set("companyId", id);
     router.replace(`${pathname}?${next.toString()}`);
   };
-  const qc = useQueryClient();
   const { openPrompt } = useAuthPrompt();
-  const like = useMutation({
-    mutationFn: async (p: Post) => {
-      if (p.isLiked) await api.delete(`/api/posts/${p.id}/like`);
-      else await api.post(`/api/posts/${p.id}/like`);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["feed"] });
-    },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Thao tác thất bại"),
-  });
-
-  const handleLike = (p: Post) => {
-    if (!user) {
-      openPrompt("like");
-      return;
-    }
-    like.mutate(p);
-  };
-
   const allPosts = useMemo(() => (query.data?.pages ?? []).flatMap((p) => p.posts ?? []), [query.data]);
-  const posts = tab === "trending"
-    ? [...allPosts].sort((a: any, b: any) => ((b as any)?._count?.likes ?? (b as any)?.likesCount ?? 0) - ((a as any)?._count?.likes ?? (a as any)?.likesCount ?? 0))
-    : allPosts;
+  const posts = useMemo(
+    () =>
+      tab === "trending"
+        ? [...allPosts].sort(
+            (a: any, b: any) =>
+              ((b as any)?._count?.likes ?? (b as any)?.likesCount ?? 0) -
+              ((a as any)?._count?.likes ?? (a as any)?.likesCount ?? 0)
+          )
+        : allPosts,
+    [allPosts, tab]
+  );
 
   return (
     <div className="space-y-4">
       {/* Post Composer */}
       <FeedPostComposer />
 
-      <div className="sticky top-[64px] z-10 -mx-2 bg-[var(--background)]/80 px-2 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/60">
+      <div className="sticky top-[64px] z-40 -mx-2 bg-[var(--background)]/80 px-2 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/60">
         <div className="flex items-center justify-between py-2">
           <Tabs
             value={tab}
@@ -119,7 +107,7 @@ function FeedPageContent() {
           </Button>
         </div>
         {showFilters ? (
-          <div className="mb-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+          <div className="relative z-50 mb-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-lg">
             <h3 className="mb-2 text-sm font-semibold">Loại bài viết</h3>
             <div className="flex flex-wrap gap-3 text-sm">
               {[
@@ -154,7 +142,7 @@ function FeedPageContent() {
         <div className="space-y-6">
           {posts.map((p, idx) => (
             <div key={p.id} className={idx === 0 ? "md:scale-[1.02]" : undefined}>
-              <PostCard post={p} onLike={() => handleLike(p)} />
+              <PostCard post={p} />
             </div>
           ))}
           {/* Load more sentinel */}

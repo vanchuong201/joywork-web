@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero";
 import ManageCompanyTabs from "@/components/company/ManageCompanyTabs";
 import CompanyManageGuard from "@/components/company/CompanyManageGuard";
@@ -15,18 +15,21 @@ type Props = {
 export default function ManageCompanyPageClient({ company, tab }: Props) {
   return (
     <CompanyManageGuard>
-      <div className="min-h-screen bg-[var(--background)] font-sans pb-20">
-        {/* Top Bar for Manager */}
-        <div className="bg-[var(--card)] border-b border-[var(--border)] sticky top-0 z-30 px-6 py-3 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-4">
+      <div className="min-h-screen bg-[var(--background)] pb-24">
+        {/* Management Top Bar */}
+        <div className="sticky top-14 z-30 border-b border-[var(--border)] bg-[var(--card)]/95 px-2 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/85 sm:px-6 sm:py-3">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3">
             <Link
               href={`/companies/${company.slug}`}
-              className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-2 text-sm font-medium"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
             >
-              <ArrowLeft className="w-4 h-4" /> Xem trang công khai
+              <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Xem trang công khai</span><span className="sm:hidden">Trang công khai</span>
             </Link>
-            <div className="h-4 w-px bg-[var(--border)]" />
-            <span className="font-bold text-[var(--foreground)]">Trang quản trị</span>
+            <div className="inline-flex items-center gap-1 rounded-full border border-[var(--brand)]/20 bg-[var(--brand)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--brand)] sm:gap-1.5 sm:px-3 sm:text-sm">
+              <ShieldCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Trang quản trị</span>
+              <span className="sm:hidden">Quản trị</span>
+            </div>
           </div>
         </div>
 
@@ -34,7 +37,7 @@ export default function ManageCompanyPageClient({ company, tab }: Props) {
         <CompanyProfileHero company={company} isEditable={true} />
 
         {/* Main Content & Tabs */}
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="mx-auto max-w-7xl px-1 sm:px-6">
           <ManageCompanyTabs company={company} initialTab={tab} />
         </div>
       </div>

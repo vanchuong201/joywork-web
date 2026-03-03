@@ -621,7 +621,13 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
                       <TiptapEditor
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Nhóm nhiệm vụ phát triển cộng đồng:&#10;• Phát triển thành viên các cộng đồng&#10;• Tạo ra môi trường, hoạt động để thành viên có thể cùng tham gia&#10;&#10;Nhóm nhiệm vụ vận hành cộng đồng:&#10;• Xây dựng và thực hiện các hoạt động cộng đồng&#10;• Thúc đẩy tương tác, thảo luận trong cộng đồng"
+                        placeholder={`Nhóm nhiệm vụ phát triển cộng đồng:
+• Phát triển thành viên các cộng đồng
+• Tạo ra môi trường, hoạt động để thành viên có thể cùng tham gia
+
+Nhóm nhiệm vụ vận hành cộng đồng:
+• Xây dựng và thực hiện các hoạt động cộng đồng
+• Thúc đẩy tương tác, thảo luận trong cộng đồng`}
                         className={errors.tasks ? "border-red-500" : ""}
                       />
                     )}

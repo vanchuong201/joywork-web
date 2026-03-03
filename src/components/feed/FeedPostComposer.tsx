@@ -488,17 +488,17 @@ export default function FeedPostComposer() {
   // Expanded state
   return (
     <Card className="overflow-hidden border border-[var(--border)] bg-[var(--card)] shadow-sm">
-      <CardContent className="p-4">
+      <CardContent className="p-3 sm:p-4">
         <div className="space-y-4">
           {/* Company Selector */}
           {memberships.length > 1 && (
-            <div className="flex items-center gap-2 pb-2 border-b border-[var(--border)]">
+            <div className="flex flex-col gap-2 border-b border-[var(--border)] pb-2 sm:flex-row sm:items-center">
               <span className="text-xs text-[var(--muted-foreground)]">Đăng với tư cách:</span>
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild>
                   <button
                     type="button"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--muted)] transition-colors text-sm"
+                    className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-sm transition-colors hover:bg-[var(--muted)] sm:w-auto"
                   >
                     {selectedCompany?.company.logoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -512,11 +512,11 @@ export default function FeedPostComposer() {
                         {selectedCompany?.company.name[0]?.toUpperCase()}
                       </div>
                     )}
-                    <span className="font-medium">{selectedCompany?.company.name}</span>
+                    <span className="max-w-[170px] truncate font-medium sm:max-w-[240px]">{selectedCompany?.company.name}</span>
                     <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--brand)]/10 text-[var(--brand)]">
                       {selectedCompany?.role}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-[var(--muted-foreground)]" />
+                    <ChevronDown className="ml-auto h-4 w-4 text-[var(--muted-foreground)]" />
                   </button>
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Portal>
@@ -573,11 +573,10 @@ export default function FeedPostComposer() {
             onChange={(e) => setContent(e.target.value)}
             maxLength={5000}
             className="min-h-[80px] resize-none border-none bg-transparent px-0 py-0 text-base focus-visible:ring-0"
-            autoFocus
           />
 
           {mediaItems.length > 0 && (
-            <div className="grid gap-2 sm:grid-cols-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {mediaItems.map((item) => {
                 const isVideo = ACCEPTED_VIDEO_TYPES.includes(item.file.type) || item.type === "VIDEO";
                 return (
@@ -624,7 +623,7 @@ export default function FeedPostComposer() {
 
           {/* Hashtags */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-medium text-[var(--foreground)]">Chủ đề (Hashtags)</span>
               <span className="text-xs text-[var(--muted-foreground)]">{hashtags.length}/5</span>
             </div>
@@ -645,7 +644,7 @@ export default function FeedPostComposer() {
                   if (!j) return null;
                   return (
                     <span key={id} className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background)] px-3 py-1 text-xs shadow-sm">
-                      <span className="truncate max-w-[220px] font-medium text-[var(--foreground)]">{j.title}</span>
+                      <span className="max-w-[170px] truncate font-medium text-[var(--foreground)] sm:max-w-[220px]">{j.title}</span>
                       <button
                         className="rounded-full hover:bg-[var(--muted)] p-0.5 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                         onClick={() => setSelectedJobIds((prev) => prev.filter((x) => x !== id))}
@@ -731,8 +730,8 @@ export default function FeedPostComposer() {
             </div>
           )}
 
-          <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex w-full items-center gap-1.5 overflow-x-auto pb-1 sm:w-auto sm:gap-2 sm:overflow-visible sm:pb-0">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -750,10 +749,11 @@ export default function FeedPostComposer() {
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!selectedCompanyId || mediaItems.length >= MAX_IMAGES || createPost.isPending}
-                className="h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                className="h-9 shrink-0 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] sm:h-8"
               >
                 <ImagePlus className="h-4 w-4" />
-                <span className="text-xs font-medium">Thêm ảnh/video</span>
+                <span className="text-xs font-medium sm:hidden">Ảnh/Video</span>
+                <span className="hidden text-xs font-medium sm:inline">Thêm ảnh/video</span>
               </Button>
               <Button
                 type="button"
@@ -762,7 +762,7 @@ export default function FeedPostComposer() {
                 onClick={() => setShowJobSelector((prev) => !prev)}
                 disabled={!selectedCompanyId || (selectedJobIds.length >= 2 && !showJobSelector)}
                 className={cn(
-                  "h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]",
+                  "h-9 shrink-0 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] sm:h-8",
                   (showJobSelector || selectedJobIds.length > 0) && "text-[var(--brand)] bg-[var(--brand)]/10 hover:bg-[var(--brand)]/20",
                   selectedJobIds.length >= 2 && !showJobSelector && "opacity-50 cursor-not-allowed"
                 )}
@@ -770,7 +770,8 @@ export default function FeedPostComposer() {
               >
                 <Briefcase className="h-4 w-4" />
                 <span className="text-xs font-medium">
-                  Đính kèm Job
+                  <span className="sm:hidden">Job</span>
+                  <span className="hidden sm:inline">Đính kèm Job</span>
                   {selectedJobIds.length > 0 && (
                     <span className="ml-1 text-[var(--brand)]">({selectedJobIds.length}/2)</span>
                   )}
@@ -782,11 +783,12 @@ export default function FeedPostComposer() {
                 size="sm"
                 onClick={() => setPreviewModalOpen(true)}
                 disabled={!selectedCompanyId || (!content.trim() && mediaItems.length === 0)}
-                className="h-8 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                className="h-9 shrink-0 gap-2 px-2 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] sm:h-8"
                 title="Xem trước bài đăng"
               >
                 <Eye className="h-4 w-4" />
-                <span className="text-xs font-medium">Xem trước</span>
+                <span className="text-xs font-medium sm:hidden">Preview</span>
+                <span className="hidden text-xs font-medium sm:inline">Xem trước</span>
               </Button>
               <Button
                 type="button"
@@ -799,7 +801,7 @@ export default function FeedPostComposer() {
                   setHashtags([]);
                   dispatch({ type: "RESET" });
                 }}
-                className="h-8 px-2 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                className="h-9 shrink-0 px-2 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] sm:h-8"
               >
                 Hủy
               </Button>
@@ -810,7 +812,7 @@ export default function FeedPostComposer() {
               onClick={handleSubmit}
               disabled={!canSubmit || createPost.isPending}
               size="sm"
-              className="h-8 px-4"
+              className="h-9 w-full px-4 sm:h-8 sm:w-auto"
             >
               {createPost.isPending ? (
                 <>

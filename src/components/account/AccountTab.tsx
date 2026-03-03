@@ -81,7 +81,6 @@ export default function AccountTab() {
       if (avatar) {
         payload.avatar = avatar;
       }
-      console.log('[AccountTab] Submitting payload:', payload);
       const res = await api.patch("/api/users/me/profile", payload);
       return res.data;
     },
@@ -175,8 +174,8 @@ export default function AccountTab() {
   if (!data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Quản lý tài khoản</h1>
-        <p className="text-slate-500">Không tải được thông tin tài khoản</p>
+        <h1 className="text-xl font-bold sm:text-2xl">Quản lý tài khoản</h1>
+        <p className="text-[var(--muted-foreground)]">Không tải được thông tin tài khoản</p>
       </div>
     );
   }
@@ -192,8 +191,8 @@ export default function AccountTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Quản lý tài khoản</h1>
-        <p className="text-sm text-slate-500 mt-1">Quản lý thông tin tài khoản đăng nhập</p>
+        <h1 className="text-xl font-bold sm:text-2xl">Quản lý tài khoản</h1>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">Quản lý thông tin tài khoản đăng nhập</p>
       </div>
 
       <Card>
@@ -204,7 +203,7 @@ export default function AccountTab() {
           {/* Avatar */}
           <div>
             <Label>Ảnh đại diện</Label>
-            <div className="mt-2 flex items-center gap-4">
+            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <div className="relative">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-200 relative">
                   <Image
@@ -230,10 +229,10 @@ export default function AccountTab() {
                 </button>
               </div>
               <div className="flex-1">
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-[var(--muted-foreground)]">
                   Ảnh đại diện sẽ hiển thị trong tài khoản và có thể dùng cho hồ sơ ứng tuyển
                 </p>
-                <p className="text-xs text-slate-500 mt-1">JPG, PNG tối đa 5MB</p>
+                <p className="mt-1 text-xs text-[var(--muted-foreground)]">JPG, PNG tối đa 5MB</p>
               </div>
               <input
                 ref={fileInputRef}
@@ -257,7 +256,7 @@ export default function AccountTab() {
             {errors.name && (
               <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
             )}
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
               Tên này sẽ hiển thị trong giao diện, thông báo và các tương tác
             </p>
           </div>
@@ -274,7 +273,7 @@ export default function AccountTab() {
             {errors.slug && (
               <p className="mt-1 text-xs text-red-600">{errors.slug.message}</p>
             )}
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 break-all text-xs text-[var(--muted-foreground)] sm:break-normal">
               URL profile của bạn:{" "}
               <a
                 href={profilePath}
@@ -290,11 +289,11 @@ export default function AccountTab() {
           {/* Email (read-only) */}
           <div>
             <Label>Email</Label>
-            <div className="mt-1 flex items-center gap-3">
+            <div className="mt-1 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
               <Input value={data.email} readOnly className="flex-1" />
               <span
                 className={
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs " +
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs whitespace-nowrap " +
                   (data.emailVerified
                     ? "bg-green-100 text-green-700"
                     : "bg-yellow-100 text-yellow-700")
@@ -303,7 +302,7 @@ export default function AccountTab() {
                 {data.emailVerified ? "Đã xác minh" : "Chưa xác minh"}
               </span>
             </div>
-            <p className="mt-1 text-xs text-slate-500">Email đăng nhập, không thể thay đổi</p>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">Email đăng nhập, không thể thay đổi</p>
           </div>
 
 
@@ -320,6 +319,7 @@ export default function AccountTab() {
             <Button
               onClick={handleSubmit(onSubmit)}
               disabled={!isDirty && !avatar}
+              className="w-full sm:w-auto"
             >
               {updateAccount.isPending ? "Đang lưu..." : "Lưu thay đổi"}
             </Button>

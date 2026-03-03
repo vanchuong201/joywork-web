@@ -29,6 +29,10 @@
 }
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
   body {
     @apply bg-[var(--background)] text-[var(--foreground)];
   }
@@ -44,6 +48,7 @@
 .ProseMirror p.is-editor-empty:first-child::before {
   color: var(--muted-foreground);
   content: attr(data-placeholder);
+  white-space: pre-line;
   float: left;
   height: 0;
   pointer-events: none;

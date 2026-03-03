@@ -16,17 +16,21 @@ interface ProfileExpectationsProps {
   profile: OwnUserProfile;
 }
 
+const MAX_EXPECTED_CULTURE_LENGTH = 400;
+
 export default function ProfileExpectations({ profile }: ProfileExpectationsProps) {
   const queryClient = useQueryClient();
   const [expectedSalary, setExpectedSalary] = useState(profile.profile?.expectedSalary || "");
   const [workMode, setWorkMode] = useState(profile.profile?.workMode || "");
-  const [expectedCulture, setExpectedCulture] = useState(profile.profile?.expectedCulture || "");
+  const [expectedCulture, setExpectedCulture] = useState(
+    (profile.profile?.expectedCulture || "").slice(0, MAX_EXPECTED_CULTURE_LENGTH)
+  );
   const [careerGoals, setCareerGoals] = useState<string[]>(profile.profile?.careerGoals || []);
 
   useEffect(() => {
     setExpectedSalary(profile.profile?.expectedSalary || "");
     setWorkMode(profile.profile?.workMode || "");
-    setExpectedCulture(profile.profile?.expectedCulture || "");
+    setExpectedCulture((profile.profile?.expectedCulture || "").slice(0, MAX_EXPECTED_CULTURE_LENGTH));
     setCareerGoals(profile.profile?.careerGoals || []);
   }, [profile]);
 
@@ -108,15 +112,24 @@ export default function ProfileExpectations({ profile }: ProfileExpectationsProp
         </div>
 
         <div>
-          <Label htmlFor="expectedCulture">Văn hóa mong muốn</Label>
+          <Label htmlFor="expectedCulture">
+            Văn hóa mong muốn <span className="text-red-500">*</span>
+          </Label>
           <Textarea
             id="expectedCulture"
             value={expectedCulture}
-            onChange={(e) => setExpectedCulture(e.target.value)}
+            onChange={(e) =>
+              setExpectedCulture(e.target.value.slice(0, MAX_EXPECTED_CULTURE_LENGTH))
+            }
             placeholder="Mô tả văn hóa công ty bạn mong muốn..."
             rows={4}
+            maxLength={MAX_EXPECTED_CULTURE_LENGTH}
+            required
             className="mt-2"
           />
+          <p className="mt-1 text-right text-xs text-[var(--muted-foreground)]">
+            {expectedCulture.length}/{MAX_EXPECTED_CULTURE_LENGTH}
+          </p>
         </div>
 
         <div>

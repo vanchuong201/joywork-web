@@ -236,8 +236,11 @@ function LeadershipMediaSection({
         )}
       </div>
       
-      <div className="absolute -bottom-10 -right-10 z-20 bg-white py-2 px-6 rounded-2xl shadow-xl border-l-8 border-slate-800 hidden md:block max-w-sm pointer-events-none">
-        <p className="text-lg font-serif italic text-slate-800 leading-relaxed">"{quote}"</p>
+      <div className="mt-3 rounded-xl border-l-4 border-slate-800 bg-white px-4 py-2.5 shadow-md md:hidden">
+        <p className="text-base font-serif italic leading-relaxed text-slate-800">"{quote}"</p>
+      </div>
+      <div className="pointer-events-none absolute -bottom-10 -right-10 z-20 hidden max-w-sm rounded-2xl border-l-8 border-slate-800 bg-white px-6 py-2 shadow-xl md:block">
+        <p className="text-lg font-serif italic leading-relaxed text-slate-800">"{quote}"</p>
       </div>
 
       {/* Video fullscreen modal */}
@@ -382,8 +385,8 @@ const SAMPLE_SALARY_AND_BONUS = {
 
 const SAMPLE_TRAINING = {
   description:
-    'Tại TechCorp, việc học chưa bao giờ dừng lại. Chúng tôi cung cấp tài khoản Udemy, Coursera Business không giới hạn và thư viện sách chuyên ngành phong phú.',
-  budget: '20.000.000 VNĐ',
+    'Tại TechCorp, chúng tôi xây dựng môi trường làm việc nơi mỗi cá nhân được trao quyền phát triển và tạo tác động thực sự.',
+  workforceSize: '200+ nhân sự toàn thời gian',
   image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800',
   programs: [
     {
@@ -726,11 +729,11 @@ const SectionTitle = ({
   align?: 'left' | 'center';
 }) => (
   <div className={`mb-10 md:mb-14 ${align === 'center' ? 'text-center' : 'text-left'}`}>
-    <h2 className="text-3xl md:text-4xl font-extrabold text-[var(--foreground)] uppercase tracking-tight mb-3">
+    <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[var(--foreground)] uppercase tracking-tight mb-3">
       {title}
     </h2>
     {subtitle && (
-      <p className="text-[var(--muted-foreground)] text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
+      <p className="max-w-3xl mx-auto text-sm sm:text-base md:text-lg text-[var(--muted-foreground)] leading-relaxed">
         {subtitle}
       </p>
     )}
@@ -835,7 +838,7 @@ const TruncatedText = ({
     <div>
       <p 
         ref={textRef}
-        className={`text-slate-600 leading-relaxed text-lg whitespace-pre-line ${needsTruncate ? 'line-clamp-5' : ''}`}
+        className={`text-slate-600 leading-relaxed text-base sm:text-lg whitespace-pre-line ${needsTruncate ? 'line-clamp-5' : ''}`}
         style={needsTruncate ? {
           display: '-webkit-box',
           WebkitLineClamp: maxLines,
@@ -886,7 +889,7 @@ const TruncatedCoreValues = ({
     <div>
       <p 
         ref={textRef}
-        className={`text-slate-600 leading-relaxed text-lg whitespace-pre-line ${needsTruncate ? 'line-clamp-5' : ''}`}
+        className={`text-slate-600 leading-relaxed text-base sm:text-lg whitespace-pre-line ${needsTruncate ? 'line-clamp-5' : ''}`}
         style={needsTruncate ? {
           display: '-webkit-box',
           WebkitLineClamp: maxLines,
@@ -1441,9 +1444,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         break;
       case 'training':
         const hasTrainingDesc = initialData.training?.description;
-        const hasTrainingBudget = initialData.training?.budget;
+        const hasWorkforceSize = initialData.training?.workforceSize;
+        // Keep old key for backward compatibility with existing stored data.
+        const hasLegacyBudget = initialData.training?.budget;
         const hasTrainingPrograms = initialData.training?.programs && initialData.training.programs.length > 0;
-        if (!hasTrainingDesc && !hasTrainingBudget && !hasTrainingPrograms) {
+        if (!hasTrainingDesc && !hasWorkforceSize && !hasLegacyBudget && !hasTrainingPrograms) {
           return { ...initialData, training: SAMPLE_TRAINING };
         }
         break;
@@ -1694,11 +1699,13 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const usingSampleTraining =
     isEditable &&
     !profile?.training &&
-    !(training.description || training.budget || (training.programs || []).length > 0);
+    !(training.description || training.workforceSize || training.budget || (training.programs || []).length > 0);
   const trainingDescriptionToRender =
     training.description || (usingSampleTraining ? SAMPLE_TRAINING.description : '');
-  const trainingBudgetToRender =
-    training.budget || (usingSampleTraining ? SAMPLE_TRAINING.budget : undefined);
+  const trainingWorkforceSizeToRender =
+    training.workforceSize ||
+    training.budget ||
+    (usingSampleTraining ? SAMPLE_TRAINING.workforceSize : undefined);
   const trainingImageToRender =
     training.image || SAMPLE_TRAINING.image;
   const trainingProgramsToRender =
@@ -1798,10 +1805,10 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   };
 
   return (
-     <div className="space-y-32 py-12">
+     <div className="-mx-2 space-y-20 py-8 sm:mx-0 sm:space-y-32 sm:py-12">
         {/* SECTION 1: COMPANY INTRODUCTION */}
         {shouldShowSection('introduction') && (
-        <section className="max-w-7xl mx-auto px-6 space-y-12 relative group/training">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 space-y-7 sm:space-y-12 relative group/training">
             {isEditable && (
                 <div className="absolute top-6 right-6 opacity-0 group-hover/training:opacity-100 transition-opacity z-20 flex items-center gap-2">
                      <Button onClick={() => handleEdit('training', { training })} variant="secondary" size="sm" className="bg-white/10 hover:bg-white/20 text-white backdrop-blur shadow-sm border border-white/20">
@@ -1810,19 +1817,25 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     <HiddenBadge sectionKey="introduction" />
                 </div>
             )}
-            <div className="bg-slate-900 rounded-[3rem] p-8 md:p-16 text-white flex flex-col md:flex-row items-center gap-12 relative overflow-hidden">
-                <div className="md:w-1/2 relative z-10 space-y-8">
+            <div className="bg-slate-900 rounded-[2rem] md:rounded-[3rem] p-4 sm:p-6 md:p-12 lg:p-16 text-white flex flex-col md:flex-row items-center gap-6 md:gap-12 relative overflow-hidden">
+                <div className="md:w-1/2 relative z-10 space-y-5 sm:space-y-8">
                   <Badge>COMPANY OVERVIEW</Badge>
-                  <h2 className="text-4xl md:text-5xl font-black leading-tight">Giới thiệu chung <br/><span className="text-blue-500">về Doanh nghiệp</span></h2>
-                  <p className="text-slate-300 text-lg leading-relaxed whitespace-pre-line">
-                      {trainingDescriptionToRender || `Tại ${company.name}, việc học chưa bao giờ dừng lại. Chúng tôi cung cấp tài nguyên học tập không giới hạn và thư viện sách chuyên ngành phong phú.`}
+                  <h2 className="text-2xl sm:text-4xl md:text-5xl font-black leading-tight">Giới thiệu chung <br/><span className="text-blue-500">về Doanh nghiệp</span></h2>
+                  <p className="text-slate-300 text-base sm:text-lg leading-relaxed whitespace-pre-line">
+                      {trainingDescriptionToRender || `Tại ${company.name}, chúng tôi xây dựng môi trường nơi mỗi cá nhân được phát triển toàn diện và tạo giá trị bền vững.`}
                   </p>
+                  {trainingWorkforceSizeToRender && (
+                    <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-2 text-sm font-semibold text-white backdrop-blur-sm">
+                      <Users className="h-4 w-4 text-blue-300" />
+                      <span>Quy mô nhân sự: {trainingWorkforceSizeToRender}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="md:w-1/2 relative z-10">
                   <img 
                     src={trainingImageToRender} 
                     alt="Company Introduction" 
-                    className="rounded-3xl shadow-2xl rotate-3 border-8 border-white/10 grayscale-[50%] object-cover aspect-video w-full" 
+                    className="rounded-2xl sm:rounded-3xl shadow-2xl rotate-3 border-4 sm:border-8 border-white/10 grayscale-[50%] object-cover aspect-video w-full" 
                   />
                 </div>
             </div>
@@ -1837,8 +1850,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 2: STATS */}
         {shouldShowSection('stats') && (
-        <section className="max-w-7xl mx-auto px-6 animate-fade-in-up relative group/section">
-          <div className="relative rounded-3xl border border-[var(--border)]/60 bg-[var(--card)]/5 px-6 md:px-10 py-10 md:py-12 overflow-hidden">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 animate-fade-in-up relative group/section">
+          <div className="relative rounded-3xl border border-[var(--border)]/60 bg-[var(--card)]/5 px-3 sm:px-6 md:px-10 py-6 sm:py-8 md:py-12 overflow-hidden">
             <div className="pointer-events-none absolute inset-x-10 -top-20 h-40 bg-gradient-to-r from-[var(--brand)]/10 via-transparent to-[var(--brand-secondary)]/10 blur-3xl" />
 
             {isEditable && (
@@ -1866,12 +1879,12 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 return (
                   <div
                     key={idx}
-                    className="bg-[var(--card)] rounded-3xl px-6 py-7 shadow-lg shadow-black/5 border border-[var(--border)] hover:-translate-y-2 hover:shadow-xl transition-all duration-300 relative overflow-hidden group min-w-[220px] w-[220px] flex flex-col justify-center items-center text-center select-none"
+                    className="bg-[var(--card)] rounded-3xl px-4 py-5 sm:px-6 sm:py-7 shadow-lg shadow-black/5 border border-[var(--border)] hover:-translate-y-2 hover:shadow-xl transition-all duration-300 relative overflow-hidden group min-w-[200px] w-[200px] sm:min-w-[220px] sm:w-[220px] flex flex-col justify-center items-center text-center select-none"
                   >
                     <div className="absolute -top-6 -right-4 opacity-10 group-hover:opacity-20 transition-opacity">
                       <Icon size={72} className="text-[var(--brand-secondary)]" />
                     </div>
-                    <div className="text-3xl md:text-4xl font-black text-[var(--brand)] mb-1.5 relative z-10">
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-black text-[var(--brand)] mb-1.5 relative z-10">
                       {stat.value}
                     </div>
                     <div className="text-xs md:text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-[0.18em] relative z-10">
@@ -1893,13 +1906,13 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 3: VISION - MISSION - VALUES */}
         {shouldShowSection('visionMissionValues') && (
-        <section className="max-w-7xl mx-auto px-6 relative group/visionMission">
-           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/visionMission">
+           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
               {/* Vision */}
-              <div className="bg-white rounded-3xl p-10 shadow-2xl border border-slate-200 relative overflow-hidden border-t-4 border-blue-600 group">
+              <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 shadow-2xl border border-slate-200 relative overflow-hidden border-t-4 border-blue-600 group">
                  <EditBtn section="vision" initialData={{ vision: profile?.vision || "" }} />
                  <Target className="w-16 h-16 mb-6 text-blue-600" />
-                 <h3 className="text-3xl font-bold mb-4 text-slate-900">Tầm Nhìn</h3>
+                 <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 text-slate-900">Tầm Nhìn</h3>
                  {profile?.vision || (isEditable ? SAMPLE_VISION : null) ? (
                    <TruncatedText
                      content={profile?.vision || (isEditable ? SAMPLE_VISION : "")}
@@ -1908,15 +1921,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                      onViewMore={(type, content) => setViewMoreModal({ type, content })}
                    />
                  ) : (
-                   <p className="text-slate-600 leading-relaxed text-lg">Chưa cập nhật</p>
+                   <p className="text-slate-600 leading-relaxed text-base sm:text-lg">Chưa cập nhật</p>
                  )}
               </div>
 
               {/* Mission */}
-              <div className="bg-white rounded-3xl p-10 shadow-2xl border border-slate-200 relative overflow-hidden border-t-4 border-blue-600 group">
+              <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 shadow-2xl border border-slate-200 relative overflow-hidden border-t-4 border-blue-600 group">
                  <EditBtn section="mission" initialData={{ mission: profile?.mission || "" }} />
                  <Globe className="w-16 h-16 mb-6 text-blue-600" />
-                 <h3 className="text-3xl font-bold mb-4 text-slate-900">Sứ Mệnh</h3>
+                 <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 text-slate-900">Sứ Mệnh</h3>
                  {profile?.mission || (isEditable ? SAMPLE_MISSION : null) ? (
                    <TruncatedText
                      content={profile?.mission || (isEditable ? SAMPLE_MISSION : "")}
@@ -1925,15 +1938,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                      onViewMore={(type, content) => setViewMoreModal({ type, content })}
                    />
                  ) : (
-                   <p className="text-slate-600 leading-relaxed text-lg">Chưa cập nhật</p>
+                   <p className="text-slate-600 leading-relaxed text-base sm:text-lg">Chưa cập nhật</p>
                  )}
               </div>
 
               {/* Core Values */}
-              <div className="bg-white rounded-3xl p-10 shadow-2xl border border-slate-200 relative overflow-hidden border-t-4 border-blue-600 group">
+              <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 shadow-2xl border border-slate-200 relative overflow-hidden border-t-4 border-blue-600 group">
                  <EditBtn section="coreValues" initialData={{ coreValues: profile?.coreValues || "" }} />
                  <Gem className="w-16 h-16 mb-6 text-blue-600" />
-                 <h3 className="text-3xl font-bold mb-4 text-slate-900">Giá Trị Cốt Lõi</h3>
+                 <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 text-slate-900">Giá Trị Cốt Lõi</h3>
                  {profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : null) ? (
                    <TruncatedCoreValues
                      content={profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : "")}
@@ -1941,7 +1954,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                      onViewMore={(content) => setViewMoreModal({ type: 'coreValues', content })}
                    />
                  ) : (
-                   <p className="text-slate-600 leading-relaxed text-lg">Chưa cập nhật</p>
+                   <p className="text-slate-600 leading-relaxed text-base sm:text-lg">Chưa cập nhật</p>
                  )}
               </div>
            </div>
@@ -1955,7 +1968,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 4: PHILOSOPHY (Leadership & Management) (MANDATORY) */}
         {shouldShowSection('leadershipPhilosophy') && (
-        <section className="max-w-7xl mx-auto px-6 relative group/philosophy">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/philosophy">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 {/* Left: Media & Quote */}
                 <LeadershipMediaSection 
@@ -1976,10 +1989,10 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                       )}
                       
                       <Badge>TRIẾT LÝ QUẢN TRỊ</Badge>
-                      <h2 className="text-4xl font-extrabold text-slate-900 mt-4 mb-6 leading-tight">
+                      <h2 className="mt-4 mb-6 text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
                         Cam Kết Được <br/><span className="text-blue-600">Xác Thực Bởi Số Liệu</span>
                       </h2>
-                      <p className="text-slate-600 text-lg mb-6">
+                      <p className="mb-6 text-base sm:text-lg text-slate-600">
                         Các tuyên bố dưới đây được xác thực trực tiếp bởi nhân viên thông qua email riêng biệt.
                       </p>
 
@@ -2315,7 +2328,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 5: PRODUCTS (MANDATORY) */}
         {shouldShowSection('products') && (
-        <section className="bg-slate-900 py-20 overflow-hidden relative rounded-[3rem] mx-6 group/products">
+        <section className="bg-slate-900 py-14 sm:py-20 overflow-hidden relative rounded-[2rem] sm:rounded-[3rem] mx-2 sm:mx-6 group/products">
             {isEditable && (
                 <div className="absolute top-6 right-6 z-30 opacity-0 group-hover/products:opacity-100 transition-opacity flex items-center gap-2">
                     <Button onClick={() => handleEdit('products', { products })} variant="secondary" size="sm" className="bg-white/90 hover:bg-white text-slate-900 font-medium shadow-lg">
@@ -2324,7 +2337,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     <HiddenBadge sectionKey="products" />
                 </div>
             )}
-            <div className="max-w-7xl mx-auto px-6 relative z-10">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 relative z-10">
                 <div className="text-center mb-12">
                   <h3 className="text-3xl font-bold text-white mb-2">SẢN PHẨM VÀ DỊCH VỤ CỐT LÕI</h3>
                   <p className="text-slate-400">Những giá trị doanh nghiệp mang lại cho khách hàng</p>
@@ -2357,7 +2370,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 6: RECRUITMENT PRINCIPLES */}
         {shouldShowSection('recruitmentPrinciples') && (recruitmentPrinciples.length > 0 || isEditable) && (
-            <section className="max-w-7xl mx-auto px-6 relative group/recruit">
+            <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/recruit">
                 {isEditable && (
                     <div className="absolute top-0 right-6 opacity-0 group-hover/recruit:opacity-100 transition-opacity z-20 flex items-center gap-2">
                          <Button onClick={() => handleEdit('recruitmentPrinciples', { recruitmentPrinciples })} variant="outline" size="sm" className="bg-white shadow-sm">
@@ -2367,16 +2380,19 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     </div>
                 )}
                 <SectionTitle title="NGUYÊN TẮC TUYỂN DỤNG" subtitle="Chúng tôi tìm kiếm những người bạn đồng hành, không chỉ là nhân viên" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-8">
                   {recruitmentPrinciplesToRender.map((rule: any, i: number) => {
                     const Icon = iconMap[rule.icon] || Star;
                     return (
-                        <div key={i} className="flex gap-6 p-8 bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-lg transition-shadow group">
-                            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-slate-900 transition-colors">
-                              <Icon className="text-slate-700 group-hover:text-white transition-colors" size={32} />
+                        <div
+                          key={i}
+                          className="group flex gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-lg sm:gap-5 sm:p-6"
+                        >
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 transition-colors group-hover:bg-slate-900 sm:h-14 sm:w-14">
+                              <Icon className="text-slate-700 transition-colors group-hover:text-white" size={24} />
                             </div>
-                            <div>
-                              <h4 className="text-xl font-bold text-slate-900 mb-3">{rule.title}</h4>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="mb-2 text-lg font-bold leading-tight text-slate-900 sm:text-xl">{rule.title}</h4>
                               <p className="text-slate-600 leading-relaxed">{rule.desc}</p>
                             </div>
                         </div>
@@ -2398,7 +2414,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 7: BENEFITS */}
         {shouldShowSection('benefits') && (
-        <section className="max-w-7xl mx-auto px-6 relative group/benefits">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/benefits">
             {isEditable && (
                 <div className="absolute top-0 right-6 opacity-0 group-hover/benefits:opacity-100 transition-opacity z-20 flex items-center gap-2">
                         <Button onClick={() => handleEdit('benefits', { benefits })} variant="outline" size="sm" className="bg-white shadow-sm">
@@ -2463,7 +2479,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 8: HR JOURNEY */}
         {shouldShowSection('hrJourney') && (
-        <section className="bg-white py-10 rounded-[3rem] mx-6 shadow-sm border border-slate-100 relative group/hr">
+        <section className="bg-white py-8 sm:py-10 rounded-[2rem] sm:rounded-[3rem] mx-2 sm:mx-6 shadow-sm border border-slate-100 relative group/hr">
             {isEditable && (
                 <div className="absolute top-6 right-6 opacity-0 group-hover/hr:opacity-100 transition-opacity z-20 flex items-center gap-2">
                      <Button onClick={() => handleEdit('hrJourney', { hrJourney })} variant="secondary" size="sm" className="bg-white shadow-sm border">
@@ -2472,7 +2488,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     <HiddenBadge sectionKey="hrJourney" />
                 </div>
             )}
-            <div className="max-w-7xl mx-auto px-6">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6">
                 <SectionTitle title="HÀNH TRÌNH NHÂN SỰ" />
                 <div className="relative">
                   {/* Line */}
@@ -2503,7 +2519,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 15: CAREER PATH */}
         {shouldShowSection('careerPath') && (careerPath.length > 0 || isEditable) && (
-            <section className="max-w-7xl mx-auto px-6 relative group/career">
+            <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/career">
                 {isEditable && (
                     <div className="absolute top-6 right-6 opacity-0 group-hover/career:opacity-100 transition-opacity z-20 flex items-center gap-2">
                          <Button onClick={() => handleEdit('careerPath', { careerPath })} variant="secondary" size="sm" className="bg-white/90 hover:bg-white shadow-sm border">
@@ -2546,7 +2562,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 16: SALARY MECHANISM */}
         {shouldShowSection('salaryAndBonus') && (
-        <section className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8 relative group/salary">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative group/salary">
             {isEditable && (
                 <div className="absolute top-0 right-6 opacity-0 group-hover/salary:opacity-100 transition-opacity z-20 flex items-center gap-2">
                     <Button onClick={() => handleEdit('salaryAndBonus', { salaryAndBonus })} variant="outline" size="sm" className="bg-white shadow-sm border">
@@ -2599,7 +2615,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 10: LEADERS */}
         {shouldShowSection('leaders') && (leadersToRender.length > 0 || isEditable) && (
-            <section className="max-w-7xl mx-auto px-6 relative group/leaders">
+            <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/leaders">
                 {isEditable && (
                     <div className="absolute top-0 right-6 opacity-0 group-hover/leaders:opacity-100 transition-opacity z-20 flex items-center gap-2">
                         <Button onClick={() => handleEdit('leaders', { leaders })} variant="outline" size="sm" className="bg-white shadow-sm border">
@@ -2663,7 +2679,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 11: TYPICAL DAY */}
         {shouldShowSection('typicalDay') && (
-        <section className="bg-slate-50 pt-10 rounded-[3rem] mx-6 relative group/culture-day">
+        <section className="bg-slate-50 pt-8 sm:pt-10 rounded-[2rem] sm:rounded-[3rem] mx-2 sm:mx-6 relative group/culture-day">
             {isEditable && (
                 <div className="absolute top-6 right-6 opacity-0 group-hover/culture-day:opacity-100 transition-opacity z-20 flex items-center gap-2">
                     <Button onClick={() => handleEdit('culture-typical-day', { culture })} variant="secondary" size="sm" className="bg-white shadow-sm border">
@@ -2672,7 +2688,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     <HiddenBadge sectionKey="typicalDay" />
                 </div>
             )}
-            <div className="max-w-7xl mx-auto px-6">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6">
                 <SectionTitle title={`MỘT NGÀY TẠI ${company.name.toUpperCase()}`} />
                 <SectionCarousel>
                   {typicalDayToRender.map((slot: any, i: number) => {
@@ -2700,7 +2716,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 14: AWARDS */}
         {shouldShowSection('awards') && (awardsToRender.length > 0 || isEditable) && (
-            <section className="max-w-7xl mx-auto px-6 relative group/awards">
+            <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/awards">
                 {isEditable && (
                     <div className="absolute top-0 right-6 opacity-0 group-hover/awards:opacity-100 transition-opacity z-20 flex items-center gap-2">
                         <Button onClick={() => handleEdit('awards', { awards })} variant="outline" size="sm" className="bg-white shadow-sm border">
@@ -2751,7 +2767,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
             
             {/* Story Content */}
              {(founderStoryToRender || isEditable) && (
-                <section className="max-w-7xl mx-auto px-6">
+                <section className="max-w-7xl mx-auto px-3 sm:px-6">
                     <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-2xl border border-slate-100">
                         <SectionTitle title="CÂU CHUYỆN KHỞI NGUỒN" align="left" />
                         {founderStoryToRender ? (
@@ -2799,7 +2815,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
             {/* Milestones Content */}
             {(milestonesToRender.length > 0 || isEditable) && (
-                <section className="max-w-7xl mx-auto px-6">
+                <section className="max-w-7xl mx-auto px-3 sm:px-6">
                     <SectionTitle title="CỘT MỐC PHÁT TRIỂN" />
                     <div className="relative border-l-4 border-slate-200 ml-4 md:ml-1/2 md:border-l-0">
                         <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-slate-200 -translate-x-1/2 rounded-full"></div>
@@ -2840,7 +2856,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
         {/* SECTION 20: TESTIMONIALS */}
         {shouldShowSection('testimonials') && (
-        <section className="max-w-7xl mx-auto px-6 pb-20 relative group/testimonials">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 pb-16 sm:pb-20 relative group/testimonials">
              {isEditable && (
                 <div className="absolute top-0 right-6 opacity-0 group-hover/testimonials:opacity-100 transition-opacity z-20 flex items-center gap-2">
                      <Button onClick={() => handleEdit('culture-testimonials', { culture })} variant="outline" size="sm" className="bg-white shadow-sm border">
@@ -3465,13 +3481,25 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                     {editingSection === 'training' && (
                         <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
                             <div className="space-y-3">
-                                <Label>Mô tả văn hóa học tập</Label>
+                                <Label>Mô tả giới thiệu doanh nghiệp</Label>
                                 <Textarea 
                                     value={formData.training?.description || ''} 
                                     onChange={e => setFormData({...formData, training: {...formData.training, description: e.target.value}})}
-                                    placeholder="Mô tả về văn hóa học tập..."
+                                    placeholder="Mô tả ngắn về doanh nghiệp..."
                                     rows={4}
                                 />
+                            </div>
+
+                            <div className="space-y-3">
+                                <Label>Quy mô nhân sự</Label>
+                                <Input
+                                    value={formData.training?.workforceSize || ''}
+                                    onChange={e => setFormData({...formData, training: {...formData.training, workforceSize: e.target.value}})}
+                                    placeholder="Ví dụ: 100-200 nhân sự hoặc 500+ nhân sự"
+                                />
+                                <p className="text-xs text-[var(--muted-foreground)]">
+                                    Trường này sẽ hiển thị ngay trong section Giới thiệu DN.
+                                </p>
                             </div>
                             
                             <div className="space-y-3">

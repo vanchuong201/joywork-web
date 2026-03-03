@@ -6,9 +6,7 @@ import PostComposer from "./PostComposer";
 import CompanyActivityFeed from "./CompanyActivityFeed";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Plus, Users, UserRound, MessageSquareText } from "lucide-react";
-import { useState } from "react";
+import { Users } from "lucide-react";
 import CompanyMembersList from "./CompanyMembersList";
 import CompanyTicketsList from "./CompanyTicketsList";
 import { useAuthStore } from "@/store/useAuth";
@@ -42,13 +40,19 @@ export default function ManageCompanyPageContent({ company }: { company: Company
   if (tab === "overview") return null;
 
   return (
-    <div className="py-8">
+    <div className="-mx-1 space-y-5 pb-8 sm:mx-0 sm:space-y-6">
         {/* Tab: Activity */}
         {tab === "activity" && (
-            <div className="max-w-3xl mx-auto space-y-8">
+            <div className="mx-auto max-w-4xl space-y-5 sm:space-y-6">
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4">
+                    <h3 className="text-base font-semibold text-[var(--foreground)] sm:text-lg">Tạo bài đăng mới</h3>
+                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                      Chia sẻ thông tin tuyển dụng, hoạt động và cập nhật mới từ doanh nghiệp.
+                    </p>
+                </div>
                 <PostComposer companyId={company.id} />
-                <div className="mt-8">
-                    <h3 className="text-xl font-bold mb-4 text-slate-800">Bài viết đã đăng</h3>
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-5">
+                    <h3 className="mb-4 text-base font-semibold text-[var(--foreground)] sm:text-lg">Bài viết đã đăng</h3>
                     {/* Pass empty array, component will fetch data */}
                     <CompanyActivityFeed posts={[]} companyId={company.id} /> 
                 </div>
@@ -64,10 +68,16 @@ export default function ManageCompanyPageContent({ company }: { company: Company
         {/* Tab: Members */}
         {tab === "members" && (
             <div className="space-y-6">
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-5">
+                    <h3 className="text-base font-semibold text-[var(--foreground)] sm:text-lg">Quản lý thành viên</h3>
+                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                      Mời cộng sự, phân quyền và theo dõi các lời mời đang chờ trong một nơi.
+                    </p>
+                </div>
                 {companyWithMembersQuery.isLoading ? (
                     <div className="space-y-3">
                         {Array.from({ length: 3 }).map((_, idx) => (
-                            <div key={idx} className="h-20 bg-white rounded-lg border border-slate-200 animate-pulse" />
+                            <div key={idx} className="h-20 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--card)]" />
                         ))}
                     </div>
                 ) : companyData.members && companyData.members.length > 0 ? (
@@ -79,11 +89,11 @@ export default function ManageCompanyPageContent({ company }: { company: Company
                         currentUserId={currentUserId}
                     />
                 ) : (
-                    <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-500">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Users className="w-8 h-8 text-slate-300" />
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-12 text-center text-[var(--muted-foreground)]">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--muted)]">
+                            <Users className="w-8 h-8 text-[var(--muted-foreground)]" />
                         </div>
-                        <h4 className="font-bold text-lg text-slate-700 mb-2">Chưa có thành viên</h4>
+                        <h4 className="mb-2 text-lg font-bold text-[var(--foreground)]">Chưa có thành viên</h4>
                         <p>Thêm thành viên để bắt đầu quản lý công ty.</p>
                     </div>
                 )}
@@ -93,6 +103,12 @@ export default function ManageCompanyPageContent({ company }: { company: Company
         {/* Tab: Tickets */}
         {tab === "tickets" && (
             <div className="space-y-6">
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-5">
+                    <h3 className="text-base font-semibold text-[var(--foreground)] sm:text-lg">Trao đổi với ứng viên</h3>
+                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                      Theo dõi ticket mới, cập nhật trạng thái phản hồi và xử lý hội thoại nhanh hơn.
+                    </p>
+                </div>
                 <CompanyTicketsList companyId={company.id} />
             </div>
         )}

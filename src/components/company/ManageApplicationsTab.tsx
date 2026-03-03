@@ -150,10 +150,10 @@ export default function ManageApplicationsTab({ company }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h3 className="text-xl font-bold text-slate-800">Danh sách ứng viên</h3>
-          <p className="text-sm text-slate-500 mt-1">
+          <h3 className="text-lg font-semibold text-[var(--foreground)] sm:text-xl">Danh sách ứng viên</h3>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             {pagination ? (
               <>
                 Tổng cộng {pagination.total} ứng viên
@@ -165,12 +165,12 @@ export default function ManageApplicationsTab({ company }: Props) {
           </p>
         </div>
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-2 border border-slate-200 rounded-lg p-1 bg-white">
+        <div className="flex w-full items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--card)] p-1 sm:w-auto">
           <Button
             variant={viewMode === "list" ? "default" : "ghost"}
             size="sm"
             onClick={() => setViewMode("list")}
-            className="h-8 px-3"
+            className="h-8 flex-1 px-3 sm:flex-none"
           >
             <List className="w-4 h-4 mr-2" />
             Danh sách
@@ -179,7 +179,7 @@ export default function ManageApplicationsTab({ company }: Props) {
             variant={viewMode === "grid" ? "default" : "ghost"}
             size="sm"
             onClick={() => setViewMode("grid")}
-            className="h-8 px-3"
+            className="h-8 flex-1 px-3 sm:flex-none"
           >
             <Grid className="w-4 h-4 mr-2" />
             Lưới
@@ -188,18 +188,18 @@ export default function ManageApplicationsTab({ company }: Props) {
       </div>
 
       {/* Filters */}
-      <Card className="p-4 bg-slate-50/50">
+      <Card className="border-[var(--border)] bg-[var(--card)] p-4">
         <div className="flex flex-wrap items-center gap-4">
           {/* Job Filter */}
-          <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
-            <Label htmlFor="job-filter" className="text-sm font-medium text-slate-700 whitespace-nowrap shrink-0">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-initial">
+            <Label htmlFor="job-filter" className="shrink-0 whitespace-nowrap text-sm font-medium text-[var(--foreground)]">
               Vị trí:
             </Label>
             <select
               id="job-filter"
               value={jobId || "all"}
               onChange={(e) => handleJobFilterChange(e.target.value)}
-              className="h-9 flex-1 sm:w-[250px] rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-colors"
+              className="h-9 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-sm text-[var(--foreground)] transition-colors focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 sm:w-[250px]"
             >
               <option value="all">Tất cả vị trí</option>
               {jobsQuery.data?.map((job: any) => (
@@ -211,15 +211,15 @@ export default function ManageApplicationsTab({ company }: Props) {
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
-            <Label htmlFor="status-filter" className="text-sm font-medium text-slate-700 whitespace-nowrap shrink-0">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-initial">
+            <Label htmlFor="status-filter" className="shrink-0 whitespace-nowrap text-sm font-medium text-[var(--foreground)]">
               Trạng thái:
             </Label>
             <select
               id="status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              className="h-9 flex-1 sm:w-[180px] rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-colors"
+              className="h-9 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-sm text-[var(--foreground)] transition-colors focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 sm:w-[180px]"
             >
               <option value="all">Tất cả</option>
               <option value="PENDING">Đang chờ</option>
@@ -241,7 +241,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                 router.push(`${pathname}?${params.toString()}`, { scroll: false });
                 setStatusFilter("all");
               }}
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              className="text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
             >
               <X className="w-4 h-4 mr-1.5" />
               Xóa bộ lọc
@@ -252,7 +252,7 @@ export default function ManageApplicationsTab({ company }: Props) {
 
       {/* Selected Job Info */}
       {selectedJob && (
-        <Card className="bg-blue-50/80 border-blue-200">
+        <Card className="border-blue-200 bg-blue-50/80">
           <div className="p-4 flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
               <p className="text-xs text-blue-600 font-medium mb-1">Đang lọc theo vị trí:</p>
@@ -274,24 +274,24 @@ export default function ManageApplicationsTab({ company }: Props) {
       {applicationsQuery.isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, idx) => (
-            <Card key={idx} className="p-6">
+            <Card key={idx} className="border-[var(--border)] bg-[var(--card)] p-6">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-slate-200 rounded-full animate-pulse" />
+                <div className="h-12 w-12 animate-pulse rounded-full bg-[var(--muted)]" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-slate-200 rounded w-1/3 animate-pulse" />
-                  <div className="h-3 bg-slate-200 rounded w-1/2 animate-pulse" />
+                  <div className="h-4 w-1/3 animate-pulse rounded bg-[var(--muted)]" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-[var(--muted)]" />
                 </div>
               </div>
             </Card>
           ))}
         </div>
       ) : applications.length === 0 ? (
-        <Card className="border-2 border-dashed border-slate-200">
-          <div className="text-center py-12 text-slate-500">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-slate-300" />
+        <Card className="border-2 border-dashed border-[var(--border)] bg-[var(--card)]">
+          <div className="py-12 text-center text-[var(--muted-foreground)]">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--muted)]">
+              <Users className="h-8 w-8 text-[var(--muted-foreground)]" />
             </div>
-            <p className="mb-4 text-lg font-medium">
+            <p className="mb-4 text-lg font-medium text-[var(--foreground)]">
               {jobId || statusFilter !== "all"
                 ? "Không tìm thấy ứng viên phù hợp"
                 : "Chưa có ứng viên nào"}
@@ -315,11 +315,11 @@ export default function ManageApplicationsTab({ company }: Props) {
                 const headline = profile?.headline;
 
                 return (
-                  <Card key={application.id} className="hover:shadow-md transition-all border-slate-200">
-                    <div className="p-6">
+                  <Card key={application.id} className="border-[var(--border)] bg-[var(--card)] transition-all hover:shadow-md">
+                    <div className="p-4 sm:p-5">
                       <div className="flex items-start gap-4">
                         {/* User Avatar */}
-                        <div className="relative w-14 h-14 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border-2 border-slate-200">
+                        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full border-2 border-[var(--border)] bg-[var(--muted)]">
                           {avatar ? (
                             <Image
                               src={avatar}
@@ -329,7 +329,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                               className="object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-50">
+                            <div className="flex h-full w-full items-center justify-center bg-[var(--muted)] text-[var(--muted-foreground)]">
                               <User className="w-7 h-7" />
                             </div>
                           )}
@@ -342,21 +342,18 @@ export default function ManageApplicationsTab({ company }: Props) {
                               <div className="flex items-center gap-3 mb-1">
                                 <Link
                                   href={`/profile/${user?.slug || user?.id}`}
-                                  className="font-semibold text-base text-slate-900 hover:text-[var(--brand)] transition-colors"
+                                  className="text-base font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--brand)]"
                                 >
                                   {userName}
                                 </Link>
                                 <Badge 
-                                  className={cn(
-                                    "text-xs font-medium px-2.5 py-0.5 border",
-                                    STATUS_COLORS[application.status] || "bg-slate-100 text-slate-700 border-slate-200"
-                                  )}
+                                  className={cn("border px-2.5 py-0.5 text-xs font-medium", STATUS_COLORS[application.status] || "border-[var(--border)] bg-[var(--muted)] text-[var(--muted-foreground)]")}
                                 >
                                   {STATUS_LABEL[application.status] || application.status}
                                 </Badge>
                               </div>
                               {headline && (
-                                <p className="text-sm text-slate-500 line-clamp-1">{headline}</p>
+                                <p className="line-clamp-1 text-sm text-[var(--muted-foreground)]">{headline}</p>
                               )}
                             </div>
 
@@ -366,7 +363,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                                  className="h-8 w-8 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
                                 >
                                   <MoreVertical className="w-4 h-4" />
                                 </Button>
@@ -374,12 +371,12 @@ export default function ManageApplicationsTab({ company }: Props) {
                               <DropdownMenu.Portal>
                                 <DropdownMenu.Content
                                   align="end"
-                                  className="min-w-[180px] rounded-lg border border-slate-200 bg-white shadow-lg p-1 z-50"
+                                  className="z-50 min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--card)] p-1 shadow-lg"
                                   sideOffset={5}
                                 >
                                   <DropdownMenu.Item
                                     onClick={() => handleStatusChange(application)}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                    className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                   >
                                     <Edit className="w-4 h-4" />
                                     Cập nhật trạng thái
@@ -387,7 +384,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                                   <DropdownMenu.Item asChild>
                                     <Link 
                                       href={`/profile/${user?.slug || user?.id}`} 
-                                      className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                      className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                     >
                                       <ExternalLink className="w-4 h-4" />
                                       Xem hồ sơ
@@ -399,7 +396,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                                         href={profile.cvUrl} 
                                         target="_blank" 
                                         rel="noreferrer"
-                                        className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                        className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                       >
                                         <FileText className="w-4 h-4" />
                                         Xem CV
@@ -413,8 +410,8 @@ export default function ManageApplicationsTab({ company }: Props) {
 
                           {/* Application Details */}
                           <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2 text-slate-600">
-                              <span className="font-medium text-slate-500">Vị trí:</span>
+                            <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
+                              <span className="font-medium text-[var(--muted-foreground)]">Vị trí:</span>
                               <Link
                                 href={`/jobs/${application.job.id}`}
                                 target="_blank"
@@ -423,20 +420,20 @@ export default function ManageApplicationsTab({ company }: Props) {
                                 {application.job.title}
                               </Link>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-600">
-                              <span className="font-medium text-slate-500">Ứng tuyển:</span>
+                            <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
+                              <span className="font-medium text-[var(--muted-foreground)]">Ứng tuyển:</span>
                               <span>{formatDate(application.appliedAt)}</span>
                             </div>
                             {application.coverLetter && (
-                              <div className="pt-2 border-t border-slate-100">
-                                <p className="text-xs font-medium text-slate-500 mb-1">Thư giới thiệu:</p>
-                                <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">{application.coverLetter}</p>
+                              <div className="border-t border-[var(--border)] pt-2">
+                                <p className="mb-1 text-xs font-medium text-[var(--muted-foreground)]">Thư giới thiệu:</p>
+                                <p className="line-clamp-2 text-sm leading-relaxed text-[var(--muted-foreground)]">{application.coverLetter}</p>
                               </div>
                             )}
                             {application.notes && (
-                              <div className="pt-2 border-t border-slate-100">
-                                <p className="text-xs font-medium text-slate-500 mb-1">Ghi chú:</p>
-                                <p className="text-sm text-slate-600 leading-relaxed">{application.notes}</p>
+                              <div className="border-t border-[var(--border)] pt-2">
+                                <p className="mb-1 text-xs font-medium text-[var(--muted-foreground)]">Ghi chú:</p>
+                                <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">{application.notes}</p>
                               </div>
                             )}
                           </div>
@@ -457,11 +454,11 @@ export default function ManageApplicationsTab({ company }: Props) {
                 const headline = profile?.headline;
 
                 return (
-                  <Card key={application.id} className="hover:shadow-lg transition-all border-slate-200 flex flex-col">
-                    <div className="p-5 flex flex-col h-full">
+                  <Card key={application.id} className="flex flex-col border-[var(--border)] bg-[var(--card)] transition-all hover:shadow-lg">
+                    <div className="flex h-full flex-col p-4 sm:p-5">
                       {/* Header with Avatar and Actions */}
                       <div className="flex items-start justify-between gap-3 mb-4">
-                        <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border-2 border-slate-200">
+                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full border-2 border-[var(--border)] bg-[var(--muted)]">
                           {avatar ? (
                             <Image
                               src={avatar}
@@ -471,7 +468,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                               className="object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-50">
+                            <div className="flex h-full w-full items-center justify-center bg-[var(--muted)] text-[var(--muted-foreground)]">
                               <User className="w-8 h-8" />
                             </div>
                           )}
@@ -481,7 +478,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                              className="h-8 w-8 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
                             >
                               <MoreVertical className="w-4 h-4" />
                             </Button>
@@ -489,12 +486,12 @@ export default function ManageApplicationsTab({ company }: Props) {
                           <DropdownMenu.Portal>
                             <DropdownMenu.Content
                               align="end"
-                              className="min-w-[180px] rounded-lg border border-slate-200 bg-white shadow-lg p-1 z-50"
+                              className="z-50 min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--card)] p-1 shadow-lg"
                               sideOffset={5}
                             >
                               <DropdownMenu.Item
                                 onClick={() => handleStatusChange(application)}
-                                className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                               >
                                 <Edit className="w-4 h-4" />
                                 Cập nhật trạng thái
@@ -502,7 +499,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                               <DropdownMenu.Item asChild>
                                 <Link 
                                   href={`/profile/${user?.slug || user?.id}`} 
-                                  className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                  className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                 >
                                   <ExternalLink className="w-4 h-4" />
                                   Xem hồ sơ
@@ -514,7 +511,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                                     href={profile.cvUrl} 
                                     target="_blank" 
                                     rel="noreferrer"
-                                    className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm transition-colors hover:bg-slate-100 outline-none"
+                                    className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                   >
                                     <FileText className="w-4 h-4" />
                                     Xem CV
@@ -530,27 +527,24 @@ export default function ManageApplicationsTab({ company }: Props) {
                       <div className="mb-3">
                         <Link
                           href={`/profile/${user?.slug || user?.id}`}
-                          className="font-semibold text-base text-slate-900 hover:text-[var(--brand)] transition-colors block mb-2"
+                          className="mb-2 block text-base font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--brand)]"
                         >
                           {userName}
                         </Link>
                         {headline && (
-                          <p className="text-xs text-slate-500 line-clamp-2 mb-2">{headline}</p>
+                          <p className="mb-2 line-clamp-2 text-xs text-[var(--muted-foreground)]">{headline}</p>
                         )}
                         <Badge 
-                          className={cn(
-                            "text-xs font-medium px-2.5 py-0.5 border",
-                            STATUS_COLORS[application.status] || "bg-slate-100 text-slate-700 border-slate-200"
-                          )}
+                          className={cn("border px-2.5 py-0.5 text-xs font-medium", STATUS_COLORS[application.status] || "border-[var(--border)] bg-[var(--muted)] text-[var(--muted-foreground)]")}
                         >
                           {STATUS_LABEL[application.status] || application.status}
                         </Badge>
                       </div>
 
                       {/* Application Details */}
-                      <div className="space-y-2 text-sm flex-1">
-                        <div className="text-slate-600">
-                          <span className="text-xs font-medium text-slate-500 block mb-1">Vị trí:</span>
+                      <div className="flex-1 space-y-2 text-sm">
+                        <div className="text-[var(--muted-foreground)]">
+                          <span className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">Vị trí:</span>
                           <Link
                             href={`/jobs/${application.job.id}`}
                             target="_blank"
@@ -559,14 +553,14 @@ export default function ManageApplicationsTab({ company }: Props) {
                             {application.job.title}
                           </Link>
                         </div>
-                        <div className="text-slate-600">
-                          <span className="text-xs font-medium text-slate-500 block mb-1">Ứng tuyển:</span>
+                        <div className="text-[var(--muted-foreground)]">
+                          <span className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">Ứng tuyển:</span>
                           <span className="text-sm">{formatDate(application.appliedAt)}</span>
                         </div>
                         {application.coverLetter && (
-                          <div className="pt-2 border-t border-slate-100">
-                            <p className="text-xs font-medium text-slate-500 mb-1">Thư giới thiệu:</p>
-                            <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">{application.coverLetter}</p>
+                          <div className="border-t border-[var(--border)] pt-2">
+                            <p className="mb-1 text-xs font-medium text-[var(--muted-foreground)]">Thư giới thiệu:</p>
+                            <p className="line-clamp-3 text-xs leading-relaxed text-[var(--muted-foreground)]">{application.coverLetter}</p>
                           </div>
                         )}
                       </div>
@@ -579,13 +573,13 @@ export default function ManageApplicationsTab({ company }: Props) {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-              <div className="text-sm text-slate-500">
+            <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-[var(--muted-foreground)]">
                 Hiển thị {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-
                 {Math.min(currentPage * ITEMS_PER_PAGE, pagination?.total || 0)} trong tổng số{" "}
                 {pagination?.total || 0} ứng viên
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -657,7 +651,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                 id="status"
                 value={newStatus}
                 onChange={(e) => setNewStatus(e.target.value)}
-                className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)]"
+                className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20"
               >
                 <option value="PENDING">Đang chờ</option>
                 <option value="REVIEWING">Đang xem xét</option>
@@ -676,10 +670,10 @@ export default function ManageApplicationsTab({ company }: Props) {
                 rows={4}
                 maxLength={1000}
               />
-              <p className="text-xs text-slate-500 mt-1">{notes.length}/1000 ký tự</p>
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">{notes.length}/1000 ký tự</p>
             </div>
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
               Hủy
             </Button>

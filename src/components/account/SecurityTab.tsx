@@ -12,8 +12,8 @@ export default function SecurityTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Bảo mật</h1>
-        <p className="text-sm text-slate-500 mt-1">Quản lý mật khẩu và bảo mật tài khoản</p>
+        <h1 className="text-xl font-bold sm:text-2xl">Bảo mật</h1>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">Quản lý mật khẩu và bảo mật tài khoản</p>
       </div>
 
       <Card>
@@ -24,17 +24,17 @@ export default function SecurityTab() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex-1">
-              <p className="text-sm font-medium text-slate-700">Mật khẩu tài khoản</p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-sm font-medium text-[var(--foreground)]">Mật khẩu tài khoản</p>
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                 Cập nhật mật khẩu để bảo vệ tài khoản của bạn
               </p>
             </div>
             <Button
               variant="outline"
               onClick={() => setShowChangePassword(true)}
-              className="flex items-center gap-2"
+              className="flex w-full items-center justify-center gap-2 sm:w-auto"
             >
               <Lock size={16} />
               Đổi mật khẩu

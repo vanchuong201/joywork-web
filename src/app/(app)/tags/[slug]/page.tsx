@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/ui/empty-state";
@@ -8,18 +8,12 @@ import PostCard, { type PostCardData } from "@/components/feed/PostCard";
 import { useEffect, useMemo } from "react";
 import useInView from "@/hooks/useInView";
 import { useParams } from "next/navigation";
-import { useAuthStore } from "@/store/useAuth";
-import { useAuthPrompt } from "@/contexts/AuthPromptContext";
-import { toast } from "sonner";
 
 export default function TagPage() {
   const params = useParams();
   const slug = params?.slug as string;
   const { ref, inView } = useInView<HTMLDivElement>({ rootMargin: "300px" });
   const pageSize = 10;
-  const user = useAuthStore((state) => state.user);
-  const { openPrompt } = useAuthPrompt();
-  const qc = useQueryClient();
 
   const query = useInfiniteQuery<{ posts: PostCardData[]; pagination: { page: number; totalPages: number } }>({
     queryKey: ["tag-feed", slug],
@@ -34,25 +28,6 @@ export default function TagPage() {
     },
     enabled: Boolean(slug),
   });
-
-  const like = useMutation({
-    mutationFn: async (p: PostCardData) => {
-      if (p.isLiked) await api.delete(`/api/posts/${p.id}/like`);
-      else await api.post(`/api/posts/${p.id}/like`);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tag-feed", slug] });
-    },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Action failed"),
-  });
-
-  const handleLike = (p: PostCardData) => {
-    if (!user) {
-      openPrompt("like");
-      return;
-    }
-    like.mutate(p);
-  };
 
   useEffect(() => {
     if (inView && query.hasNextPage && !query.isFetchingNextPage) {
@@ -78,7 +53,7 @@ export default function TagPage() {
       ) : allPosts.length ? (
         <div className="space-y-6">
           {allPosts.map((p) => (
-            <PostCard key={p.id} post={p} onLike={() => handleLike(p)} />
+            <PostCard key={p.id} post={p} />
           ))}
           {query.hasNextPage ? (
             <div ref={ref} className="h-4 flex justify-center py-4">

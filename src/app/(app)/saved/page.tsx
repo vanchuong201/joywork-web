@@ -170,13 +170,7 @@ function SavedPageContent() {
             <div className={postView === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-6"}>
               {savedPosts.map((p) => (
                 <div key={p.id}>
-                  <PostCard
-                    post={p}
-                    onLike={() => {
-                      if (p.isLiked) api.delete(`/api/posts/${p.id}/like`);
-                      else api.post(`/api/posts/${p.id}/like`);
-                    }}
-                  />
+                  <PostCard post={p} />
                 </div>
               ))}
               {postsQuery.hasNextPage ? (
