@@ -19,9 +19,9 @@ const STATUS_LABEL: Record<TicketStatus, string> = {
 };
 
 const STATUS_VARIANT: Record<TicketStatus, string> = {
-  OPEN: "bg-amber-100 text-amber-700",
-  RESPONDED: "bg-emerald-100 text-emerald-700",
-  CLOSED: "bg-gray-200 text-gray-700",
+  OPEN: "border border-amber-200 bg-amber-100 text-amber-700",
+  RESPONDED: "border border-emerald-200 bg-emerald-100 text-emerald-700",
+  CLOSED: "border border-[var(--border)] bg-[var(--muted)] text-[var(--muted-foreground)]",
 };
 
 type Props = {
@@ -62,10 +62,10 @@ export default function CompanyTicketsList({ companyId }: Props) {
   return (
     <div className="space-y-3">
       {data.tickets.map((ticket) => (
-        <Card key={ticket.id} className="border border-[var(--border)]">
-          <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Card key={ticket.id} className="border border-[var(--border)] bg-[var(--card)] shadow-sm">
+          <CardHeader className="flex flex-col gap-2 border-b border-[var(--border)] pb-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <h3 className="text-base font-semibold text-[var(--foreground)]">{ticket.title}</h3>
                 <Badge className={STATUS_VARIANT[ticket.status]}>{STATUS_LABEL[ticket.status]}</Badge>
               </div>
@@ -77,14 +77,14 @@ export default function CompanyTicketsList({ companyId }: Props) {
               Cập nhật {formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true, locale: vi })}
             </p>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm text-[var(--muted-foreground)] sm:flex-row sm:items-center sm:justify-between">
+          <CardContent className="flex flex-col gap-3 pt-4 text-sm text-[var(--muted-foreground)] sm:flex-row sm:items-center sm:justify-between">
             <div className="line-clamp-2 text-left">
               {ticket.lastMessage
                 ? ticket.lastMessage.content
                 : "Chưa có trao đổi thêm trong ticket này."}
             </div>
             <div className="flex items-center gap-2">
-              <Button asChild size="sm" variant="outline">
+              <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
                 <Link href={`/tickets/${ticket.id}?companyId=${companyId}`}>
                   Xem hội thoại
                 </Link>

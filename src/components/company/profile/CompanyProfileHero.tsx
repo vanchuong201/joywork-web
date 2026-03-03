@@ -7,7 +7,7 @@ import { Globe, MapPin, Users, CheckCircle, MessageCircle, ShieldCheck, Mail, Ph
 import CompanyMessageButton from "@/components/company/CompanyMessageButton";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { Badge } from "@/components/ui/badge";
-import { useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { uploadCompanyCover, uploadCompanyLogo } from "@/lib/uploads";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -22,14 +22,20 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const router = useRouter();
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
+    const [coverPreviewOpen, setCoverPreviewOpen] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [uploadingVerification, setUploadingVerification] = useState(false);
     const [verificationFile, setVerificationFile] = useState<File | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
     
     const coverInputRef = useRef<HTMLInputElement>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const verificationInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     // Track original legal name for re-verification detection
     const originalLegalName = useMemo(() => company.legalName || "", [company.legalName]);
@@ -251,8 +257,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         formData.legalName.trim() !== "";
 
     return (
-        <section className="relative max-w-7xl mx-auto px-4 sm:px-6 mb-20 pt-8 group/hero">
-             <div className="rounded-[2.5rem] overflow-hidden shadow-2xl relative h-[350px] md:h-[450px] group bg-slate-900">
+        <section className="relative mx-auto mb-14 max-w-7xl px-2 pt-6 sm:mb-20 sm:px-6 sm:pt-8 group/hero">
+             <div className={`relative aspect-[16/8] sm:aspect-[16/7] md:aspect-[16/6] overflow-hidden rounded-[2rem] bg-slate-900 shadow-2xl md:rounded-[2.5rem] group ${company.coverUrl ? "cursor-zoom-in" : ""}`}>
                  {/* Background decoration or Cover Image */}
                  <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                      {company.coverUrl ? (
@@ -284,6 +290,15 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     </div>
                  )}
                  
+                 {company.coverUrl && !uploadingCover && (
+                    <button
+                        type="button"
+                        className="absolute inset-0 z-10"
+                        aria-label="Xem ảnh bìa"
+                        onClick={() => setCoverPreviewOpen(true)}
+                    />
+                 )}
+
                  {isEditable && !uploadingCover && (
                     <div className="absolute top-6 right-6 z-20 opacity-0 group-hover/hero:opacity-100 transition-opacity">
                         <input 
@@ -312,9 +327,27 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                  )}
              </div>
 
+             {/* Dialog: Xem ảnh bìa */}
+             <Dialog open={coverPreviewOpen} onOpenChange={setCoverPreviewOpen}>
+                <DialogContent className="max-w-6xl border-none bg-black/95 p-2 text-white [&>button]:text-[#fff] [&>button]:opacity-100 [&>button:hover]:bg-white/10 [&>button:hover]:text-[#fff] sm:p-3">
+                    <DialogHeader>
+                        <DialogTitle className="text-sm font-medium text-white/90">Ảnh bìa doanh nghiệp</DialogTitle>
+                    </DialogHeader>
+                    {company.coverUrl && (
+                        <div className="overflow-hidden rounded-md">
+                            <img
+                                src={company.coverUrl}
+                                alt={`Ảnh bìa của ${company.name}`}
+                                className="max-h-[78vh] w-full object-contain"
+                            />
+                        </div>
+                    )}
+                </DialogContent>
+             </Dialog>
+
              {/* Floating Profile Card */}
-             <div className="relative -mt-24 mx-4 md:mx-auto max-w-5xl z-10">
-                <div className="bg-[var(--card)] rounded-3xl p-8 md:p-10 shadow-xl flex flex-col md:flex-row items-start gap-8 border border-[var(--border)] relative group/card">
+             <div className="relative z-10 -mt-12 mx-2 max-w-5xl sm:-mt-16 md:mx-auto md:-mt-24">
+                <div className="relative flex flex-col items-start gap-5 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3 sm:gap-6 sm:p-5 md:flex-row md:gap-8 md:p-10 group/card">
                   
                   {isEditable && (
                       <div className="absolute top-4 right-4 z-20 opacity-0 group-hover/card:opacity-100 transition-opacity">
@@ -329,8 +362,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                       </div>
                   )}
 
-                  <div className="relative shrink-0 mx-auto md:mx-0 group/avatar">
-                      <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-1 bg-[var(--muted)] relative overflow-hidden">
+                  <div className="relative mx-auto shrink-0 md:mx-0 group/avatar">
+                      <div className="relative h-28 w-28 overflow-hidden rounded-full bg-[var(--muted)] p-1 sm:h-32 sm:w-32 md:h-40 md:w-40">
                         {company.logoUrl ? (
                             <Image src={company.logoUrl} alt={company.name} width={160} height={160} className="w-full h-full rounded-full bg-[var(--card)] object-contain border-4 border-[var(--card)]" />
                         ) : (
@@ -370,12 +403,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                       </div>
                   </div>
                   
-                  <div className="text-center md:text-left flex-1 w-full space-y-4">
+                  <div className="w-full flex-1 space-y-4 text-center md:text-left">
                       <div>
                         {company.legalName && (
-                            <p className="text-xl text-[var(--muted-foreground)] font-bold mb-1">{company.legalName}</p>
+                            <p className="mb-1 text-sm font-bold text-[var(--muted-foreground)] sm:text-xl">{company.legalName}</p>
                         )}
-                        <h2 className="text-3xl font-bold text-[var(--foreground)] flex flex-wrap items-center justify-center md:justify-start gap-3">
+                        <h2 className="flex flex-wrap items-center justify-center gap-2 text-xl font-bold text-[var(--foreground)] sm:gap-3 sm:text-2xl md:text-3xl md:justify-start">
                           {company.name}
                           {verificationStatus === "VERIFIED" && (
                               <div className="relative group">
@@ -413,15 +446,15 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                           </div>
                       )}
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[var(--muted-foreground)] text-sm font-medium">
+                      <div className="grid grid-cols-1 gap-2 text-sm font-medium text-[var(--muted-foreground)] md:grid-cols-2 md:gap-4">
                         {company.location && (
-                            <div className="flex items-center gap-3 bg-[var(--muted)] p-3 rounded-xl group/item relative">
+                            <div className="relative flex items-center gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
                               <MapPin className="text-[var(--muted-foreground)] shrink-0" size={20} />
                               <span className="truncate">{company.location}</span>
                             </div>
                         )}
                         {company.website && (
-                            <div className="flex items-center gap-3 bg-[var(--muted)] p-3 rounded-xl group/item relative">
+                            <div className="relative flex items-center gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
                               <Globe className="text-[var(--muted-foreground)] shrink-0" size={20} />
                               <a
                                 href={company.website}
@@ -434,7 +467,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             </div>
                         )}
                         {company.email && (
-                            <div className="flex items-center gap-3 bg-[var(--muted)] p-3 rounded-xl group/item relative">
+                            <div className="relative flex items-center gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
                               <Mail className="text-[var(--muted-foreground)] shrink-0" size={20} />
                               <a
                                 href={`mailto:${company.email}`}
@@ -445,7 +478,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             </div>
                         )}
                         {company.phone && (
-                            <div className="flex items-center gap-3 bg-[var(--muted)] p-3 rounded-xl group/item relative">
+                            <div className="relative flex items-center gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
                               <Phone className="text-[var(--muted-foreground)] shrink-0" size={20} />
                               <span className="truncate">{company.phone}</span>
                             </div>
@@ -453,23 +486,32 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-6 pt-4 border-t border-[var(--border)]">
-                        <CompanyFollowButton
-                            companyId={company.id}
-                            companySlug={company.slug}
-                            variant="default"
-                            size="lg"
-                            className="bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white rounded-full px-6 shadow-lg shadow-[var(--brand)]/20 font-bold transition-all hover:scale-105 active:scale-95 border-0"
-                        />
-                        <CompanyMessageButton 
-                            companyId={company.id} 
-                            companyName={company.name}
-                            variant="secondary"
-                            size="lg"
-                            className="rounded-full px-6 font-bold bg-[var(--muted)] text-[var(--foreground)] hover:bg-[var(--muted)]/80 transition-all hover:scale-105 active:scale-95 border-0"
-                        >
-                            <MessageCircle className="w-5 h-5 mr-2" /> Nhắn tin / Liên hệ
-                        </CompanyMessageButton>
+                      <div className="mt-5 grid w-full grid-cols-2 gap-2 border-t border-[var(--border)] pt-4 md:mt-6 md:flex md:w-auto md:flex-wrap md:justify-start md:gap-4">
+                        {isMounted ? (
+                            <>
+                                <CompanyFollowButton
+                                    companyId={company.id}
+                                    companySlug={company.slug}
+                                    variant="default"
+                                    size="lg"
+                                    className="w-full justify-center whitespace-nowrap rounded-full border-0 bg-[var(--brand)] px-3 text-sm font-bold text-white shadow-lg shadow-[var(--brand)]/20 transition-all hover:scale-105 hover:bg-[var(--brand-hover)] active:scale-95 sm:px-6 sm:text-base md:w-auto"
+                                />
+                                <CompanyMessageButton 
+                                    companyId={company.id} 
+                                    companyName={company.name}
+                                    variant="secondary"
+                                    size="lg"
+                                    className="w-full justify-center whitespace-nowrap rounded-full border-0 bg-[var(--muted)] px-3 text-sm font-bold text-[var(--foreground)] transition-all hover:scale-105 hover:bg-[var(--muted)]/80 active:scale-95 sm:px-6 sm:text-base md:w-auto"
+                                >
+                                    <MessageCircle className="mr-1.5 h-4 w-4 sm:mr-2 sm:h-5 sm:w-5" /> Nhắn tin / Liên hệ
+                                </CompanyMessageButton>
+                            </>
+                        ) : (
+                            <>
+                                <div className="h-11 w-full rounded-full bg-[var(--muted)]/70" />
+                                <div className="h-11 w-full rounded-full bg-[var(--muted)]/70" />
+                            </>
+                        )}
                      </div>
                   </div>
                 </div>

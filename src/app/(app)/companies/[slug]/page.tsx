@@ -1,15 +1,11 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Users, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
 import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero";
 import CompanyProfileContent from "@/components/company/profile/CompanyProfileContent";
 import CompanyJobsTab from "@/components/company/CompanyJobsTab";
-import { formatDate } from "@/lib/utils";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -55,12 +51,15 @@ export default async function CompanyPage({ params, searchParams }: Props) {
 
   const { tab: searchTab } = await searchParams;
   const tab = searchTab || "overview";
+  const isOverview = tab === "overview";
+  const isActivity = tab === "activity";
+  const isJobs = tab === "jobs";
 
   // Data fetching based on tab to optimize performance
   // Activity Feed
   let posts = [];
   let postsPagination = null;
-  if (tab === "activity") {
+  if (isActivity) {
     try {
         const res = await fetch(
             `${API_BASE_URL}/api/posts?companyId=${company.id}&page=1&limit=10`,
@@ -78,7 +77,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
 
   // Jobs
   let jobs = [];
-  if (tab === "jobs") {
+  if (isJobs) {
     try {
         const res = await fetch(
             `${API_BASE_URL}/api/jobs?companyId=${company.id}&page=1&limit=20&isActive=true`,
@@ -92,12 +91,6 @@ export default async function CompanyPage({ params, searchParams }: Props) {
     }
   }
 
-  // Members (People)
-  let members = [];
-  if (tab === "people") {
-      members = company.members || [];
-  }
-
   return (
     <div className="min-h-screen bg-[var(--background)] font-sans selection:bg-[var(--brand-light)] selection:text-[var(--brand-dark)] pb-20">
       
@@ -105,119 +98,75 @@ export default async function CompanyPage({ params, searchParams }: Props) {
       <CompanyProfileHero company={company} />
 
       {/* Main Content & Tabs */}
-      <div className="max-w-7xl mx-auto px-6">
-        <Tabs defaultValue={tab} className="w-full">
-            <div className="flex flex-col md:flex-row items-center justify-between mb-12 border-b border-[var(--border)]">
-                <TabsList className="bg-transparent h-auto p-0 gap-8 w-full md:w-auto overflow-x-auto flex-nowrap justify-start">
-                    <Link href={`/companies/${company.slug}?tab=overview`} scroll={false}>
-                        <TabsTrigger 
-                            value="overview" 
-                            className="data-[state=active]:text-[var(--brand)] data-[state=active]:border-b-4 data-[state=active]:border-[var(--brand)] data-[state=active]:bg-transparent text-[var(--muted-foreground)] font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-[var(--foreground)] shadow-none"
-                        >
-                            Hồ sơ công ty
-                        </TabsTrigger>
-                    </Link>
-                    <Link href={`/companies/${company.slug}?tab=activity`} scroll={false}>
-                        <TabsTrigger 
-                            value="activity" 
-                            className="data-[state=active]:text-[var(--brand)] data-[state=active]:border-b-4 data-[state=active]:border-[var(--brand)] data-[state=active]:bg-transparent text-[var(--muted-foreground)] font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-[var(--foreground)] shadow-none"
-                        >
-                            Hoạt động
-                        </TabsTrigger>
-                    </Link>
-                    <Link href={`/companies/${company.slug}?tab=jobs`} scroll={false}>
-                        <TabsTrigger 
-                            value="jobs" 
-                            className="data-[state=active]:text-[var(--brand)] data-[state=active]:border-b-4 data-[state=active]:border-[var(--brand)] data-[state=active]:bg-transparent text-[var(--muted-foreground)] font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-[var(--foreground)] shadow-none"
-                        >
-                            Tuyển dụng
-                        </TabsTrigger>
-                    </Link>
-                    {/* <Link href={`/companies/${company.slug}?tab=people`} scroll={false}>
-                        <TabsTrigger 
-                            value="people" 
-                            className="data-[state=active]:text-blue-600 data-[state=active]:border-b-4 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-slate-500 font-bold text-lg px-2 py-4 rounded-none transition-all hover:text-slate-900 shadow-none"
-                        >
-                            Quản trị viên
-                        </TabsTrigger>
-                    </Link> */}
-                </TabsList>
-                
-                {/* Right side actions (optional) */}
-                <div className="hidden md:flex items-center gap-3">
-                    {/* Could add Share button or similar here */}
+      <div className="mx-auto max-w-7xl -mx-4 px-2 sm:mx-auto sm:px-6">
+        <div className="-mx-2 sticky top-[6.5rem] z-20 mb-5 rounded-xl border border-[var(--border)] bg-[var(--card)]/95 p-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/80 sm:mx-0 sm:mb-8 sm:p-2">
+          <nav className="flex w-full items-center gap-1 overflow-x-auto sm:gap-2" aria-label="Điều hướng hồ sơ công ty">
+            <Link
+              href={`/companies/${company.slug}?tab=overview`}
+              scroll={false}
+              className={`inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-all ${
+                isOverview
+                  ? "bg-[var(--brand)]/10 text-[var(--brand)]"
+                  : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              Hồ sơ
+            </Link>
+            <Link
+              href={`/companies/${company.slug}?tab=activity`}
+              scroll={false}
+              className={`inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-all ${
+                isActivity
+                  ? "bg-[var(--brand)]/10 text-[var(--brand)]"
+                  : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              Hoạt động
+            </Link>
+            <Link
+              href={`/companies/${company.slug}?tab=jobs`}
+              scroll={false}
+              className={`inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-all ${
+                isJobs
+                  ? "bg-[var(--brand)]/10 text-[var(--brand)]"
+                  : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              Tuyển dụng
+            </Link>
+          </nav>
+          {/* <p className="px-1 pt-1 text-[11px] text-[var(--muted-foreground)] md:hidden">Vuốt ngang để xem thêm mục</p> */}
+        </div>
+
+        {isOverview && <CompanyProfileContent company={company} />}
+
+        {isActivity && (
+          <div className="mx-auto max-w-3xl">
+            {posts.length > 0 ? (
+              <CompanyActivityFeed
+                posts={posts}
+                companyId={company.id}
+                totalPages={postsPagination?.totalPages}
+              />
+            ) : (
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] py-14 text-center shadow-sm sm:py-20">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--muted)] text-[var(--muted-foreground)]">
+                  <MessageCircle className="h-8 w-8" />
                 </div>
-            </div>
+                <h3 className="mb-2 text-xl font-bold text-[var(--foreground)]">Chưa có hoạt động nào</h3>
+                <p className="text-[var(--muted-foreground)]">Công ty chưa đăng tải bài viết nào gần đây.</p>
+              </div>
+            )}
+          </div>
+        )}
 
-            {/* TAB: OVERVIEW (PROFILE) */}
-            <TabsContent value="overview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <CompanyProfileContent company={company} />
-            </TabsContent>
-
-            {/* TAB: ACTIVITY */}
-            <TabsContent value="activity" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="max-w-3xl mx-auto">
-                    {posts.length > 0 ? (
-                        <CompanyActivityFeed 
-                            posts={posts} 
-                            companyId={company.id} 
-                            totalPages={postsPagination?.totalPages} 
-                        />
-                    ) : (
-                        <div className="text-center py-20 bg-[var(--card)] rounded-3xl border border-[var(--border)] shadow-sm">
-                            <div className="w-16 h-16 bg-[var(--muted)] rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--muted-foreground)]">
-                                <MessageCircle className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-xl font-bold text-[var(--foreground)] mb-2">Chưa có hoạt động nào</h3>
-                            <p className="text-[var(--muted-foreground)]">Công ty chưa đăng tải bài viết nào gần đây.</p>
-                        </div>
-                    )}
-                </div>
-            </TabsContent>
-
-            {/* TAB: JOBS */}
-            <TabsContent value="jobs" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <CompanyJobsTab 
-                    jobs={jobs} 
-                    companyName={company.name}
-                    companyLogoUrl={company.logoUrl}
-                />
-            </TabsContent>
-
-            {/* TAB: PEOPLE */}
-            <TabsContent value="people" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {members.length > 0 ? (
-                        members.map((member: any) => (
-                            <div key={member.id} className="bg-[var(--card)] p-6 rounded-2xl shadow-sm border border-[var(--border)] flex items-center gap-4">
-                                <div className="w-16 h-16 relative rounded-full overflow-hidden bg-[var(--muted)] border border-[var(--border)] flex-shrink-0">
-                                    {member.user.avatar ? (
-                                        <Image src={member.user.avatar} alt={member.user.name || "Member"} fill sizes="64px" className="object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-[var(--muted-foreground)] font-bold text-xl">
-                                            {(member.user.name || member.user.email).charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-[var(--foreground)]">{member.user.name || "Thành viên ẩn danh"}</h4>
-                                    <p className="text-sm text-[var(--muted-foreground)] mb-1">{member.role === 'OWNER' ? 'Founder / Owner' : member.role}</p>
-                                    <p className="text-xs text-[var(--muted-foreground)]/70 truncate max-w-[180px]">{member.user.email}</p>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="col-span-full text-center py-20 bg-[var(--card)] rounded-3xl border border-[var(--border)] shadow-sm">
-                             <div className="w-16 h-16 bg-[var(--muted)] rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--muted-foreground)]">
-                                <Users className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-xl font-bold text-[var(--foreground)] mb-2">Chưa có thành viên công khai</h3>
-                            <p className="text-[var(--muted-foreground)]">Danh sách thành viên đang được cập nhật.</p>
-                        </div>
-                    )}
-                 </div>
-            </TabsContent>
-        </Tabs>
+        {isJobs && (
+          <CompanyJobsTab
+            jobs={jobs}
+            companyName={company.name}
+            companyLogoUrl={company.logoUrl}
+          />
+        )}
       </div>
     </div>
   );

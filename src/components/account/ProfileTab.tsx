@@ -35,7 +35,7 @@ export default function ProfileTab() {
   if (isError || !data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Hồ sơ ứng tuyển</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Hồ sơ ứng tuyển</h1>
         <EmptyState
           title="Không tải được hồ sơ"
           subtitle="Vui lòng thử lại hoặc liên hệ đội hỗ trợ nếu lỗi tiếp diễn."
@@ -48,12 +48,12 @@ export default function ProfileTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Hồ sơ ứng tuyển</h1>
-          <p className="text-sm text-slate-500 mt-1">Quản lý thông tin hồ sơ và CV của bạn</p>
+          <h1 className="text-xl font-bold sm:text-2xl">Hồ sơ ứng tuyển</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">Quản lý thông tin hồ sơ và CV của bạn</p>
         </div>
-        <Button variant="outline" asChild>
+        <Button variant="outline" asChild className="w-full sm:w-auto">
           <Link href={`/profile/${profileSlug}`} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="w-4 h-4 mr-2" />
             Xem trang hồ sơ công khai

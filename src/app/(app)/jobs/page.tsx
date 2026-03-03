@@ -529,7 +529,7 @@ function JobsPageContent() {
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold">Việc làm</h1>
+            <h1 className="text-xl font-semibold">Việc làm mới nhất</h1>
             {companyId ? (
               <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                 Đang lọc theo doanh nghiệp:

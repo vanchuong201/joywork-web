@@ -1,9 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, FileText, Briefcase, Users, UserRound, MessageSquareText, Pencil, Copy, Check } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  Briefcase,
+  Users,
+  UserRound,
+  MessageSquareText,
+  Pencil,
+  Copy,
+  Check,
+  ChevronRight,
+} from "lucide-react";
 import CompanyProfileContent from "./profile/CompanyProfileContent";
 import ManageCompanyPageContent from "./ManageCompanyPageContent";
 import { Company } from "@/types/company";
@@ -39,11 +50,33 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
   const [newSlug, setNewSlug] = useState(company.slug || "");
   const [copied, setCopied] = useState(false);
   const [profileUrl, setProfileUrl] = useState(`/companies/${company.slug}`);
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+  const [showTabsScrollHint, setShowTabsScrollHint] = useState(false);
 
   // Set full URL after component mounts to avoid hydration mismatch
   useEffect(() => {
     setProfileUrl(`${window.location.origin}/companies/${company.slug}`);
   }, [company.slug]);
+
+  useEffect(() => {
+    const el = tabsScrollRef.current;
+    if (!el) return;
+
+    const updateHint = () => {
+      const hasOverflow = el.scrollWidth > el.clientWidth + 1;
+      const nearEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 8;
+      setShowTabsScrollHint(hasOverflow && !nearEnd);
+    };
+
+    updateHint();
+    el.addEventListener("scroll", updateHint, { passive: true });
+    window.addEventListener("resize", updateHint);
+
+    return () => {
+      el.removeEventListener("scroll", updateHint);
+      window.removeEventListener("resize", updateHint);
+    };
+  }, []);
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -98,88 +131,99 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const tabItems = [
+    { value: "overview", label: "Tổng quan", mobileLabel: "Tổng quan", icon: LayoutDashboard },
+    { value: "activity", label: "Hoạt động", mobileLabel: "Hoạt động", icon: FileText },
+    { value: "jobs", label: "Việc làm", mobileLabel: "Việc làm", icon: Briefcase },
+    { value: "applications", label: "Ứng tuyển", mobileLabel: "Ứng tuyển", icon: Users },
+    { value: "members", label: "Thành viên", mobileLabel: "Thành viên", icon: UserRound },
+    { value: "tickets", label: "Trao đổi", mobileLabel: "Trao đổi", icon: MessageSquareText },
+  ];
+
+  const triggerClass = cn(
+    "data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand)]/10",
+    "inline-flex h-10 items-center gap-1.5 whitespace-nowrap px-3.5 py-0 text-[var(--muted-foreground)] font-semibold text-sm leading-none rounded-lg transition-colors",
+    "hover:text-[var(--foreground)] hover:bg-[var(--muted)] shadow-none"
+  );
+
   return (
     <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-      <div className="flex flex-col md:flex-row items-center justify-between mb-12 border-b border-[var(--border)] bg-[var(--card)]/50 backdrop-blur-sm sticky top-16 z-20 rounded-xl px-4 shadow-sm">
-        <TabsList className="bg-transparent h-auto p-0 gap-6 w-full md:w-auto overflow-x-auto flex-nowrap justify-start py-2">
-          <TabsTrigger
-            value="overview"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
+      <div className="-mx-2 sticky top-[6.5rem] z-20 mb-5 rounded-xl border border-[var(--border)] bg-[var(--card)]/95 p-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/80 sm:mx-0 sm:mb-8 sm:p-2">
+        <div className="relative">
+          <TabsList
+            ref={tabsScrollRef}
+            aria-label="Điều hướng trang quản trị doanh nghiệp"
+            className="flex h-auto w-full justify-start gap-2 overflow-x-auto border-0 bg-transparent p-0 shadow-none"
           >
-            <LayoutDashboard className="w-4 h-4" /> Tổng quan
-          </TabsTrigger>
-          <TabsTrigger
-            value="activity"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" /> Hoạt động
-          </TabsTrigger>
-          <TabsTrigger
-            value="jobs"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
-          >
-            <Briefcase className="w-4 h-4" /> Việc làm
-          </TabsTrigger>
-          <TabsTrigger
-            value="applications"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
-          >
-            <Users className="w-4 h-4" /> Ứng tuyển
-          </TabsTrigger>
-          <TabsTrigger
-            value="members"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
-          >
-            <UserRound className="w-4 h-4" /> Thành viên
-          </TabsTrigger>
-          <TabsTrigger
-            value="tickets"
-            className="data-[state=active]:text-[var(--brand)] data-[state=active]:bg-[var(--brand-light)] text-[var(--muted-foreground)] font-bold text-base px-4 py-3 rounded-lg transition-all hover:text-[var(--foreground)] shadow-none flex items-center gap-2"
-          >
-            <MessageSquareText className="w-4 h-4" /> Trao đổi
-          </TabsTrigger>
-        </TabsList>
+            {tabItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <TabsTrigger key={item.value} value={item.value} className={triggerClass}>
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span>{item.mobileLabel}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {showTabsScrollHint && (
+            <>
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--card)] to-transparent" />
+              <div className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 rounded-full border border-[var(--border)] bg-[var(--card)] p-0.5 text-[var(--muted-foreground)] shadow-sm">
+                <ChevronRight className="h-3 w-3" />
+              </div>
+            </>
+          )}
+        </div>
+
+        <p className="px-1 pt-1 text-[11px] text-[var(--muted-foreground)] md:hidden">Vuốt ngang để xem thêm tab quản trị</p>
       </div>
 
       {/* TAB: OVERVIEW (Editable Profile) */}
       <TabsContent value="overview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-        <div className="bg-[var(--brand-light)] border border-[var(--brand)]/30 rounded-lg p-4 mb-8">
-          <div className="flex items-center gap-3 text-[var(--brand-dark)] mb-3">
-            <div className="bg-[var(--brand)]/10 p-2 rounded-full">
-              <Pencil className="w-4 h-4 text-[var(--brand)]" />
+        <div className="mb-5 rounded-xl border border-[var(--brand)]/25 bg-[var(--brand)]/10 p-3 sm:mb-8 sm:p-4">
+          <div className="mb-3 flex items-start gap-3 text-[var(--brand)]">
+            <div className="rounded-full bg-[var(--brand)]/15 p-2">
+              <Pencil className="h-4 w-4" />
             </div>
-            <p className="text-sm font-medium">Bạn đang ở chế độ chỉnh sửa. Di chuột vào các mục để chỉnh sửa nội dung.</p>
+            <p className="text-sm font-medium">
+              Bạn đang ở chế độ chỉnh sửa. Chạm vào các khối nội dung để cập nhật thông tin doanh nghiệp.
+            </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap pl-11">
-            <span className="text-sm text-[var(--brand-dark)]">Link truy cập công khai dành cho ứng viên:</span>
-            <code className="text-sm font-mono bg-white/80 text-[var(--brand)] px-2 py-1 rounded border border-[var(--brand)]/30 font-semibold">
-              {profileUrl}
-            </code>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={copyProfileLink}
-              className="h-7 w-7 text-[var(--brand-dark)] hover:bg-[var(--brand)]/20 shrink-0"
-              title="Sao chép link"
-            >
-              {copied ? (
-                <Check className="w-4 h-4 text-green-600" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setNewSlug(company.slug || "");
-                setEditSlugOpen(true);
-              }}
-              className="h-7 w-7 text-[var(--brand-dark)] hover:bg-[var(--brand)]/20 shrink-0"
-              title="Sửa link"
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
+          <div className="flex flex-col gap-2 pl-0 sm:pl-11">
+            <span className="text-sm text-[var(--brand)]">Link truy cập công khai dành cho ứng viên:</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <code className="max-w-full overflow-x-auto rounded border border-[var(--brand)]/30 bg-[var(--card)] px-2 py-1 font-mono text-xs font-semibold text-[var(--brand)] sm:text-sm">
+                {profileUrl}
+              </code>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={copyProfileLink}
+                  className="h-8 w-8 shrink-0 text-[var(--brand)] hover:bg-[var(--brand)]/20"
+                  title="Sao chép link"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setNewSlug(company.slug || "");
+                    setEditSlugOpen(true);
+                  }}
+                  className="h-8 w-8 shrink-0 text-[var(--brand)] hover:bg-[var(--brand)]/20"
+                  title="Sửa link"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -199,7 +243,7 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
             <div className="space-y-2">
               <Label htmlFor="slug">Link profile mới</Label>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500 whitespace-nowrap">
+                <span className="whitespace-nowrap text-sm text-[var(--muted-foreground)]">
                   {profileUrl.split('/companies/')[0] || ''}/companies/
                 </span>
                 <Input
@@ -217,11 +261,11 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
                   maxLength={50}
                 />
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[var(--muted-foreground)]">
                 Chỉ sử dụng chữ thường, số và dấu gạch ngang. Tối thiểu 2 ký tự.
               </p>
               {newSlug && newSlug !== company.slug && (
-                <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                <div className="rounded border border-[var(--brand)]/20 bg-[var(--brand)]/10 p-2 text-xs text-[var(--brand)]">
                   Link mới: <code className="font-mono">{profileUrl.replace(company.slug, newSlug)}</code>
                 </div>
               )}

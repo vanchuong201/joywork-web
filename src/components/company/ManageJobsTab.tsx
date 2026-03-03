@@ -208,22 +208,22 @@ export default function ManageJobsTab({ company }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h3 className="text-xl font-bold text-slate-800">Quản lý tin tuyển dụng</h3>
-          <p className="text-sm text-slate-500 mt-1">
+          <h3 className="text-lg font-semibold text-[var(--foreground)] sm:text-xl">Quản lý tin tuyển dụng</h3>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Tổng cộng {totalJobs} tin tuyển dụng ({activeJobsCount} đang mở)
             {totalPages > 1 && ` • Trang ${currentPage}/${totalPages}`}
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 lg:w-auto">
           {/* Status Filter */}
-          <div className="flex items-center gap-2 border border-slate-200 rounded-lg p-1 bg-white">
+          <div className="flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--card)] p-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setStatusFilter("all")}
-              className={cn("h-8 px-3 text-xs", statusFilter === "all" && "bg-slate-100 font-medium")}
+              className={cn("h-8 px-3 text-xs", statusFilter === "all" && "bg-[var(--muted)] font-medium text-[var(--foreground)]")}
             >
               Tất cả
             </Button>
@@ -231,7 +231,7 @@ export default function ManageJobsTab({ company }: Props) {
               variant="ghost"
               size="sm"
               onClick={() => setStatusFilter("active")}
-              className={cn("h-8 px-3 text-xs", statusFilter === "active" && "bg-green-50 text-green-700 font-medium")}
+              className={cn("h-8 px-3 text-xs", statusFilter === "active" && "bg-emerald-50 text-emerald-700 font-medium")}
             >
               Đang mở
             </Button>
@@ -239,18 +239,21 @@ export default function ManageJobsTab({ company }: Props) {
               variant="ghost"
               size="sm"
               onClick={() => setStatusFilter("inactive")}
-              className={cn("h-8 px-3 text-xs", statusFilter === "inactive" && "bg-slate-100 text-slate-600 font-medium")}
+              className={cn(
+                "h-8 px-3 text-xs",
+                statusFilter === "inactive" && "bg-[var(--muted)] text-[var(--muted-foreground)] font-medium"
+              )}
             >
               Đã đóng
             </Button>
           </div>
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-2 border border-slate-200 rounded-lg p-1 bg-white">
+          <div className="flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--card)] p-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setViewMode("list")}
-              className={cn("h-8 px-3", viewMode === "list" && "bg-slate-100")}
+              className={cn("h-8 px-3", viewMode === "list" && "bg-[var(--muted)]")}
             >
               <List className="w-4 h-4" />
             </Button>
@@ -258,12 +261,12 @@ export default function ManageJobsTab({ company }: Props) {
               variant="ghost"
               size="sm"
               onClick={() => setViewMode("grid")}
-              className={cn("h-8 px-3", viewMode === "grid" && "bg-slate-100")}
+              className={cn("h-8 px-3", viewMode === "grid" && "bg-[var(--muted)]")}
             >
               <Grid className="w-4 h-4" />
             </Button>
           </div>
-          <Button onClick={() => setCreateJobOpen(true)}>
+          <Button onClick={() => setCreateJobOpen(true)} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" /> Đăng tin mới
           </Button>
         </div>
@@ -273,13 +276,13 @@ export default function ManageJobsTab({ company }: Props) {
       {jobsQuery.isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, idx) => (
-            <div key={idx} className="h-32 bg-white rounded-xl border border-slate-200 animate-pulse" />
+            <div key={idx} className="h-32 animate-pulse rounded-xl border border-[var(--border)] bg-[var(--card)]" />
           ))}
         </div>
       ) : jobs.length === 0 ? (
-        <Card className="border-2 border-dashed border-slate-200">
-          <div className="text-center py-12 text-slate-500">
-            <p className="mb-4 text-lg font-medium">Chưa có tin tuyển dụng nào</p>
+        <Card className="border-2 border-dashed border-[var(--border)] bg-[var(--card)]">
+          <div className="py-12 text-center text-[var(--muted-foreground)]">
+            <p className="mb-4 text-lg font-medium text-[var(--foreground)]">Chưa có tin tuyển dụng nào</p>
             <Button variant="secondary" onClick={() => setCreateJobOpen(true)}>
               Đăng tin ngay
             </Button>
@@ -288,14 +291,14 @@ export default function ManageJobsTab({ company }: Props) {
       ) : viewMode === "list" ? (
         <div className="space-y-4">
           {jobs.map((job: any) => (
-            <Card key={job.id} className="hover:border-[var(--brand)]/50 transition-colors">
-              <div className="p-6">
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <Card key={job.id} className="border-[var(--border)] bg-[var(--card)] transition-colors hover:border-[var(--brand)]/50">
+              <div className="p-4 sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex-1 space-y-3 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-lg mb-2 text-slate-900 truncate">{job.title}</h4>
-                        <div className="flex flex-wrap gap-3 text-sm text-slate-500 items-center">
+                        <h4 className="mb-2 truncate text-base font-semibold text-[var(--foreground)] sm:text-lg">{job.title}</h4>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--muted-foreground)]">
                           <span>Đăng ngày: {formatDate(job.createdAt)}</span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3 h-3" /> {job._count?.applications ?? 0} ứng viên
@@ -303,12 +306,12 @@ export default function ManageJobsTab({ company }: Props) {
                         </div>
                       </div>
                       {/* Status Toggle - Improved UI */}
-                      <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-4 py-2 border border-slate-200">
+                      <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--muted)]/60 px-3 py-2">
                         <div className="flex flex-col items-end gap-1">
-                          <span className={cn("text-xs font-medium", job.isActive ? "text-green-700" : "text-slate-500")}>
+                          <span className={cn("text-xs font-medium", job.isActive ? "text-emerald-700" : "text-[var(--muted-foreground)]")}>
                             {job.isActive ? "Đang tuyển" : "Đã đóng"}
                           </span>
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[10px] text-[var(--muted-foreground)]">
                             {job.isActive ? "Ứng viên có thể xem và ứng tuyển" : "Đã ẩn khỏi tìm kiếm"}
                           </span>
                         </div>
@@ -321,12 +324,12 @@ export default function ManageJobsTab({ company }: Props) {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewApplicants(job.id)}
-                      className="flex items-center gap-2"
+                      className="flex flex-1 items-center gap-2 lg:flex-none"
                     >
                       <Users className="w-4 h-4" />
                       Ứng viên ({job._count?.applications ?? 0})
@@ -347,9 +350,9 @@ export default function ManageJobsTab({ company }: Props) {
                             className="fixed inset-0 z-10"
                             onClick={() => setOpenMenuId(null)}
                           />
-                          <div className="absolute right-0 top-10 z-20 min-w-48 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+                          <div className="absolute right-0 top-10 z-20 min-w-48 rounded-md border border-[var(--border)] bg-[var(--card)] p-1 shadow-lg">
                             <button
-                              className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                              className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
                               onClick={() => {
                                 window.open(`/jobs/${job.id}`, "_blank", "noopener,noreferrer");
                                 setOpenMenuId(null);
@@ -359,7 +362,7 @@ export default function ManageJobsTab({ company }: Props) {
                               Xem công khai
                             </button>
                             <button
-                              className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                              className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
                               onClick={() => {
                                 setEditingJob(job);
                                 setOpenMenuId(null);
@@ -381,12 +384,12 @@ export default function ManageJobsTab({ company }: Props) {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {jobs.map((job: any) => (
-            <Card key={job.id} className="hover:border-[var(--brand)]/50 transition-colors">
-              <div className="p-6 space-y-4">
+            <Card key={job.id} className="border-[var(--border)] bg-[var(--card)] transition-colors hover:border-[var(--brand)]/50">
+              <div className="space-y-4 p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-bold text-lg text-slate-900 line-clamp-2 flex-1">{job.title}</h4>
+                  <h4 className="line-clamp-2 flex-1 text-base font-semibold text-[var(--foreground)] sm:text-lg">{job.title}</h4>
                 </div>
-                <div className="space-y-2 text-sm text-slate-500">
+                <div className="space-y-2 text-sm text-[var(--muted-foreground)]">
                   <div className="flex items-center gap-1">
                     <Users className="w-3 h-3" />
                     <span>{job._count?.applications ?? 0} ứng viên</span>
@@ -394,13 +397,13 @@ export default function ManageJobsTab({ company }: Props) {
                   <div>Đăng ngày: {formatDate(job.createdAt)}</div>
                 </div>
                 {/* Status Toggle - Improved UI */}
-                <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                <div className="rounded-lg border border-[var(--border)] bg-[var(--muted)]/60 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex flex-col gap-1">
-                      <span className={cn("text-xs font-medium", job.isActive ? "text-green-700" : "text-slate-500")}>
+                      <span className={cn("text-xs font-medium", job.isActive ? "text-emerald-700" : "text-[var(--muted-foreground)]")}>
                         {job.isActive ? "Đang tuyển" : "Đã đóng"}
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-[var(--muted-foreground)]">
                         {job.isActive ? "Ứng viên có thể xem và ứng tuyển" : "Đã ẩn khỏi tìm kiếm"}
                       </span>
                     </div>
@@ -411,7 +414,7 @@ export default function ManageJobsTab({ company }: Props) {
                     />
                   </div>
                 </div>
-                <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -438,9 +441,9 @@ export default function ManageJobsTab({ company }: Props) {
                           className="fixed inset-0 z-10"
                           onClick={() => setOpenMenuId(null)}
                         />
-                        <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+                        <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-[var(--border)] bg-[var(--card)] p-1 shadow-lg">
                           <button
-                            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
                             onClick={() => {
                               window.open(`/jobs/${job.id}`, "_blank", "noopener,noreferrer");
                               setOpenMenuId(null);
@@ -450,7 +453,7 @@ export default function ManageJobsTab({ company }: Props) {
                             Xem công khai
                           </button>
                           <button
-                            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
                             onClick={() => {
                               setEditingJob(job);
                               setOpenMenuId(null);
@@ -472,11 +475,11 @@ export default function ManageJobsTab({ company }: Props) {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-          <div className="text-sm text-slate-500">
+        <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-[var(--muted-foreground)]">
             Hiển thị {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, totalJobs)} trong tổng số {totalJobs} tin
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"

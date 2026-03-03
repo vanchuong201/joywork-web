@@ -34,21 +34,21 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
-          <h3 className="text-xl font-bold text-[var(--foreground)]">Tin tuyển dụng</h3>
+          <h3 className="text-lg font-bold text-[var(--foreground)] sm:text-xl">Tin tuyển dụng</h3>
           <p className="text-sm text-[var(--muted-foreground)] mt-1">Tổng cộng {jobs.length} vị trí đang tuyển</p>
         </div>
         {/* View Mode Toggle - Only for public view */}
         {jobs.length > 0 && (
-          <div className="flex items-center gap-2 border border-[var(--border)] rounded-lg p-1 bg-[var(--card)]">
+          <div className="flex w-full items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--card)] p-1 sm:w-auto sm:gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setViewMode("list")}
-              className={cn("h-8 px-3", viewMode === "list" && "bg-[var(--muted)]")}
+              className={cn("h-8 flex-1 px-3 sm:flex-none", viewMode === "list" && "bg-[var(--muted)]")}
             >
               <List className="w-4 h-4" />
             </Button>
@@ -56,7 +56,7 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
               variant="ghost"
               size="sm"
               onClick={() => setViewMode("grid")}
-              className={cn("h-8 px-3", viewMode === "grid" && "bg-[var(--muted)]")}
+              className={cn("h-8 flex-1 px-3 sm:flex-none", viewMode === "grid" && "bg-[var(--muted)]")}
             >
               <Grid className="w-4 h-4" />
             </Button>
@@ -69,13 +69,13 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
         <div className="space-y-4">
           {jobs.map((job: any) => (
             <Link href={`/jobs/${job.id}`} target="_blank" key={job.id} className="block group">
-              <Card className="hover:border-[var(--brand)]/50 transition-colors">
-                <div className="p-6">
+              <Card className="transition-colors hover:border-[var(--brand)]/50">
+                <div className="p-4 sm:p-6">
                   <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     <div className="flex-1 space-y-3 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-lg mb-2 text-[var(--foreground)] group-hover:text-[var(--brand)] transition-colors truncate">
+                          <h4 className="mb-2 truncate text-base font-bold text-[var(--foreground)] transition-colors group-hover:text-[var(--brand)] sm:text-lg">
                             {job.title}
                           </h4>
                           <div className="flex flex-wrap gap-3 text-sm text-[var(--muted-foreground)] items-center">
@@ -121,10 +121,10 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {jobs.map((job: any) => (
             <Link href={`/jobs/${job.id}`} target="_blank" key={job.id} className="block group">
-              <Card className="hover:border-[var(--brand)]/50 transition-colors h-full">
-                <div className="p-6 space-y-4">
+              <Card className="h-full transition-colors hover:border-[var(--brand)]/50">
+                <div className="space-y-4 p-4 sm:p-6">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-bold text-lg text-[var(--foreground)] group-hover:text-[var(--brand)] transition-colors line-clamp-2 flex-1">
+                    <h4 className="line-clamp-2 flex-1 text-base font-bold text-[var(--foreground)] transition-colors group-hover:text-[var(--brand)] sm:text-lg">
                       {job.title}
                     </h4>
                     {companyLogoUrl && (
@@ -148,14 +148,14 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
                     </div>
                   </div>
                   {job.tags && job.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                    <div className="flex flex-wrap gap-2 border-t border-[var(--border)] pt-2">
                       {job.tags.slice(0, 3).map((tag: string) => (
-                        <Badge key={tag} className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-0 font-normal text-xs">
+                        <Badge key={tag} className="border-0 bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]/80 font-normal text-xs">
                           {tag}
                         </Badge>
                       ))}
                       {job.tags.length > 3 && (
-                        <Badge className="bg-slate-50 text-slate-500 border-0 font-normal text-xs">
+                        <Badge className="border-0 bg-[var(--muted)]/60 text-[var(--muted-foreground)] font-normal text-xs">
                           +{job.tags.length - 3}
                         </Badge>
                       )}

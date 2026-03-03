@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, BookmarkCheck, BookmarkPlus, MoreVertical, Pencil, Trash2, Briefcase, X, Check, MessageCircle, Play, Maximize2, ShieldCheck } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
 import { toast } from "sonner";
@@ -23,6 +23,7 @@ import { uploadCompanyPostImage } from "@/lib/uploads";
 import { createPortal } from "react-dom";
 import HashtagInput from "@/components/shared/HashtagInput";
 import CreateTicketModal from "@/components/tickets/CreateTicketModal";
+import useInView from "@/hooks/useInView";
 
 // Video Modal for fullscreen video viewing
 function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => void }) {
@@ -75,79 +76,6 @@ function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => vo
   );
 }
 
-type LikeButtonProps = {
-  liked: boolean;
-  likes: number;
-  onToggle?: () => void;
-};
-
-function LikeButton({ liked, likes, onToggle }: LikeButtonProps) {
-  const [isLiked, setIsLiked] = useState(liked);
-  const [count, setCount] = useState(likes);
-  const [isBusy, setBusy] = useState(false);
-  const heartRef = useRef<HTMLSpanElement | null>(null);
-  const prevLiked = useRef(liked);
-  const prevLikes = useRef(likes);
-
-  useEffect(() => {
-    if (prevLiked.current !== liked || prevLikes.current !== likes) {
-      prevLiked.current = liked;
-      prevLikes.current = likes;
-      setIsLiked(liked);
-      setCount(likes);
-    }
-  }, [liked, likes]);
-
-  useEffect(() => {
-    if (!isLiked) return;
-    const heartEl = heartRef.current;
-    if (!heartEl) return;
-    heartEl.classList.remove("animate-like-burst");
-    void heartEl.offsetWidth;
-    heartEl.classList.add("animate-like-burst");
-  }, [isLiked]);
-
-  const handleToggle = useCallback(() => {
-    if (!onToggle || isBusy) return;
-    const nextLiked = !isLiked;
-    setBusy(true);
-    setIsLiked(nextLiked);
-    setCount((prev) => Math.max(0, prev + (nextLiked ? 1 : -1)));
-    Promise.resolve(onToggle())
-      .catch(() => {
-        setIsLiked(isLiked);
-        setCount((prev) => Math.max(0, prev + (isLiked ? 1 : -1)));
-      })
-      .finally(() => setBusy(false));
-  }, [isLiked, isBusy, onToggle]);
-
-  const buttonLabel = isLiked ? "Đã thích" : "Thích";
-  const countLabel = count > 0 ? count.toLocaleString("vi-VN") : "";
-
-  return (
-    <Button
-      size="sm"
-      variant={isLiked ? "default" : "outline"}
-      className={isLiked ? "border-[#ff9fb1] bg-[#fff1f4] text-[#ff2d55]" : undefined}
-      onClick={handleToggle}
-      disabled={isBusy}
-      aria-pressed={isLiked}
-      aria-live="polite"
-    >
-      <span
-        ref={heartRef}
-        className={`mr-1 inline-flex h-5 w-5 items-center justify-center rounded-full transition-transform duration-200 ease-out ${
-          isLiked ? "text-[#ff2d55]" : "text-[#6b7280]"
-        }`}
-      >
-        <Heart className="h-4 w-4" fill={isLiked ? "#ff2d55" : "none"} />
-      </span>
-      {buttonLabel}
-      <span className="ml-1 font-medium tabular-nums">{countLabel}</span>
-    </Button>
-  );
-}
-
 type Company = { id: string; name: string; slug: string; slogan?: string; logoUrl?: string };
 export type PostCardData = {
   id: string;
@@ -173,7 +101,7 @@ export type PostCardData = {
   statementSnapshot?: { title: string; description?: string | null; percentYes: number; totalRecipients: number; yesCount: number; respondedCount: number; snapshotAt: string } | null;
 };
 
-function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) {
+const MediaGrid = memo(function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) {
   const [fullscreenVideoUrl, setFullscreenVideoUrl] = useState<string | null>(null);
   const hiddenCount = Math.max(0, images.length - 4);
   const primary = hiddenCount > 0 ? images.slice(0, 4) : images.slice(0, images.length);
@@ -294,7 +222,7 @@ function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) 
       )}
     </>
   );
-}
+});
 
 function stripHtml(input: string) {
   return input.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -326,7 +254,7 @@ type StatementCardProps = {
   statementAt?: string | null;
 };
 
-function StatementCard({
+const StatementCard = memo(function StatementCard({
   title,
   percentYes,
   totalRecipients,
@@ -339,38 +267,47 @@ function StatementCard({
   const hasVerification = total > 0;
   const safeTitle = title?.trim() || "Tuyên bố công ty";
   const verifiedLabel = verifiedAt ? format(new Date(verifiedAt), "HH:mm dd/MM/yyyy") : null;
+  const verifiedLabelMobile = verifiedAt ? format(new Date(verifiedAt), "HH:mm dd/MM") : null;
   const statementLabel = statementAt ? format(new Date(statementAt), "HH:mm dd/MM/yyyy") : null;
+  const statementLabelMobile = statementAt ? format(new Date(statementAt), "HH:mm dd/MM") : null;
   return (
-    <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/50 p-4 relative overflow-hidden">
+    <div className="relative mt-3 overflow-hidden rounded-xl border border-blue-200 bg-blue-50/50 p-3 sm:p-4">
       {/* Background decoration */}
-      <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-        <ShieldCheck size={120} />
+      <div className="pointer-events-none absolute right-0 top-0 p-4 opacity-[0.03] sm:p-8">
+        <ShieldCheck className="h-16 w-16 sm:h-[120px] sm:w-[120px]" />
       </div>
       
       <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs font-medium px-2 py-0.5 flex items-center gap-1">
+        <div className="mb-2 flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+          <Badge className="flex max-w-full items-center gap-1 border-blue-200 bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100">
             <ShieldCheck className="w-3 h-3" />
-            Tuyên bố công ty
+            <span className="sm:hidden">Tuyên bố</span>
+            <span className="hidden sm:inline">Tuyên bố công ty</span>
           </Badge>
           {hasVerification ? (
             verifiedLabel ? (
-              <span className="text-xs text-slate-500">Được xác thực lúc {verifiedLabel}</span>
+              <span className="text-[11px] leading-tight text-slate-500 sm:text-xs">
+                <span className="sm:hidden">Xác thực {verifiedLabelMobile}</span>
+                <span className="hidden sm:inline">Được xác thực lúc {verifiedLabel}</span>
+              </span>
             ) : null
           ) : statementLabel ? (
-            <span className="text-xs text-slate-500">Tuyên bố lúc {statementLabel}</span>
+            <span className="text-[11px] leading-tight text-slate-500 sm:text-xs">
+              <span className="sm:hidden">Tuyên bố {statementLabelMobile}</span>
+              <span className="hidden sm:inline">Tuyên bố lúc {statementLabel}</span>
+            </span>
           ) : null}
         </div>
 
-        <h3 className="text-lg font-bold text-slate-900 mb-2 leading-tight">
+        <h3 className="mb-2 line-clamp-2 break-words text-base font-bold leading-tight text-slate-900 sm:text-lg">
           {safeTitle}
         </h3>
 
         {hasVerification && (
-          <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
-            <div className="flex items-center justify-between mb-2 text-sm">
+          <div className="rounded-lg border border-blue-100 bg-white p-3 shadow-sm">
+            <div className="mb-2 flex items-center justify-between gap-2 text-xs sm:text-sm">
               <span className="font-medium text-slate-700">Mức độ đồng thuận</span>
-              <span className="font-bold text-blue-700">
+              <span className="shrink-0 font-bold text-blue-700">
                 {Math.round(percent)}% ({yesCount ?? 0}/{total})
               </span>
             </div>
@@ -380,7 +317,7 @@ function StatementCard({
                 style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
               />
             </div>
-            <div className="text-xs text-slate-500">
+            <div className="text-[11px] text-slate-500 sm:text-xs">
               {yesCount ?? 0}/{total} người đồng ý với tuyên bố
             </div>
           </div>
@@ -388,12 +325,95 @@ function StatementCard({
       </div>
     </div>
   );
-}
+});
 
-export default function PostCard({ post, onLike }: { post: PostCardData; onLike?: (p: PostCardData) => void }) {
+const PostContent = memo(function PostContent({ content }: { content: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [showReadMore, setShowReadMore] = useState(false);
+  const contentRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (!contentRef.current || expanded) return;
+    const el = contentRef.current;
+    const checkOverflow = () => {
+      const hasOverflow = el.scrollHeight > el.clientHeight + 4;
+      setShowReadMore(hasOverflow);
+    };
+    checkOverflow();
+    const onResize = () => checkOverflow();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [expanded, content]);
+
+  return (
+    <>
+      <div className="relative mt-3">
+        <p
+          ref={contentRef}
+          className={cn(
+            "whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]",
+            expanded ? "" : "line-clamp-4 max-h-24 overflow-hidden",
+          )}
+        >
+          {content}
+        </p>
+        {!expanded && showReadMore ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[var(--card)] to-transparent" />
+        ) : null}
+      </div>
+      {showReadMore ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1 text-xs font-medium text-[var(--brand)] hover:underline"
+        >
+          {expanded ? "Thu gọn" : "Xem thêm"}
+        </button>
+      ) : null}
+    </>
+  );
+});
+
+const LazyMediaBlock = memo(function LazyMediaBlock({
+  images,
+  coverUrl,
+}: {
+  images?: NonNullable<PostCardData["images"]> | null;
+  coverUrl?: string | null;
+}) {
+  const inViewOptions = useMemo(() => ({ rootMargin: "300px" }), []);
+  const { ref, inView } = useInView<HTMLDivElement>(inViewOptions);
+
+  if (!images?.length && !coverUrl) return null;
+
+  if (!inView) {
+    return <div ref={ref} className="mt-3 aspect-video w-full rounded-md bg-[var(--muted)]/60 animate-pulse" />;
+  }
+
+  return (
+    <div ref={ref}>
+      {images?.length ? (
+        <MediaGrid images={images} />
+      ) : coverUrl ? (
+        <PhotoProvider maskOpacity={0.8}>
+          <PhotoView src={coverUrl}>
+            <div className="mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coverUrl}
+                alt="cover"
+                className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+              />
+            </div>
+          </PhotoView>
+        </PhotoProvider>
+      ) : null}
+    </div>
+  );
+});
+
+const PostCard = memo(function PostCard({ post }: { post: PostCardData }) {
   const hasImages = (post.images?.length ?? 0) > 0;
-  const likeCount = post.likesCount ?? (post as any)?._count?.likes ?? 0;
-  const shareCount = post.sharesCount ?? (post as any)?._count?.shares ?? 0;
   const isStatementPost = (post.type ?? "").toUpperCase() === "STATEMENT" || Boolean(post.statementId);
   const rawSnapshot = post.statementSnapshot && Object.keys(post.statementSnapshot).length > 0 ? post.statementSnapshot : null;
   const statementTitle =
@@ -430,7 +450,10 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
   }, [post.userReaction, post.reactions?.JOY, post.reactions?.TRUST, post.reactions?.SKEPTIC]);
   const [isEditing, setIsEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [isMobileLikeMode, setIsMobileLikeMode] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const likeAreaRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!menuRef.current) return;
@@ -441,12 +464,28 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
-  const [draftTitle, setDraftTitle] = useState(post.title ?? "");
-  const [draftContent, setDraftContent] = useState(post.content ?? "");
   useEffect(() => {
-    setDraftTitle(post.title ?? "");
-    setDraftContent(post.content ?? "");
-  }, [post.title, post.content]);
+    const media = window.matchMedia("(max-width: 640px)");
+    const apply = () => setIsMobileLikeMode(media.matches);
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+  useEffect(() => {
+    if (!showReactionPicker) return;
+    function onDocClick(e: MouseEvent | TouchEvent) {
+      if (!likeAreaRef.current) return;
+      if (!likeAreaRef.current.contains(e.target as Node)) {
+        setShowReactionPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("touchstart", onDocClick, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("touchstart", onDocClick);
+    };
+  }, [showReactionPicker]);
   const myRole = useMemo(() => memberships.find((m) => m.company.id === post.company.id)?.role, [memberships, post.company.id]);
   const isOwnerOrAdmin = myRole === "OWNER" || myRole === "ADMIN";
   const isMember = myRole === "MEMBER";
@@ -608,6 +647,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
         setMyReaction(prevType);
       },
       onSuccess: () => {
+        setShowReactionPicker(false);
         qc.invalidateQueries({ queryKey: ["feed"] });
         qc.invalidateQueries({ queryKey: ["company-posts"] });
         qc.invalidateQueries({ queryKey: ["company-posts-feed"] });
@@ -631,17 +671,6 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
     },
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Không thể cập nhật bài viết"),
   });
-  const handleEditSave = useCallback(() => {
-    if (!user) {
-      openPrompt("login");
-      return;
-    }
-    if (!canEdit) {
-      toast.error("Bạn không có quyền sửa bài viết này");
-      return;
-    }
-    updateMutation.mutate({ title: draftTitle, content: draftContent });
-  }, [user, canEdit, updateMutation, draftTitle, draftContent, openPrompt]);
   const deleteMutation = useMutation({
     mutationFn: async () => {
       await api.delete(`/api/posts/${post.id}`);
@@ -670,62 +699,6 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
     if (!ok) return;
     deleteMutation.mutate();
   }, [user, canEdit, deleteMutation, openPrompt]);
-  const footerInfo = useMemo(
-    () =>
-      [
-        likeCount > 0 ? `${likeCount.toLocaleString("vi-VN")} lượt thích` : null,
-        shareCount > 0 ? `${shareCount.toLocaleString("vi-VN")} lượt chia sẻ` : null,
-      ].filter(Boolean),
-    [likeCount, shareCount],
-  );
-
-  function PostContent({ content }: { content: string }) {
-    const [expanded, setExpanded] = useState(false);
-    const [showReadMore, setShowReadMore] = useState(false);
-    const contentRef = useRef<HTMLParagraphElement>(null);
-
-    useEffect(() => {
-      if (!contentRef.current || expanded) return;
-      const el = contentRef.current;
-      const checkOverflow = () => {
-        const hasOverflow = el.scrollHeight > el.clientHeight + 4;
-        setShowReadMore(hasOverflow);
-      };
-      checkOverflow();
-      const onResize = () => checkOverflow();
-      window.addEventListener("resize", onResize);
-      return () => window.removeEventListener("resize", onResize);
-    }, [expanded, content]);
-
-    return (
-      <>
-        <div className="relative mt-3">
-          <p
-            ref={contentRef}
-            className={cn(
-              "whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]",
-              expanded ? "" : "line-clamp-4 max-h-24 overflow-hidden",
-            )}
-          >
-            {content}
-          </p>
-          {!expanded && showReadMore ? (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[var(--card)] to-transparent" />
-          ) : null}
-        </div>
-        {showReadMore ? (
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="mt-1 text-xs font-medium text-[var(--brand)] hover:underline"
-          >
-            {expanded ? "Thu gọn" : "Xem thêm"}
-          </button>
-        ) : null}
-      </>
-    );
-  }
-
   return (
     <article className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-0 overflow-hidden">
       <div className="p-4">
@@ -749,7 +722,10 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                 slug={post.company.slug}
                 companyName={post.company.name}
               >
-                <Link className="font-medium hover:text-[var(--foreground)] text-[var(--foreground)]" href={`/companies/${post.company.slug}`}>
+                <Link
+                  className="max-w-[180px] truncate font-medium text-[var(--foreground)] hover:text-[var(--foreground)] sm:max-w-[280px]"
+                  href={`/companies/${post.company.slug}`}
+                >
                   {post.company.name}
                 </Link>
               </CompanyHoverCard>
@@ -759,12 +735,17 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                   companySlug={post.company.slug}
                   variant="link"
                   size="sm"
-                  className="text-[#2563eb] hover:text-[#1d4ed8] hover:underline p-0 h-auto font-normal text-sm"
+                  className={cn(
+                    "p-0 h-auto font-normal text-sm text-[#2563eb] hover:text-[#1d4ed8] hover:underline",
+                    isStatementPost && "hidden sm:inline-flex"
+                  )}
                 />
               )}
             </div>
-            <div className="text-xs flex items-center gap-2">
-              {post.company.slogan ? <span>{post.company.slogan}</span> : null}
+            <div className="flex min-w-0 items-center gap-2 text-xs">
+              {post.company.slogan ? (
+                <span className={cn("truncate", isStatementPost && "hidden sm:inline")}>{post.company.slogan}</span>
+              ) : null}
               {(() => {
                 const dateStr = (post.publishedAt ?? post.createdAt) ?? null;
                 if (!dateStr) return null;
@@ -772,7 +753,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                 const relative = formatDistanceToNow(dateObj, { addSuffix: true, locale: vi });
                 const exact = format(dateObj, "HH:mm dd/MM/yyyy");
                 return (
-                  <span title={exact}>
+                  <span className={cn("shrink-0", isStatementPost && "text-[11px] sm:text-xs")} title={exact}>
                     {relative}
                   </span>
                 );
@@ -834,9 +815,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             />
             
             {/* Media if any */}
-            {hasImages ? (
-              <MediaGrid images={post.images!} />
-            ) : null}
+            <LazyMediaBlock images={post.images} />
           </>
         ) : (
           <>
@@ -847,22 +826,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                 </Link>
               </h3>
             )} */}
-            {hasImages ? (
-              <MediaGrid images={post.images!} />
-            ) : post.coverUrl ? (
-              <PhotoProvider maskOpacity={0.8}>
-                <PhotoView src={post.coverUrl}>
-                  <div className="mt-3 aspect-video w-full overflow-hidden rounded-md bg-[var(--muted)] cursor-zoom-in">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={post.coverUrl}
-                      alt="cover"
-                      className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
-                    />
-                  </div>
-                </PhotoView>
-              </PhotoProvider>
-            ) : null}
+            <LazyMediaBlock images={post.images} coverUrl={post.coverUrl} />
             <PostContent content={post.content} />
           </>
         )}
@@ -920,16 +884,25 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       {/* Action buttons row - Facebook style */}
       <div className="flex items-center border-t border-[var(--border)]">
         {/* Thích button with hover reactions */}
-        <div className="relative flex-1 group/like">
+        <div className="relative flex-1 group/like" ref={likeAreaRef}>
           {/* Reaction popup */}
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible group-hover/like:opacity-100 group-hover/like:visible transition-all duration-200 z-50">
-            <div className="flex items-center gap-1 rounded-full bg-white shadow-lg border border-[var(--border)] p-1.5">
+          <div
+            className={cn(
+              "absolute bottom-full left-2 mb-2 z-50 transition-all duration-200 sm:left-1/2 sm:-translate-x-1/2",
+              isMobileLikeMode
+                ? showReactionPicker
+                  ? "visible opacity-100"
+                  : "invisible opacity-0 pointer-events-none"
+                : "invisible opacity-0 pointer-events-none group-hover/like:visible group-hover/like:opacity-100 group-hover/like:pointer-events-auto"
+            )}
+          >
+            <div className="flex max-w-[calc(100vw-2.5rem)] items-center gap-1 rounded-full border border-[var(--border)] bg-white p-1.5 shadow-lg">
               <button
                 type="button"
                 onClick={() => toggleReaction("TRUST")}
                 disabled={reactMutation.isPending}
                 className={cn(
-                  "flex flex-col items-center justify-center w-10 h-10 rounded-full transition-transform hover:scale-125 hover:bg-blue-50",
+                  "flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-110 hover:bg-blue-50",
                   myReaction === "TRUST" && "ring-2 ring-blue-400 bg-blue-50"
                 )}
                 title="Tin tưởng"
@@ -941,7 +914,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                 onClick={() => toggleReaction("JOY")}
                 disabled={reactMutation.isPending}
                 className={cn(
-                  "flex flex-col items-center justify-center w-10 h-10 rounded-full transition-transform hover:scale-125 hover:bg-pink-50",
+                  "flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-110 hover:bg-pink-50",
                   myReaction === "JOY" && "ring-2 ring-pink-400 bg-pink-50"
                 )}
                 title="Yêu thích"
@@ -953,7 +926,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                 onClick={() => toggleReaction("SKEPTIC")}
                 disabled={reactMutation.isPending}
                 className={cn(
-                  "flex flex-col items-center justify-center w-10 h-10 rounded-full transition-transform hover:scale-125 hover:bg-orange-50",
+                  "flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-110 hover:bg-orange-50",
                   myReaction === "SKEPTIC" && "ring-2 ring-orange-400 bg-orange-50"
                 )}
                 title="Hoài nghi"
@@ -970,6 +943,10 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
                 openPrompt("like");
                 return;
               }
+              if (isMobileLikeMode) {
+                setShowReactionPicker((prev) => !prev);
+                return;
+              }
               // Toggle: if has reaction, remove it; else add TRUST (default like)
               if (myReaction) {
                 toggleReaction(myReaction);
@@ -979,7 +956,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             }}
             disabled={reactMutation.isPending}
             className={cn(
-              "w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)]",
+              "w-full flex min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium whitespace-nowrap transition-colors hover:bg-[var(--muted)] sm:flex-row sm:gap-2 sm:py-2.5 sm:text-sm",
               myReaction === "JOY" && "text-[#d946ef]",
               myReaction === "TRUST" && "text-[#2563eb]",
               myReaction === "SKEPTIC" && "text-[#ea580c]",
@@ -989,17 +966,20 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             {myReaction === "JOY" ? (
               <>
                 <span className="text-lg">😍</span>
-                <span>Yêu thích</span>
+                <span className="sm:hidden">Yêu</span>
+                <span className="hidden sm:inline">Yêu thích</span>
               </>
             ) : myReaction === "TRUST" ? (
               <>
                 <span className="text-lg">👍</span>
-                <span>Tin tưởng</span>
+                <span className="sm:hidden">Tin</span>
+                <span className="hidden sm:inline">Tin tưởng</span>
               </>
             ) : myReaction === "SKEPTIC" ? (
               <>
                 <span className="text-lg">🤔</span>
-                <span>Hoài nghi</span>
+                <span className="sm:hidden">Nghi</span>
+                <span className="hidden sm:inline">Hoài nghi</span>
               </>
             ) : (
               <>
@@ -1017,7 +997,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
             onClick={handleSave}
             disabled={saveMutation.isPending}
             className={cn(
-              "w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--muted)]",
+              "w-full flex min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium whitespace-nowrap transition-colors hover:bg-[var(--muted)] sm:flex-row sm:gap-2 sm:py-2.5 sm:text-sm",
               isSaved ? "text-[var(--brand)]" : "text-[var(--muted-foreground)]"
             )}
           >
@@ -1037,10 +1017,11 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
               }
               setTicketModalOpen(true);
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]"
+            className="w-full flex min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium whitespace-nowrap text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] sm:flex-row sm:gap-2 sm:py-2.5 sm:text-sm"
           >
             <MessageCircle className="h-5 w-5" />
-            <span>Trò chuyện</span>
+            <span className="sm:hidden">Chat</span>
+            <span className="hidden sm:inline">Trò chuyện</span>
           </button>
         </div>
 
@@ -1049,7 +1030,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
           <button
             type="button"
             onClick={handleShare}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]"
+            className="w-full flex min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium whitespace-nowrap text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] sm:flex-row sm:gap-2 sm:py-2.5 sm:text-sm"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -1111,7 +1092,7 @@ export default function PostCard({ post, onLike }: { post: PostCardData; onLike?
       />
     </article>
   );
-}
+});
 
 function toBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -1493,4 +1474,6 @@ function EditPostModal({
   if (typeof window === "undefined") return null;
   return createPortal(modalContent, document.body);
 }
+
+export default PostCard;
 

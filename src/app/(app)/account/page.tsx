@@ -31,15 +31,15 @@ function AccountPageContent() {
 export default function AccountPage() {
   return (
     <ProtectedRoute>
-      <div className="mx-auto max-w-7xl px-6 py-6">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
         <Suspense
           fallback={
-            <div className="flex gap-8">
-              <div className="w-64 shrink-0">
+            <div className="flex flex-col gap-4 md:flex-row md:gap-8">
+              <div className="w-full md:w-64 md:shrink-0">
                 <Skeleton className="h-96 w-full" />
               </div>
               <div className="flex-1">
-                <Skeleton className="h-10 w-48 mb-6" />
+                <Skeleton className="mb-4 h-10 w-48 sm:mb-6" />
                 <Skeleton className="h-96 w-full" />
               </div>
             </div>

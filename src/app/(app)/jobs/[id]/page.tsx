@@ -1,10 +1,10 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import type { ComponentType, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -13,9 +13,91 @@ import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
-import { Briefcase, MapPin, Clock, CheckCircle, CheckSquare, TrendingUp, Star, Send, BookOpen, Zap, Heart, DollarSign, GraduationCap, UserCheck, Calendar } from "lucide-react";
+import {
+  Briefcase,
+  MapPin,
+  Clock,
+  TrendingUp,
+  Send,
+  BookOpen,
+  Zap,
+  Heart,
+  DollarSign,
+  GraduationCap,
+  UserCheck,
+  Calendar,
+} from "lucide-react";
 import DOMPurify from "dompurify";
 import { cn, formatDateUTC } from "@/lib/utils";
+
+type JobDetail = any;
+
+function sanitizeHtml(html: string | undefined | null) {
+  if (!html) return "";
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      "p",
+      "strong",
+      "em",
+      "u",
+      "s",
+      "span",
+      "a",
+      "ul",
+      "ol",
+      "li",
+      "blockquote",
+      "code",
+      "pre",
+      "h1",
+      "h2",
+      "h3",
+      "br",
+      "div",
+    ],
+    ALLOWED_ATTR: ["href", "target", "rel", "style", "class"],
+  });
+}
+
+const richTextClass =
+  "prose prose-sm sm:prose-base prose-slate max-w-none text-[var(--muted-foreground)] leading-relaxed [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item [&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[var(--border)] [&_blockquote]:bg-[var(--muted)]/40 [&_blockquote]:py-2 [&_blockquote]:pl-4";
+
+function InfoItem({
+  icon: Icon,
+  label,
+  value,
+  accent = false,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--background)]/50 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <Icon className={cn("h-4 w-4", accent ? "text-[var(--brand)]" : "text-[var(--muted-foreground)]")} />
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{label}</p>
+      </div>
+      <p className={cn("text-sm font-semibold", accent ? "text-[var(--brand)]" : "text-[var(--foreground)]")}>{value}</p>
+    </div>
+  );
+}
+
+function SectionCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-6">
+      <h3 className="mb-4 text-base font-semibold uppercase tracking-wide text-[var(--foreground)] sm:text-lg">{title}</h3>
+      {children}
+    </section>
+  );
+}
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -24,13 +106,13 @@ export default function JobDetailPage() {
   const user = useAuthStore((state) => state.user);
   const { openPrompt } = useAuthPrompt();
 
-  const { data, isLoading } = useQuery<{ job: any }>({
+  const { data, isLoading } = useQuery<{ job: JobDetail }>({
     queryKey: ["job", jobId],
     queryFn: async () => {
       const res = await api.get(`/api/jobs/${jobId}`);
       return res.data.data;
     },
-    enabled: !!jobId,
+    enabled: Boolean(jobId),
   });
 
   const applyMutation = useMutation({
@@ -52,312 +134,237 @@ export default function JobDetailPage() {
     applyMutation.mutate();
   };
 
-  if (isLoading) return <div className="h-40 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--card)]" />;
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 pb-28 sm:px-6">
+        <div className="h-48 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--card)]" />
+      </div>
+    );
+  }
 
   const job = data?.job;
-  if (!job) return <div>Không tìm thấy việc làm</div>;
+  if (!job) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 pb-28 sm:px-6">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 text-center text-sm text-[var(--muted-foreground)]">
+          Không tìm thấy việc làm.
+        </div>
+      </div>
+    );
+  }
 
   const salary =
     job.salaryMin || job.salaryMax
       ? job.salaryMin && job.salaryMax
         ? `${job.salaryMin.toLocaleString("vi-VN")} - ${job.salaryMax.toLocaleString("vi-VN")} ${job.currency}`
         : job.salaryMin
-        ? `${job.salaryMin.toLocaleString("vi-VN")} ${job.currency}`
-        : `${job.salaryMax.toLocaleString("vi-VN")} ${job.currency}`
+          ? `${job.salaryMin.toLocaleString("vi-VN")} ${job.currency}`
+          : `${job.salaryMax.toLocaleString("vi-VN")} ${job.currency}`
       : job.benefitsIncome || "Thoả thuận";
 
   const deadline = job.applicationDeadline ? formatDateUTC(job.applicationDeadline) : "Không giới hạn";
 
-  // Sanitize HTML content
-  const sanitizeHtml = (html: string | undefined | null) => {
-    if (!html) return "";
-    return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ["p", "strong", "em", "u", "s", "span", "a", "ul", "ol", "li", "blockquote", "code", "pre", "h1", "h2", "h3", "br", "div"],
-      ALLOWED_ATTR: ["href", "target", "rel", "style", "class"],
-    });
-  };
-  const richTextClass = "prose prose-slate max-w-none text-slate-600 leading-relaxed [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700";
-  const richTextClassTight = "prose prose-slate max-w-none text-slate-600 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700";
-
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-24">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 pb-28 sm:px-6">
       {/* Header */}
-      <div className="bg-white rounded-[2.5rem] p-10 shadow-xl border border-slate-100 mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-          <Briefcase size={200} />
+      <header className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-6">
+        <div className="pointer-events-none absolute -right-6 -top-6 opacity-[0.04]">
+          <Briefcase className="h-32 w-32 sm:h-40 sm:w-40" />
         </div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="relative z-10 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
             <CompanyHoverCard companyId={job.company.id} slug={job.company.slug} companyName={job.company.name}>
-              <Link href={`/companies/${job.company.slug}`} className="text-base font-semibold text-[var(--foreground)] hover:text-[var(--brand)] hover:underline">
+              <Link
+                href={`/companies/${job.company.slug}`}
+                className="text-sm font-semibold text-[var(--foreground)] hover:text-[var(--brand)] hover:underline sm:text-base"
+              >
                 {job.company.name}
               </Link>
             </CompanyHoverCard>
-            {user && (
+            {user ? (
               <CompanyFollowButton
                 companyId={job.company.id}
                 companySlug={job.company.slug}
                 variant="link"
                 size="sm"
-                className="text-[#2563eb] hover:text-[#1d4ed8] hover:underline p-0 h-auto font-normal text-sm"
+                className="h-auto p-0 text-sm font-normal text-[#2563eb] hover:text-[#1d4ed8] hover:underline"
               />
-            )}
-          </div>
-          <div className="mb-8">
-            <div className="flex items-start justify-between gap-4 mb-2">
-              <h1 className="text-3xl md:text-5xl font-black text-slate-900 uppercase leading-tight flex-1">
-                MÔ TẢ CÔNG VIỆC <br/>
-                <span className="text-[var(--brand)]">{job.title}</span>
-              </h1>
-              {job.isActive !== undefined && (
-                <Badge 
-                  className={cn(
-                    "shrink-0 text-xs font-medium px-3 py-1.5 rounded-full",
-                    job.isActive 
-                      ? "bg-green-50 text-green-700 border border-green-200" 
-                      : "bg-slate-100 text-slate-600 border border-slate-200"
-                  )}
-                >
-                  {job.isActive ? "Đang tuyển" : "Đã đóng"}
-                </Badge>
-              )}
-            </div>
+            ) : null}
           </div>
 
-          <div className="space-y-6 pt-8 border-t border-slate-100">
-            {/* Row 1: General Info - Unified Slate/Blue Theme */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {job.department && (
-                <div className="flex items-center gap-3">
-                  <Briefcase size={20} className="text-slate-400 shrink-0"/>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Bộ phận</p>
-                    <p className="text-sm font-bold text-slate-700">{job.department}</p>
-                  </div>
-                </div>
-              )}
-              {job.location && (
-                <div className="flex items-center gap-3">
-                  <MapPin size={20} className="text-slate-400 shrink-0"/>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Địa điểm</p>
-                    <p className="text-sm font-bold text-slate-700">{job.location}</p>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-3">
-                <Clock size={20} className="text-slate-400 shrink-0"/>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Hình thức</p>
-                  <p className="text-sm font-bold text-slate-700">{translateEmploymentType(job.employmentType)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <DollarSign size={20} className="text-slate-400 shrink-0"/>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Mức lương</p>
-                  <p className="text-sm font-bold text-slate-700">{salary}</p>
-                </div>
-              </div>
-            </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <h1 className="text-2xl font-bold leading-tight text-[var(--foreground)] sm:text-3xl">
+              Mô tả công việc
+              <span className="mt-1 block text-[var(--brand)]">{job.title}</span>
+            </h1>
+            {job.isActive !== undefined ? (
+              <Badge
+                className={cn(
+                  "w-fit rounded-full border px-3 py-1 text-xs font-medium",
+                  job.isActive
+                    ? "border-green-200 bg-green-50 text-green-700"
+                    : "border-slate-200 bg-slate-100 text-slate-600"
+                )}
+              >
+                {job.isActive ? "Đang tuyển" : "Đã đóng"}
+              </Badge>
+            ) : null}
+          </div>
 
-            {/* Row 2: Requirements/Logistics - Unified Amber/Gold Theme */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-slate-50">
-              <div className="flex items-center gap-3">
-                <TrendingUp size={20} className="text-[var(--brand)] shrink-0"/>
-                <div>
-                  <p className="text-[10px] font-bold text-[var(--brand)]/60 uppercase tracking-widest leading-none mb-1">Kinh nghiệm</p>
-                  <p className="text-sm font-bold text-[var(--brand)]">{translateExperienceLevel(job.experienceLevel)}</p>
-                </div>
-              </div>
-              {job.jobLevel && (
-                <div className="flex items-center gap-3">
-                  <UserCheck size={20} className="text-[var(--brand)] shrink-0"/>
-                  <div>
-                    <p className="text-[10px] font-bold text-[var(--brand)]/60 uppercase tracking-widest leading-none mb-1">Cấp bậc</p>
-                    <p className="text-sm font-bold text-[var(--brand)]">{translateJobLevel(job.jobLevel)}</p>
-                  </div>
-                </div>
-              )}
-              {job.educationLevel && (
-                <div className="flex items-center gap-3">
-                  <GraduationCap size={20} className="text-[var(--brand)] shrink-0"/>
-                  <div>
-                    <p className="text-[10px] font-bold text-[var(--brand)]/60 uppercase tracking-widest leading-none mb-1">Học vấn</p>
-                    <p className="text-sm font-bold text-[var(--brand)]">{translateEducationLevel(job.educationLevel)}</p>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-3">
-                <Calendar size={20} className="text-[var(--brand)] shrink-0"/>
-                <div>
-                  <p className="text-[10px] font-bold text-[var(--brand)]/60 uppercase tracking-widest leading-none mb-1">Hạn nộp</p>
-                  <p className="text-sm font-bold text-[var(--brand)]">{deadline}</p>
-                </div>
-              </div>
+          <div className="space-y-3 border-t border-[var(--border)] pt-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {job.department ? <InfoItem icon={Briefcase} label="Bộ phận" value={job.department} /> : null}
+              {job.location ? <InfoItem icon={MapPin} label="Địa điểm" value={job.location} /> : null}
+              <InfoItem icon={Clock} label="Hình thức" value={translateEmploymentType(job.employmentType)} />
+              <InfoItem icon={DollarSign} label="Mức lương" value={salary} />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <InfoItem icon={TrendingUp} label="Kinh nghiệm" value={translateExperienceLevel(job.experienceLevel)} accent />
+              {job.jobLevel ? <InfoItem icon={UserCheck} label="Cấp bậc" value={translateJobLevel(job.jobLevel)} accent /> : null}
+              {job.educationLevel ? (
+                <InfoItem icon={GraduationCap} label="Học vấn" value={translateEducationLevel(job.educationLevel)} accent />
+              ) : null}
+              <InfoItem icon={Calendar} label="Hạn nộp" value={deadline} accent />
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Content Sections */}
-      <div className="space-y-8">
+      {/* Content Sections - keep existing display order */}
+      <div className="space-y-4">
         {/* 1. Sứ mệnh / Vai trò tổng quát */}
-        {job.mission && (
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">1. Sứ mệnh / Vai trò tổng quát</h3>
+        {job.mission ? (
+          <SectionCard title="1. Sứ mệnh / Vai trò tổng quát">
             <div
-              className="bg-slate-50 p-6 rounded-2xl border-l-4 border-[var(--brand)] text-slate-700 leading-relaxed text-lg italic prose prose-slate max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_li]:my-1 [&_li]:list-item [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:bg-slate-50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-slate-700"
+              className={cn(
+                richTextClass,
+                "rounded-xl border-l-4 border-[var(--brand)] bg-[var(--muted)]/40 p-4 italic text-[var(--foreground)]"
+              )}
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.mission) }}
             />
-          </div>
-        )}
+          </SectionCard>
+        ) : null}
 
         {/* 2. Nhiệm vụ chuyên môn */}
-        {job.tasks && (
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">2. Nhiệm vụ chuyên môn</h3>
-            <div
-              className={richTextClass}
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.tasks) }}
-            />
-          </div>
-        )}
+        {job.tasks ? (
+          <SectionCard title="2. Nhiệm vụ chuyên môn">
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.tasks) }} />
+          </SectionCard>
+        ) : null}
 
         {/* 3. Kết quả chuyên môn cần đạt */}
-        {job.kpis && (
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">3. Kết quả chuyên môn cần đạt</h3>
-            <p className="mb-4 text-slate-700">Công ty vận hành theo hướng quản trị bằng mục tiêu. Vị trí này sẽ cùng CEO/Quản lý xây dựng và thỏa thuận OKRs theo từng chu kỳ.</p>
-            <div
-              className={richTextClass}
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.kpis) }}
-            />
-          </div>
-        )}
+        {job.kpis ? (
+          <SectionCard title="3. Kết quả chuyên môn cần đạt">
+            <p className="mb-3 text-sm text-[var(--muted-foreground)]">
+              Công ty vận hành theo hướng quản trị bằng mục tiêu. Vị trí này sẽ cùng CEO/Quản lý xây dựng và thỏa thuận OKRs theo từng chu kỳ.
+            </p>
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.kpis) }} />
+          </SectionCard>
+        ) : null}
 
         {/* 4. Yêu cầu (KSA - Knowledge, Skills, Attitude) */}
-        {(job.knowledge || job.skills || job.attitude) && (
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">4. Yêu cầu (KSA - Knowledge, Skills, Attitude)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {job.knowledge && (
-                <div className="col-span-2">
-                  <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><BookOpen size={18}/> Kiến thức chuyên môn:</h4>
-                  <div
-                    className={richTextClass}
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.knowledge) }}
-                  />
+        {job.knowledge || job.skills || job.attitude ? (
+          <SectionCard title="4. Yêu cầu (KSA - Knowledge, Skills, Attitude)">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {job.knowledge ? (
+                <div className="md:col-span-2">
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">
+                    <BookOpen className="h-4 w-4" /> Kiến thức chuyên môn
+                  </h4>
+                  <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.knowledge) }} />
                 </div>
-              )}
-              {job.skills && (
+              ) : null}
+              {job.skills ? (
                 <div>
-                  <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><Zap size={18}/> Kỹ năng cần thiết:</h4>
-                  <div
-                    className={richTextClass}
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.skills) }}
-                  />
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">
+                    <Zap className="h-4 w-4" /> Kỹ năng cần thiết
+                  </h4>
+                  <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.skills) }} />
                 </div>
-              )}
-              {job.attitude && (
+              ) : null}
+              {job.attitude ? (
                 <div>
-                  <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><Heart size={18}/> Thái độ và phẩm chất:</h4>
-                  <div
-                    className={richTextClass}
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.attitude) }}
-                  />
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">
+                    <Heart className="h-4 w-4" /> Thái độ và phẩm chất
+                  </h4>
+                  <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.attitude) }} />
                 </div>
-              )}
+              ) : null}
             </div>
-          </div>
-        )}
+          </SectionCard>
+        ) : null}
 
         {/* 5. Quyền hạn và phạm vi ra quyết định */}
-        {job.authority && (
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">5. Quyền hạn và phạm vi ra quyết định</h3>
-            <h4 className="font-bold text-slate-900 mb-3">Có thể tự quyết:</h4>
-            <div
-              className={richTextClass}
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.authority) }}
-            />
-          </div>
-        )}
+        {job.authority ? (
+          <SectionCard title="5. Quyền hạn và phạm vi ra quyết định">
+            <h4 className="mb-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">Có thể tự quyết</h4>
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.authority) }} />
+          </SectionCard>
+        ) : null}
 
         {/* 6. Quan hệ công việc */}
-        {job.relationships && (
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">6. Quan hệ công việc</h3>
-            <div
-              className={richTextClass}
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.relationships) }}
-            />
-          </div>
-        )}
+        {job.relationships ? (
+          <SectionCard title="6. Quan hệ công việc">
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.relationships) }} />
+          </SectionCard>
+        ) : null}
 
         {/* 7. Lộ trình phát triển */}
-        {job.careerPath && (
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">7. Lộ trình phát triển</h3>
-            <p className="mb-4 text-slate-700">Tùy thuộc vào năng lực và nguyện vọng cá nhân, có thể phát triển theo hướng:</p>
-            <div
-              className={richTextClass}
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.careerPath) }}
-            />
-          </div>
-        )}
+        {job.careerPath ? (
+          <SectionCard title="7. Lộ trình phát triển">
+            <p className="mb-3 text-sm text-[var(--muted-foreground)]">
+              Tùy thuộc vào năng lực và nguyện vọng cá nhân, có thể phát triển theo hướng:
+            </p>
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.careerPath) }} />
+          </SectionCard>
+        ) : null}
 
         {/* 8. Quyền lợi */}
-        {(job.benefitsIncome || job.benefitsPerks) && (
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">8. Quyền lợi</h3>
-            {job.benefitsIncome && (
-              <div className="mb-6">
-                <h4 className="font-bold text-slate-900 text-lg mb-2">Thu nhập:</h4>
-                <div className="text-2xl font-black text-[var(--brand)] mb-1">{job.benefitsIncome}</div>
+        {job.benefitsIncome || job.benefitsPerks ? (
+          <SectionCard title="8. Quyền lợi">
+            {job.benefitsIncome ? (
+              <div className="mb-5 rounded-xl border border-[var(--border)] bg-[var(--muted)]/40 p-4">
+                <h4 className="mb-1 text-sm font-semibold text-[var(--foreground)] sm:text-base">Thu nhập</h4>
+                <p className="text-xl font-bold text-[var(--brand)] sm:text-2xl">{job.benefitsIncome}</p>
               </div>
-            )}
-            {job.benefitsPerks && (
+            ) : null}
+            {job.benefitsPerks ? (
               <div>
-                <h4 className="font-bold text-slate-900 text-lg mb-2">Chế độ, phúc lợi:</h4>
-                <div
-                  className={richTextClass}
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.benefitsPerks) }}
-                />
+                <h4 className="mb-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">Chế độ, phúc lợi</h4>
+                <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.benefitsPerks) }} />
               </div>
-            )}
-          </div>
-        )}
+            ) : null}
+          </SectionCard>
+        ) : null}
 
-        {/* Thông tin chung - moved to end if exists */}
-        {job.generalInfo && (
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2 uppercase">Thông tin chung</h3>
-            <div
-              className={richTextClass}
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.generalInfo) }}
-            />
-          </div>
-        )}
+        {/* Thông tin chung */}
+        {job.generalInfo ? (
+          <SectionCard title="Thông tin chung">
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.generalInfo) }} />
+          </SectionCard>
+        ) : null}
       </div>
 
       {/* Fixed Bottom Bar */}
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] z-50">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-slate-600 hidden md:block">
+      <div className="fixed bottom-0 left-0 z-50 w-full border-t border-[var(--border)] bg-[var(--card)] p-3">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:px-2 md:flex-row md:items-center md:justify-between">
+          <div className="hidden text-sm text-[var(--muted-foreground)] md:block">
             {job.contact ? (
-              <div className="whitespace-pre-line font-medium" dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.contact) }} />
-            ) : null}
+              <div className="line-clamp-2 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.contact) }} />
+            ) : (
+              <span>Ứng tuyển để nhận thêm thông tin liên hệ từ nhà tuyển dụng.</span>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end md:self-auto">
             <JobSaveButton jobId={job.id} />
             {job.isActive === false ? (
-              <Button disabled className="px-8 py-3 text-lg bg-slate-300 text-slate-500 cursor-not-allowed">
+              <Button disabled className="h-10 px-5 text-sm">
                 Đã ngừng tuyển
               </Button>
             ) : (
-              <Button onClick={handleApply} disabled={applyMutation.isPending} className="px-8 py-3 text-lg">
-                {applyMutation.isPending ? "Đang gửi..." : "Ứng tuyển ngay"} <Send size={20} className="ml-2" />
+              <Button onClick={handleApply} disabled={applyMutation.isPending} className="h-10 px-5 text-sm sm:text-base">
+                {applyMutation.isPending ? "Đang gửi..." : "Ứng tuyển ngay"}
+                <Send className="ml-2 h-4 w-4" />
               </Button>
             )}
           </div>
@@ -382,17 +389,6 @@ function translateEmploymentType(type?: string) {
     default:
       return type ?? "";
   }
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
 }
 
 function translateExperienceLevel(level?: string) {

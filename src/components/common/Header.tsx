@@ -93,7 +93,7 @@ export default function Header() {
     });
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--card)]/80 backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/60">
+    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--card)]">
       <div className="relative mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4">
         <button
           type="button"
@@ -156,8 +156,9 @@ export default function Header() {
             : Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-7 w-16" />)}
         </nav>
         <div className="ml-auto flex items-center justify-end gap-3">
-          <div className="relative hidden w-full max-w-md md:block">
+          <div className="relative hidden w-full max-w-[320px] lg:max-w-md md:block">
             <input
+              suppressHydrationWarning
               className="h-9 w-full rounded-md border border-[var(--border)] bg-[var(--input)] pl-9 pr-3 text-sm outline-none placeholder:text-[var(--muted-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
               placeholder="Tìm kiếm công ty hoặc việc làm..."
             />
@@ -218,16 +219,16 @@ export default function Header() {
               >
                 <CircleUserRound size={18} />
               </Link>
-              <div className="hidden items-center gap-2 text-sm md:flex">
+              <div className="hidden shrink-0 items-center gap-2 text-sm md:flex">
               <Link
                 href="/login"
-                className="rounded-md border border-[var(--brand)] px-3 py-1 text-[var(--brand)] hover:bg-[var(--brand)]/10"
+                className="inline-flex h-9 items-center whitespace-nowrap rounded-md border border-[var(--brand)] px-3.5 text-[var(--brand)] hover:bg-[var(--brand)]/10"
               >
                 Đăng nhập
               </Link>
               <Link
                 href="/register"
-                className="rounded-md bg-[var(--brand)] px-3 py-1 text-white hover:opacity-90"
+                className="inline-flex h-9 items-center whitespace-nowrap rounded-md bg-[var(--brand)] px-3.5 text-white hover:opacity-90"
               >
                 Đăng ký
               </Link>
