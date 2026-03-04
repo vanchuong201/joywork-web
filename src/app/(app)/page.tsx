@@ -8,6 +8,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SlidersHorizontal } from "lucide-react";
 import EmptyState from "@/components/ui/empty-state";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CompanySearch from "@/components/feed/CompanySearch";
@@ -85,8 +86,9 @@ function FeedPageContent() {
       <FeedPostComposer />
 
       <div className="sticky top-[64px] z-40 -mx-2 bg-[var(--background)]/80 px-2 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/60">
-        <div className="flex items-center justify-between py-2">
+        <div className="flex items-center gap-2 py-2">
           <Tabs
+            className="min-w-0 flex-1"
             value={tab}
             onValueChange={(v) => {
               if (v === "following" && !user) {
@@ -96,34 +98,25 @@ function FeedPageContent() {
               setTab(v as any);
             }}
           >
-            <TabsList>
-              <TabsTrigger value="all">Tất cả</TabsTrigger>
-              <TabsTrigger value="trending">Nổi bật</TabsTrigger>
-              <TabsTrigger value="following">Theo dõi</TabsTrigger>
+            <TabsList className="w-full justify-start gap-1 overflow-x-auto p-1 sm:w-auto sm:overflow-visible">
+              <TabsTrigger className="whitespace-nowrap" value="all">Tất cả</TabsTrigger>
+              <TabsTrigger className="whitespace-nowrap" value="trending">Nổi bật</TabsTrigger>
+              <TabsTrigger className="whitespace-nowrap" value="following">Theo dõi</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button variant="outline" size="sm" onClick={() => setShowFilters((s) => !s)}>
-            Bộ lọc nâng cao
+          <Button
+            className="h-9 w-9 shrink-0 sm:w-auto"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters((s) => !s)}
+            aria-label="Bộ lọc nâng cao"
+          >
+            <SlidersHorizontal className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Bộ lọc nâng cao</span>
           </Button>
         </div>
         {showFilters ? (
-          <div className="relative z-50 mb-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-lg">
-            <h3 className="mb-2 text-sm font-semibold">Loại bài viết</h3>
-            <div className="flex flex-wrap gap-3 text-sm">
-              {[
-                { value: "STORY", label: "Câu chuyện" },
-                { value: "ANNOUNCEMENT", label: "Thông báo" },
-                { value: "EVENT", label: "Sự kiện" },
-              ].map((t) => (
-                <label key={t.value} className="flex items-center gap-2">
-                  <input type="radio" name="postType" checked={type === t.value} onChange={() => setType(t.value)} />
-                  {t.label}
-                </label>
-              ))}
-              <button className="ml-2 text-xs text-[var(--brand)]" onClick={() => setType(undefined)}>
-                Xóa bộ lọc
-              </button>
-            </div>
+          <div className="relative z-50 mb-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4 shadow-lg">
             <div className="mt-4">
               <h3 className="mb-2 text-sm font-semibold">Doanh nghiệp</h3>
               <CompanySearch value={companyId} onSelect={setCompany} />

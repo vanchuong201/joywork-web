@@ -602,7 +602,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                       <TiptapEditor
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Đóng góp giá trị vào mục tiêu chung của công ty trong việc lan tỏa triết lý &quot;Quản trị đúng&quot; và &quot;đi làm là phải vui&quot; đến doanh nghiệp Việt Nam.&#10;&#10;Lãnh đạo mảng cộng đồng, kết nối, chăm lo và phát triển cộng đồng các nhà quản lý, người đi làm - những người cùng niềm tin về công việc hạnh phúc."
+                        placeholder={`Đóng góp giá trị vào mục tiêu chung của công ty trong việc lan tỏa triết lý "Quản trị đúng" và "đi làm là phải vui" đến doanh nghiệp Việt Nam.
+
+Lãnh đạo mảng cộng đồng, kết nối, chăm lo và phát triển cộng đồng các nhà quản lý, người đi làm - những người cùng niềm tin về công việc hạnh phúc.`}
                         className={errors.mission ? "border-red-500" : ""}
                       />
                     )}
@@ -633,7 +635,13 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                       <TiptapEditor
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Nhóm nhiệm vụ phát triển cộng đồng:&#10;• Phát triển thành viên các cộng đồng&#10;• Tạo ra môi trường, hoạt động để thành viên có thể cùng tham gia&#10;&#10;Nhóm nhiệm vụ vận hành cộng đồng:&#10;• Xây dựng và thực hiện các hoạt động cộng đồng&#10;• Thúc đẩy tương tác, thảo luận trong cộng đồng"
+                        placeholder={`Nhóm nhiệm vụ phát triển cộng đồng:
+• Phát triển thành viên các cộng đồng
+• Tạo ra môi trường, hoạt động để thành viên có thể cùng tham gia
+
+Nhóm nhiệm vụ vận hành cộng đồng:
+• Xây dựng và thực hiện các hoạt động cộng đồng
+• Thúc đẩy tương tác, thảo luận trong cộng đồng`}
                         className={errors.tasks ? "border-red-500" : ""}
                       />
                     )}
@@ -662,7 +670,10 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="• Số lượng và chất lượng thành viên các cộng đồng&#10;• Tỷ lệ thành viên hoạt động và tương tác&#10;• Doanh thu từ cộng đồng&#10;• Số lượng và chất lượng sự kiện/hội thảo được tổ chức"
+                      placeholder={`• Số lượng và chất lượng thành viên các cộng đồng
+• Tỷ lệ thành viên hoạt động và tương tác
+• Doanh thu từ cộng đồng
+• Số lượng và chất lượng sự kiện/hội thảo được tổ chức`}
                     />
                   )}
                 />
@@ -692,7 +703,10 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                         <TiptapEditor
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="• Có kinh nghiệm tối thiểu trong việc phát triển, quản lý cộng đồng&#10;• Ưu tiên đã có kinh nghiệm quản lý cộng đồng kinh doanh, doanh nghiệp&#10;• Hiểu biết về điều phối, dẫn dắt thảo luận cộng đồng&#10;• Hiểu biết về MBO, OKRs là lợi thế"
+                          placeholder={`• Có kinh nghiệm tối thiểu trong việc phát triển, quản lý cộng đồng
+• Ưu tiên đã có kinh nghiệm quản lý cộng đồng kinh doanh, doanh nghiệp
+• Hiểu biết về điều phối, dẫn dắt thảo luận cộng đồng
+• Hiểu biết về MBO, OKRs là lợi thế`}
                           className={errors.knowledge ? "border-red-500" : ""}
                         />
                       )}
@@ -709,7 +723,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                           <TiptapEditor
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder="• Khả năng lập và kiểm soát kế hoạch tốt&#10;• Làm việc đa tác vụ&#10;• Tư duy chiến lược, khả năng nhìn bao quát"
+                            placeholder={`• Khả năng lập và kiểm soát kế hoạch tốt
+• Làm việc đa tác vụ
+• Tư duy chiến lược, khả năng nhìn bao quát`}
                             className={errors.skills ? "border-red-500" : ""}
                           />
                         )}
@@ -725,7 +741,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                           <TiptapEditor
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder="• Phù hợp với văn hóa và 5 giá trị cốt lõi công ty&#10;• Đam mê tạo ra giá trị, muốn mang lại điều tốt đẹp cho người khác&#10;• Tinh thần phụng sự"
+                            placeholder={`• Phù hợp với văn hóa và 5 giá trị cốt lõi công ty
+• Đam mê tạo ra giá trị, muốn mang lại điều tốt đẹp cho người khác
+• Tinh thần phụng sự`}
                             className={errors.attitude ? "border-red-500" : ""}
                           />
                         )}
@@ -751,7 +769,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="• Kế hoạch hoạt động hàng ngày của cộng đồng&#10;• Nội dung và hình thức tương tác với thành viên&#10;• Điều phối các hoạt động trong phạm vi được giao"
+                      placeholder={`• Kế hoạch hoạt động hàng ngày của cộng đồng
+• Nội dung và hình thức tương tác với thành viên
+• Điều phối các hoạt động trong phạm vi được giao`}
                     />
                   )}
                 />
@@ -773,7 +793,12 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="Quan hệ nội bộ:&#10;• CEO Mai Xuân Đạt - nhận định hướng và báo cáo trực tiếp&#10;• Nhóm chuyên môn (đào tạo, huấn luyện) - để tạo nội dung giá trị&#10;&#10;Quan hệ bên ngoài:&#10;• Thành viên các cộng đồng (Quản trị Quán, học viên/khách hàng, độc giả)"
+                      placeholder={`Quan hệ nội bộ:
+• CEO Mai Xuân Đạt - nhận định hướng và báo cáo trực tiếp
+• Nhóm chuyên môn (đào tạo, huấn luyện) - để tạo nội dung giá trị
+
+Quan hệ bên ngoài:
+• Thành viên các cộng đồng (Quản trị Quán, học viên/khách hàng, độc giả)`}
                     />
                   )}
                 />
@@ -800,7 +825,8 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="• Xây dựng và quản lý team khi cộng đồng phát triển&#10;• Mở rộng phạm vi quản lý sang các mảng khác của công ty"
+                      placeholder={`• Xây dựng và quản lý team khi cộng đồng phát triển
+• Mở rộng phạm vi quản lý sang các mảng khác của công ty`}
                     />
                   )}
                 />
@@ -826,7 +852,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="• Làm việc linh hoạt ở bất cứ đâu (Công ty vận hành theo hướng quản trị bằng mục tiêu)&#10;• Được tiếp cận và học hỏi trực tiếp từ CEO về quản trị&#10;• Môi trường làm việc với triết lý &quot;đi làm là phải vui&quot;"
+                      placeholder={`• Làm việc linh hoạt ở bất cứ đâu (Công ty vận hành theo hướng quản trị bằng mục tiêu)
+• Được tiếp cận và học hỏi trực tiếp từ CEO về quản trị
+• Môi trường làm việc với triết lý "đi làm là phải vui"`}
                     />
                   )}
                 />
@@ -850,7 +878,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                       <TiptapEditor
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="● Tên vị trí: Phụ trách Phát triển Cộng đồng&#10;● Bộ phận: Cộng đồng&#10;● Báo cáo cho: CEO Mai Xuân Đạt (trực tiếp)"
+                        placeholder={`● Tên vị trí: Phụ trách Phát triển Cộng đồng
+● Bộ phận: Cộng đồng
+● Báo cáo cho: CEO Mai Xuân Đạt (trực tiếp)`}
                         className={errors.generalInfo ? "border-red-500" : ""}
                       />
                     )}

@@ -29,6 +29,12 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+function preventIOSInputZoomPersist() {
+  if (typeof document === "undefined") return;
+  const active = document.activeElement as HTMLElement | null;
+  active?.blur();
+}
+
 function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -83,6 +89,7 @@ function RegisterPageContent() {
       // Redirect về trang được chỉ định hoặc trang chủ
       const redirectUrl = searchParams.get("redirect");
       const safeRedirect = redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/";
+      preventIOSInputZoomPersist();
       router.push(safeRedirect);
     } catch (error: any) {
       const customError = extractDetailedValidation(error);
@@ -122,7 +129,10 @@ function RegisterPageContent() {
               placeholder="Nguyễn Văn A"
               autoComplete="name"
               aria-invalid={Boolean(errors.name)}
-              className={cn(errors.name ? "border-red-500 focus-visible:ring-red-500" : undefined)}
+              className={cn(
+                "text-base md:text-sm",
+                errors.name ? "border-red-500 focus-visible:ring-red-500" : undefined
+              )}
               {...register("name")}
             />
           </FormField>
@@ -132,7 +142,10 @@ function RegisterPageContent() {
               type="email"
               autoComplete="email"
               aria-invalid={Boolean(errors.email)}
-              className={cn(errors.email ? "border-red-500 focus-visible:ring-red-500" : undefined)}
+              className={cn(
+                "text-base md:text-sm",
+                errors.email ? "border-red-500 focus-visible:ring-red-500" : undefined
+              )}
               {...register("email")}
             />
           </FormField>
@@ -142,7 +155,10 @@ function RegisterPageContent() {
               type="tel"
               autoComplete="tel"
               aria-invalid={Boolean(errors.phone)}
-              className={cn(errors.phone ? "border-red-500 focus-visible:ring-red-500" : undefined)}
+              className={cn(
+                "text-base md:text-sm",
+                errors.phone ? "border-red-500 focus-visible:ring-red-500" : undefined
+              )}
               {...register("phone")}
             />
           </FormField>
@@ -154,6 +170,7 @@ function RegisterPageContent() {
                 autoComplete="new-password"
                 aria-invalid={Boolean(errors.password)}
                 className={cn(
+                  "text-base md:text-sm",
                   errors.password ? "border-red-500 focus-visible:ring-red-500" : undefined,
                   "pr-10"
                 )}

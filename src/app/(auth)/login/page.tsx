@@ -24,6 +24,12 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+function preventIOSInputZoomPersist() {
+  if (typeof document === "undefined") return;
+  const active = document.activeElement as HTMLElement | null;
+  active?.blur();
+}
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -55,6 +61,7 @@ function LoginPageContent() {
           toast.success("Đăng nhập thành công");
           const redirectUrl = searchParams.get("redirect");
           const safeRedirect = redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/";
+          preventIOSInputZoomPersist();
           router.push(safeRedirect);
         } catch {
           toast.error("Không thể tải thông tin tài khoản sau khi đăng nhập");
@@ -153,6 +160,7 @@ function LoginPageContent() {
       // Redirect về trang được chỉ định hoặc trang chủ
       const redirectUrl = searchParams.get("redirect");
       const safeRedirect = redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/";
+      preventIOSInputZoomPersist();
       router.push(safeRedirect);
     } catch (error: any) {
       const customError = extractDetailedValidation(error);
@@ -193,7 +201,10 @@ function LoginPageContent() {
               type="email"
               autoComplete="email"
               aria-invalid={Boolean(errors.email)}
-              className={cn(errors.email ? "border-red-500 focus-visible:ring-red-500" : undefined)}
+              className={cn(
+                "text-base md:text-sm",
+                errors.email ? "border-red-500 focus-visible:ring-red-500" : undefined
+              )}
               {...register("email")}
             />
           </FormField>
@@ -203,7 +214,10 @@ function LoginPageContent() {
               type="password"
               autoComplete="current-password"
               aria-invalid={Boolean(errors.password)}
-              className={cn(errors.password ? "border-red-500 focus-visible:ring-red-500" : undefined)}
+              className={cn(
+                "text-base md:text-sm",
+                errors.password ? "border-red-500 focus-visible:ring-red-500" : undefined
+              )}
               {...register("password")}
             />
           </FormField>

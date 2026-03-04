@@ -156,23 +156,25 @@ export default function Header() {
             : Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-7 w-16" />)}
         </nav>
         <div className="ml-auto flex items-center justify-end gap-3">
-          <div className="relative hidden w-full max-w-[320px] lg:max-w-md md:block">
+          {/* <div className="relative hidden w-full max-w-[320px] lg:max-w-md md:block">
             <input
               suppressHydrationWarning
               className="h-9 w-full rounded-md border border-[var(--border)] bg-[var(--input)] pl-9 pr-3 text-sm outline-none placeholder:text-[var(--muted-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
               placeholder="Tìm kiếm công ty hoặc việc làm..."
             />
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" size={16} />
-          </div>
+          </div> */}
           {!isReady ? (
             <Skeleton className="h-9 w-9 rounded-md md:h-8 md:w-32" />
           ) : user ? (
             <>
               <NotificationBell />
               <details ref={accountRef} className="relative">
-              <summary className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-md text-sm text-[var(--foreground)] hover:bg-[var(--muted)] md:h-auto md:w-auto md:gap-2 md:px-2 md:py-1">
+              <summary className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-md text-sm text-[var(--foreground)] hover:bg-[var(--muted)] md:h-auto md:w-auto md:max-w-[260px] md:gap-2 md:px-2 md:py-1">
                 <CircleUserRound size={18} className="md:hidden" />
-                <span className="hidden font-medium leading-tight md:inline">{user.name ?? user.email}</span>
+                <span className="hidden min-w-0 whitespace-nowrap font-medium md:inline md:truncate">
+                  {user.name ?? user.email}
+                </span>
                 <ChevronDown size={14} className="hidden md:inline" />
               </summary>
               <div className="absolute right-0 mt-2 w-56 rounded-md border border-[var(--border)] bg-[var(--card)] shadow-lg">

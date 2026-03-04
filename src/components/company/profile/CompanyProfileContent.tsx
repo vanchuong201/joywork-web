@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import { useMutation } from "@tanstack/react-query";
+import * as Popover from "@radix-ui/react-popover";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -927,11 +928,11 @@ const StatementManageItem = ({
   const hasVerification = (statement.totalRecipients ?? statement.recipients?.length ?? 0) > 0;
 
   return (
-    <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-white transition-all border-slate-200 hover:border-slate-300">
-      <div className="space-y-1 flex-1 min-w-0">
+    <div className="rounded-lg border border-slate-200 bg-white p-3 transition-all hover:border-slate-300">
+      <div className="space-y-2">
         <div className="font-medium text-sm text-slate-900 line-clamp-2">{statement.title}</div>
         {hasVerification ? (
-          <div className="flex items-center gap-3 text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
             <span>{statement.percentYes ?? 0}% xác thực</span>
             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
             <span>{statement.status === "ACTIVE" ? "Đang hoạt động" : "Đã kết thúc"}</span>
@@ -945,14 +946,14 @@ const StatementManageItem = ({
         )}
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
         {onPublishToFeed ? (
           <Button
             variant="outline"
             size="sm"
             onClick={() => onPublishToFeed(statement)}
             disabled={isPublishing || isDeleting}
-            className="text-xs h-7 px-2 border-slate-200 hover:bg-blue-50 hover:border-blue-300"
+            className="h-8 border-slate-200 px-2.5 text-xs hover:border-blue-300 hover:bg-blue-50"
           >
             {isPublishing ? (
               <>
@@ -974,7 +975,7 @@ const StatementManageItem = ({
             size="sm"
             onClick={() => onDelete(statement)}
             disabled={isPublishing || isDeleting}
-            className="text-xs h-7 px-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+            className="h-8 border-red-200 px-2.5 text-xs text-red-600 hover:border-red-300 hover:bg-red-50"
           >
             {isDeleting ? (
               <>
@@ -1540,8 +1541,11 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     const sectionKey = getSectionKey(section);
     const sectionVisible = sectionKey ? isSectionVisible(sectionKey) : true;
     
+    // Deep clone to avoid mutating original profile data when user edits form fields
+    const clonedData = JSON.parse(JSON.stringify(initialData || {}));
+    
     // Auto-fill sample data if no real data exists
-    const dataWithSamples = getSampleDataIfNeeded(section, initialData || {});
+    const dataWithSamples = getSampleDataIfNeeded(section, clonedData);
 
     // Normalize leadershipPhilosophy mediaType for edit form preview
     if (section === 'leadershipPhilosophy' && dataWithSamples?.leadershipPhilosophy) {
@@ -1553,7 +1557,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     
     setFormData({
       ...dataWithSamples,
-      sectionVisible: Boolean(sectionVisible), // Ensure boolean
+      sectionVisible: Boolean(sectionVisible),
     });
   };
 
@@ -1997,28 +2001,28 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                       </p>
 
                       <Dialog open={manageStatementsOpen} onOpenChange={setManageStatementsOpen}>
-                        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white sm:p-8">
+                        <DialogContent className="max-h-[90vh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto bg-white p-4 sm:max-w-3xl sm:p-8">
                             <DialogHeader>
-                                <DialogTitle className="text-2xl font-bold">Quản lý Tuyên bố Công ty</DialogTitle>
+                                <DialogTitle className="text-xl font-bold sm:text-2xl">Quản lý Tuyên bố Công ty</DialogTitle>
                                 <DialogDescription className="text-slate-500 italic">
                                     Tạo các tuyên bố mới để hiển thị trên hồ sơ công ty. Bạn có thể tạo tuyên bố đơn giản hoặc gửi kèm email xác thực cho nhân viên.
                                 </DialogDescription>
                             </DialogHeader>
                             
-                            <div className="space-y-8 py-6">
+                            <div className="space-y-6 py-4 sm:space-y-8 sm:py-6">
                                 {/* 1. EXISTING STATEMENTS (Now First) */}
-                                <div className="space-y-4 border-b border-slate-100 pb-8">
+                                <div className="space-y-4 border-b border-slate-100 pb-6 sm:pb-8">
                                      <div>
                                         <h4 className="font-semibold text-slate-900 flex items-center gap-2 text-lg mb-1">
                                             <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">1</span>
                                             Quản lý tuyên bố hiện tại ({statements?.length || 0})
                                         </h4>
-                                        <p className="text-sm text-slate-500 italic pl-9">
+                                        <p className="pl-0 text-sm italic text-slate-500 sm:pl-9">
                                           Tuyên bố đã tạo sẽ <span className="font-medium">không thể chỉnh sửa</span> hoặc gửi/gửi lại email xác thực.
                                           Nếu cần thay đổi nội dung, hãy <span className="font-medium">xóa</span> và tạo tuyên bố mới.
                                         </p>
                                     </div>
-                                    <div className="pl-9 space-y-3">
+                                    <div className="space-y-3 pl-0 sm:pl-9">
                                         {!statements || statements.length === 0 ? (
                                             <p className="text-sm text-slate-400 italic">Chưa có tuyên bố nào.</p>
                                         ) : (
@@ -2039,15 +2043,61 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                 </div>
 
                                 {/* 2. NEW STATEMENTS (Now Second) */}
-                                <div className="space-y-4 border-b border-slate-100 pb-8">
+                                <div className="space-y-4 border-b border-slate-100 pb-6 sm:pb-8">
                                     <div>
                                         <h4 className="font-semibold text-slate-900 flex items-center gap-2 text-lg mb-1">
                                             <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">2</span>
                                             Tạo tuyên bố mới
                                         </h4>
-                                        <p className="text-sm text-slate-500 italic pl-9">Nhập nội dung tuyên bố mà công ty muốn cam kết. Có thể tạo nhiều tuyên bố cùng lúc.</p>
+                                        <div className="pl-0 sm:pl-9">
+                                            <div className="flex max-w-full flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+                                                <p className="leading-relaxed">
+                                                    Nhập nội dung tuyên bố mà công ty muốn cam kết. Có thể tạo nhiều tuyên bố cùng lúc.
+                                                </p>
+                                                <Popover.Root>
+                                                    <Popover.Trigger asChild>
+                                                        <button
+                                                            type="button"
+                                                            className="inline-flex w-auto shrink-0 self-start items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 transition-colors hover:border-blue-300 hover:text-blue-600 sm:self-auto"
+                                                        >
+                                                            <Info className="h-3.5 w-3.5" />
+                                                            Gợi ý viết
+                                                        </button>
+                                                    </Popover.Trigger>
+                                                    <Popover.Portal>
+                                                        <Popover.Content
+                                                            side="bottom"
+                                                            align="start"
+                                                            sideOffset={8}
+                                                            className="z-[120] w-[min(92vw,460px)] rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-xl"
+                                                        >
+                                                            <div className="space-y-3">
+                                                                <p className="text-sm font-semibold text-slate-900">
+                                                                    Mẹo viết tuyên bố hiệu quả
+                                                                </p>
+                                                                <p className="text-sm text-slate-600">
+                                                                    Nội dung tuyên bố nên ngắn gọn, rõ ràng, ai đọc cũng hiểu ngay, và quan trọng nhất cần thể hiện
+                                                                    <span className="font-semibold"> SỰ KHÁC BIỆT </span>
+                                                                    trong văn hóa công ty bạn với các công ty khác.
+                                                                </p>
+                                                                <div className="space-y-2 text-xs">
+                                                                    <div className="flex items-start gap-2 text-emerald-700">
+                                                                        <CheckCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                                                        <p>Nên: “Thưởng 1.000.000đ/ tháng cho nhân viên không bao giờ đi muộn.”</p>
+                                                                    </div>
+                                                                    <div className="flex items-start gap-2 text-rose-700">
+                                                                        <X className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                                                        <p>Không nên: “Công ty không có văn hóa đi làm muộn.”</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </Popover.Content>
+                                                    </Popover.Portal>
+                                                </Popover.Root>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="pl-9 space-y-4">
+                                    <div className="space-y-4 pl-0 sm:pl-9">
                                         {newStatements.map((stmt, idx) => (
                                             <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative group">
                                                 {newStatements.length > 1 && (
@@ -2148,9 +2198,9 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                                             <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">3</span>
                                             Gửi email xác thực (tùy chọn)
                                         </h4>
-                                        <p className="text-sm text-slate-500 italic pl-9">Nếu muốn gửi email cho nhân viên để xác thực tuyên bố, hãy chọn hoặc tải lên danh sách email. Bỏ qua bước này nếu chỉ muốn tạo tuyên bố đơn giản.</p>
+                                        <p className="pl-0 text-sm italic text-slate-500 sm:pl-9">Nếu muốn gửi email cho nhân viên để xác thực tuyên bố, hãy chọn hoặc tải lên danh sách email. Bỏ qua bước này nếu chỉ muốn tạo tuyên bố đơn giản.</p>
                                     </div>
-                                    <div className="pl-9 space-y-4">
+                                    <div className="space-y-4 pl-0 sm:pl-9">
                                         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end bg-slate-50 p-4 rounded-xl border border-slate-100">
                                             <div className="flex-1 w-full">
                                                 <Label className="text-sm font-medium text-slate-700 mb-2 block flex items-center gap-2">
@@ -2901,7 +2951,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
         )}
 
         {/* Edit Dialogs (Only basic text for now to keep file size manageable) */}
-        <Dialog open={!!editingSection} onOpenChange={(open) => !open && setEditingSection(null)}>
+        <Dialog open={!!editingSection} onOpenChange={(open) => { if (!open) { setEditingSection(null); setFormData({}); } }}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogDescription className="sr-only">
