@@ -885,10 +885,10 @@ const PostCard = memo(function PostCard({ post }: { post: PostCardData }) {
       <div className="flex items-center border-t border-[var(--border)]">
         {/* Thích button with hover reactions */}
         <div className="relative flex-1 group/like" ref={likeAreaRef}>
-          {/* Reaction popup */}
+          {/* Reaction popup - pb-2 bridges hover gap so cursor can move from button to picker without losing group-hover (desktop) */}
           <div
             className={cn(
-              "absolute bottom-full left-2 mb-2 z-50 transition-all duration-200 sm:left-1/2 sm:-translate-x-1/2",
+              "absolute bottom-full left-2 z-50 pb-2 transition-all duration-200 sm:left-1/2 sm:-translate-x-1/2",
               isMobileLikeMode
                 ? showReactionPicker
                   ? "visible opacity-100"

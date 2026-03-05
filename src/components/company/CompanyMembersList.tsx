@@ -47,7 +47,8 @@ export default function CompanyMembersList({ companyId, members, invitations = [
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const canManage = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
+  // const canManage = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
+  const canManage = currentUserRole === "OWNER";
 
   const removeMutation = useMutation({
     mutationFn: async (memberId: string) => {

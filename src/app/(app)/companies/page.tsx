@@ -4,7 +4,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
 import Link from "next/link";
-import { MapPin, Settings2, Users } from "lucide-react";
+import { MapPin, Settings2, Users, Settings, Crown, ShieldCheck, User } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 
 import api from "@/lib/api";
@@ -25,6 +25,7 @@ type Membership = {
     name: string;
     slug: string;
     tagline?: string | null;
+    logoUrl?: string | null;
   };
 };
 
@@ -127,7 +128,7 @@ export default function CompaniesPage() {
 
   return (
     <div className="space-y-10">
-      <section className="space-y-3">
+      <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-[var(--foreground)]">Công ty của tôi</h2>
           <Button asChild size="sm" variant="secondary">
@@ -136,49 +137,51 @@ export default function CompaniesPage() {
         </div>
 
         {membershipsQuery.isLoading ? (
-          <div className="flex flex-wrap gap-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 2 }).map((_, index) => (
-              <Skeleton key={index} className="h-24 w-full rounded-md md:w-64" />
+              <Skeleton key={index} className="h-20 w-full rounded-xl" />
             ))}
           </div>
         ) : memberships.length ? (
-          <div className="flex flex-wrap gap-3">
-            {memberships.map((membership) => (
-              <Card
-                key={membership.membershipId}
-                className="flex w-full flex-col justify-between rounded-lg border border-dashed border-[var(--border)] bg-[var(--card)] p-4 text-sm md:w-[240px]"
-              >
-                <div className="space-y-1">
-                  <Link
-                    href={`/companies/${membership.company.slug}`}
-                    className="line-clamp-2 text-sm font-semibold text-[var(--foreground)] hover:text-[var(--brand)]"
-                  >
-                    {membership.company.name}
-                  </Link>
-                  {membership.company.tagline ? (
-                    <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">{membership.company.tagline}</p>
-                  ) : null}
-                </div>
-                <div className="mt-3 flex items-center justify-between text-xs text-[var(--muted-foreground)]">
-                  <span className="rounded-full bg-[var(--brand)]/10 px-2 py-0.5 font-medium text-[var(--brand)] uppercase">
-                    {membership.role}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Button asChild size="sm" variant="ghost">
-                      <Link href={`/companies/${membership.company.slug}`}>Xem</Link>
-                    </Button>
-                    <Button asChild size="sm" variant="outline">
-                      <Link href={`/companies/${membership.company.slug}/manage`}>Quản trị</Link>
-                    </Button>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {memberships.map((membership) => {
+              const RoleIcon = membership.role === 'OWNER' ? Crown : membership.role === 'ADMIN' ? ShieldCheck : User;
+              const roleLabel = membership.role === 'OWNER' ? 'Chủ sở hữu' : membership.role === 'ADMIN' ? 'Quản trị viên' : 'Thành viên';
+              return (
+                <Link
+                  key={membership.membershipId}
+                  href={`/companies/${membership.company.slug}`}
+                  className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3.5 transition-all hover:border-[var(--brand)]/30 hover:shadow-md"
+                >
+                  <CompanyAvatar name={membership.company.name} logoUrl={membership.company.logoUrl} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-[var(--foreground)] group-hover:text-[var(--brand)] transition-colors">
+                      {membership.company.name}
+                    </p>
+                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
+                      <RoleIcon className="h-3 w-3 shrink-0" />
+                      <span>{roleLabel}</span>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                  <Button
+                    asChild
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Link href={`/companies/${membership.company.slug}/manage`} title="Quản trị">
+                      <Settings className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </Link>
+              );
+            })}
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--card)] p-4 text-xs text-[var(--muted-foreground)]">
+          <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] p-5 text-sm text-[var(--muted-foreground)]">
             <p className="font-medium text-[var(--foreground)]">Bạn chưa tham gia công ty nào.</p>
-            <p className="mt-1">
+            <p className="mt-1 text-xs">
               Nếu bạn là chủ doanh nghiệp, hãy tạo hồ sơ công ty để thu hút ứng viên và quản lý hoạt động tuyển dụng.
             </p>
           </div>

@@ -69,6 +69,7 @@ export interface CompanyProfileData {
       desc?: string;
     }>;
   };
+  gallery?: Array<{ url: string; type: 'image' | 'video'; caption?: string }>;
   leaders?: any;
   story?: any;
   culture?: any;
