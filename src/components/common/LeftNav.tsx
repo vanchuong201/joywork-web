@@ -22,6 +22,35 @@ import {
   type NavItem,
 } from "./navigation-config";
 
+const MAX_COMPANY_NAV_ITEMS = 6;
+
+function StaticPageLinks() {
+  return (
+    <div className="mt-auto border-t border-[var(--border)] pt-3 text-xs text-[var(--muted-foreground)]">
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        <Link
+          href="/gioi-thieu"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-[var(--foreground)] hover:underline"
+        >
+          Giới thiệu
+        </Link>
+        <span>·</span>
+        <Link
+          href="/dieu-khoan-hoat-dong"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-[var(--foreground)] hover:underline"
+        >
+          Điều khoản hoạt động
+        </Link>
+      </div>
+      <p className="mt-1">JOYWORK © {new Date().getFullYear()}</p>
+    </div>
+  );
+}
+
 function NavSection({
   title,
   items,
@@ -111,12 +140,13 @@ export default function LeftNav() {
 
   if (!isReady) {
     return (
-      <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">
+      <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:sticky md:top-24 md:block md:h-[calc(100vh-6rem)]">
         <div className="flex h-full flex-col gap-4 p-4">
           <Skeleton className="h-16 rounded-md" />
           <Skeleton className="h-28 rounded-md" />
           <Skeleton className="h-28 rounded-md" />
           <Skeleton className="h-28 rounded-md" />
+          <StaticPageLinks />
         </div>
       </aside>
     );
@@ -124,8 +154,8 @@ export default function LeftNav() {
 
   if (!user) {
     return (
-      <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">
-        <div className="p-4">
+      <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:sticky md:top-24 md:block md:h-[calc(100vh-6rem)]">
+        <div className="flex h-full flex-col p-4">
           <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--muted-foreground)]">
             <p className="font-medium text-[var(--foreground)]">Đăng nhập để cá nhân hóa trải nghiệm</p>
             <p className="mt-1 text-xs">
@@ -146,6 +176,7 @@ export default function LeftNav() {
               </Link>
             </div>
           </div>
+          <StaticPageLinks />
         </div>
       </aside>
     );
@@ -154,11 +185,14 @@ export default function LeftNav() {
   const primaryNav = buildLeftExploreNav();
   const personalNav = leftPersonalNav;
   const companyItems = buildCompanyManageNav(memberships);
+  const visibleCompanyItems = companyItems.slice(0, MAX_COMPANY_NAV_ITEMS);
+  const hasMoreCompanyItems = companyItems.length > MAX_COMPANY_NAV_ITEMS;
   const adminNav = buildLeftAdminNav(user);
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:block">
-      <nav className="flex h-full flex-col gap-6 p-4">
+    <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:sticky md:top-24 md:block md:h-[calc(100vh-6rem)]">
+      <nav className="flex h-full flex-col p-4">
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
         <div className="rounded-md border border-[var(--border)] bg-[var(--background)] p-3">
           <div className="flex items-center gap-3">
             {user.avatar && !avatarError ? (
@@ -223,10 +257,21 @@ export default function LeftNav() {
         <NavSection title="Không gian của tôi" items={personalNav} pathname={pathname} />
 
         {companyItems.length > 0 ? (
-          <NavSection title="Công ty của tôi" items={companyItems} pathname={pathname} truncateLabel />
+          <div>
+            <NavSection title="Công ty của tôi" items={visibleCompanyItems} pathname={pathname} truncateLabel />
+            {hasMoreCompanyItems ? (
+              <Link
+                href="/companies"
+                className="mt-1 inline-block px-2 text-xs font-medium text-[var(--brand)] hover:underline"
+              >
+                Xem thêm ({companyItems.length - MAX_COMPANY_NAV_ITEMS})
+              </Link>
+            ) : null}
+          </div>
         ) : null}
 
         {adminNav.length > 0 ? <NavSection title="Hệ thống" items={adminNav} pathname={pathname} /> : null}
+        </div>
 
         {/* Support Modal */}
         {joyworkCompanyId && joyworkCompany && (
@@ -253,6 +298,7 @@ export default function LeftNav() {
             }}
           />
         )}
+        <StaticPageLinks />
       </nav>
     </aside>
   );
