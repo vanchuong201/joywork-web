@@ -9,24 +9,56 @@ type Props = {
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const API_BASE_CANDIDATES = Array.from(
+  new Set(
+    [
+      process.env.INTERNAL_API_BASE_URL,
+      API_BASE_URL,
+      "http://localhost:4000",
+      "http://127.0.0.1:4000",
+    ].filter(Boolean)
+  )
+) as string[];
 
 async function getCompany(slug: string, cookie?: string) {
-  const res = await fetch(`${API_BASE_URL}/api/companies/${slug}`, {
-    cache: "no-store",
-    headers: cookie ? { Cookie: cookie } : undefined,
-  });
+  let sawNotFound = false;
+  let lastError: unknown = null;
 
-  if (!res.ok) {
-    if (res.status === 404) return null;
-    throw new Error("Failed to fetch company");
+  for (const baseUrl of API_BASE_CANDIDATES) {
+    try {
+      const res = await fetch(`${baseUrl}/api/companies/${slug}`, {
+        cache: "no-store",
+        headers: cookie ? { Cookie: cookie } : undefined,
+      });
+
+      if (res.ok) {
+        const payload = await res.json();
+        return payload?.data?.company ?? null;
+      }
+
+      if (res.status === 404) {
+        sawNotFound = true;
+        continue;
+      }
+
+      lastError = new Error(`Failed to fetch company: ${res.status}`);
+    } catch (error) {
+      lastError = error;
+    }
   }
 
-  return res.json().then((r) => r.data.company);
+  if (sawNotFound) return null;
+  throw lastError instanceof Error ? lastError : new Error("Failed to fetch company");
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const company = await getCompany(slug);
+  let company: any = null;
+  try {
+    company = await getCompany(slug);
+  } catch {
+    return {};
+  }
   if (!company) return {};
   return {
     title: `Quản lý - ${company.name} | JoyWork`,
@@ -38,7 +70,21 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
   const cookie = headersList.get("cookie") || "";
   
   const { slug } = await params;
-  const company = await getCompany(slug, cookie);
+  let company: any = null;
+  try {
+    company = await getCompany(slug, cookie);
+  } catch {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-12">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center">
+          <h2 className="mb-2 text-lg font-semibold text-[var(--foreground)]">Không thể tải dữ liệu doanh nghiệp</h2>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            Không kết nối được tới máy chủ API. Vui lòng kiểm tra backend và thử tải lại trang.
+          </p>
+        </div>
+      </div>
+    );
+  }
   
   if (!company) notFound();
 

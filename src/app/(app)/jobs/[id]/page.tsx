@@ -337,9 +337,9 @@ export default function JobDetailPage() {
           </SectionCard>
         ) : null}
 
-        {/* Thông tin chung */}
+        {/* Thông tin bổ sung */}
         {job.generalInfo ? (
-          <SectionCard title="Thông tin chung">
+          <SectionCard title="Thông tin bổ sung">
             <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.generalInfo) }} />
           </SectionCard>
         ) : null}

@@ -47,7 +47,7 @@ const schema = z
     department: z.string().max(100, "Bộ phận tối đa 100 ký tự").optional().or(z.literal("")),
     jobLevel: optionalEnum(jobLevels, "Cấp bậc không hợp lệ"),
     educationLevel: optionalEnum(educationLevels, "Học vấn không hợp lệ"),
-    generalInfo: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Thông tin chung tối thiểu 10 ký tự" }),
+    generalInfo: z.string().optional(),
     mission: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Sứ mệnh/Vai trò tối thiểu 10 ký tự" }),
     tasks: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Nhiệm vụ chuyên môn tối thiểu 10 ký tự" }),
     knowledge: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Kiến thức chuyên môn tối thiểu 10 ký tự" }),
@@ -62,7 +62,7 @@ const schema = z
   })
   .superRefine((vals, ctx) => {
     const fields = [
-      { key: "generalInfo", max: 5000, label: "Thông tin chung" },
+      { key: "generalInfo", max: 5000, label: "Thông tin bổ sung" },
       { key: "mission", max: 5000, label: "Sứ mệnh/Vai trò" },
       { key: "tasks", max: 10000, label: "Nhiệm vụ chuyên môn" },
       { key: "knowledge", max: 5000, label: "Kiến thức chuyên môn" },
@@ -225,7 +225,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
         department: values.department?.trim() || null,
         jobLevel: values.jobLevel || null,
         educationLevel: values.educationLevel || null,
-        generalInfo: sanitizeHtml(values.generalInfo),
+        generalInfo: values.generalInfo ? sanitizeHtml(values.generalInfo) : null,
         mission: sanitizeHtml(values.mission),
         tasks: sanitizeHtml(values.tasks),
         knowledge: sanitizeHtml(values.knowledge),
@@ -328,7 +328,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
       department: "Bộ phận",
       jobLevel: "Cấp bậc",
       educationLevel: "Học vấn",
-      generalInfo: "Thông tin chung",
+      generalInfo: "Thông tin bổ sung",
       mission: "Sứ mệnh/Vai trò",
       tasks: "Nhiệm vụ chuyên môn",
       knowledge: "Kiến thức chuyên môn",
@@ -861,22 +861,21 @@ Quan hệ bên ngoài:
               </FormField>
             </FormSection>
 
-            {/* Section 10: Thông tin chung */}
+            {/* Section 10: Thông tin bổ sung */}
             <FormSection
-              title="10. Thông tin chung"
+              title="10. Thông tin bổ sung"
               description="Thông tin bổ sung về vị trí (tên vị trí, báo cáo cho ai, v.v.). Section này sẽ hiển thị ở cuối trang JD."
               isExpanded={expandedSections.has("general")}
               onToggle={() => toggleSection("general")}
-              required
             >
-              <FormField label="Nhập thông tin chung (Bộ phận, Báo cáo cho...)" error={errors.generalInfo?.message} required>
+              <FormField label="Nhập thông tin bổ sung (Bộ phận, Báo cáo cho...)" error={errors.generalInfo?.message}>
                 <div data-field="generalInfo">
                   <Controller
                     name="generalInfo"
                     control={control}
                     render={({ field }) => (
                       <TiptapEditor
-                        value={field.value}
+                        value={field.value || ""}
                         onChange={field.onChange}
                         placeholder={`● Tên vị trí: Phụ trách Phát triển Cộng đồng
 ● Bộ phận: Cộng đồng

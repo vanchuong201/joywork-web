@@ -27,6 +27,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [uploadingVerification, setUploadingVerification] = useState(false);
     const [verificationFile, setVerificationFile] = useState<File | null>(null);
+    const [verificationLegalName, setVerificationLegalName] = useState(company.legalName || "");
     const [isMounted, setIsMounted] = useState(false);
     
     const coverInputRef = useRef<HTMLInputElement>(null);
@@ -36,6 +37,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (verificationDialogOpen) {
+            setVerificationLegalName(company.legalName || "");
+        }
+    }, [verificationDialogOpen, company.legalName]);
 
     // Track original legal name for re-verification detection
     const originalLegalName = useMemo(() => company.legalName || "", [company.legalName]);
@@ -147,8 +154,25 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             toast.error("Vui lòng chọn file DKKD");
             return;
         }
+        const legalName = verificationLegalName.trim();
+        if (!legalName) {
+            toast.error("Vui lòng nhập Tên pháp lý đầy đủ trước khi gửi xác thực");
+            return;
+        }
         setUploadingVerification(true);
         try {
+            const currentLegalName = (company.legalName || "").trim();
+            if (legalName !== currentLegalName) {
+                const payload: any = { legalName };
+                const legalNameChangedVerified =
+                    verificationStatus === "VERIFIED" && legalName !== originalLegalName.trim();
+                if (legalNameChangedVerified) {
+                    payload.requestReVerification = true;
+                }
+                await api.patch(`/api/companies/${company.id}`, payload);
+                setFormData((prev) => ({ ...prev, legalName }));
+            }
+
             const fileData = await fileToBase64(verificationFile);
             await api.post("/api/uploads/company/verification-document", {
                 companyId: company.id,
@@ -189,6 +213,22 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         const file = e.target.files?.[0];
         if (!file) return;
 
+        const MAX_COVER_SIZE = 8 * 1024 * 1024; // 8MB
+        const ALLOWED_COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+        // Client-side validation mirrors API rules for faster feedback
+        if (!ALLOWED_COVER_TYPES.has(file.type)) {
+            toast.error("Định dạng tệp không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WEBP");
+            e.target.value = "";
+            return;
+        }
+
+        if (file.size > MAX_COVER_SIZE) {
+            toast.error("Kích thước tệp vượt quá giới hạn 8MB");
+            e.target.value = "";
+            return;
+        }
+
         setUploadingCover(true);
         try {
             const reader = new FileReader();
@@ -204,16 +244,18 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     });
                     toast.success("Cập nhật ảnh bìa thành công");
                     router.refresh();
-                } catch (error) {
+                } catch (error: any) {
                     console.error(error);
-                    toast.error("Tải ảnh bìa thất bại");
+                    const message = error?.response?.data?.error?.message ?? "Tải ảnh bìa thất bại";
+                    toast.error(message);
                 } finally {
                     setUploadingCover(false);
                 }
             };
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Đã xảy ra lỗi khi xử lý ảnh");
+            const message = error?.response?.data?.error?.message ?? "Đã xảy ra lỗi khi xử lý ảnh";
+            toast.error(message);
             setUploadingCover(false);
         }
     };
@@ -649,13 +691,15 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             </div>
                         )}
 
-                        {/* Legal name display */}
+                        {/* Legal name input */}
                         <div className="space-y-2">
                             <Label>Tên pháp lý đầy đủ</Label>
-                            <div className="p-3 rounded-lg bg-[var(--muted)] text-sm">
-                                {company.legalName || <span className="text-[var(--muted-foreground)] italic">Chưa có - vui lòng cập nhật trong thông tin cơ bản</span>}
-                            </div>
-                            {!company.legalName && (
+                            <Input
+                                value={verificationLegalName}
+                                onChange={(e) => setVerificationLegalName(e.target.value)}
+                                placeholder="Nhập tên pháp lý đầy đủ của doanh nghiệp"
+                            />
+                            {!verificationLegalName.trim() && (
                                 <p className="text-xs text-amber-600">
                                     Vui lòng nhập tên pháp lý trước khi xác thực.
                                 </p>
@@ -707,7 +751,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         <Button variant="outline" onClick={() => setVerificationDialogOpen(false)}>Đóng</Button>
                         <Button 
                             onClick={handleUploadVerification} 
-                            disabled={uploadingVerification || !verificationFile || !company.legalName}
+                            disabled={uploadingVerification || !verificationFile || !verificationLegalName.trim()}
                         >
                             {uploadingVerification ? (
                                 <>

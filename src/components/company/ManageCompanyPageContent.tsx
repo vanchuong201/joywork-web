@@ -47,7 +47,7 @@ export default function ManageCompanyPageContent({ company }: { company: Company
                 <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4">
                     <h3 className="text-base font-semibold text-[var(--foreground)] sm:text-lg">Tạo bài đăng mới</h3>
                     <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                      Chia sẻ thông tin tuyển dụng, hoạt động và cập nhật mới từ doanh nghiệp.
+                    Bạn có thể chia sẻ những câu chuyện hoặc sự kiện diễn ra thực tế tại Doanh Nghiệp.
                     </p>
                 </div>
                 <PostComposer companyId={company.id} />

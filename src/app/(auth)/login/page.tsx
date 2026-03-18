@@ -114,7 +114,7 @@ function LoginPageContent() {
     };
   }, [fetchMe, router, searchParams]);
 
-  const openSocialPopup = (provider: "google" | "facebook") => {
+  const openSocialPopup = (provider: "google") => {
     if (typeof window === "undefined") return;
     const width = 500;
     const height = 600;
@@ -240,14 +240,6 @@ function LoginPageContent() {
               onClick={() => openSocialPopup("google")}
             >
               <span className="text-sm font-medium">Tiếp tục với Google</span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full flex items-center justify-center gap-2"
-              onClick={() => openSocialPopup("facebook")}
-            >
-              <span className="text-sm font-medium">Tiếp tục với Facebook</span>
             </Button>
           </div>
         </div>

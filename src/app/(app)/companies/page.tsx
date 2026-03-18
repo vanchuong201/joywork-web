@@ -4,6 +4,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MapPin, Settings2, Users, Settings, Crown, ShieldCheck, User } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 
@@ -61,6 +62,7 @@ const SIZE_OPTIONS: { value: string; label: string }[] = [
 ];
 
 export default function CompaniesPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [industry, setIndustry] = useState("");
   const [location, setLocation] = useState("");
@@ -148,10 +150,18 @@ export default function CompaniesPage() {
               const RoleIcon = membership.role === 'OWNER' ? Crown : membership.role === 'ADMIN' ? ShieldCheck : User;
               const roleLabel = membership.role === 'OWNER' ? 'Chủ sở hữu' : membership.role === 'ADMIN' ? 'Quản trị viên' : 'Thành viên';
               return (
-                <Link
+                <div
                   key={membership.membershipId}
-                  href={`/companies/${membership.company.slug}`}
-                  className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3.5 transition-all hover:border-[var(--brand)]/30 hover:shadow-md"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => router.push(`/companies/${membership.company.slug}/manage`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      router.push(`/companies/${membership.company.slug}/manage`);
+                    }
+                  }}
+                  className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3.5 transition-all hover:border-[var(--brand)]/30 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                 >
                   <CompanyAvatar name={membership.company.name} logoUrl={membership.company.logoUrl} />
                   <div className="min-w-0 flex-1">
@@ -174,7 +184,7 @@ export default function CompaniesPage() {
                       <Settings className="h-4 w-4" />
                     </Link>
                   </Button>
-                </Link>
+                </div>
               );
             })}
           </div>

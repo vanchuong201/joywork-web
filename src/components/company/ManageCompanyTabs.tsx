@@ -148,7 +148,7 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
 
   return (
     <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-      <div className="-mx-2 sticky top-[6.5rem] z-20 mb-5 rounded-xl border border-[var(--border)] bg-[var(--card)]/95 p-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/80 sm:mx-0 sm:mb-8 sm:p-2">
+      <div className="-mx-2 sticky top-[7.4rem] z-30 mb-5 rounded-xl border border-[var(--border)] bg-[var(--card)]/98 p-1 shadow-md backdrop-blur-md supports-[backdrop-filter]:bg-[var(--card)]/96 sm:mx-0 sm:mb-8 sm:p-2">
         <div className="relative">
           <TabsList
             ref={tabsScrollRef}

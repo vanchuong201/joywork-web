@@ -6,6 +6,7 @@ import CompanyActivityFeed from "@/components/company/CompanyActivityFeed";
 import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero";
 import CompanyProfileContent from "@/components/company/profile/CompanyProfileContent";
 import CompanyJobsTab from "@/components/company/CompanyJobsTab";
+import CompanyModeSwitchBar from "@/components/company/CompanyModeSwitchBar";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -13,24 +14,56 @@ type Props = {
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const API_BASE_CANDIDATES = Array.from(
+  new Set(
+    [
+      process.env.INTERNAL_API_BASE_URL,
+      API_BASE_URL,
+      "http://localhost:4000",
+      "http://127.0.0.1:4000",
+    ].filter(Boolean)
+  )
+) as string[];
 
 async function getCompany(slug: string) {
-  const res = await fetch(`${API_BASE_URL}/api/companies/${slug}`, {
-    cache: "no-store",
-    next: { tags: [`company-${slug}`] },
-  });
+  let sawNotFound = false;
+  let lastError: unknown = null;
 
-  if (!res.ok) {
-    if (res.status === 404) return null;
-    throw new Error("Failed to fetch company");
+  for (const baseUrl of API_BASE_CANDIDATES) {
+    try {
+      const res = await fetch(`${baseUrl}/api/companies/${slug}`, {
+        cache: "no-store",
+        next: { tags: [`company-${slug}`] },
+      });
+
+      if (res.ok) {
+        const payload = await res.json();
+        return payload?.data?.company ?? null;
+      }
+
+      if (res.status === 404) {
+        sawNotFound = true;
+        continue;
+      }
+
+      lastError = new Error(`Failed to fetch company: ${res.status}`);
+    } catch (error) {
+      lastError = error;
+    }
   }
 
-  return res.json().then((r) => r.data.company);
+  if (sawNotFound) return null;
+  throw lastError instanceof Error ? lastError : new Error("Failed to fetch company");
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const company = await getCompany(slug);
+  let company: any = null;
+  try {
+    company = await getCompany(slug);
+  } catch {
+    return {};
+  }
   if (!company) return {};
 
   return {
@@ -46,7 +79,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CompanyPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const company = await getCompany(slug);
+  let company: any = null;
+  try {
+    company = await getCompany(slug);
+  } catch {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-12">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center">
+          <h2 className="mb-2 text-lg font-semibold text-[var(--foreground)]">Không thể tải hồ sơ doanh nghiệp</h2>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            Không kết nối được tới máy chủ API. Vui lòng kiểm tra backend và thử tải lại trang.
+          </p>
+        </div>
+      </div>
+    );
+  }
   if (!company) notFound();
 
   const { tab: searchTab } = await searchParams;
@@ -93,13 +140,14 @@ export default async function CompanyPage({ params, searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-[var(--background)] font-sans selection:bg-[var(--brand-light)] selection:text-[var(--brand-dark)] pb-20">
+      <CompanyModeSwitchBar slug={company.slug} mode="public" />
       
       {/* Hero Section */}
       <CompanyProfileHero company={company} />
 
       {/* Main Content & Tabs */}
       <div className="mx-auto max-w-7xl -mx-4 px-2 sm:mx-auto sm:px-6">
-        <div className="-mx-2 sticky top-[6.5rem] z-20 mb-5 rounded-xl border border-[var(--border)] bg-[var(--card)]/95 p-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/80 sm:mx-0 sm:mb-8 sm:p-2">
+        <div className="-mx-2 sticky top-[7.4rem] z-30 mb-5 rounded-xl border border-[var(--border)] bg-[var(--card)]/98 p-1 shadow-md backdrop-blur-md supports-[backdrop-filter]:bg-[var(--card)]/96 sm:mx-0 sm:mb-8 sm:p-2">
           <nav className="flex w-full items-center gap-1 overflow-x-auto sm:gap-2" aria-label="Điều hướng hồ sơ công ty">
             <Link
               href={`/companies/${company.slug}?tab=overview`}

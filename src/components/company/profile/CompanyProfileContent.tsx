@@ -147,7 +147,7 @@ function LeadershipMediaSection({
   };
 
   return (
-    <div className="relative group/leadership">
+    <div className="relative isolate group/leadership">
       {isEditable && (
         <div className="absolute top-4 right-4 z-30 opacity-0 group-hover/leadership:opacity-100 transition-opacity flex items-center gap-2">
           <Button onClick={onEdit} variant="secondary" size="sm" className="bg-white/90 hover:bg-white shadow-sm border">
@@ -2310,10 +2310,10 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
               <Badge>TRIẾT LÝ QUẢN TRỊ</Badge>
               <h2 className="mt-4 mb-6 text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
-                Cam Kết Được <br /><span className="text-blue-600">Xác Thực Bởi Số Liệu</span>
+                Cam Kết Được <br /><span className="text-blue-600">Xác Thực Bởi Nhân Viên</span>
               </h2>
               <p className="mb-6 text-base sm:text-lg text-slate-600">
-                Các tuyên bố dưới đây được xác thực trực tiếp bởi nhân viên thông qua email riêng biệt.
+              Các tuyên bố dưới đây được xác thực bởi chính các nhân sự của công ty thông qua email
               </p>
 
               <Dialog open={manageStatementsOpen} onOpenChange={setManageStatementsOpen}>
@@ -3361,6 +3361,9 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
             {editingSection === 'leadershipPhilosophy' && (
               <div className="space-y-4">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-relaxed text-slate-600">
+                  Ở mục này bạn có thể để ảnh của lãnh đạo kèm theo một câu nói ngắn thể hiện triết lý quản trị của lãnh đạo.
+                </div>
                 <div className="space-y-2">
                   <Label>Câu trích dẫn triết lý</Label>
                   <Textarea

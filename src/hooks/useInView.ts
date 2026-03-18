@@ -4,14 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function useInView<T extends Element = Element>(options?: IntersectionObserverInit) {
   const ref = useRef<T | null>(null);
+  const [node, setNode] = useState<T | null>(null);
   const [inView, setInView] = useState(false);
 
   const setRef = useCallback((node: T | null) => {
     ref.current = node;
+    setNode(node);
   }, []);
 
   useEffect(() => {
-    const node = ref.current;
     if (!node) return;
     const observer = new IntersectionObserver(([entry]) => {
       setInView(entry.isIntersecting);
@@ -21,7 +22,7 @@ export default function useInView<T extends Element = Element>(options?: Interse
     return () => {
       observer.disconnect();
     };
-  }, [options]);
+  }, [node, options]);
 
   return { ref: setRef, inView } as const;
 }

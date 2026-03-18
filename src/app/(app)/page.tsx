@@ -30,7 +30,10 @@ function FeedPageContent() {
   const pathname = usePathname();
   const type = sp.get("type") || undefined; // STORY | ANNOUNCEMENT | EVENT
   const companyId = sp.get("companyId") || undefined;
-  const inViewOptions = useMemo(() => ({ rootMargin: "300px" }), []);
+  const inViewOptions = useMemo<IntersectionObserverInit>(
+    () => ({ root: null, rootMargin: "800px 0px 800px 0px", threshold: 0 }),
+    []
+  );
   const { ref, inView } = useInView<HTMLDivElement>(inViewOptions);
   const pageSize = 6;
   const user = useAuthStore((state) => state.user);
@@ -50,10 +53,11 @@ function FeedPageContent() {
 
   // Auto-fetch next page when sentinel is visible
   useEffect(() => {
+    if (!query.isSuccess) return;
     if (inView && query.hasNextPage && !query.isFetchingNextPage) {
       query.fetchNextPage();
     }
-  }, [inView, query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage]);
+  }, [inView, query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage, query.isSuccess]);
   const setType = (val?: string) => {
     const next = new URLSearchParams(sp.toString());
     if (!val) next.delete("type");
@@ -141,18 +145,32 @@ function FeedPageContent() {
           {/* Load more sentinel */}
           {query.hasNextPage ? (
             <div className="space-y-3">
-              <div ref={ref} className="h-4" />
+              <div ref={ref} className="h-6" />
               {query.isFetchingNextPage ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 2 }).map((_, i) => (
-                    <Skeleton key={i} className="h-40 rounded-lg" />
-                  ))}
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3">
+                  <div className="mb-3 flex items-center justify-center gap-2 text-xs text-[var(--muted-foreground)]">
+                    <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-[var(--brand)] [animation-delay:-0.2s]" />
+                    <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-[var(--brand)] [animation-delay:-0.1s]" />
+                    <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-[var(--brand)]" />
+                    <span className="ml-1">Đang tải thêm bài viết...</span>
+                  </div>
+                  <div className="space-y-3">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <Skeleton key={i} className="h-40 rounded-lg" />
+                    ))}
+                  </div>
                 </div>
-              ) : (
+              ) : query.isError ? (
                 <div className="flex justify-center">
-                  <Button variant="outline" onClick={() => query.fetchNextPage()}>Tải thêm</Button>
+                  <Button variant="outline" onClick={() => query.fetchNextPage()}>
+                    Tải lại bài viết
+                  </Button>
                 </div>
-              )}
+              ) : null}
+            </div>
+          ) : posts.length ? (
+            <div className="flex justify-center py-3 text-xs text-[var(--muted-foreground)]">
+              Bạn đã xem hết bài viết mới.
             </div>
           ) : null}
         </div>
