@@ -1,0 +1,13 @@
+---
+description: JoyWork web architecture boundaries and reuse rules
+alwaysApply: true
+---
+
+# JoyWork Web Architecture
+
+- Keep route entrypoints in `src/app` thin; push heavy UI or business logic into `src/components`, `src/hooks`, `src/lib`, `src/store`, or `src/contexts`.
+- Reuse existing feature folders and shared primitives before creating new top-level folders, duplicate modals, or parallel APIs.
+- Use `src/lib/api.ts` for HTTP access and preserve the current auth flow based on `accessToken` plus refresh interception.
+- Shared app providers belong in `src/app/providers.tsx`; do not duplicate provider trees per page unless route isolation is required.
+- Put reusable primitives in `src/components/ui`; keep feature-specific components close to the feature that owns them.
+- When an API contract changes, update the relevant frontend mapping, store, and rendered states in the same task.

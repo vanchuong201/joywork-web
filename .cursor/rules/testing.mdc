@@ -1,0 +1,15 @@
+---
+description: JoyWork frontend validation and testing expectations
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# JoyWork Frontend Testing
+
+- This repo currently exposes `npm run lint` but no visible automated test suite; for meaningful changes, treat lint as the minimum validation gate when practical.
+- `next build` does not enforce ESLint in this repo, so do not treat a successful build as equivalent to a lint pass.
+- When changing forms, auth, uploads, rich text, or routing, verify validation, loading, disabled state, error handling, and success flows.
+- For API-driven UI changes, confirm the response shape still matches the frontend code that reads `data` and error payloads.
+- For list or page states, verify loading, empty, error, and success rendering rather than only the happy path.
+- Add automated tests only when introducing reusable logic complex enough to justify it; otherwise document the manual verification you actually did.
+- Never claim unit, integration, or e2e coverage unless the tests were added or run in this task.

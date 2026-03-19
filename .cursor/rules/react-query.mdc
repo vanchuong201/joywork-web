@@ -1,0 +1,13 @@
+---
+description: JoyWork web React Query key and mutation conventions
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# JoyWork Web React Query
+
+- Use array query keys with a stable feature prefix like `["jobs", filters]` or `["company-summary", slug]`, matching the current codebase style.
+- Include the identifiers or filters that affect fetched data in the query key so cache entries stay correct.
+- After a mutation, invalidate or update every affected query family, not just the most obvious detail query.
+- Prefer React Query loading and mutation state over duplicating extra request flags unless the UX truly needs separate local state.
+- Keep optimistic updates and manual cache writes scoped and reversible; if the cache logic becomes broad, prefer invalidation over fragile ad hoc patching.

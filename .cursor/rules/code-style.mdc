@@ -1,0 +1,14 @@
+---
+description: JoyWork web formatting, imports, exports, and naming style
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# JoyWork Web Code Style
+
+- Match existing frontend formatting: `double quotes`, semicolons, and `@/` alias imports for cross-folder references.
+- Prefer relative imports only for the same folder or a very local sibling; otherwise use `@/`.
+- Use `PascalCase` for component files, `useX` for hooks, `UPPER_SNAKE_CASE` for constants, and clear feature-oriented filenames.
+- Prefer `default export` for `page.tsx`, `layout.tsx`, screen components, and large modals; prefer named exports for hooks, utilities, stores, and UI primitives.
+- Use `type Props = { ... }` for component props when the file follows the existing component pattern.
+- Do not add `"use client"` unless the file needs hooks, browser APIs, editors, uploads, or client-side event handling.

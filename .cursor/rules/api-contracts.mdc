@@ -1,0 +1,13 @@
+---
+description: JoyWork web expectations for backend response contracts
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# JoyWork Web API Contracts
+
+- Frontend code currently expects backend success responses in the shape `res.data.data` and error responses under `error`; do not introduce raw response handling for new code without a clear migration plan.
+- When touching an endpoint contract, update every affected frontend reader in the same task, including query mappers, store hydration, and mutation success handlers.
+- Preserve field names that the UI reads directly, such as `accessToken`, `user`, `company`, `job`, `posts`, `pagination`, or `url`, unless the matching frontend usage is updated too.
+- If a response shape is reused across multiple screens, prefer normalizing access through a shared feature API helper instead of duplicating ad hoc parsing.
+- Treat legacy contract quirks as compatibility constraints, not as a pattern to copy into unrelated new features.

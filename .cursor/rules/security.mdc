@@ -1,0 +1,14 @@
+---
+description: JoyWork frontend security and secrets handling
+alwaysApply: true
+---
+
+# JoyWork Frontend Security
+
+- Never commit, print, or paste secrets from `.env*`, tokens, cookies, signed URLs, or private backend endpoints.
+- Treat all user-provided HTML, editor output, upload metadata, and query params as untrusted input.
+- Preserve sanitization and file restrictions for uploads, avatars, covers, CVs, and any rich text content.
+- Do not use `dangerouslySetInnerHTML` unless the content is sanitized in the same flow or via a shared sanitize helper.
+- Respect permission-aware UX for company and account actions, but never assume UI checks replace backend authorization.
+- Do not introduce new token storage patterns or expose auth data outside the existing interceptor and store flow.
+- Do not hardcode public runtime config such as OAuth client IDs, API origins, or third-party keys in components; prefer `NEXT_PUBLIC_*` env variables.

@@ -1,0 +1,15 @@
+---
+description: JoyWork frontend component, form, and state conventions
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# JoyWork Frontend UI
+
+- Prefer functional components and add `"use client"` only when hooks, browser APIs, editors, uploads, or client-side interactivity are required.
+- Keep new route pages thin; if a page is already large, extract more logic out instead of growing the page further.
+- New forms should default to `react-hook-form` + `zodResolver`; keep manual `safeParse` style only when touching a local legacy flow.
+- Every form or mutation should model loading, disabled, inline field errors, and `toast.success` or `toast.error` behavior consistently.
+- Use React Query for server state and invalidation; keep Zustand reserved for cross-page state like auth, not page-local or form-local state.
+- Sanitize rich text or HTML before sending or rendering it, especially around editor output and `dangerouslySetInnerHTML`.
+- Reuse existing `src/components/ui` primitives and prefer `src/components/ui/dialog` for new modal work unless a touched legacy feature already uses another dialog stack.
