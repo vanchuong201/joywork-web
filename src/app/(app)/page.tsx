@@ -14,7 +14,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CompanySearch from "@/components/feed/CompanySearch";
 import PostCard, { type PostCardData } from "@/components/feed/PostCard";
 import FeedPostComposer from "@/components/feed/FeedPostComposer";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import useInView from "@/hooks/useInView";
 import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
@@ -38,7 +38,15 @@ function FeedPageContent() {
   const pageSize = 6;
   const user = useAuthStore((state) => state.user);
   const following = tab === "following" ? true : undefined;
-  const query = useInfiniteQuery<{ posts: Post[]; pagination: { page: number; totalPages: number } }>({
+  const {
+    data: feedData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isSuccess: feedQuerySuccess,
+    isLoading: feedQueryLoading,
+  } = useInfiniteQuery<{ posts: Post[]; pagination: { page: number; totalPages: number } }>({
     queryKey: ["feed", { type, companyId, following }],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
@@ -51,13 +59,34 @@ function FeedPageContent() {
     },
   });
 
-  // Auto-fetch next page when sentinel is visible
+  const loadMore = useCallback(() => {
+    if (!feedQuerySuccess || !hasNextPage || isFetchingNextPage || isFetchNextPageError) return;
+    fetchNextPage();
+  }, [feedQuerySuccess, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
+
   useEffect(() => {
-    if (!query.isSuccess) return;
-    if (inView && query.hasNextPage && !query.isFetchingNextPage) {
-      query.fetchNextPage();
-    }
-  }, [inView, query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage, query.isSuccess]);
+    if (inView) loadMore();
+  }, [inView, loadMore]);
+
+  const scrollRootMarginPx = 480;
+  useEffect(() => {
+    if (!feedQuerySuccess || !hasNextPage || isFetchingNextPage) return;
+
+    const onScrollOrResize = () => {
+      const doc = document.documentElement;
+      const scrollBottom = window.scrollY + window.innerHeight;
+      const threshold = doc.scrollHeight - scrollRootMarginPx;
+      if (scrollBottom >= threshold) loadMore();
+    };
+
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    window.addEventListener("resize", onScrollOrResize, { passive: true });
+    onScrollOrResize();
+    return () => {
+      window.removeEventListener("scroll", onScrollOrResize);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [feedQuerySuccess, hasNextPage, isFetchingNextPage, isFetchNextPageError, loadMore]);
   const setType = (val?: string) => {
     const next = new URLSearchParams(sp.toString());
     if (!val) next.delete("type");
@@ -71,7 +100,7 @@ function FeedPageContent() {
     router.replace(`${pathname}?${next.toString()}`);
   };
   const { openPrompt } = useAuthPrompt();
-  const allPosts = useMemo(() => (query.data?.pages ?? []).flatMap((p) => p.posts ?? []), [query.data]);
+  const allPosts = useMemo(() => (feedData?.pages ?? []).flatMap((p) => p.posts ?? []), [feedData]);
   const posts = useMemo(
     () =>
       tab === "trending"
@@ -129,7 +158,7 @@ function FeedPageContent() {
         ) : null}
       </div>
 
-      {query.isLoading ? (
+      {feedQueryLoading ? (
         <div className="space-y-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-40 rounded-lg" />
@@ -143,10 +172,10 @@ function FeedPageContent() {
             </div>
           ))}
           {/* Load more sentinel */}
-          {query.hasNextPage ? (
+          {hasNextPage ? (
             <div className="space-y-3">
-              <div ref={ref} className="h-6" />
-              {query.isFetchingNextPage ? (
+              <div ref={ref} className="h-6" aria-hidden />
+              {isFetchingNextPage ? (
                 <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3">
                   <div className="mb-3 flex items-center justify-center gap-2 text-xs text-[var(--muted-foreground)]">
                     <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-[var(--brand)] [animation-delay:-0.2s]" />
@@ -160,9 +189,9 @@ function FeedPageContent() {
                     ))}
                   </div>
                 </div>
-              ) : query.isError ? (
+              ) : isFetchNextPageError ? (
                 <div className="flex justify-center">
-                  <Button variant="outline" onClick={() => query.fetchNextPage()}>
+                  <Button variant="outline" onClick={() => fetchNextPage()}>
                     Tải lại bài viết
                   </Button>
                 </div>

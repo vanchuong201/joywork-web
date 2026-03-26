@@ -113,11 +113,19 @@ export default function LeftNav() {
     queryKey: ["joywork-company", joyworkCompanyId],
     queryFn: async () => {
       if (!joyworkCompanyId) return null;
-      const res = await api.get(`/api/companies/by-id/${joyworkCompanyId}`);
-      return res.data.data.company as { id: string; name: string; slug: string };
+      try {
+        const res = await api.get(`/api/companies/by-id/${joyworkCompanyId}`);
+        return res.data.data.company as { id: string; name: string; slug: string };
+      } catch (error: unknown) {
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        // Gracefully handle stale/missing configured company id to avoid noisy console errors.
+        if (status === 404) return null;
+        throw error;
+      }
     },
     enabled: Boolean(joyworkCompanyId) && Boolean(user),
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    retry: false,
   });
 
   const isReady = initialized && !loading;
@@ -238,16 +246,13 @@ export default function LeftNav() {
                   }}
                   disabled={!joyworkCompany}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
+                    "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
                     "bg-[var(--brand)]/10 text-[var(--brand)] hover:bg-[var(--brand)]/20 font-semibold",
                     !joyworkCompany && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <LifeBuoy size={16} />
                   <span className="flex-1 font-medium">Hỗ trợ</span>
-                  <span className="rounded-full bg-[var(--brand)]/20 px-2 py-0.5 text-[10px] font-semibold text-[var(--brand)]">
-                    Mới
-                  </span>
                 </button>
               </li>
             </ul>

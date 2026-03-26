@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText } from 'lucide-react';
+import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText, Sparkles } from 'lucide-react';
 import { PublicUserProfile } from '@/types/user';
 import { useAuthStore } from '@/store/useAuth';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,14 @@ export default function UserProfileHeader({ profile }: UserProfileHeaderProps) {
         <div className="flex-1">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-black text-slate-900">{profile.name || 'User'}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-black text-slate-900">{profile.name || 'User'}</h1>
+                {profile.isTalentPoolMember && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-100 to-yellow-100 px-3 py-1 text-xs font-semibold text-amber-700 shadow-sm">
+                    <Sparkles size={14} /> Talent Pool
+                  </span>
+                )}
+              </div>
               {profile.profile?.title && (
                 <p className="text-lg text-slate-600 font-medium mb-2">{profile.profile.title}</p>
               )}

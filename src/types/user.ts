@@ -66,6 +66,7 @@ export interface PublicUserProfile {
   id: string;
   name?: string | null;
   slug?: string | null;
+  isTalentPoolMember?: boolean;
   createdAt: string;
   profile?: {
     id: string;
