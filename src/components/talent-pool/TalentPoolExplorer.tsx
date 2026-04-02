@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Sparkles, ChevronLeft, ChevronRight, User } from "lucide-react";
 import Link from "next/link";
+import { formatSalaryRange } from "@/lib/provinces";
 
 type CandidateProfile = {
   avatar: string | null;
@@ -18,7 +19,9 @@ type CandidateProfile = {
   location: string | null;
   knowledge: string[];
   attitude: string[];
-  expectedSalary: string | null;
+  expectedSalaryMin: number | null;
+  expectedSalaryMax: number | null;
+  salaryCurrency: string | null;
   workMode: string | null;
   expectedCulture: string | null;
 };
@@ -198,7 +201,17 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
       )}
 
       <div className="mt-auto flex flex-wrap gap-2 text-[10px] text-slate-400">
-        {profile.expectedSalary && <span>💰 {profile.expectedSalary}</span>}
+        {(profile.expectedSalaryMin != null || profile.expectedSalaryMax != null) && (
+          <span>
+            💰{" "}
+            {formatSalaryRange(
+              profile.expectedSalaryMin,
+              profile.expectedSalaryMax,
+              (profile.salaryCurrency as "VND" | "USD") || "VND"
+            )}{" "}
+            {profile.salaryCurrency || "VND"}
+          </span>
+        )}
         {profile.workMode && <span>🏢 {profile.workMode}</span>}
       </div>
     </Link>

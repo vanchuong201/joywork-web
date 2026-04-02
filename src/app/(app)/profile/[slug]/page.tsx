@@ -82,7 +82,9 @@ export default async function UserProfilePage({ params }: Props) {
             {/* Expectations Card */}
             {visibility.expectations && (
               <UserProfileExpectations
-                expectedSalary={profile.profile?.expectedSalary}
+                expectedSalaryMin={profile.profile?.expectedSalaryMin}
+                expectedSalaryMax={profile.profile?.expectedSalaryMax}
+                salaryCurrency={profile.profile?.salaryCurrency}
                 workMode={profile.profile?.workMode}
                 expectedCulture={profile.profile?.expectedCulture}
               />

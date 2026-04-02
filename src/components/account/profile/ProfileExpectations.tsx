@@ -18,9 +18,19 @@ interface ProfileExpectationsProps {
 
 const MAX_EXPECTED_CULTURE_LENGTH = 400;
 
+type Currency = "VND" | "USD";
+
 export default function ProfileExpectations({ profile }: ProfileExpectationsProps) {
   const queryClient = useQueryClient();
-  const [expectedSalary, setExpectedSalary] = useState(profile.profile?.expectedSalary || "");
+  const [salaryMin, setSalaryMin] = useState<string>(
+    profile.profile?.expectedSalaryMin != null ? String(profile.profile.expectedSalaryMin) : ""
+  );
+  const [salaryMax, setSalaryMax] = useState<string>(
+    profile.profile?.expectedSalaryMax != null ? String(profile.profile.expectedSalaryMax) : ""
+  );
+  const [currency, setCurrency] = useState<Currency>(
+    (profile.profile?.salaryCurrency as Currency) || "VND"
+  );
   const [workMode, setWorkMode] = useState(profile.profile?.workMode || "");
   const [expectedCulture, setExpectedCulture] = useState(
     (profile.profile?.expectedCulture || "").slice(0, MAX_EXPECTED_CULTURE_LENGTH)
@@ -28,7 +38,9 @@ export default function ProfileExpectations({ profile }: ProfileExpectationsProp
   const [careerGoals, setCareerGoals] = useState<string[]>(profile.profile?.careerGoals || []);
 
   useEffect(() => {
-    setExpectedSalary(profile.profile?.expectedSalary || "");
+    setSalaryMin(profile.profile?.expectedSalaryMin != null ? String(profile.profile.expectedSalaryMin) : "");
+    setSalaryMax(profile.profile?.expectedSalaryMax != null ? String(profile.profile.expectedSalaryMax) : "");
+    setCurrency((profile.profile?.salaryCurrency as Currency) || "VND");
     setWorkMode(profile.profile?.workMode || "");
     setExpectedCulture((profile.profile?.expectedCulture || "").slice(0, MAX_EXPECTED_CULTURE_LENGTH));
     setCareerGoals(profile.profile?.careerGoals || []);
@@ -36,7 +48,9 @@ export default function ProfileExpectations({ profile }: ProfileExpectationsProp
 
   const updateProfile = useMutation({
     mutationFn: async (data: {
-      expectedSalary?: string | null;
+      expectedSalaryMin?: number | null;
+      expectedSalaryMax?: number | null;
+      salaryCurrency?: string | null;
       workMode?: string | null;
       expectedCulture?: string | null;
       careerGoals?: string[];
@@ -54,8 +68,18 @@ export default function ProfileExpectations({ profile }: ProfileExpectationsProp
   });
 
   const handleSave = () => {
+    const minVal = salaryMin ? parseInt(salaryMin, 10) : null;
+    const maxVal = salaryMax ? parseInt(salaryMax, 10) : null;
+
+    if (minVal !== null && maxVal !== null && minVal > maxVal) {
+      toast.error("Lương từ không được lớn hơn lương đến");
+      return;
+    }
+
     updateProfile.mutate({
-      expectedSalary: expectedSalary || null,
+      expectedSalaryMin: minVal,
+      expectedSalaryMax: maxVal,
+      salaryCurrency: (minVal !== null || maxVal !== null) ? currency : null,
       workMode: workMode || null,
       expectedCulture: expectedCulture || null,
       careerGoals,
@@ -77,7 +101,9 @@ export default function ProfileExpectations({ profile }: ProfileExpectationsProp
   };
 
   const hasChanges =
-    expectedSalary !== (profile.profile?.expectedSalary || "") ||
+    salaryMin !== (profile.profile?.expectedSalaryMin != null ? String(profile.profile.expectedSalaryMin) : "") ||
+    salaryMax !== (profile.profile?.expectedSalaryMax != null ? String(profile.profile.expectedSalaryMax) : "") ||
+    currency !== ((profile.profile?.salaryCurrency as Currency) || "VND") ||
     workMode !== (profile.profile?.workMode || "") ||
     expectedCulture !== (profile.profile?.expectedCulture || "") ||
     JSON.stringify(careerGoals) !== JSON.stringify(profile.profile?.careerGoals || []);
@@ -89,15 +115,52 @@ export default function ProfileExpectations({ profile }: ProfileExpectationsProp
         <CardDescription>Mức lương, hình thức làm việc và văn hóa mong muốn</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div>
-          <Label htmlFor="expectedSalary">Mức lương kỳ vọng</Label>
-          <Input
-            id="expectedSalary"
-            value={expectedSalary}
-            onChange={(e) => setExpectedSalary(e.target.value)}
-            placeholder="Ví dụ: $2000 - $2500"
-            className="mt-2"
-          />
+        {/* Salary Range — cùng bố cục form tạo JD (CreateJobModal) */}
+        <div className="space-y-2">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="profile-expected-salary-min">Mức lương tối thiểu</Label>
+              <Input
+                id="profile-expected-salary-min"
+                type="number"
+                value={salaryMin}
+                onChange={(e) => setSalaryMin(e.target.value)}
+                placeholder="VD: 10000000"
+                min={0}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profile-expected-salary-max">Mức lương tối đa</Label>
+              <Input
+                id="profile-expected-salary-max"
+                type="number"
+                value={salaryMax}
+                onChange={(e) => setSalaryMax(e.target.value)}
+                placeholder="VD: 20000000"
+                min={0}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profile-salary-currency">Đơn vị tiền tệ</Label>
+              <select
+                id="profile-salary-currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as Currency)}
+                className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm"
+              >
+                <option value="VND">VND</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+          </div>
+          {salaryMin && salaryMax && parseInt(salaryMin, 10) > parseInt(salaryMax, 10) && (
+            <p className="text-xs text-red-500">Mức lương tối thiểu không được lớn hơn mức lương tối đa</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {currency === "VND"
+              ? "Nhập số tiền (VND), ví dụ 15.000.000 – 25.000.000."
+              : "Nhập số tiền (USD), ví dụ 1.000 – 2.000."}
+          </p>
         </div>
 
         <div>

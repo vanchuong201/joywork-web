@@ -1,19 +1,30 @@
 "use client";
 
-import { Target } from 'lucide-react';
+import { Target } from "lucide-react";
+import { formatSalaryRange } from "@/lib/provinces";
 
 interface UserProfileExpectationsProps {
-  expectedSalary?: string | null;
+  expectedSalaryMin?: number | null;
+  expectedSalaryMax?: number | null;
+  salaryCurrency?: string | null;
   workMode?: string | null;
   expectedCulture?: string | null;
 }
 
 export default function UserProfileExpectations({
-  expectedSalary,
+  expectedSalaryMin,
+  expectedSalaryMax,
+  salaryCurrency,
   workMode,
   expectedCulture,
 }: UserProfileExpectationsProps) {
-  if (!expectedSalary && !workMode && !expectedCulture) {
+  const hasSalary = expectedSalaryMin != null || expectedSalaryMax != null;
+  const salaryDisplay = hasSalary
+    ? formatSalaryRange(expectedSalaryMin, expectedSalaryMax, (salaryCurrency as "VND" | "USD") || "VND") +
+      ` ${salaryCurrency || "VND"}`
+    : null;
+
+  if (!hasSalary && !workMode && !expectedCulture) {
     return null;
   }
 
@@ -23,10 +34,10 @@ export default function UserProfileExpectations({
         <Target size={20} /> Mong Muốn (Quyền Lợi)
       </h3>
       <div className="space-y-4 text-sm">
-        {expectedSalary && (
+        {salaryDisplay && (
           <div className="flex justify-between items-center">
             <span className="text-slate-500">Mức lương kỳ vọng</span>
-            <span className="font-bold text-green-600">{expectedSalary}</span>
+            <span className="font-bold text-green-600">{salaryDisplay}</span>
           </div>
         )}
         {workMode && (
@@ -45,4 +56,3 @@ export default function UserProfileExpectations({
     </div>
   );
 }
-

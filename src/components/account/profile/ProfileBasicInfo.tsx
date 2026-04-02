@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { uploadProfileAvatar, uploadProfileCV } from "@/lib/uploads";
 import Image from "next/image";
 import { Loader2, Upload, FileText, X } from "lucide-react";
+import ProvinceSelect from "@/components/ui/province-select";
 
 // Helper for optional URL fields - accepts empty string
 const optionalUrl = z.union([
@@ -38,7 +39,7 @@ const schema = z.object({
   // CV contact info (independent from account email/phone)
   contactEmail: optionalEmail,
   contactPhone: z.string().max(50, "Số điện thoại tối đa 50 ký tự").optional(),
-  location: z.string().max(100, "Địa điểm tối đa 100 ký tự").optional(),
+  locations: z.array(z.string()).optional(),
   website: optionalUrl,
   linkedin: optionalUrl,
   github: optionalUrl,
@@ -90,7 +91,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       title: profile.profile?.title || "",
       headline: profile.profile?.headline || "",
       bio: profile.profile?.bio || "",
-      location: profile.profile?.location || "",
+      locations: profile.profile?.locations || [],
       website: profile.profile?.website || "",
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
@@ -116,7 +117,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       title: profile.profile?.title || "",
       headline: profile.profile?.headline || "",
       bio: profile.profile?.bio || "",
-      location: profile.profile?.location || "",
+      locations: profile.profile?.locations || [],
       website: profile.profile?.website || "",
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
@@ -326,7 +327,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       bio: "Giới thiệu",
       contactEmail: "Email liên hệ",
       contactPhone: "Số điện thoại",
-      location: "Địa điểm",
+      locations: "Địa điểm",
       website: "Website",
       linkedin: "LinkedIn",
       github: "GitHub",
@@ -494,9 +495,14 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           {/* Location & Website */}
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label htmlFor="location">Địa điểm</Label>
-              <Input id="location" {...register("location")} placeholder="Hồ Chí Minh, Việt Nam" />
-              {errors.location && <p className="mt-1 text-sm text-red-500">{errors.location.message}</p>}
+              <Label>Địa điểm</Label>
+              <ProvinceSelect
+                multiple
+                values={watch("locations") || []}
+                onChangeValues={(vals) => setValue("locations", vals, { shouldDirty: true })}
+                className="mt-1"
+              />
+              {errors.locations && <p className="mt-1 text-sm text-red-500">{errors.locations.message}</p>}
             </div>
             <div>
               <Label htmlFor="website">Website</Label>

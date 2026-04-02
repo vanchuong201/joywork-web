@@ -3,7 +3,7 @@
 import { Company } from "@/types/company";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Globe, MapPin, Users, CheckCircle, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle } from "lucide-react";
+import { Globe, MapPin, Users, CheckCircle, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle, Briefcase } from "lucide-react";
 import CompanyMessageButton from "@/components/company/CompanyMessageButton";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import IndustrySelect from "@/components/ui/industry-select";
 
 export default function CompanyProfileHero({ company, isEditable = false }: { company: Company, isEditable?: boolean }) {
     const router = useRouter();
@@ -51,11 +52,26 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         name: company.name,
         legalName: company.legalName || "",
         location: company.location || "",
+        industry: company.industry || "",
         // Let user type domain only; we'll normalize on blur/submit.
         website: (company.website || "").replace(/^https?:\/\//i, ""),
         email: company.email || "",
         phone: company.phone || "",
     });
+
+    const openBasicEditDialog = () => {
+        setFormData({
+            name: company.name,
+            legalName: company.legalName || "",
+            location: company.location || "",
+            industry: company.industry || "",
+            website: (company.website || "").replace(/^https?:\/\//i, ""),
+            email: company.email || "",
+            phone: company.phone || "",
+        });
+        setEmailError(null);
+        setEditDialogOpen(true);
+    };
     const [emailError, setEmailError] = useState<string | null>(null);
 
     // Get owner email for verification notification
@@ -124,6 +140,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             name: formData.name.trim(),
             legalName: formData.legalName?.trim() || null,
             location: formData.location?.trim() || null,
+            industry: formData.industry?.trim() ? formData.industry.trim() : null,
             website: normalizeWebsite(formData.website),
             email: formData.email?.trim() || null,
             phone: formData.phone?.trim() || null,
@@ -397,7 +414,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             variant="ghost" 
                             size="icon" 
                             className="hover:bg-[var(--muted)] rounded-full"
-                            onClick={() => setEditDialogOpen(true)}
+                            onClick={openBasicEditDialog}
                           >
                               <Pencil className="w-4 h-4 text-[var(--muted-foreground)]" />
                           </Button>
@@ -489,6 +506,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                       )}
                       
                       <div className="grid grid-cols-1 gap-2 text-sm font-medium text-[var(--muted-foreground)] md:grid-cols-2 md:gap-4">
+                        {company.industry && (
+                            <div className="relative flex items-start gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item md:col-span-2">
+                              <Briefcase className="mt-0.5 text-[var(--muted-foreground)] shrink-0" size={20} />
+                              <span className="text-left leading-snug text-[var(--foreground)]">{company.industry}</span>
+                            </div>
+                        )}
                         {company.location && (
                             <div className="relative flex items-center gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
                               <MapPin className="text-[var(--muted-foreground)] shrink-0" size={20} />
@@ -592,6 +615,22 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                     </div>
                                 </div>
                             )}
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Lĩnh vực hoạt động</Label>
+                            <IndustrySelect
+                                value={formData.industry || null}
+                                onChange={(v) =>
+                                    setFormData({
+                                        ...formData,
+                                        industry: v ?? "",
+                                    })
+                                }
+                                placeholder="Chọn lĩnh vực theo danh sách chuẩn"
+                            />
+                            <p className="text-xs text-[var(--muted-foreground)]">
+                                Có thể để trống. Giá trị cũ không nằm trong danh sách vẫn hiển thị cho đến khi bạn đổi.
+                            </p>
                         </div>
                         <div className="space-y-2">
                             <Label>Địa chỉ trụ sở</Label>

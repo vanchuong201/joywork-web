@@ -43,6 +43,7 @@ export interface UserProfile {
   skills: string[];
   cvUrl?: string | null;
   location?: string | null;
+  locations?: string[];
   website?: string | null;
   linkedin?: string | null;
   github?: string | null;
@@ -54,7 +55,9 @@ export interface UserProfile {
   visibility?: UserProfileVisibility | null;
   knowledge?: string[];
   attitude?: string[];
-  expectedSalary?: string | null;
+  expectedSalaryMin?: number | null;
+  expectedSalaryMax?: number | null;
+  salaryCurrency?: string | null;
   workMode?: string | null;
   expectedCulture?: string | null;
   careerGoals?: string[];
@@ -75,6 +78,7 @@ export interface PublicUserProfile {
     title?: string | null;
     headline?: string | null;
     location?: string | null;
+    locations?: string[];
     website?: string | null;
     linkedin?: string | null;
     github?: string | null;
@@ -86,7 +90,9 @@ export interface PublicUserProfile {
     knowledge?: string[];
     skills?: string[];
     attitude?: string[];
-    expectedSalary?: string | null;
+    expectedSalaryMin?: number | null;
+    expectedSalaryMax?: number | null;
+    salaryCurrency?: string | null;
     workMode?: string | null;
     expectedCulture?: string | null;
     careerGoals?: string[];

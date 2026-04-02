@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import ProvinceSelect from "@/components/ui/province-select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -17,7 +18,7 @@ const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", 
 const schema = z.object({
   title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự"),
   description: z.string().min(20, "Mô tả tối thiểu 20 ký tự"),
-  location: z.string().optional().or(z.literal("")),
+  locations: z.array(z.string()).optional(),
   remote: z.boolean().optional().default(false),
   employmentType: z.enum(employmentTypes).default("FULL_TIME"),
   experienceLevel: z.enum(experienceLevels).default("NO_EXPERIENCE"),
@@ -31,7 +32,7 @@ const schema = z.object({
     .optional()
     .or(z.literal(""))
     .refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
-  currency: z.string().min(3).max(3).default("VND"),
+  currency: z.enum(["VND", "USD"]).default("VND"),
   applicationDeadline: z
     .string()
     .optional()
@@ -54,13 +55,15 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       title: "",
       description: "",
-      location: "",
+      locations: [],
       remote: false,
       employmentType: "FULL_TIME",
       experienceLevel: "NO_EXPERIENCE",
@@ -76,7 +79,7 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
       const payload = {
         title: values.title.trim(),
         description: values.description.trim(),
-        location: values.location?.trim() || undefined,
+        locations: values.locations || [],
         remote: values.remote ?? false,
         employmentType: values.employmentType,
         experienceLevel: values.experienceLevel,
@@ -117,8 +120,12 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
         <FormField label="Tiêu đề job" error={errors.title?.message}>
           <Input placeholder="Ví dụ: Product Designer (Mid)" {...register("title")} />
         </FormField>
-        <FormField label="Địa điểm" error={errors.location?.message}>
-          <Input placeholder="Hà Nội / Remote" {...register("location")} />
+        <FormField label="Địa điểm" error={errors.locations?.message}>
+          <ProvinceSelect
+            multiple
+            values={watch("locations") || []}
+            onChangeValues={(vals) => setValue("locations", vals, { shouldDirty: true })}
+          />
         </FormField>
       </div>
 
@@ -167,7 +174,13 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
           <Input placeholder="Ví dụ: 25000000" inputMode="numeric" {...register("salaryMax")} />
         </FormField>
         <FormField label="Đơn vị lương">
-          <Input placeholder="VND" maxLength={3} {...register("currency")} />
+          <select
+            {...register("currency")}
+            className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+          >
+            <option value="VND">VND</option>
+            <option value="USD">USD</option>
+          </select>
         </FormField>
       </div>
 

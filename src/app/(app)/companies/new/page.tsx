@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/api";
@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuth";
 import { useMemo, useState, useEffect } from "react";
+import IndustrySelect from "@/components/ui/industry-select";
+import { COMPANY_INDUSTRY_SET } from "@/lib/company-industries";
 
 const schema = z.object({
   name: z.string().min(2, "Tên doanh nghiệp cần ít nhất 2 ký tự"),
@@ -20,6 +22,15 @@ const schema = z.object({
     .regex(/^[a-z0-9-]+$/, "Slug chỉ được chứa chữ thường (không dấu), số và dấu gạch ngang")
     .min(2, "Slug cần ít nhất 2 ký tự"),
   tagline: z.string().optional(),
+  industry: z.preprocess(
+    (v) => (v === null || v === undefined || v === "" ? undefined : v),
+    z
+      .string()
+      .refine((s) => COMPANY_INDUSTRY_SET.has(s), {
+        message: "Vui lòng chọn lĩnh vực từ danh sách",
+      })
+      .optional()
+  ),
   description: z.string().optional(),
 });
 
@@ -54,6 +65,7 @@ export default function CreateCompanyPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     setValue,
@@ -63,7 +75,7 @@ export default function CreateCompanyPage() {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
-    defaultValues: { name: "", legalName: "", slug: "", tagline: "", description: "" },
+    defaultValues: { name: "", legalName: "", slug: "", tagline: "", industry: undefined, description: "" },
   });
 
   const nameField = register("name");
@@ -104,7 +116,12 @@ export default function CreateCompanyPage() {
     try {
       setSubmitError(null);
       const sanitizedSlug = slugify(values.slug);
-      const payload = { ...values, slug: sanitizedSlug };
+      const { industry, ...rest } = values;
+      const payload = {
+        ...rest,
+        slug: sanitizedSlug,
+        ...(industry ? { industry } : {}),
+      };
       const { data } = await api.post("/api/companies", payload);
       const company = data.data.company;
 
@@ -224,6 +241,39 @@ export default function CreateCompanyPage() {
         <div>
           <label className="text-sm font-medium text-[var(--foreground)]">Tagline (tuỳ chọn)</label>
           <Input className="mt-1" placeholder="Câu mô tả ngắn gọn" {...register("tagline")} />
+        </div>
+
+        <div>
+          <label htmlFor="create-company-industry" className="text-sm font-medium text-[var(--foreground)]">
+            Lĩnh vực hoạt động (tuỳ chọn)
+          </label>
+          <Controller
+            name="industry"
+            control={control}
+            render={({ field }) => (
+              <div className="mt-1">
+                <IndustrySelect
+                  id="create-company-industry"
+                  value={field.value ?? null}
+                  onChange={(v) =>
+                    setValue("industry", v ?? undefined, {
+                      shouldValidate: false,
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    })
+                  }
+                  placeholder="Chọn lĩnh vực theo danh sách chuẩn"
+                />
+              </div>
+            )}
+          />
+          {errors.industry ? (
+            <p className="mt-1 text-sm text-red-500">{errors.industry.message}</p>
+          ) : (
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              Giúp ứng viên và đối tác hiểu rõ ngành nghề chính của doanh nghiệp.
+            </p>
+          )}
         </div>
 
         <div>

@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/ui/empty-state";
 import CompanySearch from "@/components/feed/CompanySearch";
 import { Input } from "@/components/ui/input";
+import ProvinceSelect from "@/components/ui/province-select";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
@@ -26,6 +27,7 @@ import { Pagination } from "@/components/ui/pagination";
 type Job = {
   id: string;
   title: string;
+  locations?: string[];
   location?: string;
   remote: boolean;
   employmentType: string;
@@ -453,19 +455,9 @@ function JobsPageContent() {
             </div>
             <div className="space-y-1.5 text-sm">
               <div className="font-medium">Địa điểm</div>
-              <Input
-                defaultValue={location ?? ""}
-                placeholder="VD: Hà Nội, HCM, Đà Nẵng..."
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  const value = (e.currentTarget.value ?? "").trim();
-                  toggleParam("location", value || undefined, { resetPage: true });
-                }}
-                onBlur={(e) => {
-                  const value = (e.currentTarget.value ?? "").trim();
-                  if ((location ?? "") === value) return;
-                  toggleParam("location", value || undefined, { resetPage: true });
-                }}
+              <ProvinceSelect
+                value={location ?? null}
+                onChange={(value) => toggleParam("location", value || undefined, { resetPage: true })}
               />
               {location ? (
                 <button className="text-xs text-[var(--brand)] hover:underline" onClick={() => toggleParam("location", undefined, { resetPage: true })}>

@@ -13,7 +13,10 @@ import TiptapEditor from "@/components/ui/tiptap-editor";
 import { uploadCompanyLogo, uploadCompanyCover } from "@/lib/uploads";
 import Image from "next/image";
 
-const sizeOptions = ["STARTUP", "SMALL", "MEDIUM", "LARGE", "ENTERPRISE"] as const;
+import ProvinceSelect from "@/components/ui/province-select";
+import { COMPANY_SIZE_OPTIONS } from "@/lib/provinces";
+
+const sizeOptions = COMPANY_SIZE_OPTIONS;
 
 const DESCRIPTION_SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
@@ -75,9 +78,9 @@ const schema = z.object({
     .refine((val) => !val || /^https?:\/\//i.test(val), {
       message: "Vui lòng nhập URL bắt đầu bằng http:// hoặc https://",
     }),
-  location: z.string().max(120, "Địa điểm tối đa 120 ký tự").optional().or(z.literal("")),
+  location: z.string().optional().nullable(),
   industry: z.string().max(60, "Ngành tối đa 60 ký tự").optional().or(z.literal("")),
-  size: z.enum(sizeOptions).optional().or(z.literal("")),
+  size: z.string().optional().or(z.literal("")),
   foundedYear: z
     .string()
     .optional()
@@ -166,7 +169,7 @@ export default function CompanyProfileForm({
       website: initialData.website ?? "",
       location: initialData.location ?? "",
       industry: initialData.industry ?? "",
-      size: (initialData.size as FormValues["size"]) ?? "",
+      size: initialData.size ?? "",
       foundedYear: initialData.foundedYear ? String(initialData.foundedYear) : "",
       headcount: initialData.headcount ? String(initialData.headcount) : "",
       headcountNote: initialData.headcountNote ?? "",
@@ -186,7 +189,7 @@ export default function CompanyProfileForm({
       website: initialData.website ?? "",
       location: initialData.location ?? "",
       industry: initialData.industry ?? "",
-      size: (initialData.size as FormValues["size"]) ?? "",
+      size: initialData.size ?? "",
       foundedYear: initialData.foundedYear ? String(initialData.foundedYear) : "",
       headcount: initialData.headcount ? String(initialData.headcount) : "",
       headcountNote: initialData.headcountNote ?? "",
@@ -344,7 +347,10 @@ export default function CompanyProfileForm({
           <Input placeholder="https://your-company.com" {...register("website")} />
         </FormField>
         <FormField label="Địa điểm" error={errors.location?.message}>
-          <Input placeholder="Hà Nội, Việt Nam" {...register("location")} />
+          <ProvinceSelect
+            value={watch("location")}
+            onChange={(val) => setValue("location", val, { shouldDirty: true })}
+          />
         </FormField>
       </div>
 
@@ -352,7 +358,7 @@ export default function CompanyProfileForm({
         <FormField label="Ngành nghề" error={errors.industry?.message}>
           <Input placeholder="Công nghệ, Giáo dục..." {...register("industry")} />
         </FormField>
-        <FormField label="Quy mô" error={errors.size?.message}>
+        <FormField label="Quy mô doanh nghiệp" error={errors.size?.message}>
           <select
             {...register("size")}
             className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
@@ -360,7 +366,7 @@ export default function CompanyProfileForm({
             <option value="">Chọn quy mô</option>
             {sizeOptions.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {option} nhân viên
               </option>
             ))}
           </select>

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import api from "@/lib/api";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import DOMPurify from "dompurify";
+import ProvinceSelect from "@/components/ui/province-select";
 
 const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"] as const;
 const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"] as const;
@@ -37,13 +38,13 @@ const schema = z
   .object({
     // Basic info
     title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự").max(200, "Tiêu đề tối đa 200 ký tự"),
-    location: z.string().max(100, "Địa điểm tối đa 100 ký tự").optional().or(z.literal("")),
+    locations: z.array(z.string()).optional(),
     remote: z.boolean().optional().default(false),
     employmentType: z.enum(employmentTypes).default("FULL_TIME"),
     experienceLevel: z.enum(experienceLevels).default("NO_EXPERIENCE"),
     salaryMin: z.string().refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
     salaryMax: z.string().refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
-    currency: z.string().refine((v) => !v || /^[A-Z]{3}$/.test(v), "Mã tiền tệ phải gồm 3 chữ in hoa (VD: VND, USD)"),
+    currency: z.enum(["VND", "USD"]).default("VND"),
     applicationDeadline: z.string().refine((val) => !val || !Number.isNaN(Date.parse(val)), { message: "Ngày không hợp lệ" }),
     tags: z.array(z.string()).max(10, "Tối đa 10 tags").optional(),
     // Header fields
@@ -159,7 +160,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
     reValidateMode: "onChange",
     defaultValues: {
       title: "",
-      location: "",
+      locations: [],
       remote: false,
       employmentType: "FULL_TIME",
       experienceLevel: "NO_EXPERIENCE",
@@ -234,13 +235,13 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       // Sanitize all HTML fields
       const payload = {
         title: values.title.trim(),
-        location: values.location?.trim() || undefined,
+        locations: values.locations || [],
         remote: values.remote ?? false,
         employmentType: values.employmentType,
         experienceLevel: values.experienceLevel,
         salaryMin: values.salaryMin ? Number(values.salaryMin) : undefined,
         salaryMax: values.salaryMax ? Number(values.salaryMax) : undefined,
-        currency: values.currency?.trim() ? values.currency.trim().toUpperCase() : "VND",
+        currency: values.currency || "VND",
         applicationDeadline: values.applicationDeadline ? new Date(values.applicationDeadline).toISOString() : undefined,
         tags: values.tags || [],
         // Header fields (optional)
@@ -372,7 +373,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       
       // Expand the section containing the error
       const sectionMap: Record<string, string> = {
-        title: "basic", location: "basic", employmentType: "basic", experienceLevel: "basic",
+        title: "basic", locations: "basic", employmentType: "basic", experienceLevel: "basic",
         salaryMin: "basic", salaryMax: "basic", currency: "basic", applicationDeadline: "basic", tags: "basic",
         department: "basic", jobLevel: "basic", educationLevel: "basic",
         mission: "mission",
@@ -486,11 +487,11 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
               </div>
               
               <div className="grid gap-4 md:grid-cols-2">
-                <FormField label="Địa điểm làm việc" error={errors.location?.message}>
-                  <Input 
-                    placeholder="Hà Nội, TP.HCM, Remote..." 
-                    {...register("location")}
-                    className={errors.location ? "border-red-500 focus-visible:ring-red-500" : ""}
+                <FormField label="Địa điểm làm việc" error={errors.locations?.message}>
+                  <ProvinceSelect
+                    multiple
+                    values={watch("locations") || []}
+                    onChangeValues={(vals) => setValue("locations", vals, { shouldDirty: true })}
                   />
                 </FormField>
                 <FormField label="Hình thức làm việc">
@@ -522,10 +523,13 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
                   />
                 </FormField>
                 <FormField label="Đơn vị tiền tệ" error={errors.currency?.message}>
-                  <Input placeholder="VND" maxLength={3} {...register("currency")} onChange={(e) => {
-                    e.target.value = e.target.value.toUpperCase();
-                    register("currency").onChange(e);
-                  }} />
+                  <select
+                    {...register("currency")}
+                    className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm"
+                  >
+                    <option value="VND">VND</option>
+                    <option value="USD">USD</option>
+                  </select>
                 </FormField>
               </div>
               
