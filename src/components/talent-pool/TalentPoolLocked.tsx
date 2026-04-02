@@ -17,7 +17,7 @@ export default function TalentPoolLocked({ reason }: { reason?: string }) {
       </div>
 
       <p className="mx-auto mb-6 max-w-md text-sm text-slate-500 dark:text-slate-400">
-        Talent Pool là danh sách ứng viên tài năng được JoyWork tuyển chọn. Tính năng này chỉ dành cho doanh nghiệp đã đăng ký gói Premium.
+        Talent Pool là danh sách ứng viên tài năng được JOYWORK tuyển chọn. Tính năng này chỉ dành cho doanh nghiệp đã đăng ký gói Premium.
       </p>
 
       {reason === "NO_ELIGIBLE_COMPANY" && (
@@ -28,13 +28,13 @@ export default function TalentPoolLocked({ reason }: { reason?: string }) {
 
       {reason === "NO_PREMIUM_ACCESS" && (
         <p className="text-sm text-slate-500">
-          Doanh nghiệp của bạn chưa kích hoạt gói Premium. Vui lòng liên hệ JoyWork để biết thêm.
+          Doanh nghiệp của bạn chưa kích hoạt gói Premium. Vui lòng liên hệ JOYWORK để biết thêm.
         </p>
       )}
 
       <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50/50 px-6 py-4 dark:border-amber-900/40 dark:bg-amber-950/20">
         <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-          Liên hệ: <a href="mailto:support@joywork.vn" className="underline">support@joywork.vn</a>
+          Liên hệ: <a href="mailto:contact@joywork.vn" className="underline">contact@joywork.vn | 033 868 5855</a>
         </p>
       </div>
     </div>

@@ -142,6 +142,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     reset,
     control,
     setError,
+    setValue,
     watch,
     formState: { errors, submitCount, isSubmitted },
   } = useForm<FormValues>({
