@@ -1,11 +1,21 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { toast } from "sonner";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
@@ -19,6 +29,7 @@ import {
   Clock,
   TrendingUp,
   Send,
+  AlertTriangle,
   BookOpen,
   Zap,
   Heart,
@@ -105,6 +116,8 @@ export default function JobDetailPage() {
   const jobId = params?.id as string;
   const user = useAuthStore((state) => state.user);
   const { openPrompt } = useAuthPrompt();
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [coverLetter, setCoverLetter] = useState("");
 
   const { data, isLoading } = useQuery<{ job: JobDetail }>({
     queryKey: ["job", jobId],
@@ -117,10 +130,16 @@ export default function JobDetailPage() {
 
   const applyMutation = useMutation({
     mutationFn: async () => {
-      await api.post("/api/jobs/apply", { jobId });
+      const trimmedCoverLetter = coverLetter.trim();
+      await api.post("/api/jobs/apply", {
+        jobId,
+        coverLetter: trimmedCoverLetter || undefined,
+      });
     },
     onSuccess: () => {
       toast.success("Ứng tuyển thành công");
+      setConfirmDialogOpen(false);
+      setCoverLetter("");
       qc.invalidateQueries({ queryKey: ["job", jobId] });
     },
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Ứng tuyển thất bại"),
@@ -131,6 +150,10 @@ export default function JobDetailPage() {
       openPrompt("apply");
       return;
     }
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmApply = () => {
     applyMutation.mutate();
   };
 
@@ -370,6 +393,65 @@ export default function JobDetailPage() {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={confirmDialogOpen}
+        onOpenChange={(open) => {
+          if (!applyMutation.isPending) {
+            setConfirmDialogOpen(open);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Xác nhận ứng tuyển</DialogTitle>
+            <DialogDescription>
+              Hoàn tất thông tin trước khi gửi hồ sơ ứng tuyển của bạn.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="cover-letter">Thư giới thiệu (Không bắt buộc)</Label>
+              <p className="mt-1 mb-3 text-xs text-[var(--muted-foreground)]">
+                Một thư giới thiệu ngắn gọn, chỉn chu sẽ giúp bạn trở nên chuyên nghiệp và gây ấn tượng hơn với nhà tuyển dụng.
+              </p>
+              <Textarea
+                id="cover-letter"
+                value={coverLetter}
+                onChange={(e) => setCoverLetter(e.target.value)}
+                placeholder="Viết giới thiệu ngắn gọn về bản thân (điểm mạnh, điểm yếu) và nêu rõ mong muốn, lý do bạn muốn ứng tuyển cho vị trí này."
+                rows={5}
+                maxLength={2000}
+                className="mt-2"
+              />
+              <p className="mt-1 text-right text-xs text-[var(--muted-foreground)]">{coverLetter.length}/2000 ký tự</p>
+            </div>
+
+            <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
+              <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                <AlertTriangle className="h-4 w-4" />
+                Lưu ý trước khi xác nhận
+              </p>
+              <p className="leading-6">
+                Bạn đang chuẩn bị nộp hồ sơ ứng tuyển vào vị trí <strong>{job.title}</strong> tại{" "}
+                <strong>{job.company.name}</strong>.
+              </p>
+              <p className="mt-1 leading-6">Sau khi xác nhận, hồ sơ của bạn sẽ được gửi đến nhà tuyển dụng.</p>
+              <p className="mt-1 font-medium leading-6">Bạn có muốn tiếp tục không?</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)} disabled={applyMutation.isPending}>
+              Hủy
+            </Button>
+            <Button onClick={handleConfirmApply} disabled={applyMutation.isPending}>
+              {applyMutation.isPending ? "Đang gửi..." : "Xác nhận"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
