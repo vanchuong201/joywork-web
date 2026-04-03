@@ -34,6 +34,10 @@ export default function NotificationsPage() {
   };
 
   const getNotificationLink = (notification: any) => {
+    if (notification.type === "APPLICATION_STATUS" && notification.metadata?.jobId) {
+      return `/jobs/${notification.metadata.jobId}`;
+    }
+
     if (notification.relatedEntityType === "TICKET" && notification.relatedEntityId) {
       const companySlug = notification.metadata?.companySlug;
       if (companySlug) {
