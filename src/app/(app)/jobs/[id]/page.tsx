@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { toast } from "sonner";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
+import RelatedJobCard, { type RelatedJobItem } from "@/components/jobs/RelatedJobCard";
 import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
@@ -127,6 +128,16 @@ export default function JobDetailPage() {
     },
     enabled: Boolean(jobId),
   });
+  const { data: relatedJobsData } = useQuery<RelatedJobItem[]>({
+    queryKey: ["job-related", jobId],
+    queryFn: async () => {
+      const res = await api.get(`/api/jobs/${jobId}/related`, {
+        params: { limit: 10 },
+      });
+      return res.data.data.jobs;
+    },
+    enabled: Boolean(jobId),
+  });
 
   const applyMutation = useMutation({
     mutationFn: async () => {
@@ -186,6 +197,9 @@ export default function JobDetailPage() {
       : job.benefitsIncome || "Thoả thuận";
 
   const deadline = job.applicationDeadline ? formatDateUTC(job.applicationDeadline) : "Không giới hạn";
+  const relatedJobs = relatedJobsData ?? [];
+  const featuredRelatedJobs = relatedJobs.slice(0, 2);
+  const slideRelatedJobs = relatedJobs.slice(0, 10);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 pb-28 sm:px-6">
@@ -325,6 +339,22 @@ export default function JobDetailPage() {
           </SectionCard>
         ) : null}
 
+        {featuredRelatedJobs.length > 0 ? (
+          <section className="rounded-xl border border-[var(--brand)]/20 bg-gradient-to-r from-[var(--brand)]/[0.04] via-[var(--card)] to-[var(--brand)]/[0.02] p-3 sm:p-4">
+            <div className="mb-2.5 flex items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Việc làm liên quan</h3>
+              <Badge className="rounded-full border border-[var(--brand)]/30 bg-[var(--brand)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--brand)]">
+                Gợi ý
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {featuredRelatedJobs.map((relatedJob) => (
+                <RelatedJobCard key={relatedJob.id} job={relatedJob} size="featured" />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         {/* 6. Quan hệ công việc */}
         {job.relationships ? (
           <SectionCard title="6. Quan hệ công việc">
@@ -365,6 +395,27 @@ export default function JobDetailPage() {
           <SectionCard title="Thông tin bổ sung">
             <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.generalInfo) }} />
           </SectionCard>
+        ) : null}
+
+        {slideRelatedJobs.length > 0 ? (
+          <section className="rounded-xl border border-dashed border-[var(--brand)]/30 bg-[var(--muted)]/30 p-3 sm:p-4">
+            <div className="mb-2.5 flex items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Khám phá thêm việc làm phù hợp</h3>
+              <Badge className="rounded-full border border-[var(--brand)]/30 bg-[var(--brand)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--brand)]">
+                Đề xuất
+              </Badge>
+            </div>
+            <div className="-mx-1 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-1">
+              {slideRelatedJobs.map((relatedJob) => (
+                <RelatedJobCard
+                  key={`slide-${relatedJob.id}`}
+                  job={relatedJob}
+                  size="compact"
+                  className="w-[220px] shrink-0 snap-start sm:w-[240px]"
+                />
+              ))}
+            </div>
+          </section>
         ) : null}
       </div>
 
