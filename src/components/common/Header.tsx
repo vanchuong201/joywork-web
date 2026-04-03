@@ -74,17 +74,33 @@ export default function Header() {
     items.map((item) => {
       const active = isNavItemActive(pathname, item);
       const Icon = item.icon;
+      const className = cn(
+        "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+        active
+          ? "bg-[var(--muted)] text-[var(--foreground)]"
+          : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+      );
+      if (item.external) {
+        return (
+          <a
+            key={item.href}
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={className}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Icon size={16} />
+            <span>{item.label}</span>
+          </a>
+        );
+      }
       return (
         <Link
           key={item.href}
           href={item.href}
           onClick={() => setIsMobileMenuOpen(false)}
-          className={cn(
-            "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
-            active
-              ? "bg-[var(--muted)] text-[var(--foreground)]"
-              : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-          )}
+          className={className}
         >
           <Icon size={16} />
           <span>{item.label}</span>
@@ -137,17 +153,28 @@ export default function Header() {
             ? navItems.map((item) => {
                 const active = isNavItemActive(pathname, item);
                 const Icon = item.icon;
+                const className = cn(
+                  "flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors",
+                  active
+                    ? "bg-[var(--muted)] text-[var(--foreground)]"
+                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                );
+                if (item.external) {
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={className}
+                    >
+                      <Icon size={16} />
+                      <span>{item.label}</span>
+                    </a>
+                  );
+                }
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors",
-                      active
-                        ? "bg-[var(--muted)] text-[var(--foreground)]"
-                        : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                    )}
-                  >
+                  <Link key={item.href} href={item.href} className={className}>
                     <Icon size={16} />
                     <span>{item.label}</span>
                   </Link>

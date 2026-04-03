@@ -9,6 +9,7 @@ import {
   Heart,
   MessageSquareText,
   Sparkles,
+  FileQuestion,
   type LucideIcon,
 } from "lucide-react";
 import type { AuthUser, CompanyMembership } from "@/store/useAuth";
@@ -19,6 +20,7 @@ export type NavItem = {
   href: string;
   exact?: boolean;
   badge?: string;
+  external?: boolean;
 };
 
 export type AccountDropdownItem = {
@@ -32,6 +34,13 @@ const exploreNavBase: NavItem[] = [
   { icon: Building2, label: "Doanh nghiệp", href: "/companies" },
   { icon: Sparkles, label: "Talent Pool", href: "/talent-pool" },
 ];
+
+const headerInternalSurveyNavItem: NavItem = {
+  icon: FileQuestion,
+  label: "Khảo sát nội bộ",
+  href: "https://survey.joywork.vn/",
+  external: true,
+};
 
 const headerAdminNavItem: NavItem = {
   icon: Settings,
@@ -61,10 +70,11 @@ export const accountDropdownItems: AccountDropdownItem[] = [
 ];
 
 export function buildHeaderExploreNav(user: AuthUser | null): NavItem[] {
+  const items = [...exploreNavBase, headerInternalSurveyNavItem];
   if (user?.role === "ADMIN") {
-    return [...exploreNavBase, headerAdminNavItem];
+    return [...items, headerAdminNavItem];
   }
-  return [...exploreNavBase];
+  return items;
 }
 
 export function buildLeftExploreNav(): NavItem[] {
@@ -88,7 +98,8 @@ export function buildCompanyManageNav(memberships: CompanyMembership[]): NavItem
     }));
 }
 
-export function isNavItemActive(pathname: string, item: Pick<NavItem, "href" | "exact">): boolean {
+export function isNavItemActive(pathname: string, item: Pick<NavItem, "href" | "exact" | "external">): boolean {
+  if (item.external) return false;
   if (item.exact) return pathname === item.href;
   if (item.href === "/") return pathname === "/";
   return pathname.startsWith(item.href);
