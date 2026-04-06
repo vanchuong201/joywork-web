@@ -54,7 +54,7 @@ export default function ManageCompanyPageContent({ company }: { company: Company
                 <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-5">
                     <h3 className="mb-4 text-base font-semibold text-[var(--foreground)] sm:text-lg">Bài viết đã đăng</h3>
                     {/* Pass empty array, component will fetch data */}
-                    <CompanyActivityFeed posts={[]} companyId={company.id} /> 
+                    <CompanyActivityFeed posts={[]} companyId={company.id} scope="manage" /> 
                 </div>
             </div>
         )}

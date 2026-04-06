@@ -109,7 +109,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   if (isActivity) {
     try {
         const res = await fetch(
-            `${API_BASE_URL}/api/posts?companyId=${company.id}&page=1&limit=10`,
+            `${API_BASE_URL}/api/posts/companies/${company.id}/posts?scope=profile&page=1&limit=10`,
             { cache: "no-store", next: { revalidate: 0 } },
         );
         if (res.ok) {
@@ -194,6 +194,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
               <CompanyActivityFeed
                 posts={posts}
                 companyId={company.id}
+                scope="profile"
                 totalPages={postsPagination?.totalPages}
               />
             ) : (

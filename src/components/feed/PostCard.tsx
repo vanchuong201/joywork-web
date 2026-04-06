@@ -19,6 +19,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { uploadCompanyPostImage } from "@/lib/uploads";
 import { createPortal } from "react-dom";
 import HashtagInput from "@/components/shared/HashtagInput";
@@ -99,6 +100,7 @@ export type PostCardData = {
   userReaction?: "JOY" | "TRUST" | "SKEPTIC" | null;
   statementId?: string | null;
   statementSnapshot?: { title: string; description?: string | null; percentYes: number; totalRecipients: number; yesCount: number; respondedCount: number; snapshotAt: string } | null;
+  hiddenFromFeed?: boolean | null;
 };
 
 const MediaGrid = memo(function MediaGrid({ images }: { images: NonNullable<PostCardData["images"]> }) {
@@ -412,7 +414,18 @@ const LazyMediaBlock = memo(function LazyMediaBlock({
   );
 });
 
-const PostCard = memo(function PostCard({ post }: { post: PostCardData }) {
+const JOYWORK_HIDDEN_TOOLTIP_TITLE = "Bài viết đang bị giới hạn hiển thị";
+const JOYWORK_HIDDEN_TOOLTIP_DESC =
+  "Nội dung này vẫn hiển thị trong trang quản lý doanh nghiệp nhưng đã được ẩn khỏi Bảng tin chung bởi JOYWORK.";
+const JOYWORK_HIDDEN_TOOLTIP_CONTACT = "Liên hệ hỗ trợ: contact@joywork.vn | 033 868 5855";
+
+const PostCard = memo(function PostCard({
+  post,
+  showJoyworkModerationBadge = false,
+}: {
+  post: PostCardData;
+  showJoyworkModerationBadge?: boolean;
+}) {
   const hasImages = (post.images?.length ?? 0) > 0;
   const isStatementPost = (post.type ?? "").toUpperCase() === "STATEMENT" || Boolean(post.statementId);
   const rawSnapshot = post.statementSnapshot && Object.keys(post.statementSnapshot).length > 0 ? post.statementSnapshot : null;
@@ -741,6 +754,33 @@ const PostCard = memo(function PostCard({ post }: { post: PostCardData }) {
                   )}
                 />
               )}
+              {showJoyworkModerationBadge && Boolean(post.hiddenFromFeed) ? (
+                <div className="ml-auto">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="secondary"
+                          className="cursor-help border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-100"
+                        >
+                          Đã ẩn bởi JOYWORK
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        align="end"
+                        className="max-w-xs rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-[12px] leading-relaxed text-slate-100 shadow-2xl"
+                      >
+                        <p className="font-semibold text-white">{JOYWORK_HIDDEN_TOOLTIP_TITLE}</p>
+                        <p className="mt-1 text-slate-200">{JOYWORK_HIDDEN_TOOLTIP_DESC}</p>
+                        <p className="mt-2 border-t border-slate-700 pt-2 text-slate-300">
+                          {JOYWORK_HIDDEN_TOOLTIP_CONTACT}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              ) : null}
             </div>
             <div className="flex min-w-0 items-center gap-2 text-xs">
               {post.company.slogan ? (

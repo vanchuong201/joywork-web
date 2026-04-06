@@ -10,12 +10,13 @@ import { useAuthStore } from "@/store/useAuth";
 type Props = {
   posts: PostCardData[];
   companyId: string;
+  scope?: "profile" | "manage";
   totalPages?: number;
 };
 
 const PAGE_SIZE = 10;
 
-export default function CompanyActivityFeed({ posts, companyId, totalPages }: Props) {
+export default function CompanyActivityFeed({ posts, companyId, scope = "profile", totalPages }: Props) {
   const { ref, inView } = useInView<HTMLDivElement>({ rootMargin: "200px" });
   const user = useAuthStore((state) => state.user);
 
@@ -38,12 +39,12 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
   }), [posts, totalPages]);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ["company-posts-feed", companyId, user?.id],
+    queryKey: ["company-posts-feed", scope, companyId, user?.id],
     initialPageParam: 1,
     initialData: initialData as any,
     queryFn: async ({ pageParam }) => {
-      const res = await api.get("/api/posts", {
-        params: { companyId, page: pageParam, limit: PAGE_SIZE },
+      const res = await api.get(`/api/posts/companies/${companyId}/posts`, {
+        params: { scope, page: pageParam, limit: PAGE_SIZE },
       });
       return res.data.data;
     },
@@ -67,7 +68,11 @@ export default function CompanyActivityFeed({ posts, companyId, totalPages }: Pr
   return (
     <div className="space-y-4">
       {items.map((post: PostCardData) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard
+          key={post.id}
+          post={post}
+          showJoyworkModerationBadge={scope === "manage"}
+        />
       ))}
       
       {(isFetchingNextPage) && (
