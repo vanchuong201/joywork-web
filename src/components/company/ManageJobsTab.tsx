@@ -7,7 +7,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
-import { Plus, Users, Eye, List, Grid, Edit, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Users, Eye, List, Grid, Edit, MoreVertical, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import CreateJobModal from "./CreateJobModal";
@@ -149,6 +149,19 @@ export default function ManageJobsTab({ company }: Props) {
     },
   });
 
+  const refreshJobMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      await api.patch(`/api/jobs/${jobId}/refresh`);
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["company-jobs-manage", company.id] });
+      toast.success("Đã làm mới tin tuyển dụng");
+    },
+    onError: (e: any) => {
+      toast.error(e?.response?.data?.error?.message ?? "Không thể làm mới tin tuyển dụng");
+    },
+  });
+
   const handleToggleStatus = useCallback((job: any) => {
     const oldIsActive = job.isActive;
     setTogglingJobId(job.id); // Track which job is being toggled
@@ -170,6 +183,11 @@ export default function ManageJobsTab({ company }: Props) {
 
   const handleViewApplicants = (jobId: string) => {
     router.push(`${pathname}?tab=applications&jobId=${jobId}`);
+    setOpenMenuId(null);
+  };
+
+  const handleRefreshJob = (jobId: string) => {
+    refreshJobMutation.mutate(jobId);
     setOpenMenuId(null);
   };
 
@@ -299,7 +317,7 @@ export default function ManageJobsTab({ company }: Props) {
                       <div className="flex-1 min-w-0">
                         <h4 className="mb-2 truncate text-base font-semibold text-[var(--foreground)] sm:text-lg">{job.title}</h4>
                         <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--muted-foreground)]">
-                          <span>Đăng ngày: {formatDate(job.createdAt)}</span>
+                          <span>Cập nhật ngày: {formatDate(job.updatedAt || job.createdAt)}</span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3 h-3" /> {job._count?.applications ?? 0} ứng viên
                           </span>
@@ -371,6 +389,15 @@ export default function ManageJobsTab({ company }: Props) {
                               <Edit className="h-4 w-4" />
                               Chỉnh sửa
                             </button>
+                            {job.isActive && (
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+                                onClick={() => handleRefreshJob(job.id)}
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                                Làm mới
+                              </button>
+                            )}
                           </div>
                         </>
                       )}
@@ -394,7 +421,7 @@ export default function ManageJobsTab({ company }: Props) {
                     <Users className="w-3 h-3" />
                     <span>{job._count?.applications ?? 0} ứng viên</span>
                   </div>
-                  <div>Đăng ngày: {formatDate(job.createdAt)}</div>
+                  <div>Cập nhật ngày: {formatDate(job.updatedAt || job.createdAt)}</div>
                 </div>
                 {/* Status Toggle - Improved UI */}
                 <div className="rounded-lg border border-[var(--border)] bg-[var(--muted)]/60 p-3">
@@ -462,6 +489,15 @@ export default function ManageJobsTab({ company }: Props) {
                             <Edit className="h-4 w-4" />
                             Chỉnh sửa
                           </button>
+                          {job.isActive && (
+                            <button
+                              className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+                              onClick={() => handleRefreshJob(job.id)}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                              Làm mới
+                            </button>
+                          )}
                         </div>
                       </>
                     )}

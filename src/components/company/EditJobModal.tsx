@@ -893,7 +893,11 @@ Quan hệ bên ngoài:
               </FormField>
             </FormSection>
 
-            {/* Section 11: Thông tin liên hệ */}
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p className="text-xs text-amber-800">
+                Sau 20 ngày kể từ lần tạo hoặc chỉnh sửa gần nhất, nếu bạn không thực hiện thêm thao tác nào, hệ thống sẽ tự động đóng việc làm và ẩn khỏi danh sách hiển thị. Để duy trì hiển thị, bạn có thể cập nhật việc làm hoặc bấm nút "Làm mới".
+              </p>
+            </div>
 
             <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
               <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>

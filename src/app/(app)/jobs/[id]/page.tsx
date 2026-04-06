@@ -197,6 +197,7 @@ export default function JobDetailPage() {
       : job.benefitsIncome || "Thoả thuận";
 
   const deadline = job.applicationDeadline ? formatDateUTC(job.applicationDeadline) : "Không giới hạn";
+  const isDeadlinePassed = Boolean(job.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now());
   const relatedJobs = relatedJobsData ?? [];
   const featuredRelatedJobs = relatedJobs.slice(0, 2);
   const slideRelatedJobs = relatedJobs.slice(0, 10);
@@ -434,6 +435,10 @@ export default function JobDetailPage() {
             {job.isActive === false ? (
               <Button disabled className="h-10 px-5 text-sm">
                 Đã ngừng tuyển
+              </Button>
+            ) : isDeadlinePassed ? (
+              <Button disabled className="h-10 px-5 text-sm">
+                Đã hết hạn ứng tuyển
               </Button>
             ) : (
               <Button onClick={handleApply} disabled={applyMutation.isPending} className="h-10 px-5 text-sm sm:text-base">

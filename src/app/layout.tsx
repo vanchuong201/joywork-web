@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Noto_Serif } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import GoogleOneTap from "@/components/auth/GoogleOneTap";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 
 // Inter: Font hiện đại, hỗ trợ tốt tiếng Việt, phù hợp với ứng dụng doanh nghiệp
 // Dùng cho UI elements: buttons, forms, navigation, headings
@@ -83,6 +84,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <GoogleOneTap />
+          <GoogleAnalytics />
         </Providers>
       </body>
     </html>
