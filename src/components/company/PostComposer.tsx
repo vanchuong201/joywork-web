@@ -411,7 +411,7 @@ export default function CompanyPostComposer({ companyId, onCreated }: Props) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             maxLength={5000}
-            className="min-h-[80px] resize-none border-none bg-transparent px-0 py-0 text-base focus-visible:ring-0"
+            className="min-h-[80px] max-h-[400px] resize-y overflow-y-auto border-none bg-transparent px-0 py-0 text-base focus-visible:ring-0"
           />
 
           {mediaItems.length > 0 && (
