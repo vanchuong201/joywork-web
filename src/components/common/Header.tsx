@@ -129,7 +129,7 @@ export default function Header() {
           <div className="relative h-8 w-8 md:hidden">
             <Image
               src="/JW-320x320.png"
-              alt="JoyWork Logo"
+              alt="JOYWORK Logo"
               fill
               sizes="32px"
               className="object-contain"
@@ -139,7 +139,7 @@ export default function Header() {
           <div className="relative hidden h-8 w-32 md:block">
             <Image
               src="/JW-mid.png"
-              alt="JoyWork Logo"
+              alt="JOYWORK Logo"
               fill
               sizes="128px"
               className="object-contain"

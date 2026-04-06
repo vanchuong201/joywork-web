@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   if (!company) return {};
   return {
-    title: `Quản lý - ${company.name} | JoyWork`,
+    title: `Quản lý - ${company.name} | JOYWORK`,
   };
 }
 

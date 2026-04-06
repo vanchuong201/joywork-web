@@ -1,10 +1,10 @@
 ---
-description: JoyWork frontend component, form, and state conventions
+description: JOYWORK frontend component, form, and state conventions
 globs: src/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
-# JoyWork Frontend UI
+# JOYWORK Frontend UI
 
 - Prefer functional components and add `"use client"` only when hooks, browser APIs, editors, uploads, or client-side interactivity are required.
 - Keep new route pages thin; if a page is already large, extract more logic out instead of growing the page further.

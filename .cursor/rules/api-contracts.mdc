@@ -1,10 +1,10 @@
 ---
-description: JoyWork web expectations for backend response contracts
+description: JOYWORK web expectations for backend response contracts
 globs: src/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
-# JoyWork Web API Contracts
+# JOYWORK Web API Contracts
 
 - Frontend code currently expects backend success responses in the shape `res.data.data` and error responses under `error`; do not introduce raw response handling for new code without a clear migration plan.
 - When touching an endpoint contract, update every affected frontend reader in the same task, including query mappers, store hydration, and mutation success handlers.

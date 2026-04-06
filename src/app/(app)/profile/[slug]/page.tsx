@@ -24,12 +24,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const profile = res.data.data.profile as PublicUserProfile;
     
     return {
-      title: `${profile.name || 'User'} - Profile | JoyWork`,
-      description: profile.profile?.headline || profile.profile?.bio || 'User profile on JoyWork',
+      title: `${profile.name || 'User'} - Profile | JOYWORK`,
+      description: profile.profile?.headline || profile.profile?.bio || 'User profile on JOYWORK',
     };
   } catch {
     return {
-      title: 'Profile Not Found | JoyWork',
+      title: 'Profile Not Found | JOYWORK',
     };
   }
 }

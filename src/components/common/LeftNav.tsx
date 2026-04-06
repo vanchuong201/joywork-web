@@ -108,7 +108,7 @@ export default function LeftNav() {
   
   const joyworkCompanyId = process.env.NEXT_PUBLIC_JOYWORK_COMPANY_ID;
   
-  // Fetch JoyWork company info
+  // Fetch JOYWORK company info
   const { data: joyworkCompany } = useQuery({
     queryKey: ["joywork-company", joyworkCompanyId],
     queryFn: async () => {
@@ -296,7 +296,7 @@ export default function LeftNav() {
             open={supportModalOpen}
             onOpenChange={setSupportModalOpen}
             companyId={joyworkCompanyId}
-            companyName="JoyWork"
+            companyName="JOYWORK"
             onCreated={(ticket) => {
               setSupportModalOpen(false);
               router.push(`/tickets/${ticket.id}`);

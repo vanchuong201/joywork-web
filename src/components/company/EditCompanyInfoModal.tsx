@@ -161,10 +161,10 @@ export default function EditCompanyInfoModal({
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <FormField label="Tên công ty (Thương hiệu)" required error={errors.name?.message}>
-                <Input placeholder="Ví dụ: JoyWork Studio" {...register("name")} />
+                <Input placeholder="Ví dụ: JOYWORK Studio" {...register("name")} />
               </FormField>
               <FormField label="Tên đăng ký kinh doanh" error={errors.legalName?.message}>
-                <Input placeholder="Công ty Cổ phần Công nghệ JoyWork" {...register("legalName")} />
+                <Input placeholder="Công ty Cổ phần Công nghệ JOYWORK" {...register("legalName")} />
               </FormField>
             </div>
 

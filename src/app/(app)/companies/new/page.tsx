@@ -153,14 +153,14 @@ export default function CreateCompanyPage() {
     <div className="max-w-xl space-y-4">
       <h1 className="text-xl font-semibold text-[var(--foreground)]">Tạo hồ sơ doanh nghiệp</h1>
       <p className="text-sm text-[var(--muted-foreground)]">
-        Hoàn thành các thông tin cơ bản bên dưới để xuất bản trang giới thiệu doanh nghiệp của bạn trên JoyWork.
+        Hoàn thành các thông tin cơ bản bên dưới để xuất bản trang giới thiệu doanh nghiệp của bạn trên JOYWORK.
       </p>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label className="text-sm font-medium text-[var(--foreground)]">Tên doanh nghiệp *</label>
           <Input
             className="mt-1"
-            placeholder="Ví dụ: JoyWork Studio"
+            placeholder="Ví dụ: JOYWORK Studio"
             {...nameField}
             onChange={(event) => {
               nameField.onChange(event).catch(() => {});

@@ -1,9 +1,9 @@
 ---
-description: JoyWork web architecture boundaries and reuse rules
+description: JOYWORK web architecture boundaries and reuse rules
 alwaysApply: true
 ---
 
-# JoyWork Web Architecture
+# JOYWORK Web Architecture
 
 - Keep route entrypoints in `src/app` thin; push heavy UI or business logic into `src/components`, `src/hooks`, `src/lib`, `src/store`, or `src/contexts`.
 - Reuse existing feature folders and shared primitives before creating new top-level folders, duplicate modals, or parallel APIs.

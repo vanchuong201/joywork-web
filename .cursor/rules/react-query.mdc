@@ -1,10 +1,10 @@
 ---
-description: JoyWork web React Query key and mutation conventions
+description: JOYWORK web React Query key and mutation conventions
 globs: src/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
-# JoyWork Web React Query
+# JOYWORK Web React Query
 
 - Use array query keys with a stable feature prefix like `["jobs", filters]` or `["company-summary", slug]`, matching the current codebase style.
 - Include the identifiers or filters that affect fetched data in the query key so cache entries stay correct.

@@ -34,7 +34,7 @@ export default function TalentPoolLocked({ reason }: { reason?: string }) {
 
       <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50/50 px-6 py-4 dark:border-amber-900/40 dark:bg-amber-950/20">
         <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-          Liên hệ: <a href="mailto:contact@joywork.vn" className="underline">contact@joywork.vn | 033 868 5855</a>
+          Liên hệ: <a href="mailto:contact@joywork.vn" className="underline">contact@joywork.vn</a> | <span className="underline">033 868 5855</span>
         </p>
       </div>
     </div>

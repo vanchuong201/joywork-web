@@ -1,10 +1,10 @@
 ---
-description: JoyWork frontend validation and testing expectations
+description: JOYWORK frontend validation and testing expectations
 globs: src/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
-# JoyWork Frontend Testing
+# JOYWORK Frontend Testing
 
 - This repo currently exposes `npm run lint` but no visible automated test suite; for meaningful changes, treat lint as the minimum validation gate when practical.
 - `next build` does not enforce ESLint in this repo, so do not treat a successful build as equivalent to a lint pass.

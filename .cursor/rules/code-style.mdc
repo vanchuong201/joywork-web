@@ -1,10 +1,10 @@
 ---
-description: JoyWork web formatting, imports, exports, and naming style
+description: JOYWORK web formatting, imports, exports, and naming style
 globs: src/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
-# JoyWork Web Code Style
+# JOYWORK Web Code Style
 
 - Match existing frontend formatting: `double quotes`, semicolons, and `@/` alias imports for cross-folder references.
 - Prefer relative imports only for the same folder or a very local sibling; otherwise use `@/`.

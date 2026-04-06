@@ -309,7 +309,7 @@ export default function AccountTab() {
           {/* Joined Date (read-only) */}
           {joinedDate && (
             <div>
-              <Label>Tham gia JoyWork</Label>
+              <Label>Tham gia JOYWORK</Label>
               <Input value={joinedDate} readOnly className="mt-1" />
             </div>
           )}

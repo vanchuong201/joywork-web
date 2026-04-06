@@ -112,7 +112,7 @@ function RegisterPageContent() {
             <div className="relative h-12 w-48">
               <Image
                 src="/JW-mid.png"
-                alt="JoyWork Logo"
+                alt="JOYWORK Logo"
                 fill
                 sizes="192px"
                 className="object-contain"
@@ -120,7 +120,7 @@ function RegisterPageContent() {
               />
             </div>
           </div>
-          <h1 className="text-xl font-semibold text-[var(--foreground)]">Tạo tài khoản JoyWork</h1>
+          <h1 className="text-xl font-semibold text-[var(--foreground)]">Tạo tài khoản JOYWORK</h1>
           <p className="text-sm text-[var(--muted-foreground)]">Hoàn tất thông tin để bắt đầu</p>
         </div>
         <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -266,7 +266,7 @@ export default function RegisterPage() {
               <div className="relative h-12 w-48">
                 <Image
                   src="/JW-mid.png"
-                  alt="JoyWork Logo"
+                  alt="JOYWORK Logo"
                   fill
                   sizes="192px"
                   className="object-contain"
@@ -274,7 +274,7 @@ export default function RegisterPage() {
                 />
               </div>
             </div>
-            <h1 className="text-xl font-semibold text-[var(--foreground)]">Tạo tài khoản JoyWork</h1>
+            <h1 className="text-xl font-semibold text-[var(--foreground)]">Tạo tài khoản JOYWORK</h1>
             <p className="text-sm text-[var(--muted-foreground)]">Đang tải...</p>
           </div>
         </div>

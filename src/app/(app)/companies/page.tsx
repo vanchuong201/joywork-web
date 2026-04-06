@@ -203,7 +203,7 @@ export default function CompaniesPage() {
           <div>
             <h1 className="text-xl font-semibold text-[var(--foreground)]">Khám phá doanh nghiệp</h1>
             <p className="text-sm text-[var(--muted-foreground)]">
-              Tìm hiểu văn hoá, hoạt động và các cơ hội việc làm từ các công ty trên JoyWork.
+              Tìm hiểu văn hoá, hoạt động và các cơ hội việc làm từ các công ty trên JOYWORK.
             </p>
           </div>
         </div>

@@ -321,7 +321,7 @@ export default function CompanyProfileForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Tên công ty" error={errors.name?.message}>
-          <Input placeholder="Ví dụ: JoyWork Studio" {...register("name")} />
+          <Input placeholder="Ví dụ: JOYWORK Studio" {...register("name")} />
         </FormField>
         <FormField label="Tagline" error={errors.tagline?.message}>
           <Input placeholder="Thông điệp ngắn gọn" {...register("tagline")} />

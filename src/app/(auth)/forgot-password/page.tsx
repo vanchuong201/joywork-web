@@ -90,7 +90,7 @@ function ForgotPasswordContent() {
             <div className="relative h-12 w-48">
               <Image
                 src="/JW-mid.png"
-                alt="JoyWork Logo"
+                alt="JOYWORK Logo"
                 fill
                 sizes="192px"
                 className="object-contain"
@@ -158,7 +158,7 @@ export default function ForgotPasswordPage() {
                 <div className="relative h-12 w-48">
                   <Image
                     src="/JW-mid.png"
-                    alt="JoyWork Logo"
+                    alt="JOYWORK Logo"
                     fill
                     sizes="192px"
                     className="object-contain"

@@ -1,9 +1,9 @@
 ---
-description: JoyWork frontend security and secrets handling
+description: JOYWORK frontend security and secrets handling
 alwaysApply: true
 ---
 
-# JoyWork Frontend Security
+# JOYWORK Frontend Security
 
 - Never commit, print, or paste secrets from `.env*`, tokens, cookies, signed URLs, or private backend endpoints.
 - Treat all user-provided HTML, editor output, upload metadata, and query params as untrusted input.

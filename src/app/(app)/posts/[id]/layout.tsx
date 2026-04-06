@@ -52,7 +52,7 @@ export async function generateMetadata({
 	}
 
 	const baseTitle = post?.title?.trim();
-	const siteName = "JoyWork";
+	const siteName = "JOYWORK";
 	const title = baseTitle
 		? `${baseTitle} - ${post?.company?.name ?? siteName}`
 		: `Bài viết trên ${siteName}`;

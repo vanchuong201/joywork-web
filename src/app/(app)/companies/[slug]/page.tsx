@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!company) return {};
 
   return {
-    title: `${company.name} | JoyWork`,
+    title: `${company.name} | JOYWORK`,
     description: company.tagline || company.description,
     openGraph: {
       title: company.name,

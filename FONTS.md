@@ -1,4 +1,4 @@
-# Font Configuration cho JoyWork
+# Font Configuration cho JOYWORK
 
 ## Font Strategy: Hybrid (Sans-serif + Serif)
 

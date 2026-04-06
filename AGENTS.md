@@ -1,6 +1,6 @@
-# JoyWork Web Agent Guide
+# JOYWORK Web Agent Guide
 
-This repo is a Next.js App Router frontend for JoyWork.
+This repo is a Next.js App Router frontend for JOYWORK.
 
 Follow `.cursor/rules/*.mdc` first. Use this file as the short default guide:
 

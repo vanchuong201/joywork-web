@@ -438,7 +438,7 @@ export default function ProfilePage() {
             Cập nhật ảnh đại diện và thông tin để nhà tuyển dụng hiểu rõ hơn về bạn.
           </p>
           {joinedDate ? (
-            <p className="text-xs text-[var(--muted-foreground)]">Tham gia JoyWork: {joinedDate}</p>
+            <p className="text-xs text-[var(--muted-foreground)]">Tham gia JOYWORK: {joinedDate}</p>
           ) : null}
         </CardHeader>
         <CardContent>
@@ -455,7 +455,7 @@ export default function ProfilePage() {
                 <Input placeholder="Họ và tên của bạn" {...register("name")} />
               </FormField>
               <FormField label="Headline" error={errors.headline?.message}>
-                <Input placeholder="Ví dụ: Product Manager @ JoyWork" {...register("headline")} />
+                <Input placeholder="Ví dụ: Product Manager @ JOYWORK" {...register("headline")} />
               </FormField>
             </div>
 

@@ -1,10 +1,10 @@
 ---
-description: JoyWork web form, query, mutation, and feature API patterns
+description: JOYWORK web form, query, mutation, and feature API patterns
 globs: src/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
-# JoyWork Web Forms And Data
+# JOYWORK Web Forms And Data
 
 - New forms should default to `react-hook-form` + `zodResolver`, with validation colocated near the form and mapped to inline errors.
 - Use React Query for server state, cache invalidation, and mutation lifecycle instead of ad hoc request state spread across components.

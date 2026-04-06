@@ -183,7 +183,7 @@ function LoginPageContent() {
             <div className="relative h-12 w-48">
               <Image
                 src="/JW-mid.png"
-                alt="JoyWork Logo"
+                alt="JOYWORK Logo"
                 fill
                 sizes="192px"
                 className="object-contain"
@@ -191,7 +191,7 @@ function LoginPageContent() {
               />
             </div>
           </div>
-          <h1 className="text-xl font-semibold text-[var(--foreground)]">Đăng nhập JoyWork</h1>
+          <h1 className="text-xl font-semibold text-[var(--foreground)]">Đăng nhập JOYWORK</h1>
           <p className="text-sm text-[var(--muted-foreground)]">Nhập thông tin để tiếp tục</p>
         </div>
         <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -326,7 +326,7 @@ export default function LoginPage() {
               <div className="relative h-12 w-48">
                 <Image
                   src="/JW-mid.png"
-                  alt="JoyWork Logo"
+                  alt="JOYWORK Logo"
                   fill
                   sizes="192px"
                   className="object-contain"
@@ -334,7 +334,7 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <h1 className="text-xl font-semibold text-[var(--foreground)]">Đăng nhập JoyWork</h1>
+            <h1 className="text-xl font-semibold text-[var(--foreground)]">Đăng nhập JOYWORK</h1>
             <p className="text-sm text-[var(--muted-foreground)]">Đang tải...</p>
           </div>
         </div>
