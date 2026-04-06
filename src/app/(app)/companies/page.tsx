@@ -63,6 +63,7 @@ const SIZE_OPTIONS: { value: string; label: string }[] = [
 
 export default function CompaniesPage() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const [search, setSearch] = useState("");
   const [industry, setIndustry] = useState("");
   const [location, setLocation] = useState("");
@@ -122,6 +123,7 @@ export default function CompaniesPage() {
   );
 
   const memberships = membershipsQuery.data?.memberships ?? [];
+  const createCompanyHref = user ? "/companies/new" : `/login?redirect=${encodeURIComponent("/companies/new")}`;
   const clearAdvancedFilters = () => {
     setIndustry("");
     setLocation("");
@@ -134,7 +136,7 @@ export default function CompaniesPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-[var(--foreground)]">Công ty của tôi</h2>
           <Button asChild size="sm" variant="secondary">
-            <Link href="/companies/new">+ Tạo công ty</Link>
+            <Link href={createCompanyHref}>+ Tạo công ty</Link>
           </Button>
         </div>
 

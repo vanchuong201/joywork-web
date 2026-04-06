@@ -2521,6 +2521,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                             <div className="leading-relaxed space-y-1.5">
                               <p>Nếu muốn gửi email cho nhân viên để xác thực tuyên bố, hãy chọn hoặc tải lên danh sách email. Bỏ qua bước này nếu chỉ muốn tạo tuyên bố đơn giản.</p>
                               <p className="text-slate-500 text-xs">Việc gửi tuyên bố cho nhân viên xác thực giúp các tuyên bố có sức nặng và đáng tin cậy hơn, từ đó hồ sơ công ty được nhiều ứng viên yêu thích và tăng khả năng tuyển dụng được người phù hợp.</p>
+                              <p className="text-slate-500 text-xs">Mỗi email xác thực có hiệu lực trong 5 ngày kể từ lúc gửi.</p>
                             </div>
                           </div>
                         </div>

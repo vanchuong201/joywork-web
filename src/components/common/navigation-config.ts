@@ -35,13 +35,6 @@ const exploreNavBase: NavItem[] = [
   { icon: Sparkles, label: "Talent Pool", href: "/talent-pool" },
 ];
 
-const headerInternalSurveyNavItem: NavItem = {
-  icon: FileQuestion,
-  label: "Khảo sát nội bộ",
-  href: "https://survey.joywork.vn/",
-  external: true,
-};
-
 const headerAdminNavItem: NavItem = {
   icon: Settings,
   label: "Hệ thống",
@@ -70,7 +63,19 @@ export const accountDropdownItems: AccountDropdownItem[] = [
 ];
 
 export function buildHeaderExploreNav(user: AuthUser | null): NavItem[] {
-  const items = [...exploreNavBase, headerInternalSurveyNavItem];
+  const internalSurveyItem: NavItem = user
+    ? {
+        icon: FileQuestion,
+        label: "Khảo sát nội bộ",
+        href: "https://survey.joywork.vn/",
+        external: true,
+      }
+    : {
+        icon: FileQuestion,
+        label: "Khảo sát nội bộ",
+        href: "/login?redirect=%2F",
+      };
+  const items = [...exploreNavBase, internalSurveyItem];
   if (user?.role === "ADMIN") {
     return [...items, headerAdminNavItem];
   }
