@@ -18,6 +18,7 @@ import { usePathname } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChangePasswordDialog from "@/components/auth/ChangePasswordDialog";
 import Image from "next/image";
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import {
   accountDropdownItems,
   buildCompanyManageNav,
@@ -38,8 +39,12 @@ export default function Header() {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuId = "mobile-navigation-menu";
+  const { isComplete, isLoading: isProfileCompletionLoading, hasProfile } = useProfileCompletion({
+    enabled: Boolean(user),
+  });
 
   const isReady = initialized && !loading;
+  const showProfileWarningDot = Boolean(user) && !isProfileCompletionLoading && hasProfile && !isComplete;
 
   const navItems = useMemo(() => buildHeaderExploreNav(user), [user]);
   const mobileCompanyItems = useMemo(() => buildCompanyManageNav(memberships), [memberships]);
@@ -197,12 +202,15 @@ export default function Header() {
             <>
               <NotificationBell />
               <details ref={accountRef} className="relative">
-              <summary className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-md text-sm text-[var(--foreground)] hover:bg-[var(--muted)] md:h-auto md:w-auto md:max-w-[260px] md:gap-2 md:px-2 md:py-1">
+              <summary className="relative flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-md text-sm text-[var(--foreground)] hover:bg-[var(--muted)] md:h-auto md:w-auto md:max-w-[260px] md:gap-2 md:px-2 md:py-1">
                 <CircleUserRound size={18} className="md:hidden" />
                 <span className="hidden min-w-0 whitespace-nowrap font-medium md:inline md:truncate">
                   {user.name ?? user.email}
                 </span>
                 <ChevronDown size={14} className="hidden md:inline" />
+                {showProfileWarningDot && (
+                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
+                )}
               </summary>
               <div className="absolute right-0 mt-2 w-56 rounded-md border border-[var(--border)] bg-[var(--card)] shadow-lg">
                 <div className="flex flex-col py-2 text-sm">
@@ -210,12 +218,15 @@ export default function Header() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="px-3 py-2 text-left text-[var(--foreground)] hover:bg-[var(--muted)]"
+                      className="flex items-center gap-2 px-3 py-2 text-left text-[var(--foreground)] hover:bg-[var(--muted)]"
                       onClick={() => {
                         if (accountRef.current) accountRef.current.open = false;
                       }}
                     >
-                      {item.label}
+                      <span>{item.label}</span>
+                      {item.href === "/account/profile" && showProfileWarningDot ? (
+                        <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-red-500" />
+                      ) : null}
                     </Link>
                   ))}
                   <button

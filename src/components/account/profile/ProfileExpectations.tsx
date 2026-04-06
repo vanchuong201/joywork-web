@@ -55,12 +55,11 @@ export default function ProfileExpectations({ profile }: ProfileExpectationsProp
       expectedCulture?: string | null;
       careerGoals?: string[];
     }) => {
-      const res = await api.patch("/api/users/me/profile", data);
-      return res.data.data.profile as OwnUserProfile;
+      await api.patch("/api/users/me/profile", data);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success("Cập nhật mong muốn thành công");
-      queryClient.setQueryData(["own-profile"], data);
+      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
     },
     onError: () => {
       toast.error("Cập nhật thất bại");

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { OwnUserProfile } from "@/types/user";
+import type { OwnUserProfile } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -30,12 +30,11 @@ export default function ProfileKSA({ profile }: ProfileKSAProps) {
 
   const updateProfile = useMutation({
     mutationFn: async (data: { knowledge: string[]; skills: string[]; attitude: string[] }) => {
-      const res = await api.patch("/api/users/me/profile", data);
-      return res.data.data.profile as OwnUserProfile;
+      await api.patch("/api/users/me/profile", data);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success("Cập nhật năng lực thành công");
-      queryClient.setQueryData(["own-profile"], data);
+      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
     },
     onError: () => {
       toast.error("Cập nhật thất bại");

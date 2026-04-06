@@ -107,6 +107,29 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   });
 
   const isPublic = watch("isPublic");
+  const fullNameValue = watch("fullName");
+  const titleValue = watch("title");
+  const bioValue = watch("bio");
+  const contactEmailValue = watch("contactEmail");
+  const contactPhoneValue = watch("contactPhone");
+  const locationValues = watch("locations") || [];
+
+  const isAvatarMissing = !avatar;
+  const isFullNameMissing = !fullNameValue?.trim();
+  const isTitleMissing = !titleValue?.trim();
+  const isBioMissing = !bioValue?.trim();
+  const isContactEmailMissing = !contactEmailValue?.trim();
+  const isContactPhoneMissing = !contactPhoneValue?.trim();
+  const isLocationMissing = !locationValues.some((item) => item.trim().length > 0);
+  const missingRequiredFields = [
+    isAvatarMissing ? "Avatar" : null,
+    isFullNameMissing ? "Họ tên đầy đủ" : null,
+    isTitleMissing ? "Tiêu đề nghề nghiệp" : null,
+    isBioMissing ? "Giới thiệu" : null,
+    isContactEmailMissing ? "Email liên hệ trên CV" : null,
+    isContactPhoneMissing ? "Số điện thoại liên hệ trên CV" : null,
+    isLocationMissing ? "Địa điểm" : null,
+  ].filter(Boolean) as string[];
 
   useEffect(() => {
     reset({
@@ -155,7 +178,6 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
         avatar,
         cvUrl: cvUrl || cleanedData.cvUrl || null,
       };
-      console.log('[ProfileBasicInfo] Submitting payload:', payload);
       await api.patch("/api/users/me/profile", payload);
     },
     onSuccess: () => {
@@ -373,6 +395,12 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       <CardHeader>
         <CardTitle>Thông tin cơ bản</CardTitle>
         <CardDescription>Cập nhật thông tin cá nhân và liên hệ</CardDescription>
+        {missingRequiredFields.length > 0 && (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+            <p className="font-medium">Bạn còn thiếu thông tin bắt buộc để hoàn thiện mục này:</p>
+            <p className="mt-1">{missingRequiredFields.join(", ")}</p>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <form onSubmit={onFormSubmit} className="space-y-6">
@@ -419,6 +447,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
                 <Upload className="mr-2 h-4 w-4" />
                 {uploadingAvatar ? "Đang tải..." : "Tải ảnh đại diện"}
               </Button>
+              {isAvatarMissing && (
+                <p className="mt-2 text-xs text-amber-600">Vui lòng tải avatar để hoàn thiện mục Thông tin cơ bản.</p>
+              )}
             </div>
           </div>
 
@@ -431,6 +462,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               placeholder={profile.name || "Nguyễn Văn Chương"} 
             />
             {errors.fullName && <p className="mt-1 text-sm text-red-500">{errors.fullName.message}</p>}
+            {!errors.fullName && isFullNameMissing && (
+              <p className="mt-1 text-xs text-amber-600">Vui lòng nhập họ tên đầy đủ.</p>
+            )}
             <p className="mt-1 text-xs text-slate-500">
               Tên đầy đủ sẽ được sử dụng trong CV và đơn ứng tuyển. 
               {!profile.profile?.fullName && profile.name && (
@@ -445,6 +479,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               <Label htmlFor="title">Tiêu đề nghề nghiệp</Label>
               <Input id="title" {...register("title")} placeholder="Lập trình viên Full-stack" />
               {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>}
+              {!errors.title && isTitleMissing && (
+                <p className="mt-1 text-xs text-amber-600">Vui lòng nhập tiêu đề nghề nghiệp.</p>
+              )}
             </div>
             <div>
               <Label htmlFor="headline">Tiêu đề ngắn</Label>
@@ -458,6 +495,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
             <Label htmlFor="bio">Giới thiệu</Label>
             <Textarea id="bio" rows={6} {...register("bio")} placeholder="Giới thiệu về bản thân..." />
             {errors.bio && <p className="mt-1 text-sm text-red-500">{errors.bio.message}</p>}
+            {!errors.bio && isBioMissing && (
+              <p className="mt-1 text-xs text-amber-600">Vui lòng thêm phần giới thiệu về bản thân.</p>
+            )}
           </div>
 
           {/* CV Email & Phone (independent from account) */}
@@ -472,6 +512,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               {errors.contactEmail && (
                 <p className="mt-1 text-sm text-red-500">{errors.contactEmail.message}</p>
               )}
+              {!errors.contactEmail && isContactEmailMissing && (
+                <p className="mt-1 text-xs text-amber-600">Vui lòng nhập email liên hệ trên CV.</p>
+              )}
               <p className="mt-1 text-xs text-slate-500">
                 Mặc định lấy từ email tài khoản ({profile.email}). Bạn có thể thay đổi email hiển thị trên CV.
               </p>
@@ -485,6 +528,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               />
               {errors.contactPhone && (
                 <p className="mt-1 text-sm text-red-500">{errors.contactPhone.message}</p>
+              )}
+              {!errors.contactPhone && isContactPhoneMissing && (
+                <p className="mt-1 text-xs text-amber-600">Vui lòng nhập số điện thoại liên hệ trên CV.</p>
               )}
               <p className="mt-1 text-xs text-slate-500">
                 Mặc định lấy từ số điện thoại tài khoản (nếu có). Bạn có thể dùng số khác cho CV.
@@ -503,6 +549,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
                 className="mt-1"
               />
               {errors.locations && <p className="mt-1 text-sm text-red-500">{errors.locations.message}</p>}
+              {!errors.locations && isLocationMissing && (
+                <p className="mt-1 text-xs text-amber-600">Vui lòng chọn ít nhất 1 địa điểm.</p>
+              )}
             </div>
             <div>
               <Label htmlFor="website">Website</Label>

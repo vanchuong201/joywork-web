@@ -8,13 +8,14 @@ import { OwnUserProfile } from "@/types/user";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ChevronRight, Clock, ExternalLink, Sparkles } from "lucide-react";
+import { CheckCircle2, ChevronRight, Circle, Clock, ExternalLink, Sparkles } from "lucide-react";
 import ProfileBasicInfo from "@/components/account/profile/ProfileBasicInfo";
 import ProfileKSA from "@/components/account/profile/ProfileKSA";
 import ProfileExpectations from "@/components/account/profile/ProfileExpectations";
 import ProfileExperiences from "@/components/account/profile/ProfileExperiences";
 import ProfileEducations from "@/components/account/profile/ProfileEducations";
 import TalentPoolStatus from "@/components/talent-pool/TalentPoolStatus";
+import { buildProfileCompletion } from "@/hooks/useProfileCompletion";
 
 type TalentPoolMyStatus = {
   member: { id: string; status: string; source: string; reason: string | null; createdAt: string } | null;
@@ -60,6 +61,7 @@ export default function ProfileTab() {
   }
 
   const profileSlug = data.slug || data.id;
+  const { completionItems, completionPercent } = buildProfileCompletion(data);
   const memberStatus = talentPoolStatus?.member?.status ?? null;
   const requestStatus = talentPoolStatus?.latestRequest?.status ?? null;
   const isActive =
@@ -80,6 +82,48 @@ export default function ProfileTab() {
             Xem trang hồ sơ công khai
           </Link>
         </Button>
+      </div>
+
+      <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-medium text-[var(--muted-foreground)]">Tiến độ hoàn thiện hồ sơ</p>
+            <p className="text-2xl font-bold">{completionPercent}%</p>
+          </div>
+          <p className="text-sm text-amber-600">
+            Hoàn thiện 100% hồ sơ sẽ giúp nhà tuyển dụng nhanh chóng tìm thấy bạn
+          </p>
+        </div>
+
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-emerald-500 transition-all"
+            style={{ width: `${completionPercent}%` }}
+          />
+        </div>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          {completionItems.map((item) => (
+            <div
+              key={item.key}
+              className={`rounded-lg border px-3 py-2 text-sm ${
+                item.completed
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-slate-200 bg-slate-50 text-slate-600"
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                {item.completed ? (
+                  <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                ) : (
+                  <Circle size={14} className="shrink-0 text-slate-400" />
+                )}
+                <span className="font-medium">{item.label}</span>
+              </div>
+              <p className="mt-1 text-xs">{item.completed ? "Đã hoàn thành" : "Chưa hoàn thành"}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {isTalentPoolLoading ? (
