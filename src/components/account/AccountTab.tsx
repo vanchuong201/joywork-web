@@ -34,12 +34,15 @@ type AccountResponse = {
   createdAt: string;
 };
 
+const RESEND_VERIFICATION_COOLDOWN_SECONDS = 60;
+
 export default function AccountTab() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [origin, setOrigin] = useState<string>("");
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   const { data, isLoading } = useQuery({
     queryKey: ["account"],
@@ -71,6 +74,34 @@ export default function AccountTab() {
       setAvatar(data.avatar || null); // Use User.avatar (account avatar)
     }
   }, [data, reset]);
+
+  const resendVerificationEmail = useMutation({
+    mutationFn: async () => {
+      const res = await api.post("/api/auth/resend-verification-email");
+      return res.data as { data?: { message?: string } };
+    },
+    onSuccess: (payload) => {
+      setCooldownSeconds(RESEND_VERIFICATION_COOLDOWN_SECONDS);
+      toast.success(payload?.data?.message || "Đã gửi email xác minh. Vui lòng kiểm tra hộp thư.");
+    },
+    onError: (error: any) => {
+      const retryAfter = Number(error?.response?.headers?.["retry-after"]);
+      if (Number.isFinite(retryAfter) && retryAfter > 0) {
+        setCooldownSeconds((prev) => Math.max(prev, retryAfter));
+      }
+      toast.error(error?.response?.data?.error?.message || "Không gửi được email xác minh");
+    },
+  });
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+
+    const timer = window.setInterval(() => {
+      setCooldownSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [cooldownSeconds]);
 
   const updateAccount = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -301,8 +332,36 @@ export default function AccountTab() {
               >
                 {data.emailVerified ? "Đã xác minh" : "Chưa xác minh"}
               </span>
+              {!data.emailVerified && (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto px-0 text-sm font-semibold text-blue-600 underline-offset-4 hover:text-blue-800 hover:underline"
+                  disabled={resendVerificationEmail.isPending || cooldownSeconds > 0}
+                  onClick={() => {
+                    if (cooldownSeconds > 0) return;
+                    resendVerificationEmail.mutate();
+                  }}
+                >
+                  {resendVerificationEmail.isPending ? (
+                    <>
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      Đang gửi...
+                    </>
+                  ) : cooldownSeconds > 0 ? (
+                    `Gửi lại sau ${cooldownSeconds}s`
+                  ) : (
+                    "Xác minh ngay"
+                  )}
+                </Button>
+              )}
             </div>
             <p className="mt-1 text-xs text-[var(--muted-foreground)]">Email đăng nhập, không thể thay đổi</p>
+            {!data.emailVerified && (
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                Bạn sẽ nhận email giống lúc đăng ký, kèm nút và liên kết xác nhận email.
+              </p>
+            )}
           </div>
 
 

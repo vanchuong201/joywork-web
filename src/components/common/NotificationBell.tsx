@@ -9,14 +9,14 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { CheckCheck } from "lucide-react";
 import { useAuthStore } from "@/store/useAuth";
+import type { Notification } from "@/types/notification";
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
-  const { data: unreadCount, isLoading: unreadCountLoading } = useUnreadCount();
+  const { data: unreadCount } = useUnreadCount();
   const { data: notificationsData, isLoading: notificationsLoading } = useNotifications({
     page: 1,
     limit: 10,
@@ -42,7 +42,11 @@ export default function NotificationBell() {
     await markAllAsReadMutation.mutateAsync();
   };
 
-  const getNotificationLink = (notification: any) => {
+  const getNotificationLink = (notification: Notification) => {
+    if (typeof notification?.metadata?.targetUrl === "string" && notification.metadata.targetUrl.startsWith("/")) {
+      return notification.metadata.targetUrl;
+    }
+
     if (notification.type === "APPLICATION_STATUS" && notification.metadata?.jobId) {
       return `/jobs/${notification.metadata.jobId}`;
     }

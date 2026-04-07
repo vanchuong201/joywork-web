@@ -635,13 +635,17 @@ export default function ManageApplicationsTab({ company }: Props) {
           <DialogHeader>
             <DialogTitle>Cập nhật trạng thái ứng tuyển</DialogTitle>
             <DialogDescription>
-              {selectedApplication && (
+              {selectedApplication ? (
                 <>
                   Ứng viên: <strong>{selectedApplication.user?.name || selectedApplication.user?.email}</strong>
                   <br />
                   Vị trí: <strong>{selectedApplication.job?.title}</strong>
+                  <br />
+                  <span className="mt-2 block text-xs">
+                    Khi bạn cập nhật, ứng viên sẽ nhận thông báo trên JOYWORK và email (nếu tài khoản có email đã xác minh).
+                  </span>
                 </>
-              )}
+              ) : null}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
