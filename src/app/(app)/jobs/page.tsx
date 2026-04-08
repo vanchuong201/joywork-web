@@ -9,13 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/ui/empty-state";
-import CompanySearch from "@/components/feed/CompanySearch";
+// import CompanySearch from "@/components/feed/CompanySearch";
 import { Input } from "@/components/ui/input";
 import ProvinceSelect from "@/components/ui/province-select";
+import WardSelect from "@/components/ui/ward-select";
+import { getProvinceNameByCode } from "@/lib/provinces";
+import { fetchWardsByProvinceCodes } from "@/lib/location-wards";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
-import { List, Grid, ChevronLeft, ChevronRight, Building2 } from "lucide-react";
+import { List, Grid, ChevronLeft, ChevronRight, Building2, X } from "lucide-react";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { useAuthStore } from "@/store/useAuth";
@@ -29,6 +32,7 @@ type Job = {
   title: string;
   locations?: string[];
   location?: string;
+  wardCodes?: string[];
   remote: boolean;
   employmentType: string;
   experienceLevel: string;
@@ -211,6 +215,25 @@ function SimpleCarousel({
   );
 }
 
+function JobsFilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <div className="group relative inline-flex max-w-full items-center rounded-full border border-[var(--border)] bg-[var(--muted)] pl-3 pr-7 py-1 text-xs text-[var(--muted-foreground)]">
+      <span className="truncate">{label}</span>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-[var(--muted-foreground)] opacity-100 transition-opacity hover:bg-[var(--background)] hover:text-[var(--foreground)] focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+        aria-label="Bỏ lọc này"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 function JobsPageContent() {
   const sp = useSearchParams();
   const router = useRouter();
@@ -219,12 +242,13 @@ function JobsPageContent() {
 
   const q = sp.get("q") || undefined;
   const location = sp.get("location") || undefined;
+  const ward = sp.get("ward") || undefined;
   const companyId = sp.get("companyId") || undefined;
   const remote = sp.get("remote") === "true" ? true : undefined;
   const employmentType = sp.get("employmentType") || undefined;
   const experienceLevel = sp.get("experienceLevel") || undefined;
 
-  const hasActiveFilters = Boolean(q || location || companyId || remote === true || employmentType || experienceLevel);
+  const hasActiveFilters = Boolean(q || location || ward || companyId || remote === true || employmentType || experienceLevel);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const page = Number(sp.get("page") || "1");
   const limit = 12;
@@ -232,7 +256,7 @@ function JobsPageContent() {
   const featuredLimit = 12;
 
   const { data, isLoading, isFetching } = useQuery<{ jobs: Job[]; pagination: any }>({
-    queryKey: ["jobs", { q, location, remote, employmentType, experienceLevel, companyId, page }],
+    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, companyId, page }],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
         params: {
@@ -240,6 +264,7 @@ function JobsPageContent() {
           page,
           q,
           location,
+          ward,
           companyId,
           remote,
           employmentType,
@@ -262,6 +287,18 @@ function JobsPageContent() {
     },
     placeholderData: (prev) => prev,
   });
+
+  const { data: wardsForFilterChip = [] } = useQuery({
+    queryKey: ["job-search-ward-labels", location],
+    queryFn: () => fetchWardsByProvinceCodes(location ? [location] : []),
+    enabled: Boolean(location && ward),
+  });
+
+  const wardDisplayName = useMemo(() => {
+    if (!ward) return "";
+    const row = wardsForFilterChip.find((w) => w.code === ward);
+    return row ? (row.fullName ?? row.name) : ward;
+  }, [ward, wardsForFilterChip]);
 
   const applyParams = (params: URLSearchParams) => {
     const query = params.toString();
@@ -292,7 +329,7 @@ function JobsPageContent() {
 
   const clearAllFilters = () => {
     const next = new URLSearchParams(sp.toString());
-    ["q", "location", "companyId", "remote", "employmentType", "experienceLevel", "page"].forEach((key) =>
+    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "page"].forEach((key) =>
       next.delete(key),
     );
     applyParams(next);
@@ -336,18 +373,13 @@ function JobsPageContent() {
     }
   };
 
-  const activeFilterLabels = useMemo(
-    () =>
-      [
-        q ? `Từ khoá: ${q}` : null,
-        location ? `Địa điểm: ${location}` : null,
-        companyId ? "Đang lọc theo doanh nghiệp" : null,
-        remote === true ? "Làm việc từ xa" : null,
-        employmentType ? `Loại: ${translateEmploymentType(employmentType)}` : null,
-        experienceLevel ? `Kinh nghiệm: ${translateExperienceLevel(experienceLevel)}` : null,
-      ].filter(Boolean) as string[],
-    [q, location, companyId, remote, employmentType, experienceLevel],
-  );
+  const clearLocationAndWard = () => {
+    const next = new URLSearchParams(sp.toString());
+    next.delete("location");
+    next.delete("ward");
+    next.delete("page");
+    applyParams(next);
+  };
 
   const totalPages = data?.pagination?.totalPages ?? 1;
   const featuredTotalPages = featuredData?.pagination?.totalPages ?? 1;
@@ -429,7 +461,7 @@ function JobsPageContent() {
               </button>
             ) : null}
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
             <div className="space-y-1.5 text-sm">
               <div className="font-medium">Từ khoá</div>
               <Input
@@ -447,36 +479,45 @@ function JobsPageContent() {
                   toggleParam("q", value || undefined, { resetPage: true });
                 }}
               />
-              {q ? (
-                <button className="text-xs text-[var(--brand)] hover:underline" onClick={() => toggleParam("q", undefined, { resetPage: true })}>
-                  Xoá từ khoá
-                </button>
-              ) : null}
             </div>
             <div className="space-y-1.5 text-sm">
-              <div className="font-medium">Địa điểm</div>
+              <div className="font-medium">Tỉnh/thành</div>
               <ProvinceSelect
                 value={location ?? null}
-                onChange={(value) => toggleParam("location", value || undefined, { resetPage: true })}
+                onChange={(value) => {
+                  const next = new URLSearchParams(sp.toString());
+                  if (value) {
+                    next.set("location", value);
+                    const w = next.get("ward");
+                    if (w && w.split("/")[0] !== value) next.delete("ward");
+                  } else {
+                    next.delete("location");
+                    next.delete("ward");
+                  }
+                  next.delete("page");
+                  applyParams(next);
+                }}
               />
-              {location ? (
-                <button className="text-xs text-[var(--brand)] hover:underline" onClick={() => toggleParam("location", undefined, { resetPage: true })}>
-                  Xoá địa điểm
-                </button>
-              ) : null}
             </div>
+            <div className="space-y-1.5 text-sm">
+              <div className="font-medium">Phường / xã</div>
+              <WardSelect
+                provinceCodes={location ? [location] : []}
+                disabled={!location}
+                values={ward ? [ward] : []}
+                onChangeValues={(vals) => {
+                  const v = vals.length ? vals[vals.length - 1] : undefined;
+                  toggleParam("ward", v, { resetPage: true });
+                }}
+                placeholder={location ? "Lọc theo phường/xã (tuỳ chọn)" : "Chọn tỉnh/thành trước"}
+              />
+            </div>
+            {/*
             <div className="space-y-1.5 text-sm">
               <div className="font-medium">Doanh nghiệp</div>
               <CompanySearch value={companyId} onSelect={(id) => toggleParam("companyId", id, { resetPage: true })} />
-              {companyId ? (
-                <button
-                  className="text-xs text-[var(--brand)] hover:underline"
-                  onClick={() => toggleParam("companyId", undefined, { resetPage: true })}
-                >
-                  Bỏ chọn doanh nghiệp
-                </button>
-              ) : null}
             </div>
+            */}
             {/* <div className="space-y-2 text-sm">
               <div className="font-medium">Hình thức làm việc</div>
               <label className="flex items-center gap-2">
@@ -519,19 +560,41 @@ function JobsPageContent() {
               </select>
             </div>
           </div>
+          {hasActiveFilters ? (
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-4">
+              {q ? (
+                <JobsFilterChip label={`Từ khoá: ${q}`} onRemove={() => toggleParam("q", undefined, { resetPage: true })} />
+              ) : null}
+              {location ? (
+                <JobsFilterChip
+                  label={`Tỉnh/thành: ${getProvinceNameByCode(location) || location}`}
+                  onRemove={clearLocationAndWard}
+                />
+              ) : null}
+              {ward ? (
+                <JobsFilterChip label={`Phường/xã: ${wardDisplayName || ward}`} onRemove={() => toggleParam("ward", undefined, { resetPage: true })} />
+              ) : null}
+              {companyId ? (
+                <JobsFilterChip label="Doanh nghiệp đã chọn" onRemove={() => toggleParam("companyId", undefined, { resetPage: true })} />
+              ) : null}
+              {remote === true ? (
+                <JobsFilterChip label="Làm việc từ xa" onRemove={() => toggleParam("remote", undefined, { resetPage: true })} />
+              ) : null}
+              {employmentType ? (
+                <JobsFilterChip
+                  label={`Loại hợp đồng: ${translateEmploymentType(employmentType)}`}
+                  onRemove={() => toggleParam("employmentType", undefined, { resetPage: true })}
+                />
+              ) : null}
+              {experienceLevel ? (
+                <JobsFilterChip
+                  label={`Kinh nghiệm: ${translateExperienceLevel(experienceLevel)}`}
+                  onRemove={() => toggleParam("experienceLevel", undefined, { resetPage: true })}
+                />
+              ) : null}
+            </div>
+          ) : null}
         </div>
-        {activeFilterLabels.length ? (
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
-            {activeFilterLabels.map((label) => (
-              <span
-                key={label}
-                className="rounded-full border border-[var(--border)] bg-[var(--muted)] px-3 py-1 text-[var(--muted-foreground)]"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-        ) : null}
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (

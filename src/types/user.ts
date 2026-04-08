@@ -44,6 +44,7 @@ export interface UserProfile {
   cvUrl?: string | null;
   location?: string | null;
   locations?: string[];
+  wardCodes?: string[];
   website?: string | null;
   linkedin?: string | null;
   github?: string | null;
@@ -79,6 +80,7 @@ export interface PublicUserProfile {
     headline?: string | null;
     location?: string | null;
     locations?: string[];
+    wardCodes?: string[];
     website?: string | null;
     linkedin?: string | null;
     github?: string | null;

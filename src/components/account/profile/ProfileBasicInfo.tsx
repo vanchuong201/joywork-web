@@ -18,6 +18,7 @@ import { uploadProfileAvatar, uploadProfileCV } from "@/lib/uploads";
 import Image from "next/image";
 import { Loader2, Upload, FileText, X } from "lucide-react";
 import ProvinceSelect from "@/components/ui/province-select";
+import WardSelect from "@/components/ui/ward-select";
 
 // Helper for optional URL fields - accepts empty string
 const optionalUrl = z.union([
@@ -40,6 +41,7 @@ const schema = z.object({
   contactEmail: optionalEmail,
   contactPhone: z.string().max(50, "Số điện thoại tối đa 50 ký tự").optional(),
   locations: z.array(z.string()).optional(),
+  wardCodes: z.array(z.string()).optional(),
   website: optionalUrl,
   linkedin: optionalUrl,
   github: optionalUrl,
@@ -78,6 +80,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     handleSubmit,
     reset,
     watch,
+    getValues,
     setValue,
     setError,
     formState: { errors, isDirty },
@@ -92,6 +95,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       headline: profile.profile?.headline || "",
       bio: profile.profile?.bio || "",
       locations: profile.profile?.locations || [],
+      wardCodes: profile.profile?.wardCodes || [],
       website: profile.profile?.website || "",
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
@@ -113,6 +117,15 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const contactEmailValue = watch("contactEmail");
   const contactPhoneValue = watch("contactPhone");
   const locationValues = watch("locations") || [];
+
+  useEffect(() => {
+    const allowed = new Set(locationValues);
+    const current = getValues("wardCodes") || [];
+    const next = current.filter((w) => allowed.has(w.split("/")[0]));
+    if (next.length !== current.length) {
+      setValue("wardCodes", next, { shouldDirty: true });
+    }
+  }, [locationValues.join(","), getValues, setValue]);
 
   const isAvatarMissing = !avatar;
   const isFullNameMissing = !fullNameValue?.trim();
@@ -141,6 +154,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       headline: profile.profile?.headline || "",
       bio: profile.profile?.bio || "",
       locations: profile.profile?.locations || [],
+      wardCodes: profile.profile?.wardCodes || [],
       website: profile.profile?.website || "",
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
@@ -558,6 +572,20 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               <Input id="website" {...register("website")} placeholder="https://your-website.com" />
               {errors.website && <p className="mt-1 text-sm text-red-500">{errors.website.message}</p>}
             </div>
+          </div>
+
+          <div>
+            <Label>Phường / xã chi tiết (tùy chọn)</Label>
+            <WardSelect
+              className="mt-1"
+              provinceCodes={watch("locations") || []}
+              values={watch("wardCodes") || []}
+              onChangeValues={(vals) => setValue("wardCodes", vals, { shouldDirty: true })}
+            />
+            {errors.wardCodes && <p className="mt-1 text-sm text-red-500">{errors.wardCodes.message}</p>}
+            <p className="mt-1 text-xs text-slate-500">
+              Chọn sau khi đã chọn tỉnh/thành. Có thể bỏ qua nếu chỉ cần mức tỉnh/thành.
+            </p>
           </div>
 
           {/* Social Links */}

@@ -14,6 +14,7 @@ import { uploadCompanyLogo, uploadCompanyCover } from "@/lib/uploads";
 import Image from "next/image";
 
 import ProvinceSelect from "@/components/ui/province-select";
+import WardSelect from "@/components/ui/ward-select";
 import { COMPANY_SIZE_OPTIONS } from "@/lib/provinces";
 
 const sizeOptions = COMPANY_SIZE_OPTIONS;
@@ -79,6 +80,7 @@ const schema = z.object({
       message: "Vui lòng nhập URL bắt đầu bằng http:// hoặc https://",
     }),
   location: z.string().optional().nullable(),
+  wardCodes: z.array(z.string()).optional(),
   industry: z.string().max(60, "Ngành tối đa 60 ký tự").optional().or(z.literal("")),
   size: z.string().optional().or(z.literal("")),
   foundedYear: z
@@ -111,6 +113,7 @@ type CompanyProfileFormProps = {
     description?: string | null;
     website?: string | null;
     location?: string | null;
+    wardCodes?: string[] | null;
     industry?: string | null;
     size?: string | null;
     foundedYear?: number | null;
@@ -158,6 +161,7 @@ export default function CompanyProfileForm({
     handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<FormValues>({
@@ -168,6 +172,7 @@ export default function CompanyProfileForm({
       description: initialData.description ?? "",
       website: initialData.website ?? "",
       location: initialData.location ?? "",
+      wardCodes: initialData.wardCodes ?? [],
       industry: initialData.industry ?? "",
       size: initialData.size ?? "",
       foundedYear: initialData.foundedYear ? String(initialData.foundedYear) : "",
@@ -188,6 +193,7 @@ export default function CompanyProfileForm({
       description: initialData.description ?? "",
       website: initialData.website ?? "",
       location: initialData.location ?? "",
+      wardCodes: initialData.wardCodes ?? [],
       industry: initialData.industry ?? "",
       size: initialData.size ?? "",
       foundedYear: initialData.foundedYear ? String(initialData.foundedYear) : "",
@@ -206,6 +212,22 @@ export default function CompanyProfileForm({
       if (match) setCoverKey(match[0]);
     }
   }, [initialData, reset]);
+
+  const hqProvince = watch("location");
+
+  useEffect(() => {
+    if (!hqProvince) {
+      const cur = getValues("wardCodes") || [];
+      if (cur.length) setValue("wardCodes", [], { shouldDirty: true });
+      return;
+    }
+    const allowed = new Set([hqProvince]);
+    const current = getValues("wardCodes") || [];
+    const next = current.filter((w) => allowed.has(w.split("/")[0]));
+    if (next.length !== current.length) {
+      setValue("wardCodes", next, { shouldDirty: true });
+    }
+  }, [hqProvince, getValues, setValue]);
 
   const handleLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -292,6 +314,7 @@ export default function CompanyProfileForm({
         description: sanitizedDescription || undefined,
         website: values.website?.trim() || undefined,
         location: values.location?.trim() || undefined,
+        wardCodes: values.wardCodes?.length ? values.wardCodes : [],
         industry: values.industry?.trim() || undefined,
         size: values.size ? values.size : undefined,
         foundedYear: values.foundedYear ? Number(values.foundedYear) : undefined,
@@ -353,6 +376,15 @@ export default function CompanyProfileForm({
           />
         </FormField>
       </div>
+
+      <FormField label="Phường / xã trụ sở (tuỳ chọn)" error={errors.wardCodes?.message}>
+        <WardSelect
+          provinceCodes={hqProvince ? [hqProvince] : []}
+          disabled={!hqProvince}
+          values={watch("wardCodes") || []}
+          onChangeValues={(vals) => setValue("wardCodes", vals, { shouldDirty: true })}
+        />
+      </FormField>
 
       <div className="grid gap-4 md:grid-cols-3">
         <FormField label="Ngành nghề" error={errors.industry?.message}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
@@ -38,9 +38,13 @@ import {
   GraduationCap,
   UserCheck,
   Calendar,
+  MapPinned,
+  Globe2,
 } from "lucide-react";
 import DOMPurify from "dompurify";
 import { cn, formatDateUTC } from "@/lib/utils";
+import { getProvinceNameByCode } from "@/lib/provinces";
+import { fetchWardsByProvinceCodes } from "@/lib/location-wards";
 
 type JobDetail = any;
 
@@ -128,6 +132,29 @@ export default function JobDetailPage() {
     },
     enabled: Boolean(jobId),
   });
+
+  const draftJob = data?.job;
+  const draftLocations = Array.isArray(draftJob?.locations) ? draftJob.locations : [];
+  const draftWardCodes = Array.isArray(draftJob?.wardCodes) ? draftJob.wardCodes : [];
+
+  const { data: jobDetailWards = [], isFetching: jobDetailWardsLoading } = useQuery({
+    queryKey: ["job-detail-wards", jobId, draftLocations.join(",")],
+    queryFn: () => fetchWardsByProvinceCodes(draftLocations),
+    enabled: Boolean(jobId && draftLocations.length && draftWardCodes.length > 0),
+  });
+
+  const jobProvinceLine = useMemo(
+    () => draftLocations.map((code: string) => getProvinceNameByCode(code) || code).join(", "),
+    [draftLocations],
+  );
+
+  const jobWardLine = useMemo(() => {
+    if (!draftWardCodes.length) return "";
+    if (jobDetailWardsLoading && jobDetailWards.length === 0) return "Đang tải…";
+    const byCode = new Map(jobDetailWards.map((w) => [w.code, w.fullName ?? w.name]));
+    return draftWardCodes.map((c: string) => byCode.get(c) ?? c).join(", ");
+  }, [draftWardCodes, jobDetailWards, jobDetailWardsLoading]);
+
   const { data: relatedJobsData } = useQuery<RelatedJobItem[]>({
     queryKey: ["job-related", jobId],
     queryFn: async () => {
@@ -252,7 +279,11 @@ export default function JobDetailPage() {
           <div className="space-y-3 border-t border-[var(--border)] pt-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {job.department ? <InfoItem icon={Briefcase} label="Bộ phận" value={job.department} /> : null}
-              {job.location ? <InfoItem icon={MapPin} label="Địa điểm" value={job.location} /> : null}
+              {jobProvinceLine || job.location ? (
+                <InfoItem icon={MapPin} label="Tỉnh/thành" value={jobProvinceLine || String(job.location)} />
+              ) : null}
+              {jobWardLine ? <InfoItem icon={MapPinned} label="Phường/xã" value={jobWardLine} /> : null}
+              {job.remote ? <InfoItem icon={Globe2} label="Làm việc từ xa" value="Có thể làm remote" /> : null}
               <InfoItem icon={Clock} label="Hình thức" value={translateEmploymentType(job.employmentType)} />
               <InfoItem icon={DollarSign} label="Mức lương" value={salary} />
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { z } from "zod";
 import { useForm, Controller, type Resolver } from "react-hook-form";
@@ -12,6 +12,7 @@ import api from "@/lib/api";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import DOMPurify from "dompurify";
 import ProvinceSelect from "@/components/ui/province-select";
+import WardSelect from "@/components/ui/ward-select";
 
 const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"] as const;
 const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"] as const;
@@ -36,6 +37,7 @@ const schema = z
   .object({
     title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự").max(200, "Tiêu đề tối đa 200 ký tự"),
     locations: z.array(z.string()).optional(),
+    wardCodes: z.array(z.string()).optional(),
     remote: z.boolean().optional().default(false),
     employmentType: z.enum(employmentTypes).default("FULL_TIME"),
     experienceLevel: z.enum(experienceLevels).default("NO_EXPERIENCE"),
@@ -143,6 +145,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     control,
     setError,
     setValue,
+    getValues,
     watch,
     formState: { errors, submitCount, isSubmitted },
   } = useForm<FormValues>({
@@ -152,6 +155,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     defaultValues: {
       title: "",
       locations: [],
+      wardCodes: [],
       remote: false,
       employmentType: "FULL_TIME",
       experienceLevel: "NO_EXPERIENCE",
@@ -183,6 +187,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
       reset({
         title: job.title ?? "",
         locations: job.locations ?? [],
+        wardCodes: job.wardCodes ?? [],
         remote: job.remote ?? false,
         employmentType: job.employmentType ?? "FULL_TIME",
         experienceLevel: job.experienceLevel ?? "NO_EXPERIENCE",
@@ -210,12 +215,27 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
     }
   }, [open, job, reset]);
 
+  const locationsSelected = watch("locations");
+  const locationsKey = useMemo(() => (locationsSelected ?? []).join(","), [locationsSelected]);
+  const locationValues = locationsSelected ?? [];
+
+  useEffect(() => {
+    const locs = getValues("locations") ?? [];
+    const allowed = new Set(locs);
+    const current = getValues("wardCodes") || [];
+    const next = current.filter((w) => allowed.has(w.split("/")[0]));
+    if (next.length !== current.length) {
+      setValue("wardCodes", next, { shouldDirty: true });
+    }
+  }, [locationsKey, getValues, setValue]);
+
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
       const payload = {
         title: values.title.trim(),
         locations: values.locations || [],
+        wardCodes: values.wardCodes ?? [],
         remote: values.remote ?? false,
         employmentType: values.employmentType,
         experienceLevel: values.experienceLevel,
@@ -391,7 +411,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
       const firstErrorField = errorFields[0];
       
       const sectionMap: Record<string, string> = {
-        title: "basic", locations: "basic", employmentType: "basic", experienceLevel: "basic",
+        title: "basic", locations: "basic", wardCodes: "basic", employmentType: "basic", experienceLevel: "basic",
         salaryMin: "basic", salaryMax: "basic", currency: "basic", applicationDeadline: "basic", tags: "basic",
         department: "basic", jobLevel: "basic", educationLevel: "basic",
         mission: "mission",
@@ -506,6 +526,14 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                     multiple
                     values={watch("locations") || []}
                     onChangeValues={(vals) => setValue("locations", vals, { shouldDirty: true })}
+                  />
+                </FormField>
+                <FormField label="Phường / xã (tuỳ chọn)" error={errors.wardCodes?.message}>
+                  <WardSelect
+                    provinceCodes={locationValues}
+                    disabled={!locationValues.length}
+                    values={watch("wardCodes") || []}
+                    onChangeValues={(vals) => setValue("wardCodes", vals, { shouldDirty: true })}
                   />
                 </FormField>
                 <FormField label="Hình thức làm việc">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import type { ReactNode } from "react";
 import { z } from "zod";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import ProvinceSelect from "@/components/ui/province-select";
+import WardSelect from "@/components/ui/ward-select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -19,6 +21,7 @@ const schema = z.object({
   title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự"),
   description: z.string().min(20, "Mô tả tối thiểu 20 ký tự"),
   locations: z.array(z.string()).optional(),
+  wardCodes: z.array(z.string()).optional(),
   remote: z.boolean().optional().default(false),
   employmentType: z.enum(employmentTypes).default("FULL_TIME"),
   experienceLevel: z.enum(experienceLevels).default("NO_EXPERIENCE"),
@@ -57,6 +60,7 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
     reset,
     watch,
     setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -64,6 +68,7 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
       title: "",
       description: "",
       locations: [],
+      wardCodes: [],
       remote: false,
       employmentType: "FULL_TIME",
       experienceLevel: "NO_EXPERIENCE",
@@ -80,6 +85,7 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
         title: values.title.trim(),
         description: values.description.trim(),
         locations: values.locations || [],
+        wardCodes: values.wardCodes?.length ? values.wardCodes : undefined,
         remote: values.remote ?? false,
         employmentType: values.employmentType,
         experienceLevel: values.experienceLevel,
@@ -109,6 +115,20 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
     await createJob.mutateAsync(values);
   };
 
+  const locationsSelected = watch("locations");
+  const locationsKey = useMemo(() => (locationsSelected ?? []).join(","), [locationsSelected]);
+  const locationValues = locationsSelected ?? [];
+
+  useEffect(() => {
+    const locs = getValues("locations") ?? [];
+    const allowed = new Set(locs);
+    const current = getValues("wardCodes") || [];
+    const next = current.filter((w) => allowed.has(w.split("/")[0]));
+    if (next.length !== current.length) {
+      setValue("wardCodes", next, { shouldDirty: true });
+    }
+  }, [locationsKey, getValues, setValue]);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
       <div>
@@ -128,6 +148,15 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
           />
         </FormField>
       </div>
+
+      <FormField label="Phường / xã (tuỳ chọn)" error={errors.wardCodes?.message}>
+        <WardSelect
+          provinceCodes={locationValues}
+          disabled={!locationValues.length}
+          values={watch("wardCodes") || []}
+          onChangeValues={(vals) => setValue("wardCodes", vals, { shouldDirty: true })}
+        />
+      </FormField>
 
       <FormField label="Mô tả công việc" error={errors.description?.message}>
         <Textarea rows={4} placeholder="Tóm tắt nhiệm vụ chính, yêu cầu và quyền lợi..." {...register("description")} />

@@ -201,17 +201,19 @@ export default function ProvinceSelect({
                       type="button"
                       onClick={() => handleSelect(province)}
                       className={cn(
-                        "flex w-full flex-col bg-white px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                        "flex w-full bg-white px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
                         isSelected && "bg-accent/50 font-medium"
                       )}
                     >
-                      <span>{province.name}</span>
-                      <span className="text-xs text-muted-foreground">{province.code}</span>
-                      {showMergedFrom && (
-                        <span className="text-xs text-muted-foreground mt-0.5">
-                          (gộp từ: {province.merged_from.join(", ")})
-                        </span>
-                      )}
+                      <span className="truncate text-foreground">
+                        {province.name}
+                        {showMergedFrom ? (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            (gộp từ: {province.merged_from.join(", ")})
+                          </span>
+                        ) : null}
+                      </span>
                     </button>
                   </li>
                 );
