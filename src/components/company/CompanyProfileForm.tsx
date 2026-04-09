@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import TiptapEditor from "@/components/ui/tiptap-editor";
 import { uploadCompanyLogo, uploadCompanyCover } from "@/lib/uploads";
 import Image from "next/image";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
@@ -419,7 +420,7 @@ export default function CompanyProfileForm({
           <div className="space-y-3">
             {logoUrl ? (
               <div className="relative inline-block">
-                <Image
+                <CompanyLogo
                   src={logoUrl}
                   alt="Logo"
                   width={120}

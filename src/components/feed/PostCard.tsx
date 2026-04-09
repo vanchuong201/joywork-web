@@ -15,6 +15,7 @@ import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import { cn } from "@/lib/utils";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { format, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Textarea } from "@/components/ui/textarea";
@@ -717,11 +718,12 @@ const PostCard = memo(function PostCard({
       <div className="p-4">
         <div className="mb-1 flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
           {post.company.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <CompanyLogo
               src={post.company.logoUrl}
               alt={post.company.name}
-              className="h-7 w-7 rounded-full object-cover border border-[var(--border)]"
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded-full border border-[var(--border)] object-cover"
             />
           ) : (
             <div className="h-7 w-7 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold text-[var(--muted-foreground)]">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Briefcase, MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 
 export type RelatedJobItem = {
   id: string;
@@ -84,8 +85,13 @@ export default function RelatedJobCard({ job, size = "featured", className }: Re
             )}
           >
             {job.company.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={job.company.logoUrl} alt={job.company.name} className="h-full w-full object-cover" />
+              <CompanyLogo
+                src={job.company.logoUrl}
+                alt={job.company.name}
+                className="h-full w-full object-cover"
+                width={48}
+                height={48}
+              />
             ) : (
               <Briefcase className={cn("text-[var(--muted-foreground)]", compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
             )}

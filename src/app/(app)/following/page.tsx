@@ -6,6 +6,7 @@ import EmptyState from "@/components/ui/empty-state";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 
 type FollowItem = {
   followId: string;
@@ -64,6 +65,7 @@ export default function FollowingCompaniesPage() {
         <Card key={item.followId} className="overflow-hidden">
           {item.company.coverUrl ? (
             <div className="h-32 w-full overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element -- cover URL từ API */}
               <img
                 src={item.company.coverUrl}
                 alt={item.company.name}
@@ -73,9 +75,11 @@ export default function FollowingCompaniesPage() {
           ) : null}
           <CardHeader className="flex flex-row items-center gap-3">
             {item.company.logoUrl ? (
-              <img
+              <CompanyLogo
                 src={item.company.logoUrl}
                 alt={item.company.name}
+                width={40}
+                height={40}
                 className="h-10 w-10 rounded-md object-cover"
               />
             ) : (

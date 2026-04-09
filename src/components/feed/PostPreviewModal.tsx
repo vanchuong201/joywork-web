@@ -7,6 +7,7 @@ import "react-photo-view/dist/react-photo-view.css";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Play, Maximize2, X } from "lucide-react";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { createPortal } from "react-dom";
 
 // Video Modal for fullscreen video viewing
@@ -274,11 +275,12 @@ export default function PostPreviewModal({ open, onOpenChange, previewData }: Pr
               {/* Company Header */}
               <div className="mb-1 flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
                 {previewPost.company.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <CompanyLogo
                     src={previewPost.company.logoUrl}
                     alt={previewPost.company.name}
-                    className="h-7 w-7 rounded-full object-cover border border-[var(--border)]"
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 rounded-full border border-[var(--border)] object-cover"
                   />
                 ) : (
                   <div className="h-7 w-7 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold text-[var(--muted-foreground)]">

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { uploadCompanyLogo } from "@/lib/uploads";
 import api from "@/lib/api";
-import Image from "next/image";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { X } from "lucide-react";
 
 type Props = {
@@ -163,11 +163,12 @@ export default function EditLogoModal({
             <div className="flex justify-center">
               {previewUrl ? (
                 <div className="relative">
-                  <Image
+                  <CompanyLogo
                     src={previewUrl}
                     alt="Logo preview"
                     width={160}
                     height={160}
+                    priority
                     className="h-40 w-40 rounded-2xl border border-[var(--border)] object-cover"
                   />
                   {uploading && (

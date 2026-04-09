@@ -2,6 +2,7 @@
 
 import { Company } from "@/types/company";
 import Image from "next/image";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { Button } from "@/components/ui/button";
 import { Globe, MapPin, Users, CheckCircle, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle, Briefcase } from "lucide-react";
 import CompanyMessageButton from "@/components/company/CompanyMessageButton";
@@ -394,6 +395,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     </DialogHeader>
                     {company.coverUrl && (
                         <div className="overflow-hidden rounded-md">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- cover URL từ API */}
                             <img
                                 src={company.coverUrl}
                                 alt={`Ảnh bìa của ${company.name}`}
@@ -424,7 +426,14 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                   <div className="relative mx-auto shrink-0 md:mx-0 group/avatar">
                       <div className="relative h-28 w-28 overflow-hidden rounded-full bg-[var(--muted)] p-1 sm:h-32 sm:w-32 md:h-40 md:w-40">
                         {company.logoUrl ? (
-                            <Image src={company.logoUrl} alt={company.name} width={160} height={160} className="w-full h-full rounded-full bg-[var(--card)] object-contain border-4 border-[var(--card)]" />
+                            <CompanyLogo
+                              src={company.logoUrl}
+                              alt={company.name}
+                              width={160}
+                              height={160}
+                              priority
+                              className="h-full w-full rounded-full border-4 border-[var(--card)] bg-[var(--card)] object-contain"
+                            />
                         ) : (
                             <div className="w-full h-full rounded-full bg-[var(--card)] border-4 border-[var(--card)] flex items-center justify-center text-4xl font-bold text-[var(--foreground)]">
                                 {company.name.charAt(0)}

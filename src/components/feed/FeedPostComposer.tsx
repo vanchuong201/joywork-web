@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import PostPreviewModal from "@/components/feed/PostPreviewModal";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -454,11 +455,12 @@ export default function FeedPostComposer() {
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             {selectedCompany?.company.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <CompanyLogo
                 src={selectedCompany.company.logoUrl}
                 alt={selectedCompany.company.name}
-                className="h-10 w-10 rounded-full object-cover border border-[var(--border)]"
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-full border border-[var(--border)] object-cover"
               />
             ) : user.avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -501,10 +503,11 @@ export default function FeedPostComposer() {
                     className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-sm transition-colors hover:bg-[var(--muted)] sm:w-auto"
                   >
                     {selectedCompany?.company.logoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <CompanyLogo
                         src={selectedCompany.company.logoUrl}
                         alt={selectedCompany.company.name}
+                        width={20}
+                        height={20}
                         className="h-5 w-5 rounded-full object-cover"
                       />
                     ) : (
@@ -536,10 +539,11 @@ export default function FeedPostComposer() {
                         onSelect={() => setSelectedCompanyId(membership.company.id)}
                       >
                         {membership.company.logoUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <CompanyLogo
                             src={membership.company.logoUrl}
                             alt={membership.company.name}
+                            width={24}
+                            height={24}
                             className="h-6 w-6 rounded-full object-cover"
                           />
                         ) : (

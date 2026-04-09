@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { LayoutGrid, List, MapPin, Briefcase, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 
 type SavedPostsResponse = {
   data: {
@@ -212,7 +212,13 @@ function SavedPageContent() {
                       <li key={fav.id} className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 flex items-start gap-4">
                         <Link href={`/companies/${j.company.slug}`} className="shrink-0">
                           {j.company.logoUrl ? (
-                            <Image src={j.company.logoUrl} alt={j.company.name} width={48} height={48} className="rounded-lg object-cover border border-[var(--border)]" />
+                            <CompanyLogo
+                              src={j.company.logoUrl}
+                              alt={j.company.name}
+                              width={48}
+                              height={48}
+                              className="rounded-lg border border-[var(--border)] object-cover"
+                            />
                           ) : (
                             <div className="w-12 h-12 rounded-lg bg-[var(--muted)] flex items-center justify-center">
                               <Building2 className="w-5 h-5 text-[var(--muted-foreground)]" />
@@ -273,7 +279,13 @@ function SavedPageContent() {
                         <div className="flex items-center gap-3">
                           <Link href={`/companies/${j.company.slug}`} className="shrink-0">
                             {j.company.logoUrl ? (
-                              <Image src={j.company.logoUrl} alt={j.company.name} width={40} height={40} className="rounded-lg object-cover border border-[var(--border)]" />
+                              <CompanyLogo
+                                src={j.company.logoUrl}
+                                alt={j.company.name}
+                                width={40}
+                                height={40}
+                                className="rounded-lg border border-[var(--border)] object-cover"
+                              />
                             ) : (
                               <div className="w-10 h-10 rounded-lg bg-[var(--muted)] flex items-center justify-center">
                                 <Building2 className="w-4 h-4 text-[var(--muted-foreground)]" />

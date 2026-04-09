@@ -14,6 +14,7 @@ import CreateTicketModal from "@/components/tickets/CreateTicketModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MessageCircleHeart, Plus, Check } from "lucide-react";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 
 type Props = {
   companyId: string;
@@ -135,8 +136,13 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   {data.logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={data.logoUrl} alt={data.name} className="h-12 w-12 rounded-lg object-cover" />
+                    <CompanyLogo
+                      src={data.logoUrl}
+                      alt={data.name}
+                      width={48}
+                      height={48}
+                      className="h-12 w-12 rounded-lg object-cover"
+                    />
                   ) : (
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--muted)] text-lg font-semibold text-[var(--muted-foreground)]">
                       {data.name.slice(0, 1)}

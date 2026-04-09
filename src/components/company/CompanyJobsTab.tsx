@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Briefcase, Calendar, List, Grid } from "lucide-react";
@@ -91,8 +91,14 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
                           </div>
                         </div>
                         {companyLogoUrl && (
-                          <div className="w-12 h-12 relative bg-[var(--card)] rounded-lg border border-[var(--border)] p-1 flex-shrink-0">
-                            <Image src={companyLogoUrl} alt={companyName} fill sizes="48px" className="object-contain p-1" />
+                          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-1">
+                            <CompanyLogo
+                              src={companyLogoUrl}
+                              alt={companyName}
+                              width={40}
+                              height={40}
+                              className="max-h-full max-w-full object-contain"
+                            />
                           </div>
                         )}
                       </div>
@@ -128,8 +134,14 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
                       {job.title}
                     </h4>
                     {companyLogoUrl && (
-                      <div className="w-10 h-10 relative bg-[var(--card)] rounded-lg border border-[var(--border)] p-1 flex-shrink-0">
-                        <Image src={companyLogoUrl} alt={companyName} fill sizes="40px" className="object-contain p-1" />
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-1">
+                        <CompanyLogo
+                          src={companyLogoUrl}
+                          alt={companyName}
+                          width={32}
+                          height={32}
+                          className="max-h-full max-w-full object-contain"
+                        />
                       </div>
                     )}
                   </div>

@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { useAuthStore } from "@/store/useAuth";
 
 type Membership = {
@@ -391,8 +392,7 @@ function CompanyAvatar({ name, logoUrl }: { name: string; logoUrl?: string | nul
   if (logoUrl) {
     return (
       <div className="h-12 w-12 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoUrl} alt={name} className="h-full w-full object-cover" />
+        <CompanyLogo src={logoUrl} alt={name} className="h-full w-full object-cover" width={48} height={48} />
       </div>
     );
   }

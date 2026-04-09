@@ -21,6 +21,7 @@ import JobSaveButton from "@/components/jobs/JobSaveButton";
 import { List, Grid, ChevronLeft, ChevronRight, Building2, X } from "lucide-react";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
@@ -615,10 +616,12 @@ function JobsPageContent() {
                         {/* Company Avatar */}
                         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
                           {j.company.logoUrl ? (
-                            <img 
-                              src={j.company.logoUrl} 
-                              alt={j.company.name} 
+                            <CompanyLogo
+                              src={j.company.logoUrl}
+                              alt={j.company.name}
                               className="h-full w-full object-cover"
+                              width={64}
+                              height={64}
                             />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
@@ -678,10 +681,12 @@ function JobsPageContent() {
                         {/* Company Avatar */}
                         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
                           {j.company.logoUrl ? (
-                            <img 
-                              src={j.company.logoUrl} 
-                              alt={j.company.name} 
+                            <CompanyLogo
+                              src={j.company.logoUrl}
+                              alt={j.company.name}
                               className="h-full w-full object-cover"
+                              width={64}
+                              height={64}
                             />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
@@ -754,12 +759,19 @@ function JobsPageContent() {
           {MOCK_COMPANIES.map((company) => (
             <Card key={company.id} className="overflow-hidden border border-[var(--border)]">
               <div className="relative h-56 w-full">
+                {/* eslint-disable-next-line @next/next/no-img-element -- mock banner URL */}
                 <img src={company.bannerUrl} alt={company.name} className="h-full w-full object-cover" />
               </div>
               <CardContent className="flex items-center justify-between gap-4 p-4">
                 <div className="flex items-center gap-3">
                   <div className="h-12 w-12 overflow-hidden rounded-xl bg-[var(--muted)]">
-                    <img src={company.logoUrl} alt={`${company.name} logo`} className="h-full w-full object-cover" />
+                    <CompanyLogo
+                      src={company.logoUrl}
+                      alt={`${company.name} logo`}
+                      className="h-full w-full object-cover"
+                      width={48}
+                      height={48}
+                    />
                   </div>
                   <div>
                     <p className="text-sm font-semibold">{company.name}</p>
@@ -782,7 +794,13 @@ function JobsPageContent() {
             <Card key={company.id} className="border border-[var(--border)]">
               <CardContent className="flex flex-col items-center gap-3 p-4 text-center">
                 <div className="h-20 w-20 overflow-hidden rounded-2xl bg-[var(--muted)]">
-                  <img src={company.logoUrl} alt={company.name} className="h-full w-full object-cover" />
+                  <CompanyLogo
+                    src={company.logoUrl}
+                    alt={company.name}
+                    className="h-full w-full object-cover"
+                    width={80}
+                    height={80}
+                  />
                 </div>
                 <div className="text-sm font-semibold">{company.name}</div>
                 <Button asChild size="sm" variant="outline">
@@ -821,10 +839,12 @@ function JobsPageContent() {
                         {/* Company Avatar */}
                         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
                           {j.company.logoUrl ? (
-                            <img 
-                              src={j.company.logoUrl} 
-                              alt={j.company.name} 
+                            <CompanyLogo
+                              src={j.company.logoUrl}
+                              alt={j.company.name}
                               className="h-full w-full object-cover"
+                              width={64}
+                              height={64}
                             />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
