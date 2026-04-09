@@ -10,6 +10,7 @@ import {
   MessageSquareText,
   Sparkles,
   FileQuestion,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 import type { AuthUser, CompanyMembership } from "@/store/useAuth";
@@ -32,6 +33,7 @@ const exploreNavBase: NavItem[] = [
   { icon: Home, label: "Bảng tin", href: "/" },
   { icon: Briefcase, label: "Việc làm", href: "/jobs" },
   { icon: Building2, label: "Doanh nghiệp", href: "/companies" },
+  { icon: GraduationCap, label: "Khóa học", href: "/courses" },
   { icon: Sparkles, label: "Talent Pool", href: "/talent-pool" },
 ];
 

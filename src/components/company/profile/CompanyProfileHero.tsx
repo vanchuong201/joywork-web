@@ -1,7 +1,6 @@
 "use client";
 
 import { Company } from "@/types/company";
-import Image from "next/image";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { Button } from "@/components/ui/button";
 import { Globe, MapPin, Users, CheckCircle, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle, Briefcase } from "lucide-react";
@@ -282,6 +281,19 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         const file = e.target.files?.[0];
         if (!file) return;
 
+        const MAX_AVATAR_SIZE = 8 * 1024 * 1024;
+        const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+        if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
+            toast.error("Định dạng tệp không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WEBP");
+            e.target.value = "";
+            return;
+        }
+        if (file.size > MAX_AVATAR_SIZE) {
+            toast.error("Kích thước tệp vượt quá giới hạn 8MB");
+            e.target.value = "";
+            return;
+        }
+
         setUploadingAvatar(true);
         try {
             const reader = new FileReader();
@@ -323,12 +335,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                  <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                      {company.coverUrl ? (
                          <>
-                            <Image 
-                                src={company.coverUrl} 
-                                alt="Cover" 
-                                fill 
-                                className="object-cover"
-                                priority
+                            {/* Ảnh bìa từ API (S3 + presign) — dùng img như logo công ty, tránh next/image tối ưu lại URL */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={company.coverUrl}
+                                alt="Cover"
+                                className="h-full w-full object-cover"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent"></div>
                          </>
@@ -363,7 +375,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     <div className="absolute top-6 right-6 z-20 opacity-0 group-hover/hero:opacity-100 transition-opacity">
                         <input 
                             type="file" 
-                            accept="image/*" 
+                            accept="image/jpeg,image/png,image/webp" 
                             className="hidden" 
                             ref={coverInputRef}
                             onChange={handleUploadCover}
@@ -444,7 +456,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             <>
                                 <input 
                                     type="file" 
-                                    accept="image/*" 
+                                    accept="image/jpeg,image/png,image/webp" 
                                     className="hidden" 
                                     ref={avatarInputRef}
                                     onChange={handleUploadAvatar}

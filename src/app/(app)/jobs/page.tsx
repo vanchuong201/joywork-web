@@ -37,6 +37,7 @@ type Job = {
   remote: boolean;
   employmentType: string;
   experienceLevel: string;
+  jobLevel?: string | null;
   salaryMin?: number | null;
   salaryMax?: number | null;
   currency?: string;
@@ -64,98 +65,51 @@ type Job = {
 };
 
 type ViewMode = "list" | "grid";
+type SalaryUnit = "THOUSAND" | "MILLION" | "BILLION";
 
-type MockCompany = {
+const SALARY_UNIT_OPTIONS: Array<{
+  value: SalaryUnit;
+  label: string;
+  shortLabel: string;
+  multiplier: number;
+}> = [
+  { value: "THOUSAND", label: "Nghìn VND", shortLabel: "nghìn", multiplier: 1_000 },
+  { value: "MILLION", label: "Triệu VND", shortLabel: "triệu", multiplier: 1_000_000 },
+  { value: "BILLION", label: "Tỷ VND", shortLabel: "tỷ", multiplier: 1_000_000_000 },
+];
+
+const DEFAULT_SALARY_UNIT: SalaryUnit = "MILLION";
+
+function parseSalaryUnit(value?: string | null): SalaryUnit {
+  if (value === "THOUSAND" || value === "MILLION" || value === "BILLION") return value;
+  return DEFAULT_SALARY_UNIT;
+}
+
+function parseSalaryValueParam(value?: string | null): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return parsed;
+}
+
+function formatSalaryInputValue(value: number): string {
+  if (Number.isInteger(value)) return String(value);
+  return Number(value.toFixed(2)).toString();
+}
+
+function formatSalaryFilterValue(value: number): string {
+  return value.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+}
+
+type HomepageShowcaseCompany = {
   id: string;
   name: string;
   slug: string;
-  bannerUrl: string;
-  logoUrl: string;
-  tagline: string;
+  logoUrl?: string | null;
+  tagline?: string | null;
+  coverUrl?: string | null;
+  order: number;
 };
-
-const MOCK_COMPANIES: MockCompany[] = [
-  {
-    id: "momo",
-    name: "MoMo",
-    slug: "momo",
-    bannerUrl: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=400&auto=format&fit=crop",
-    tagline: "Become the Next Generation of MoMo Leaders",
-  },
-  {
-    id: "vinfast",
-    name: "VinFast",
-    slug: "vinfast",
-    bannerUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=400&auto=format&fit=crop",
-    tagline: "Empower the next wave of mobility",
-  },
-  {
-    id: "techcombank",
-    name: "Techcombank",
-    slug: "techcombank",
-    bannerUrl: "https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=400&auto=format&fit=crop",
-    tagline: "Vì một Việt Nam vượt trội",
-  },
-  {
-    id: "vpbank",
-    name: "VPBank",
-    slug: "vpbank",
-    bannerUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=400&auto=format&fit=crop",
-    tagline: "Vì một Việt Nam thịnh vượng",
-  },
-  {
-    id: "fpt",
-    name: "FPT Software",
-    slug: "fpt-software",
-    bannerUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=400&auto=format&fit=crop",
-    tagline: "Build the future with technology",
-  },
-  {
-    id: "vietcombank",
-    name: "Vietcombank",
-    slug: "vietcombank",
-    bannerUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=400&auto=format&fit=crop",
-    tagline: "Chung niềm tin vững tương lai",
-  },
-  {
-    id: "viettel",
-    name: "Viettel",
-    slug: "viettel",
-    bannerUrl: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=400&auto=format&fit=crop",
-    tagline: "Kết nối giá trị mới",
-  },
-  {
-    id: "vinamilk",
-    name: "Vinamilk",
-    slug: "vinamilk",
-    bannerUrl: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=400&auto=format&fit=crop",
-    tagline: "Vươn cao Việt Nam",
-  },
-  {
-    id: "vnpt",
-    name: "VNPT",
-    slug: "vnpt",
-    bannerUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=400&auto=format&fit=crop",
-    tagline: "Cuộc sống đích thực",
-  },
-  {
-    id: "microsoft",
-    name: "Microsoft",
-    slug: "microsoft",
-    bannerUrl: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1600&auto=format&fit=crop",
-    logoUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=400&auto=format&fit=crop",
-    tagline: "Empower every person on the planet",
-  },
-];
 
 function SimpleCarousel({
   children,
@@ -248,16 +202,39 @@ function JobsPageContent() {
   const remote = sp.get("remote") === "true" ? true : undefined;
   const employmentType = sp.get("employmentType") || undefined;
   const experienceLevel = sp.get("experienceLevel") || undefined;
+  const jobLevel = sp.get("jobLevel") || undefined;
+  const salaryMin = parseSalaryValueParam(sp.get("salaryMin"));
+  const salaryMax = parseSalaryValueParam(sp.get("salaryMax"));
+  const salaryUnit = parseSalaryUnit(sp.get("salaryUnit"));
+  const salaryUnitMeta = SALARY_UNIT_OPTIONS.find((option) => option.value === salaryUnit) || SALARY_UNIT_OPTIONS[1];
 
-  const hasActiveFilters = Boolean(q || location || ward || companyId || remote === true || employmentType || experienceLevel);
+  const hasActiveFilters = Boolean(
+    q ||
+      location ||
+      ward ||
+      companyId ||
+      remote === true ||
+      employmentType ||
+      experienceLevel ||
+      jobLevel ||
+      salaryMin !== undefined ||
+      salaryMax !== undefined,
+  );
+  const hasAdvancedFilters = Boolean(
+    employmentType || experienceLevel || jobLevel || salaryMin !== undefined || salaryMax !== undefined,
+  );
+  const advancedFilterCount =
+    [employmentType, experienceLevel, jobLevel].filter(Boolean).length +
+    (salaryMin !== undefined || salaryMax !== undefined ? 1 : 0);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(hasAdvancedFilters);
   const page = Number(sp.get("page") || "1");
   const limit = 12;
   const featuredPage = Number(sp.get("featuredPage") || "1");
   const featuredLimit = 12;
 
   const { data, isLoading, isFetching } = useQuery<{ jobs: Job[]; pagination: any }>({
-    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, companyId, page }],
+    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, salaryMin, salaryMax, companyId, page }],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
         params: {
@@ -270,6 +247,9 @@ function JobsPageContent() {
           remote,
           employmentType,
           experienceLevel,
+          jobLevel,
+          salaryMin,
+          salaryMax,
         },
       });
       return res.data.data;
@@ -288,6 +268,32 @@ function JobsPageContent() {
     },
     placeholderData: (prev) => prev,
   });
+
+  const { data: featuredCompaniesData } = useQuery<{ companies: HomepageShowcaseCompany[] }>({
+    queryKey: ["homepage-showcase-companies", "FEATURED"],
+    queryFn: async () => {
+      const res = await api.get("/api/companies/showcase/homepage", {
+        params: { type: "FEATURED", limit: 12 },
+      });
+      return res.data.data;
+    },
+  });
+
+  const { data: topCompaniesData } = useQuery<{ companies: HomepageShowcaseCompany[] }>({
+    queryKey: ["homepage-showcase-companies", "TOP"],
+    queryFn: async () => {
+      const res = await api.get("/api/companies/showcase/homepage", {
+        params: { type: "TOP", limit: 16 },
+      });
+      return res.data.data;
+    },
+  });
+
+  useEffect(() => {
+    if (hasAdvancedFilters) {
+      setShowAdvancedFilters(true);
+    }
+  }, [hasAdvancedFilters]);
 
   const { data: wardsForFilterChip = [] } = useQuery({
     queryKey: ["job-search-ward-labels", location],
@@ -330,7 +336,7 @@ function JobsPageContent() {
 
   const clearAllFilters = () => {
     const next = new URLSearchParams(sp.toString());
-    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "page"].forEach((key) =>
+    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "jobLevel", "salaryMin", "salaryMax", "salaryUnit", "page"].forEach((key) =>
       next.delete(key),
     );
     applyParams(next);
@@ -374,6 +380,56 @@ function JobsPageContent() {
     }
   };
 
+  const translateJobLevel = (level: string) => {
+    switch (level) {
+      case "INTERN_STUDENT":
+        return "Thực tập sinh / Sinh viên";
+      case "FRESH_GRAD":
+        return "Mới tốt nghiệp";
+      case "EMPLOYEE":
+        return "Nhân viên";
+      case "SPECIALIST_TEAM_LEAD":
+        return "Chuyên viên / Trưởng nhóm";
+      case "MANAGER_HEAD":
+        return "Quản lý / Trưởng phòng";
+      case "DIRECTOR":
+        return "Giám đốc";
+      case "EXECUTIVE":
+        return "Điều hành";
+      default:
+        return level;
+    }
+  };
+
+  const convertFromBaseSalary = (value: number) => value / salaryUnitMeta.multiplier;
+  const convertToBaseSalary = (value: number) => Math.round(value * salaryUnitMeta.multiplier);
+  const salaryMinDisplay = salaryMin !== undefined ? formatSalaryInputValue(convertFromBaseSalary(salaryMin)) : "";
+  const salaryMaxDisplay = salaryMax !== undefined ? formatSalaryInputValue(convertFromBaseSalary(salaryMax)) : "";
+
+  const updateSalaryParam = (key: "salaryMin" | "salaryMax", rawValue: string) => {
+    const next = new URLSearchParams(sp.toString());
+    const trimmed = rawValue.trim();
+    if (!trimmed) {
+      next.delete(key);
+    } else {
+      const parsed = Number(trimmed);
+      if (!Number.isFinite(parsed) || parsed < 0) return;
+      next.set(key, String(convertToBaseSalary(parsed)));
+    }
+    next.delete("page");
+    applyParams(next);
+  };
+
+  const salaryFilterLabel = useMemo(() => {
+    if (salaryMin === undefined && salaryMax === undefined) return "";
+    const fromLabel = salaryMin !== undefined ? formatSalaryFilterValue(salaryMin / salaryUnitMeta.multiplier) : undefined;
+    const toLabel = salaryMax !== undefined ? formatSalaryFilterValue(salaryMax / salaryUnitMeta.multiplier) : undefined;
+    if (fromLabel && toLabel) return `Mức lương: ${fromLabel} - ${toLabel} ${salaryUnitMeta.shortLabel}`;
+    if (fromLabel) return `Mức lương: từ ${fromLabel} ${salaryUnitMeta.shortLabel}`;
+    if (toLabel) return `Mức lương: đến ${toLabel} ${salaryUnitMeta.shortLabel}`;
+    return "";
+  }, [salaryMin, salaryMax, salaryUnitMeta]);
+
   const clearLocationAndWard = () => {
     const next = new URLSearchParams(sp.toString());
     next.delete("location");
@@ -384,6 +440,8 @@ function JobsPageContent() {
 
   const totalPages = data?.pagination?.totalPages ?? 1;
   const featuredTotalPages = featuredData?.pagination?.totalPages ?? 1;
+  const featuredCompanies = featuredCompaniesData?.companies ?? [];
+  const topCompanies = topCompaniesData?.companies ?? [];
 
   // Helper function to format salary
   const formatSalary = (job: Job) => {
@@ -462,7 +520,7 @@ function JobsPageContent() {
               </button>
             ) : null}
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <div className="space-y-1.5 text-sm">
               <div className="font-medium">Từ khoá</div>
               <Input
@@ -513,6 +571,21 @@ function JobsPageContent() {
                 placeholder={location ? "Lọc theo phường/xã (tuỳ chọn)" : "Chọn tỉnh/thành trước"}
               />
             </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setShowAdvancedFilters((prev) => !prev)}
+            >
+              {showAdvancedFilters ? "Ẩn lọc nâng cao" : "Lọc nâng cao"}
+              {hasAdvancedFilters ? ` (${advancedFilterCount})` : ""}
+            </Button>
+          </div>
+          {showAdvancedFilters ? (
+            <div className="mt-4 grid gap-3 border-t border-[var(--border)] pt-4 md:grid-cols-2 xl:grid-cols-4">
             {/*
             <div className="space-y-1.5 text-sm">
               <div className="font-medium">Doanh nghiệp</div>
@@ -560,7 +633,74 @@ function JobsPageContent() {
                 ))}
               </select>
             </div>
-          </div>
+            <div className="space-y-1.5 text-sm">
+              <div className="font-medium">Cấp bậc</div>
+              <select
+                value={jobLevel ?? ""}
+                onChange={(e) => toggleParam("jobLevel", e.target.value || undefined, { resetPage: true })}
+                className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm"
+              >
+                <option value="">Tất cả cấp bậc</option>
+                {["INTERN_STUDENT", "FRESH_GRAD", "EMPLOYEE", "SPECIALIST_TEAM_LEAD", "MANAGER_HEAD", "DIRECTOR", "EXECUTIVE"].map((t) => (
+                  <option key={t} value={t}>
+                    {translateJobLevel(t)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5 text-sm md:col-span-2 xl:col-span-2">
+              <div className="font-medium">Mức lương</div>
+              <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                <Input
+                  key={`salary-min-${salaryUnit}-${salaryMin ?? "empty"}`}
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  defaultValue={salaryMinDisplay}
+                  placeholder="Từ"
+                  className="w-full md:min-w-[180px] md:flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    updateSalaryParam("salaryMin", e.currentTarget.value || "");
+                  }}
+                  onBlur={(e) => {
+                    if ((e.currentTarget.value || "").trim() === salaryMinDisplay) return;
+                    updateSalaryParam("salaryMin", e.currentTarget.value || "");
+                  }}
+                />
+                <Input
+                  key={`salary-max-${salaryUnit}-${salaryMax ?? "empty"}`}
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  defaultValue={salaryMaxDisplay}
+                  placeholder="Đến"
+                  className="w-full md:min-w-[180px] md:flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    updateSalaryParam("salaryMax", e.currentTarget.value || "");
+                  }}
+                  onBlur={(e) => {
+                    if ((e.currentTarget.value || "").trim() === salaryMaxDisplay) return;
+                    updateSalaryParam("salaryMax", e.currentTarget.value || "");
+                  }}
+                />
+                <select
+                  value={salaryUnit}
+                  onChange={(e) => toggleParam("salaryUnit", e.target.value, { resetPage: true })}
+                  className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-2 text-sm md:w-[170px] md:flex-none"
+                  aria-label="Đơn vị lương"
+                >
+                  {SALARY_UNIT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            </div>
+          ) : null}
           {hasActiveFilters ? (
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-4">
               {q ? (
@@ -591,6 +731,24 @@ function JobsPageContent() {
                 <JobsFilterChip
                   label={`Kinh nghiệm: ${translateExperienceLevel(experienceLevel)}`}
                   onRemove={() => toggleParam("experienceLevel", undefined, { resetPage: true })}
+                />
+              ) : null}
+              {jobLevel ? (
+                <JobsFilterChip
+                  label={`Cấp bậc: ${translateJobLevel(jobLevel)}`}
+                  onRemove={() => toggleParam("jobLevel", undefined, { resetPage: true })}
+                />
+              ) : null}
+              {salaryFilterLabel ? (
+                <JobsFilterChip
+                  label={salaryFilterLabel}
+                  onRemove={() => {
+                    const next = new URLSearchParams(sp.toString());
+                    next.delete("salaryMin");
+                    next.delete("salaryMax");
+                    next.delete("page");
+                    applyParams(next);
+                  }}
                 />
               ) : null}
             </div>
@@ -755,66 +913,98 @@ function JobsPageContent() {
             <Link href="/companies">Khám phá ngay</Link>
           </Button>
         </div>
-        <SimpleCarousel itemClassName="flex-[0_0_100%]">
-          {MOCK_COMPANIES.map((company) => (
-            <Card key={company.id} className="overflow-hidden border border-[var(--border)]">
-              <div className="relative h-56 w-full">
-                {/* eslint-disable-next-line @next/next/no-img-element -- mock banner URL */}
-                <img src={company.bannerUrl} alt={company.name} className="h-full w-full object-cover" />
-              </div>
-              <CardContent className="flex items-center justify-between gap-4 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 overflow-hidden rounded-xl bg-[var(--muted)]">
-                    <CompanyLogo
-                      src={company.logoUrl}
-                      alt={`${company.name} logo`}
+        {featuredCompanies.length ? (
+          <SimpleCarousel itemClassName="flex-[0_0_100%]">
+            {featuredCompanies.map((company) => (
+              <Card key={company.id} className="overflow-hidden border border-[var(--border)]">
+                <div className="relative h-56 w-full">
+                  {company.coverUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- ảnh cover từ backend
+                    <img
+                      src={company.coverUrl}
+                      alt={company.name}
                       className="h-full w-full object-cover"
-                      width={48}
-                      height={48}
                     />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold">{company.name}</p>
-                    <p className="text-xs text-[var(--muted-foreground)] line-clamp-1">{company.tagline}</p>
-                  </div>
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-[var(--muted)] text-xs text-[var(--muted-foreground)]">
+                      Chưa có ảnh cover nổi bật
+                    </div>
+                  )}
                 </div>
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/companies/${company.slug}`}>Xem hồ sơ</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </SimpleCarousel>
+                <CardContent className="flex items-center justify-between gap-4 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 overflow-hidden rounded-xl bg-[var(--muted)]">
+                      {company.logoUrl ? (
+                        <CompanyLogo
+                          src={company.logoUrl}
+                          alt={`${company.name} logo`}
+                          className="h-full w-full object-contain"
+                          width={48}
+                          height={48}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-lg font-bold text-[var(--foreground)]">
+                          {(company.name || "?").charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{company.name}</p>
+                      <p className="text-xs text-[var(--muted-foreground)] line-clamp-1">
+                        {company.tagline || "Khám phá cơ hội nghề nghiệp mới cùng doanh nghiệp hàng đầu."}
+                      </p>
+                    </div>
+                  </div>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/companies/${company.slug}`}>Xem hồ sơ</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </SimpleCarousel>
+        ) : (
+          <EmptyState title="Chưa có công ty nổi bật" subtitle="Danh sách sẽ được cập nhật sớm." />
+        )}
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Các công ty hàng đầu</h2>
-        <SimpleCarousel itemClassName="flex-[0_0_60%] sm:flex-[0_0_40%] lg:flex-[0_0_25%]">
-          {MOCK_COMPANIES.map((company) => (
-            <Card key={company.id} className="border border-[var(--border)]">
-              <CardContent className="flex flex-col items-center gap-3 p-4 text-center">
-                <div className="h-20 w-20 overflow-hidden rounded-2xl bg-[var(--muted)]">
-                  <CompanyLogo
-                    src={company.logoUrl}
-                    alt={company.name}
-                    className="h-full w-full object-cover"
-                    width={80}
-                    height={80}
-                  />
-                </div>
-                <div className="text-sm font-semibold">{company.name}</div>
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/companies/${company.slug}`}>Việc mới</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </SimpleCarousel>
+        {topCompanies.length ? (
+          <SimpleCarousel itemClassName="flex-[0_0_60%] sm:flex-[0_0_40%] lg:flex-[0_0_25%]">
+            {topCompanies.map((company) => (
+              <Card key={company.id} className="border border-[var(--border)]">
+                <CardContent className="flex flex-col items-center gap-3 p-4 text-center">
+                  <div className="h-20 w-20 overflow-hidden rounded-2xl bg-[var(--muted)]">
+                    {company.logoUrl ? (
+                      <CompanyLogo
+                        src={company.logoUrl}
+                        alt={company.name}
+                        className="h-full w-full object-contain"
+                        width={80}
+                        height={80}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-[var(--foreground)]">
+                        {(company.name || "?").charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-sm font-semibold">{company.name}</div>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/companies/${company.slug}`}>Việc mới</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </SimpleCarousel>
+        ) : (
+          <EmptyState title="Chưa có công ty hàng đầu" subtitle="Danh sách sẽ được cập nhật sớm." />
+        )}
       </section>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Việc làm tốt nhất</h2>
+          <h2 className="text-lg font-semibold">Việc làm mới nhất</h2>
           {/* <Button asChild variant="ghost" size="sm">
             <Link href="/jobs">Xem tất cả</Link>
           </Button> */}
