@@ -53,6 +53,8 @@ export interface UserProfile {
    contactPhone?: string | null;
   status?: UserStatus | null;
   isPublic?: boolean;
+  isSearchingJob?: boolean;
+  allowCvFlip?: boolean;
   visibility?: UserProfileVisibility | null;
   knowledge?: string[];
   attitude?: string[];
@@ -88,6 +90,8 @@ export interface PublicUserProfile {
     contactEmail?: string | null;
     contactPhone?: string | null;
     status?: UserStatus | null;
+    isSearchingJob?: boolean;
+    allowCvFlip?: boolean;
     bio?: string | null;
     knowledge?: string[];
     skills?: string[];

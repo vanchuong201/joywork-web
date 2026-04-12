@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -10,12 +10,22 @@ import EmptyState from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ChevronRight, Circle, Clock, ExternalLink, Sparkles } from "lucide-react";
 import ProfileBasicInfo from "@/components/account/profile/ProfileBasicInfo";
+import ProfileDiscoverySettings from "@/components/account/profile/ProfileDiscoverySettings";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ProfileKSA from "@/components/account/profile/ProfileKSA";
 import ProfileExpectations from "@/components/account/profile/ProfileExpectations";
 import ProfileExperiences from "@/components/account/profile/ProfileExperiences";
 import ProfileEducations from "@/components/account/profile/ProfileEducations";
 import TalentPoolStatus from "@/components/talent-pool/TalentPoolStatus";
 import { buildProfileCompletion } from "@/hooks/useProfileCompletion";
+import { listMyCvFlipRequests, respondMyCvFlipRequest } from "@/lib/api/cv-flip";
+import { toast } from "sonner";
 
 type TalentPoolMyStatus = {
   member: { id: string; status: string; source: string; reason: string | null; createdAt: string } | null;
@@ -23,7 +33,9 @@ type TalentPoolMyStatus = {
 };
 
 export default function ProfileTab() {
+  const queryClient = useQueryClient();
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
+  const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["own-profile"],
     queryFn: async () => {
@@ -36,6 +48,26 @@ export default function ProfileTab() {
     queryFn: async () => {
       const res = await api.get("/api/talent-pool/me");
       return res.data.data;
+    },
+  });
+  const { data: cvFlipRequests, isLoading: isCvFlipRequestsLoading } = useQuery({
+    queryKey: ["cv-flip-my-requests"],
+    queryFn: () => listMyCvFlipRequests({ page: 1, limit: 20 }),
+  });
+
+  const respondRequestMutation = useMutation({
+    mutationFn: async ({ requestId, action }: { requestId: string; action: "approve" | "reject" }) =>
+      respondMyCvFlipRequest(requestId, action),
+    onSuccess: (_data, variables) => {
+      toast.success(variables.action === "approve" ? "Bạn đã đồng ý yêu cầu lật CV." : "Bạn đã từ chối yêu cầu lật CV.");
+      queryClient.invalidateQueries({ queryKey: ["cv-flip-my-requests"] });
+    },
+    onError: (error: unknown) => {
+      const maybeAxiosError = error as {
+        response?: { data?: { error?: { message?: string } } };
+      };
+      toast.error(maybeAxiosError.response?.data?.error?.message || "Không thể xử lý yêu cầu lúc này.");
+      queryClient.invalidateQueries({ queryKey: ["cv-flip-my-requests"] });
     },
   });
 
@@ -74,7 +106,16 @@ export default function ProfileTab() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">Hồ sơ ứng tuyển</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">Quản lý thông tin hồ sơ và CV của bạn</p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-sm text-[var(--muted-foreground)]">Quản lý thông tin hồ sơ và CV của bạn</p>
+            <button
+              type="button"
+              onClick={() => setProfileSettingsOpen(true)}
+              className="text-sm font-medium text-[var(--brand)] hover:underline"
+            >
+              Cài đặt
+            </button>
+          </div>
         </div>
         <Button variant="outline" asChild className="w-full sm:w-auto">
           <Link href={`/profile/${profileSlug}`} target="_blank" rel="noopener noreferrer">
@@ -195,6 +236,60 @@ export default function ProfileTab() {
         onOpenChange={setIsJoinDialogOpen}
         latestRequest={talentPoolStatus?.latestRequest ?? null}
       />
+
+      <Dialog open={profileSettingsOpen} onOpenChange={setProfileSettingsOpen}>
+        <DialogContent className="max-w-lg sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cài đặt</DialogTitle>
+            <DialogDescription>
+              Trạng thái tìm việc, hiển thị trong danh sách ứng viên và quyền lật CV.
+            </DialogDescription>
+          </DialogHeader>
+          <ProfileDiscoverySettings profile={data} />
+        </DialogContent>
+      </Dialog>
+
+      <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
+        <h2 className="text-base font-semibold">Yêu cầu lật CV từ doanh nghiệp</h2>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+          Khi bạn tắt quyền cho doanh nghiệp xem trực tiếp thông tin liên hệ, yêu cầu sẽ xuất hiện ở đây.
+        </p>
+        {isCvFlipRequestsLoading ? (
+          <p className="mt-3 text-sm text-[var(--muted-foreground)]">Đang tải danh sách yêu cầu...</p>
+        ) : (cvFlipRequests?.requests?.length ?? 0) === 0 ? (
+          <p className="mt-3 text-sm text-[var(--muted-foreground)]">Hiện chưa có yêu cầu nào.</p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {cvFlipRequests?.requests.map((request) => (
+              <div key={request.id} className="rounded-lg border border-[var(--border)] p-3">
+                <p className="text-sm font-medium">{request.company.name}</p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Trạng thái: {request.status} · Hết hạn: {new Date(request.expiresAt).toLocaleString("vi-VN")}
+                </p>
+                {request.status === "PENDING" ? (
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => respondRequestMutation.mutate({ requestId: request.id, action: "approve" })}
+                      disabled={respondRequestMutation.isPending}
+                    >
+                      Đồng ý
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => respondRequestMutation.mutate({ requestId: request.id, action: "reject" })}
+                      disabled={respondRequestMutation.isPending}
+                    >
+                      Từ chối
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <ProfileBasicInfo profile={data} />
       <ProfileKSA profile={data} />

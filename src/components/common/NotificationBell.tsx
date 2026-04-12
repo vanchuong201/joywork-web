@@ -51,6 +51,10 @@ export default function NotificationBell() {
       return `/jobs/${notification.metadata.jobId}`;
     }
 
+    if (notification.type === "CV_FLIP_REQUEST") {
+      return "/account?tab=profile";
+    }
+
     if (notification.relatedEntityType === "TICKET" && notification.relatedEntityId) {
       const companySlug = notification.metadata?.companySlug;
       if (companySlug) {

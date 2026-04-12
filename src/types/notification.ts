@@ -6,7 +6,10 @@ export type NotificationType =
   | "COMPANY_FOLLOW"
   | "POST_LIKE"
   | "POST_COMMENT"
-  | "SYSTEM";
+  | "SYSTEM"
+  | "CV_FLIP_REQUEST"
+  | "CV_FLIP_APPROVED"
+  | "CV_FLIP_REJECTED";
 
 export interface Notification {
   id: string;
@@ -14,7 +17,7 @@ export interface Notification {
   type: NotificationType;
   title: string;
   content: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   isRead: boolean;
   relatedEntityType?: string | null;
   relatedEntityId?: string | null;

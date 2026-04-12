@@ -186,7 +186,7 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
 
   return (
     <Link
-      href={slug ? `/profile/${slug}` : "#"}
+      href={slug ? `/candidates/${slug}` : "#"}
       className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
     >
       <div className="shrink-0">

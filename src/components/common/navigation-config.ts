@@ -11,6 +11,7 @@ import {
   Sparkles,
   FileQuestion,
   GraduationCap,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import type { AuthUser, CompanyMembership } from "@/store/useAuth";
@@ -33,8 +34,9 @@ const exploreNavBase: NavItem[] = [
   { icon: Home, label: "Bảng tin", href: "/" },
   { icon: Briefcase, label: "Việc làm", href: "/jobs" },
   { icon: Building2, label: "Doanh nghiệp", href: "/companies" },
+  { icon: Users, label: "Ứng viên", href: "/candidates" },
   { icon: GraduationCap, label: "Khóa học", href: "/courses" },
-  { icon: Sparkles, label: "Talent Pool", href: "/talent-pool" },
+  { icon: Sparkles, label: "Talent Pool", href: "/candidates?tab=talent-pool" },
 ];
 
 const headerAdminNavItem: NavItem = {
@@ -77,7 +79,8 @@ export function buildHeaderExploreNav(user: AuthUser | null): NavItem[] {
         label: "Khảo sát nội bộ",
         href: "/login?redirect=%2F",
       };
-  const items = [...exploreNavBase, internalSurveyItem];
+  const baseItems = user ? exploreNavBase : exploreNavBase.filter((item) => item.href !== "/jobs");
+  const items = [...baseItems, internalSurveyItem];
   if (user?.role === "ADMIN") {
     return [...items, headerAdminNavItem];
   }
@@ -107,9 +110,10 @@ export function buildCompanyManageNav(memberships: CompanyMembership[]): NavItem
 
 export function isNavItemActive(pathname: string, item: Pick<NavItem, "href" | "exact" | "external">): boolean {
   if (item.external) return false;
-  if (item.exact) return pathname === item.href;
-  if (item.href === "/") return pathname === "/";
-  return pathname.startsWith(item.href);
+  const normalizedHref = item.href.split("?")[0];
+  if (item.exact) return pathname === normalizedHref;
+  if (normalizedHref === "/") return pathname === "/";
+  return pathname.startsWith(normalizedHref);
 }
 
 function isValidCompanySlug(slug: string | null | undefined): slug is string {

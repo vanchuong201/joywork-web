@@ -6,13 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z, ZodError } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { OwnUserProfile, UserStatus } from "@/types/user";
+import { OwnUserProfile } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import ProfileDiscoverySettings from "@/components/account/profile/ProfileDiscoverySettings";
 import { toast } from "sonner";
 import { uploadProfileAvatar, uploadProfileCV } from "@/lib/uploads";
 import Image from "next/image";
@@ -46,7 +46,6 @@ const schema = z.object({
   linkedin: optionalUrl,
   github: optionalUrl,
   cvUrl: optionalUrl,
-  status: z.enum(["OPEN_TO_WORK", "NOT_AVAILABLE", "LOOKING"]).optional().nullable(),
   isPublic: z.boolean().optional(),
 });
 
@@ -55,12 +54,6 @@ type FormValues = z.infer<typeof schema>;
 interface ProfileBasicInfoProps {
   profile: OwnUserProfile;
 }
-
-const statusLabels: Record<UserStatus, string> = {
-  OPEN_TO_WORK: "Đang tìm việc",
-  NOT_AVAILABLE: "Không có sẵn",
-  LOOKING: "Đang tìm kiếm",
-};
 
 export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const queryClient = useQueryClient();
@@ -100,17 +93,10 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
       cvUrl: profile.profile?.cvUrl || "",
-      // Default to OPEN_TO_WORK if status is null or LOOKING (migrate old data)
-      status: profile.profile?.status === "OPEN_TO_WORK" || profile.profile?.status === "LOOKING" 
-        ? "OPEN_TO_WORK" 
-        : profile.profile?.status === "NOT_AVAILABLE" 
-        ? "NOT_AVAILABLE" 
-        : "OPEN_TO_WORK",
       isPublic: profile.profile?.isPublic ?? true,
     },
   });
 
-  const isPublic = watch("isPublic");
   const fullNameValue = watch("fullName");
   const titleValue = watch("title");
   const bioValue = watch("bio");
@@ -159,12 +145,6 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
       cvUrl: profile.profile?.cvUrl || "",
-      // Default to OPEN_TO_WORK if status is null or LOOKING (migrate old data)
-      status: profile.profile?.status === "OPEN_TO_WORK" || profile.profile?.status === "LOOKING" 
-        ? "OPEN_TO_WORK" 
-        : profile.profile?.status === "NOT_AVAILABLE" 
-        ? "NOT_AVAILABLE" 
-        : "OPEN_TO_WORK",
       isPublic: profile.profile?.isPublic ?? true,
     });
     // Fallback: profile.avatar || user.avatar || null
@@ -676,59 +656,13 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
             </p>
           </div>
 
-          {/* Status & Privacy */}
-          <div>
-            <div>
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="status"
-                  checked={watch("status") === "OPEN_TO_WORK"}
-                  onCheckedChange={(checked) => {
-                    setValue("status", checked ? "OPEN_TO_WORK" : "NOT_AVAILABLE", { shouldDirty: true });
-                  }}
-                />
-                <Label htmlFor="status" className="cursor-pointer">
-                  {watch("status") === "OPEN_TO_WORK" ? "Đang bật tìm việc" : "Đang tắt tìm việc"}
-                </Label>
-              </div>
-              <p className="mt-2 text-xs text-slate-500">
-                {watch("status") === "OPEN_TO_WORK" ? (
-                  <span className="text-green-600">
-                    ✓ Nhà tuyển dụng sẽ biết bạn đang tích cực tìm việc và sẵn sàng ứng tuyển ngay
-                  </span>
-                ) : (
-                  <span className="text-amber-600">
-                    ⚠ Hồ sơ của bạn sẽ ít được nhà tuyển dụng chú ý vì bạn không đang tìm việc
-                  </span>
-                )}
-              </p>
-            </div>
-            
-            {/* TODO: Uncomment khi cần sử dụng tính năng "Công khai hồ sơ" */}
-            {/* <div className="mt-4">
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="isPublic"
-                  checked={isPublic}
-                  onCheckedChange={(checked) => setValue("isPublic", checked, { shouldDirty: true })}
-                />
-                <Label htmlFor="isPublic" className="cursor-pointer">
-                  Công khai hồ sơ
-                </Label>
-              </div>
-              <p className="mt-2 text-xs text-slate-500">
-                {isPublic ? (
-                  <span className="text-green-600">
-                    ✓ Hồ sơ của bạn đang công khai. Mọi người có thể truy cập qua liên kết công khai.
-                  </span>
-                ) : (
-                  <span className="text-amber-600">
-                    ⚠ Hồ sơ của bạn đang ở chế độ riêng tư. Bất kỳ ai cũng không thể truy cập vào trang hồ sơ công khai của bạn.
-                  </span>
-                )}
-              </p>
+          {/* Tìm việc, hiển thị danh sách, lật CV — dùng chung ProfileDiscoverySettings (có thể mở nhanh từ nút Cài đặt ở tab Hồ sơ) */}
+          {/* <ProfileDiscoverySettings profile={profile} /> */}
+
+          {/* TODO: Uncomment khi cần sử dụng tính năng "Công khai hồ sơ" — import Switch */}
+          {/* <div className="mt-4">
+              ...
             </div> */}
-          </div>
 
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => reset()}>
