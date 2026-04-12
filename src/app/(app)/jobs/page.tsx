@@ -154,10 +154,10 @@ function SimpleCarousel({
         </button>
       )}
       <div ref={emblaRef} className="overflow-hidden">
-        <div className="flex gap-4 py-2">
+        <div className="flex items-stretch gap-4 py-2">
           {Array.isArray(children)
             ? children.map((child, idx) => (
-                <div key={idx} className={itemClassName}>
+                <div key={idx} className={cn(itemClassName, "flex min-h-0")}>
                   {child}
                 </div>
               ))
@@ -906,101 +906,143 @@ function JobsPageContent() {
         ) : null}
       </section>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Khám phá công ty nổi bật</h1>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/companies">Khám phá ngay</Link>
-          </Button>
-        </div>
-        {featuredCompanies.length ? (
-          <SimpleCarousel itemClassName="flex-[0_0_100%]">
-            {featuredCompanies.map((company) => (
-              <Card key={company.id} className="overflow-hidden border border-[var(--border)]">
-                <div className="relative h-56 w-full">
-                  {company.coverUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- ảnh cover từ backend
-                    <img
-                      src={company.coverUrl}
-                      alt={company.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-[var(--muted)] text-xs text-[var(--muted-foreground)]">
-                      Chưa có ảnh cover nổi bật
-                    </div>
-                  )}
-                </div>
-                <CardContent className="flex items-center justify-between gap-4 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 overflow-hidden rounded-xl bg-[var(--muted)]">
-                      {company.logoUrl ? (
-                        <CompanyLogo
-                          src={company.logoUrl}
-                          alt={`${company.name} logo`}
-                          className="h-full w-full object-contain"
-                          width={48}
-                          height={48}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-lg font-bold text-[var(--foreground)]">
-                          {(company.name || "?").charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold">{company.name}</p>
-                      <p className="text-xs text-[var(--muted-foreground)] line-clamp-1">
-                        {company.tagline || "Khám phá cơ hội nghề nghiệp mới cùng doanh nghiệp hàng đầu."}
-                      </p>
-                    </div>
-                  </div>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/companies/${company.slug}`}>Xem hồ sơ</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </SimpleCarousel>
-        ) : (
-          <EmptyState title="Chưa có công ty nổi bật" subtitle="Danh sách sẽ được cập nhật sớm." />
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Các công ty hàng đầu</h2>
-        {topCompanies.length ? (
-          <SimpleCarousel itemClassName="flex-[0_0_60%] sm:flex-[0_0_40%] lg:flex-[0_0_25%]">
-            {topCompanies.map((company) => (
-              <Card key={company.id} className="border border-[var(--border)]">
-                <CardContent className="flex flex-col items-center gap-3 p-4 text-center">
-                  <div className="h-20 w-20 overflow-hidden rounded-2xl bg-[var(--muted)]">
-                    {company.logoUrl ? (
-                      <CompanyLogo
-                        src={company.logoUrl}
-                        alt={company.name}
-                        className="h-full w-full object-contain"
-                        width={80}
-                        height={80}
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-[var(--foreground)]">
-                        {(company.name || "?").charAt(0)}
+      <TooltipProvider delayDuration={300}>
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold">Khám phá công ty nổi bật</h1>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/companies">Khám phá ngay</Link>
+            </Button>
+          </div>
+          {featuredCompanies.length ? (
+            <SimpleCarousel itemClassName="flex-[0_0_100%]">
+              {featuredCompanies.map((company) => {
+                const jobsHref = `/companies/${company.slug}?tab=jobs`;
+                return (
+                  <Link
+                    key={company.id}
+                    href={jobsHref}
+                    aria-label={`Việc tuyển dụng — ${company.name}`}
+                    className="block h-full w-full min-h-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Card className="h-full overflow-hidden border border-[var(--border)] transition hover:border-[var(--brand)]/35 hover:shadow-md">
+                      <div className="relative h-56 w-full">
+                        {company.coverUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- ảnh cover từ backend
+                          <img
+                            src={company.coverUrl}
+                            alt=""
+                            aria-hidden
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-[var(--muted)] text-xs text-[var(--muted-foreground)]">
+                            Chưa có ảnh cover nổi bật
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="text-sm font-semibold">{company.name}</div>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/companies/${company.slug}`}>Việc mới</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </SimpleCarousel>
-        ) : (
-          <EmptyState title="Chưa có công ty hàng đầu" subtitle="Danh sách sẽ được cập nhật sớm." />
-        )}
-      </section>
+                      <CardContent className="flex items-start justify-between gap-4 p-4">
+                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--muted)]">
+                            {company.logoUrl ? (
+                              <CompanyLogo
+                                src={company.logoUrl}
+                                alt=""
+                                className="h-full w-full object-contain"
+                                width={48}
+                                height={48}
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-lg font-bold text-[var(--foreground)]">
+                                {(company.name || "?").charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="line-clamp-2 min-h-[2.5rem] text-left text-sm font-semibold leading-5 text-[var(--foreground)]">
+                                  {company.name}
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                <p>{company.name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <p className="mt-0.5 line-clamp-1 text-left text-xs text-[var(--muted-foreground)]">
+                              {company.tagline ||
+                                "Khám phá cơ hội nghề nghiệp mới cùng doanh nghiệp hàng đầu."}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="pointer-events-none shrink-0 rounded-md border border-[var(--border)] bg-[var(--muted)]/40 px-2.5 py-1 text-xs font-medium text-[var(--muted-foreground)]">
+                          Tuyển dụng
+                        </span>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </SimpleCarousel>
+          ) : (
+            <EmptyState title="Chưa có công ty nổi bật" subtitle="Danh sách sẽ được cập nhật sớm." />
+          )}
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Các công ty hàng đầu</h2>
+          {topCompanies.length ? (
+            <SimpleCarousel itemClassName="flex-[0_0_60%] sm:flex-[0_0_40%] lg:flex-[0_0_25%]">
+              {topCompanies.map((company) => {
+                const jobsHref = `/companies/${company.slug}?tab=jobs`;
+                return (
+                  <Link
+                    key={company.id}
+                    href={jobsHref}
+                    aria-label={`Việc tuyển dụng — ${company.name}`}
+                    className="block h-full w-full min-h-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Card className="flex h-full min-h-[11.5rem] flex-col border border-[var(--border)] transition hover:border-[var(--brand)]/35 hover:shadow-md">
+                      <CardContent className="flex flex-1 flex-col items-center gap-3 p-4 text-center">
+                        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-[var(--muted)]">
+                          {company.logoUrl ? (
+                            <CompanyLogo
+                              src={company.logoUrl}
+                              alt=""
+                              className="h-full w-full object-contain"
+                              width={80}
+                              height={80}
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-[var(--foreground)]">
+                              {(company.name || "?").charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="line-clamp-2 min-h-[2.5rem] w-full max-w-full flex-1 px-0.5 text-sm font-semibold leading-5 text-[var(--foreground)]">
+                              {company.name}
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p>{company.name}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <span className="pointer-events-none mt-auto rounded-md border border-[var(--border)] bg-[var(--muted)]/40 px-2.5 py-1 text-xs font-medium text-[var(--muted-foreground)]">
+                          Việc tuyển dụng
+                        </span>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </SimpleCarousel>
+          ) : (
+            <EmptyState title="Chưa có công ty hàng đầu" subtitle="Danh sách sẽ được cập nhật sớm." />
+          )}
+        </section>
+      </TooltipProvider>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">

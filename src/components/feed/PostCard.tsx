@@ -756,7 +756,7 @@ const PostCard = memo(function PostCard({
                   )}
                 />
               )}
-              {showJoyworkModerationBadge && Boolean(post.hiddenFromFeed) ? (
+              {/* {showJoyworkModerationBadge && Boolean(post.hiddenFromFeed) ? (
                 <div className="ml-auto">
                   <TooltipProvider>
                     <Tooltip>
@@ -782,7 +782,7 @@ const PostCard = memo(function PostCard({
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-              ) : null}
+              ) : null} */}
             </div>
             <div className="flex min-w-0 items-center gap-2 text-xs">
               {post.company.slogan ? (
