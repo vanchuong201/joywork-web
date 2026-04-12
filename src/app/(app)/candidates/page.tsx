@@ -16,6 +16,8 @@ import TalentPoolExplorer from "@/components/talent-pool/TalentPoolExplorer";
 import TalentPoolLocked from "@/components/talent-pool/TalentPoolLocked";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ProvinceSelect from "@/components/ui/province-select";
+import WardSelect from "@/components/ui/ward-select";
 import api from "@/lib/api";
 
 const SELECTED_COMPANY_KEY = "cvFlip.selectedCompanyId";
@@ -29,12 +31,15 @@ function CandidatesPageContent() {
 
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [page, setPage] = useState(1);
+  const [keywordInput, setKeywordInput] = useState("");
+  const [skillsInput, setSkillsInput] = useState("");
   const [keyword, setKeyword] = useState("");
   const [skillsText, setSkillsText] = useState("");
-  const [location, setLocation] = useState("");
-  const [experience, setExperience] = useState("");
+  const [locations, setLocations] = useState<string[]>([]);
+  const [wardCodes, setWardCodes] = useState<string[]>([]);
   const [education, setEducation] = useState("");
-  const [workMode, setWorkMode] = useState("");
+  const [workMode, setWorkMode] = useState<"" | "onsite" | "remote" | "hybrid">("");
+  const [salaryCurrency, setSalaryCurrency] = useState<"VND" | "USD">("VND");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
   const tab = searchParams.get("tab") === TAB_TALENT_POOL ? TAB_TALENT_POOL : TAB_ALL;
@@ -84,16 +89,46 @@ function CandidatesPageContent() {
     [skillsText]
   );
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setKeyword(keywordInput.trim());
+      setPage(1);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [keywordInput]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSkillsText(skillsInput);
+      setPage(1);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [skillsInput]);
+
+  useEffect(() => {
+    const validWards = wardCodes.filter((code) =>
+      locations.some((provinceCode) => code.startsWith(`${provinceCode}/`))
+    );
+    if (validWards.length !== wardCodes.length) {
+      setWardCodes(validWards);
+    }
+  }, [locations, wardCodes]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [education, workMode, salaryCurrency, salaryMin, salaryMax]);
+
   const candidatesQuery = useQuery({
     queryKey: [
       "cv-flip-candidates",
       page,
       keyword,
       skillsText,
-      location,
-      experience,
+      locations,
+      wardCodes[0] ?? "",
       education,
       workMode,
+      salaryCurrency,
       salaryMin,
       salaryMax,
     ],
@@ -103,10 +138,11 @@ function CandidatesPageContent() {
         limit: 12,
         keyword: keyword || undefined,
         skills: skills.length > 0 ? skills : undefined,
-        location: location || undefined,
-        experience: experience || undefined,
+        locations: locations.length > 0 ? locations : undefined,
+        ward: wardCodes[0] || undefined,
         education: education || undefined,
         workMode: workMode || undefined,
+        salaryCurrency,
         salaryMin: salaryMin ? Number(salaryMin) : undefined,
         salaryMax: salaryMax ? Number(salaryMax) : undefined,
       }),
@@ -210,15 +246,66 @@ function CandidatesPageContent() {
 
       {tab === TAB_ALL ? (
         <>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <Input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Từ khóa" />
-            <Input value={skillsText} onChange={(e) => setSkillsText(e.target.value)} placeholder="Skills (phân tách dấu phẩy)" />
-            <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Địa điểm" />
-            <Input value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="Kinh nghiệm" />
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <Input
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+              placeholder="Từ khóa trong CV (ưu tiên tiêu đề nghề nghiệp)"
+            />
+            <Input
+              value={skillsInput}
+              onChange={(e) => setSkillsInput(e.target.value)}
+              placeholder="Skills (phân tách dấu phẩy, hỗ trợ gần đúng)"
+            />
+            <ProvinceSelect
+              multiple
+              values={locations}
+              onChangeValues={(values) => {
+                setLocations(values);
+                setPage(1);
+              }}
+              placeholder="Chọn tỉnh / thành phố"
+            />
+            <WardSelect
+              provinceCodes={locations}
+              values={wardCodes}
+              onChangeValues={(values) => {
+                setWardCodes(values);
+                setPage(1);
+              }}
+              placeholder="Chọn phường / xã"
+            />
             <Input value={education} onChange={(e) => setEducation(e.target.value)} placeholder="Học vấn" />
-            <Input value={workMode} onChange={(e) => setWorkMode(e.target.value)} placeholder="Hình thức làm việc" />
-            <Input value={salaryMin} onChange={(e) => setSalaryMin(e.target.value)} placeholder="Lương tối thiểu" type="number" />
-            <Input value={salaryMax} onChange={(e) => setSalaryMax(e.target.value)} placeholder="Lương tối đa" type="number" />
+            <select
+              className="h-10 rounded-md border border-[var(--border)] bg-white px-3 text-sm"
+              value={workMode}
+              onChange={(e) => setWorkMode(e.target.value as "" | "onsite" | "remote" | "hybrid")}
+            >
+              <option value="">Hình thức làm việc</option>
+              <option value="onsite">Onsite</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+            <Input
+              value={salaryMin}
+              onChange={(e) => setSalaryMin(e.target.value)}
+              placeholder={`Lương tối thiểu (${salaryCurrency})`}
+              type="number"
+            />
+            <Input
+              value={salaryMax}
+              onChange={(e) => setSalaryMax(e.target.value)}
+              placeholder={`Lương tối đa (${salaryCurrency})`}
+              type="number"
+            />
+            <select
+              className="h-10 rounded-md border border-[var(--border)] bg-white px-3 text-sm"
+              value={salaryCurrency}
+              onChange={(e) => setSalaryCurrency(e.target.value as "VND" | "USD")}
+            >
+              <option value="VND">VND</option>
+              <option value="USD">USD</option>
+            </select>
           </div>
 
           {candidatesQuery.error ? (

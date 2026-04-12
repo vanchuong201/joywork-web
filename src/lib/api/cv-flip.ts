@@ -23,11 +23,12 @@ export async function listCvFlipCandidates(params: {
   limit: number;
   keyword?: string;
   skills?: string[];
-  location?: string;
-  experience?: string;
+  locations?: string[];
+  ward?: string;
   education?: string;
   salaryMin?: number;
   salaryMax?: number;
+  salaryCurrency?: "VND" | "USD";
   workMode?: string;
 }): Promise<CvFlipCandidatesResponse> {
   const searchParams: Record<string, string | number> = {
@@ -37,11 +38,12 @@ export async function listCvFlipCandidates(params: {
 
   if (params.keyword) searchParams.keyword = params.keyword;
   if (params.skills && params.skills.length > 0) searchParams.skills = params.skills.join(",");
-  if (params.location) searchParams.location = params.location;
-  if (params.experience) searchParams.experience = params.experience;
+  if (params.locations && params.locations.length > 0) searchParams.locations = params.locations.join(",");
+  if (params.ward) searchParams.ward = params.ward;
   if (params.education) searchParams.education = params.education;
   if (params.salaryMin !== undefined) searchParams.salaryMin = params.salaryMin;
   if (params.salaryMax !== undefined) searchParams.salaryMax = params.salaryMax;
+  if (params.salaryCurrency) searchParams.salaryCurrency = params.salaryCurrency;
   if (params.workMode) searchParams.workMode = params.workMode;
 
   const res = await api.get("/api/cv-flip/candidates", { params: searchParams });
