@@ -1670,16 +1670,29 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
           return { ...initialData, salaryAndBonus: SAMPLE_SALARY_AND_BONUS };
         }
         break;
-      case 'training':
+      case 'training': {
         const hasTrainingDesc = initialData.training?.description;
         const hasWorkforceSize = initialData.training?.workforceSize;
         // Keep old key for backward compatibility with existing stored data.
         const hasLegacyBudget = initialData.training?.budget;
         const hasTrainingPrograms = initialData.training?.programs && initialData.training.programs.length > 0;
+        const hasCompanyIntroFields = !!(company.description || company.size);
         if (!hasTrainingDesc && !hasWorkforceSize && !hasLegacyBudget && !hasTrainingPrograms) {
+          if (hasCompanyIntroFields) {
+            return {
+              ...initialData,
+              training: {
+                programs: initialData.training?.programs || [],
+                description: initialData.training?.description ?? company.description ?? '',
+                workforceSize: initialData.training?.workforceSize ?? company.size ?? '',
+                image: initialData.training?.image ?? '',
+              },
+            };
+          }
           return { ...initialData, training: SAMPLE_TRAINING };
         }
         break;
+      }
       case 'leaders':
         if (!initialData.leaders || initialData.leaders.length === 0) {
           return { ...initialData, leaders: SAMPLE_LEADERS };
@@ -1934,13 +1947,16 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
   const usingSampleTraining =
     isEditable &&
-    !profile?.training &&
-    !(training.description || training.workforceSize || training.budget || (training.programs || []).length > 0);
+    !(training.description || training.workforceSize || training.budget || (training.programs || []).length > 0) &&
+    !(company.description || company.size);
   const trainingDescriptionToRender =
-    training.description || (usingSampleTraining ? SAMPLE_TRAINING.description : '');
+    training.description ||
+    company.description ||
+    (usingSampleTraining ? SAMPLE_TRAINING.description : '');
   const trainingWorkforceSizeToRender =
     training.workforceSize ||
     training.budget ||
+    company.size ||
     (usingSampleTraining ? SAMPLE_TRAINING.workforceSize : undefined);
   const trainingImageToRender =
     training.image || SAMPLE_TRAINING.image;
