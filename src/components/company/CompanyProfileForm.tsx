@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +16,7 @@ import { CompanyLogo } from "@/components/company/CompanyLogo";
 
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
-import { COMPANY_SIZE_OPTIONS } from "@/lib/provinces";
+import { COMPANY_SIZE_OPTIONS, resolveProvinceCode } from "@/lib/provinces";
 
 const sizeOptions = COMPANY_SIZE_OPTIONS;
 
@@ -215,20 +215,24 @@ export default function CompanyProfileForm({
   }, [initialData, reset]);
 
   const hqProvince = watch("location");
+  const hqProvinceCode = useMemo(
+    () => (hqProvince ? resolveProvinceCode(hqProvince.trim()) ?? hqProvince.trim() : null),
+    [hqProvince],
+  );
 
   useEffect(() => {
-    if (!hqProvince) {
+    if (!hqProvinceCode) {
       const cur = getValues("wardCodes") || [];
       if (cur.length) setValue("wardCodes", [], { shouldDirty: true });
       return;
     }
-    const allowed = new Set([hqProvince]);
+    const allowed = new Set([hqProvinceCode]);
     const current = getValues("wardCodes") || [];
     const next = current.filter((w) => allowed.has(w.split("/")[0]));
     if (next.length !== current.length) {
       setValue("wardCodes", next, { shouldDirty: true });
     }
-  }, [hqProvince, getValues, setValue]);
+  }, [hqProvinceCode, getValues, setValue]);
 
   const handleLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -380,8 +384,8 @@ export default function CompanyProfileForm({
 
       <FormField label="Phường / xã trụ sở (tuỳ chọn)" error={errors.wardCodes?.message}>
         <WardSelect
-          provinceCodes={hqProvince ? [hqProvince] : []}
-          disabled={!hqProvince}
+          provinceCodes={hqProvinceCode ? [hqProvinceCode] : []}
+          disabled={!hqProvinceCode}
           values={watch("wardCodes") || []}
           onChangeValues={(vals) => setValue("wardCodes", vals, { shouldDirty: true })}
         />

@@ -143,6 +143,16 @@ export function getProvinceNameByCode(code: string | null | undefined): string |
   return PROVINCES.find((province) => province.code === code)?.name ?? null;
 }
 
+/** Nhãn hiển thị khi API có thể trả slug hoặc tên tỉnh. */
+export function getProvinceDisplayLabel(stored: string | null | undefined): string {
+  if (!stored) return "";
+  const fromCode = getProvinceNameByCode(stored);
+  if (fromCode) return fromCode;
+  const code = resolveProvinceCode(stored);
+  if (code) return getProvinceNameByCode(code) ?? stored;
+  return stored;
+}
+
 export function getProvinceNamesByCodes(codes: string[] | null | undefined): string[] {
   if (!codes || codes.length === 0) return [];
   return codes.map((code) => getProvinceNameByCode(code)).filter((name): name is string => Boolean(name));

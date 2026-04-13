@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronDown, X, Search, MapPin } from "lucide-react";
 import {
   searchProvinces,
-  getProvinceNameByCode,
+  getProvinceDisplayLabel,
+  resolveProvinceCode,
   type Province,
 } from "@/lib/provinces";
 import { cn } from "@/lib/utils";
@@ -37,8 +38,8 @@ export default function ProvinceSelect({
 
   const results = searchProvinces(query);
 
-  const displayValue = value ? getProvinceNameByCode(value) || value : "";
-  const displayValues = values.map((code) => getProvinceNameByCode(code) || code);
+  const displayValue = value ? getProvinceDisplayLabel(value) : "";
+  const displayValues = values.map((code) => getProvinceDisplayLabel(code));
 
   const handleSelect = useCallback(
     (province: Province) => {
@@ -185,9 +186,12 @@ export default function ProvinceSelect({
               </li>
             ) : (
               results.map((province) => {
+                const valueCode = value ? resolveProvinceCode(value) : null;
                 const isSelected = multiple
                   ? values.includes(province.code)
-                  : province.code === value;
+                  : valueCode != null
+                    ? province.code === valueCode
+                    : province.code === value;
                 const showMergedFrom =
                   query &&
                   province.merged &&
