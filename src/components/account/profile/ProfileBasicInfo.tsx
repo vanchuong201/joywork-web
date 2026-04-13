@@ -656,7 +656,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
             </p>
           </div>
 
-          {/* Tìm việc, hiển thị danh sách, lật CV — dùng chung ProfileDiscoverySettings (có thể mở nhanh từ nút Cài đặt ở tab Hồ sơ) */}
+          {/* Tìm việc, hiển thị danh sách, mở CV — dùng chung ProfileDiscoverySettings (có thể mở nhanh từ nút Cài đặt ở tab Hồ sơ) */}
           {/* <ProfileDiscoverySettings profile={profile} /> */}
 
           {/* TODO: Uncomment khi cần sử dụng tính năng "Công khai hồ sơ" — import Switch */}

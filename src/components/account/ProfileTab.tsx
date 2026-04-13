@@ -59,7 +59,7 @@ export default function ProfileTab() {
     mutationFn: async ({ requestId, action }: { requestId: string; action: "approve" | "reject" }) =>
       respondMyCvFlipRequest(requestId, action),
     onSuccess: (_data, variables) => {
-      toast.success(variables.action === "approve" ? "Bạn đã đồng ý yêu cầu lật CV." : "Bạn đã từ chối yêu cầu lật CV.");
+      toast.success(variables.action === "approve" ? "Bạn đã đồng ý yêu cầu mở CV." : "Bạn đã từ chối yêu cầu mở CV.");
       queryClient.invalidateQueries({ queryKey: ["cv-flip-my-requests"] });
     },
     onError: (error: unknown) => {
@@ -242,7 +242,7 @@ export default function ProfileTab() {
           <DialogHeader>
             <DialogTitle>Cài đặt</DialogTitle>
             <DialogDescription>
-              Trạng thái tìm việc, hiển thị trong danh sách ứng viên và quyền lật CV.
+              Trạng thái tìm việc, hiển thị trong danh sách ứng viên và quyền mở CV.
             </DialogDescription>
           </DialogHeader>
           <ProfileDiscoverySettings profile={data} />
@@ -250,7 +250,7 @@ export default function ProfileTab() {
       </Dialog>
 
       <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
-        <h2 className="text-base font-semibold">Yêu cầu lật CV từ doanh nghiệp</h2>
+        <h2 className="text-base font-semibold">Yêu cầu mở CV từ doanh nghiệp</h2>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           Khi bạn tắt quyền cho doanh nghiệp xem trực tiếp thông tin liên hệ, yêu cầu sẽ xuất hiện ở đây.
         </p>

@@ -134,7 +134,7 @@ export default function CandidateDetailPage({ params }: Props) {
       if (result.status === "REQUESTED") {
         toast.success("Đã gửi yêu cầu đến ứng viên. Chờ ứng viên đồng ý.");
       } else {
-        toast.success("Lật CV thành công.");
+        toast.success("Mở CV thành công.");
       }
       queryClient.invalidateQueries({ queryKey: ["cv-flip-candidate-detail", safeSlug, companyId] });
       queryClient.invalidateQueries({ queryKey: ["cv-flip-usage", companyId] });
@@ -144,7 +144,7 @@ export default function CandidateDetailPage({ params }: Props) {
         response?: { data?: { error?: { message?: string } } };
       };
       const message =
-        maybeAxiosError.response?.data?.error?.message || "Không thể lật CV lúc này.";
+        maybeAxiosError.response?.data?.error?.message || "Không thể mở CV lúc này.";
       toast.error(message);
     },
   });
@@ -173,7 +173,7 @@ export default function CandidateDetailPage({ params }: Props) {
   if (needsCvFlipLayer && cvDetailQuery.error) {
     return (
       <div className="mx-auto max-w-4xl space-y-4 p-4">
-        <p className="text-sm text-red-600">Không tải được trạng thái lật CV (doanh nghiệp).</p>
+        <p className="text-sm text-red-600">Không tải được trạng thái mở CV (doanh nghiệp).</p>
         <Link href="/candidates" className="text-sm text-[var(--brand)] hover:underline">
           Quay lại danh sách ứng viên
         </Link>

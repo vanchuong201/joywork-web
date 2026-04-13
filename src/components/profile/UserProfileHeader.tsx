@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-/** Khi chưa lật CV: chỉ hiển thị chữ cái đầu mỗi từ, ví dụ "Nguyễn Văn Chương" → "NVC". */
+/** Khi chưa mở CV: chỉ hiển thị chữ cái đầu mỗi từ, ví dụ "Nguyễn Văn Chương" → "NVC". */
 function nameToMaskedInitials(name: string | null | undefined): string {
   const raw = (name || "Ứng viên").trim();
   const parts = raw.split(/\s+/).filter((p) => p.length > 0);
@@ -23,7 +23,7 @@ function nameToMaskedInitials(name: string | null | undefined): string {
 
 interface UserProfileHeaderProps {
   profile: PublicUserProfile;
-  /** Trang lật CV: làm mờ avatar + liên hệ cho đến khi DN xác nhận lật */
+  /** Trang mở CV: làm mờ avatar + liên hệ cho đến khi DN xác nhận mở */
   cvFlip?: {
     enabled: boolean;
     revealed: boolean;

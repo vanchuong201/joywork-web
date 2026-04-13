@@ -155,7 +155,7 @@ export default function ProfileDiscoverySettings({ profile }: ProfileDiscoverySe
         </div>
         <p className="mt-2 text-xs text-slate-500">
           {watch("allowCvFlip")
-            ? "Doanh nghiệp đủ điều kiện có thể lật CV trực tiếp để xem thông tin liên hệ."
+            ? "Doanh nghiệp đủ điều kiện có thể mở CV trực tiếp để xem thông tin liên hệ."
             : "Doanh nghiệp phải gửi yêu cầu kết nối và chờ bạn đồng ý qua thông báo/email."}
         </p>
       </div>

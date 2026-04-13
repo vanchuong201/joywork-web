@@ -34,11 +34,11 @@ export default function CompanySelectorModal({
     <Dialog open={open}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{hasCompanies ? "Chọn doanh nghiệp để lật CV" : "Bạn chưa có doanh nghiệp"}</DialogTitle>
+          <DialogTitle>{hasCompanies ? "Chọn doanh nghiệp để mở CV" : "Bạn chưa có doanh nghiệp"}</DialogTitle>
           <DialogDescription>
             {hasCompanies
-              ? "Lượt lật CV sẽ được tính theo doanh nghiệp bạn chọn."
-              : "Bạn cần tạo doanh nghiệp trước khi sử dụng tính năng lật CV."}
+              ? "Lượt mở CV sẽ được tính theo doanh nghiệp bạn chọn."
+              : "Bạn cần tạo doanh nghiệp trước khi sử dụng tính năng mở CV."}
           </DialogDescription>
         </DialogHeader>
 
