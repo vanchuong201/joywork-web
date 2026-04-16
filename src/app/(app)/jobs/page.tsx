@@ -65,40 +65,11 @@ type Job = {
 };
 
 type ViewMode = "list" | "grid";
-type SalaryUnit = "THOUSAND" | "MILLION" | "BILLION";
+type SalaryCurrency = "VND" | "USD";
 
-const SALARY_UNIT_OPTIONS: Array<{
-  value: SalaryUnit;
-  label: string;
-  shortLabel: string;
-  multiplier: number;
-}> = [
-  { value: "THOUSAND", label: "Nghìn VND", shortLabel: "nghìn", multiplier: 1_000 },
-  { value: "MILLION", label: "Triệu VND", shortLabel: "triệu", multiplier: 1_000_000 },
-  { value: "BILLION", label: "Tỷ VND", shortLabel: "tỷ", multiplier: 1_000_000_000 },
-];
-
-const DEFAULT_SALARY_UNIT: SalaryUnit = "MILLION";
-
-function parseSalaryUnit(value?: string | null): SalaryUnit {
-  if (value === "THOUSAND" || value === "MILLION" || value === "BILLION") return value;
-  return DEFAULT_SALARY_UNIT;
-}
-
-function parseSalaryValueParam(value?: string | null): number | undefined {
-  if (!value) return undefined;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
-  return parsed;
-}
-
-function formatSalaryInputValue(value: number): string {
-  if (Number.isInteger(value)) return String(value);
-  return Number(value.toFixed(2)).toString();
-}
-
-function formatSalaryFilterValue(value: number): string {
-  return value.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+function parseSalaryCurrency(value?: string | null): SalaryCurrency {
+  if (value === "VND" || value === "USD") return value;
+  return "VND";
 }
 
 type HomepageShowcaseCompany = {
@@ -203,10 +174,11 @@ function JobsPageContent() {
   const employmentType = sp.get("employmentType") || undefined;
   const experienceLevel = sp.get("experienceLevel") || undefined;
   const jobLevel = sp.get("jobLevel") || undefined;
-  const salaryMin = parseSalaryValueParam(sp.get("salaryMin"));
-  const salaryMax = parseSalaryValueParam(sp.get("salaryMax"));
-  const salaryUnit = parseSalaryUnit(sp.get("salaryUnit"));
-  const salaryUnitMeta = SALARY_UNIT_OPTIONS.find((option) => option.value === salaryUnit) || SALARY_UNIT_OPTIONS[1];
+  const salaryCurrency = parseSalaryCurrency(sp.get("salaryCurrency"));
+  const salaryMinParam = sp.get("salaryMin") || "";
+  const salaryMaxParam = sp.get("salaryMax") || "";
+  const [salaryMinInput, setSalaryMinInput] = useState(salaryMinParam);
+  const [salaryMaxInput, setSalaryMaxInput] = useState(salaryMaxParam);
 
   const hasActiveFilters = Boolean(
     q ||
@@ -217,15 +189,15 @@ function JobsPageContent() {
       employmentType ||
       experienceLevel ||
       jobLevel ||
-      salaryMin !== undefined ||
-      salaryMax !== undefined,
+      salaryMinParam ||
+      salaryMaxParam,
   );
   const hasAdvancedFilters = Boolean(
-    employmentType || experienceLevel || jobLevel || salaryMin !== undefined || salaryMax !== undefined,
+    employmentType || experienceLevel || jobLevel || salaryMinParam || salaryMaxParam,
   );
   const advancedFilterCount =
     [employmentType, experienceLevel, jobLevel].filter(Boolean).length +
-    (salaryMin !== undefined || salaryMax !== undefined ? 1 : 0);
+    (salaryMinParam || salaryMaxParam ? 1 : 0);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(hasAdvancedFilters);
   const page = Number(sp.get("page") || "1");
@@ -234,7 +206,7 @@ function JobsPageContent() {
   const featuredLimit = 12;
 
   const { data, isLoading, isFetching } = useQuery<{ jobs: Job[]; pagination: any }>({
-    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, salaryMin, salaryMax, companyId, page }],
+    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, salaryCurrency, salaryMin: salaryMinParam, salaryMax: salaryMaxParam, companyId, page }],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
         params: {
@@ -248,8 +220,9 @@ function JobsPageContent() {
           employmentType,
           experienceLevel,
           jobLevel,
-          salaryMin,
-          salaryMax,
+          salaryCurrency: (salaryMinParam || salaryMaxParam) ? salaryCurrency : undefined,
+          salaryMin: salaryMinParam ? Number(salaryMinParam) : undefined,
+          salaryMax: salaryMaxParam ? Number(salaryMaxParam) : undefined,
         },
       });
       return res.data.data;
@@ -288,6 +261,11 @@ function JobsPageContent() {
       return res.data.data;
     },
   });
+
+  useEffect(() => {
+    setSalaryMinInput(salaryMinParam);
+    setSalaryMaxInput(salaryMaxParam);
+  }, [salaryMinParam, salaryMaxParam]);
 
   useEffect(() => {
     if (hasAdvancedFilters) {
@@ -336,7 +314,7 @@ function JobsPageContent() {
 
   const clearAllFilters = () => {
     const next = new URLSearchParams(sp.toString());
-    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "jobLevel", "salaryMin", "salaryMax", "salaryUnit", "page"].forEach((key) =>
+    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "jobLevel", "salaryMin", "salaryMax", "salaryCurrency", "page"].forEach((key) =>
       next.delete(key),
     );
     applyParams(next);
@@ -401,12 +379,7 @@ function JobsPageContent() {
     }
   };
 
-  const convertFromBaseSalary = (value: number) => value / salaryUnitMeta.multiplier;
-  const convertToBaseSalary = (value: number) => Math.round(value * salaryUnitMeta.multiplier);
-  const salaryMinDisplay = salaryMin !== undefined ? formatSalaryInputValue(convertFromBaseSalary(salaryMin)) : "";
-  const salaryMaxDisplay = salaryMax !== undefined ? formatSalaryInputValue(convertFromBaseSalary(salaryMax)) : "";
-
-  const updateSalaryParam = (key: "salaryMin" | "salaryMax", rawValue: string) => {
+  const commitSalaryParam = (key: "salaryMin" | "salaryMax", rawValue: string) => {
     const next = new URLSearchParams(sp.toString());
     const trimmed = rawValue.trim();
     if (!trimmed) {
@@ -414,21 +387,27 @@ function JobsPageContent() {
     } else {
       const parsed = Number(trimmed);
       if (!Number.isFinite(parsed) || parsed < 0) return;
-      next.set(key, String(convertToBaseSalary(parsed)));
+      next.set(key, String(parsed));
     }
     next.delete("page");
     applyParams(next);
   };
 
+  const updateSalaryCurrency = (currency: string) => {
+    const next = new URLSearchParams(sp.toString());
+    next.set("salaryCurrency", currency);
+    next.delete("page");
+    applyParams(next);
+  };
+
   const salaryFilterLabel = useMemo(() => {
-    if (salaryMin === undefined && salaryMax === undefined) return "";
-    const fromLabel = salaryMin !== undefined ? formatSalaryFilterValue(salaryMin / salaryUnitMeta.multiplier) : undefined;
-    const toLabel = salaryMax !== undefined ? formatSalaryFilterValue(salaryMax / salaryUnitMeta.multiplier) : undefined;
-    if (fromLabel && toLabel) return `Mức lương: ${fromLabel} - ${toLabel} ${salaryUnitMeta.shortLabel}`;
-    if (fromLabel) return `Mức lương: từ ${fromLabel} ${salaryUnitMeta.shortLabel}`;
-    if (toLabel) return `Mức lương: đến ${toLabel} ${salaryUnitMeta.shortLabel}`;
+    if (!salaryMinParam && !salaryMaxParam) return "";
+    const fmt = (v: string) => Number(v).toLocaleString("vi-VN");
+    if (salaryMinParam && salaryMaxParam) return `Mức lương: ${fmt(salaryMinParam)} - ${fmt(salaryMaxParam)} ${salaryCurrency}`;
+    if (salaryMinParam) return `Mức lương: từ ${fmt(salaryMinParam)} ${salaryCurrency}`;
+    if (salaryMaxParam) return `Mức lương: đến ${fmt(salaryMaxParam)} ${salaryCurrency}`;
     return "";
-  }, [salaryMin, salaryMax, salaryUnitMeta]);
+  }, [salaryMinParam, salaryMaxParam, salaryCurrency]);
 
   const clearLocationAndWard = () => {
     const next = new URLSearchParams(sp.toString());
@@ -652,50 +631,40 @@ function JobsPageContent() {
               <div className="font-medium">Mức lương</div>
               <div className="flex flex-col gap-2 md:flex-row md:items-center">
                 <Input
-                  key={`salary-min-${salaryUnit}-${salaryMin ?? "empty"}`}
                   type="number"
                   min={0}
-                  step="0.1"
-                  defaultValue={salaryMinDisplay}
-                  placeholder="Từ"
-                  className="w-full md:min-w-[180px] md:flex-1"
+                  value={salaryMinInput}
+                  onChange={(e) => setSalaryMinInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key !== "Enter") return;
-                    updateSalaryParam("salaryMin", e.currentTarget.value || "");
+                    if (e.key === "Enter") commitSalaryParam("salaryMin", e.currentTarget.value);
                   }}
                   onBlur={(e) => {
-                    if ((e.currentTarget.value || "").trim() === salaryMinDisplay) return;
-                    updateSalaryParam("salaryMin", e.currentTarget.value || "");
+                    if (e.currentTarget.value !== salaryMinParam) commitSalaryParam("salaryMin", e.currentTarget.value);
                   }}
+                  placeholder={`Lương tối thiểu (${salaryCurrency})`}
+                  className="w-full md:min-w-[180px] md:flex-1"
                 />
                 <Input
-                  key={`salary-max-${salaryUnit}-${salaryMax ?? "empty"}`}
                   type="number"
                   min={0}
-                  step="0.1"
-                  defaultValue={salaryMaxDisplay}
-                  placeholder="Đến"
-                  className="w-full md:min-w-[180px] md:flex-1"
+                  value={salaryMaxInput}
+                  onChange={(e) => setSalaryMaxInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key !== "Enter") return;
-                    updateSalaryParam("salaryMax", e.currentTarget.value || "");
+                    if (e.key === "Enter") commitSalaryParam("salaryMax", e.currentTarget.value);
                   }}
                   onBlur={(e) => {
-                    if ((e.currentTarget.value || "").trim() === salaryMaxDisplay) return;
-                    updateSalaryParam("salaryMax", e.currentTarget.value || "");
+                    if (e.currentTarget.value !== salaryMaxParam) commitSalaryParam("salaryMax", e.currentTarget.value);
                   }}
+                  placeholder={`Lương tối đa (${salaryCurrency})`}
+                  className="w-full md:min-w-[180px] md:flex-1"
                 />
                 <select
-                  value={salaryUnit}
-                  onChange={(e) => toggleParam("salaryUnit", e.target.value, { resetPage: true })}
-                  className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-2 text-sm md:w-[170px] md:flex-none"
-                  aria-label="Đơn vị lương"
+                  className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm md:w-[100px] md:flex-none"
+                  value={salaryCurrency}
+                  onChange={(e) => updateSalaryCurrency(e.target.value)}
                 >
-                  {SALARY_UNIT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  <option value="VND">VND</option>
+                  <option value="USD">USD</option>
                 </select>
               </div>
             </div>

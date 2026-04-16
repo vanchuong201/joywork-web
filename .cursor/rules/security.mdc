@@ -12,3 +12,4 @@ alwaysApply: true
 - Respect permission-aware UX for company and account actions, but never assume UI checks replace backend authorization.
 - Do not introduce new token storage patterns or expose auth data outside the existing interceptor and store flow.
 - Do not hardcode public runtime config such as OAuth client IDs, API origins, or third-party keys in components; prefer `NEXT_PUBLIC_*` env variables.
+- Use CSS variable tokens (`var(--background)`, `var(--foreground)`, `var(--border)`, `var(--muted-foreground)`) for all component styling — never use Tailwind arbitrary values or abstract color tokens like `bg-popover` that depend on CSS variables not defined in this project.

@@ -1888,13 +1888,76 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const products = (profile?.products as any[]) || [];
   const recruitmentPrinciples = (profile?.recruitmentPrinciples as any[]) || [];
   const benefits = (profile?.benefits as any) || { financial: [], nonFinancial: [] };
-  const hrJourney = (profile?.hrJourney as any[]) || [];
+  const normalizeHrJourney = (value: any): any[] => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (value && Array.isArray(value.phases)) {
+      return value.phases.map((phase: string, index: number) => ({
+        step: String(index + 1).padStart(2, "0"),
+        title: phase,
+        desc: "",
+      }));
+    }
+    return [];
+  };
+  const hrJourney = normalizeHrJourney(profile?.hrJourney);
   const careerPath = (profile?.careerPath as any[]) || [];
   const salaryAndBonus = (profile?.salaryAndBonus as any) || { salary: [], bonus: [] };
   const training = (profile?.training as any) || { programs: [] };
   const gallery = (profile?.gallery as any[]) || [];
   const leaders = (profile?.leaders as any[]) || [];
-  const culture = (profile?.culture as any) || { typicalDay: [], testimonials: [] };
+  const normalizeTypicalDay = (value: any): any[] => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (typeof value === "string" && value.trim()) {
+      return [
+        {
+          time: "",
+          title: "Nhịp làm việc",
+          desc: value.trim(),
+          icon: "Coffee",
+        },
+      ];
+    }
+    return [];
+  };
+  const normalizeTestimonials = (value: any): any[] => {
+    if (Array.isArray(value)) {
+      return value.map((item: any) => {
+        if (typeof item === "string") {
+          return {
+            name: "",
+            role: "",
+            quote: item,
+            image: undefined,
+          };
+        }
+        return {
+          ...item,
+          image: typeof item?.image === "string" && item.image.trim() ? item.image : undefined,
+        };
+      });
+    }
+    if (typeof value === "string" && value.trim()) {
+      return [
+        {
+          name: "",
+          role: "",
+          quote: value.trim(),
+          image: undefined,
+        },
+      ];
+    }
+    return [];
+  };
+  const cultureRaw = (profile?.culture as any) || {};
+  const culture = {
+    ...cultureRaw,
+    typicalDay: normalizeTypicalDay(cultureRaw.typicalDay),
+    testimonials: normalizeTestimonials(cultureRaw.testimonials),
+  };
   const awards = (profile?.awards as any[]) || [];
   const story = (profile?.story as any) || { founderStory: {}, milestones: [] };
 
@@ -3265,7 +3328,13 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                 {testimonialsToRender.map((t: any, i: number) => (
                   <div key={i} className="bg-white rounded-3xl p-8 shadow-xl border border-slate-50 relative mt-10 w-[85vw] md:w-[350px] shrink-0">
                     <div className="absolute -top-10 left-8">
-                      <img src={t.image} alt={t.name} className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-lg" />
+                      {typeof t.image === "string" && t.image.trim() ? (
+                        <img src={t.image} alt={t.name || "Avatar"} className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-lg" />
+                      ) : (
+                        <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg bg-slate-100 text-slate-500 flex items-center justify-center font-semibold">
+                          {(t.name || "N/A").slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
                     </div>
                     <div className="mt-8">
                       <div className="text-6xl font-serif text-slate-200 absolute top-4 right-6 opacity-50">”</div>

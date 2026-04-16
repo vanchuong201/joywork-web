@@ -32,13 +32,9 @@ function CandidatesPageContent() {
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [page, setPage] = useState(1);
   const [keywordInput, setKeywordInput] = useState("");
-  const [skillsInput, setSkillsInput] = useState("");
   const [keyword, setKeyword] = useState("");
-  const [skillsText, setSkillsText] = useState("");
   const [locations, setLocations] = useState<string[]>([]);
   const [wardCodes, setWardCodes] = useState<string[]>([]);
-  const [education, setEducation] = useState("");
-  const [workMode, setWorkMode] = useState<"" | "onsite" | "remote" | "hybrid">("");
   const [salaryCurrency, setSalaryCurrency] = useState<"VND" | "USD">("VND");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
@@ -84,11 +80,6 @@ function CandidatesPageContent() {
     enabled: Boolean(selectedCompanyId),
   });
 
-  const skills = useMemo(
-    () => skillsText.split(",").map((part) => part.trim()).filter((part) => part.length > 0),
-    [skillsText]
-  );
-
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setKeyword(keywordInput.trim());
@@ -96,14 +87,6 @@ function CandidatesPageContent() {
     }, 350);
     return () => window.clearTimeout(timer);
   }, [keywordInput]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setSkillsText(skillsInput);
-      setPage(1);
-    }, 350);
-    return () => window.clearTimeout(timer);
-  }, [skillsInput]);
 
   useEffect(() => {
     const validWards = wardCodes.filter((code) =>
@@ -116,18 +99,15 @@ function CandidatesPageContent() {
 
   useEffect(() => {
     setPage(1);
-  }, [education, workMode, salaryCurrency, salaryMin, salaryMax]);
+  }, [salaryCurrency, salaryMin, salaryMax]);
 
   const candidatesQuery = useQuery({
     queryKey: [
       "cv-flip-candidates",
       page,
       keyword,
-      skillsText,
       locations,
       wardCodes[0] ?? "",
-      education,
-      workMode,
       salaryCurrency,
       salaryMin,
       salaryMax,
@@ -137,11 +117,8 @@ function CandidatesPageContent() {
         page,
         limit: 12,
         keyword: keyword || undefined,
-        skills: skills.length > 0 ? skills : undefined,
         locations: locations.length > 0 ? locations : undefined,
         ward: wardCodes[0] || undefined,
-        education: education || undefined,
-        workMode: workMode || undefined,
         salaryCurrency,
         salaryMin: salaryMin ? Number(salaryMin) : undefined,
         salaryMax: salaryMax ? Number(salaryMax) : undefined,
@@ -217,32 +194,35 @@ function CandidatesPageContent() {
         ) : null}
       </div>
 
-      <div className="flex items-center gap-2 border-b border-[var(--border)]">
-        <Button
-          variant="ghost"
-          className={`rounded-none border-b-2 px-2 ${
-            tab === TAB_ALL
-              ? "border-[var(--brand)] text-[var(--brand)]"
-              : "border-transparent text-[var(--muted-foreground)]"
-          }`}
-          onClick={() => switchTab(TAB_ALL)}
-        >
-          Tất cả ứng viên
-        </Button>
-        <Button
-          variant="ghost"
-          className={`rounded-none border-b-2 px-2 ${
-            tab === TAB_TALENT_POOL
-              ? "border-[var(--brand)] text-[var(--brand)]"
-              : "border-transparent text-[var(--muted-foreground)]"
-          }`}
-          onClick={() => switchTab(TAB_TALENT_POOL)}
-        >
-          Talent Pool
-        </Button>
+      <div className="flex items-center justify-between border-b border-[var(--border)]">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            className={`rounded-none border-b-2 px-2 ${
+              tab === TAB_ALL
+                ? "border-[var(--brand)] text-[var(--brand)]"
+                : "border-transparent text-[var(--muted-foreground)]"
+            }`}
+            onClick={() => switchTab(TAB_ALL)}
+          >
+            Tất cả ứng viên
+          </Button>
+          <Button
+            variant="ghost"
+            className={`rounded-none border-b-2 px-2 ${
+              tab === TAB_TALENT_POOL
+                ? "border-[var(--brand)] text-[var(--brand)]"
+                : "border-transparent text-[var(--muted-foreground)]"
+            }`}
+            onClick={() => switchTab(TAB_TALENT_POOL)}
+          >
+            Talent Pool
+          </Button>
+        </div>
+        {selectedCompany ? (
+          <CvFlipUsageBadge usage={usageQuery.data} />
+        ) : null}
       </div>
-
-      {selectedCompany ? <CvFlipUsageBadge usage={usageQuery.data} /> : null}
 
       {tab === TAB_ALL ? (
         <>
@@ -251,11 +231,6 @@ function CandidatesPageContent() {
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
               placeholder="Từ khóa trong CV (ưu tiên tiêu đề nghề nghiệp)"
-            />
-            <Input
-              value={skillsInput}
-              onChange={(e) => setSkillsInput(e.target.value)}
-              placeholder="Skills (phân tách dấu phẩy, hỗ trợ gần đúng)"
             />
             <ProvinceSelect
               multiple
@@ -275,17 +250,6 @@ function CandidatesPageContent() {
               }}
               placeholder="Chọn phường / xã"
             />
-            <Input value={education} onChange={(e) => setEducation(e.target.value)} placeholder="Học vấn" />
-            <select
-              className="h-10 rounded-md border border-[var(--border)] bg-white px-3 text-sm"
-              value={workMode}
-              onChange={(e) => setWorkMode(e.target.value as "" | "onsite" | "remote" | "hybrid")}
-            >
-              <option value="">Hình thức làm việc</option>
-              <option value="onsite">Onsite</option>
-              <option value="remote">Remote</option>
-              <option value="hybrid">Hybrid</option>
-            </select>
             <Input
               value={salaryMin}
               onChange={(e) => setSalaryMin(e.target.value)}
