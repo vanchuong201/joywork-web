@@ -13,6 +13,7 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import { cn } from "@/lib/utils";
+import { buildJobUrl } from "@/lib/job-url";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
@@ -26,6 +27,7 @@ import { createPortal } from "react-dom";
 import HashtagInput from "@/components/shared/HashtagInput";
 import CreateTicketModal from "@/components/tickets/CreateTicketModal";
 import useInView from "@/hooks/useInView";
+import { AutoLinkText } from "@/components/shared/AutoLinkText";
 
 // Video Modal for fullscreen video viewing
 function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => void }) {
@@ -358,7 +360,11 @@ const PostContent = memo(function PostContent({ content }: { content: string }) 
             expanded ? "" : "line-clamp-4 max-h-24 overflow-hidden",
           )}
         >
-          {content}
+          <AutoLinkText
+            text={content}
+            className="whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]"
+            linkClassName="text-sm"
+          />
         </p>
         {!expanded && showReadMore ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[var(--card)] to-transparent" />
@@ -889,7 +895,7 @@ const PostCard = memo(function PostCard({
               {post.jobs.map((j) => (
                 <Link
                   key={j.id}
-                  href={`/jobs/${j.id}`}
+                  href={buildJobUrl(j)}
                   target="_blank"
                   className="group flex items-center gap-3 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 hover:border-[var(--brand)]/50 hover:bg-[var(--muted)]/30 transition-all"
                 >

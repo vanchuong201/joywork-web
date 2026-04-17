@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import { buildJobUrl } from "@/lib/job-url";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -763,7 +764,7 @@ function JobsPageContent() {
                             <TooltipTrigger asChild>
                               <h3 
                                 className="text-base font-semibold text-[var(--foreground)] line-clamp-1 cursor-pointer hover:text-[var(--brand)] transition-colors"
-                                onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
+                                onClick={() => window.open(buildJobUrl(j), "_blank", "noopener,noreferrer")}
                               >
                                 {j.title}
                               </h3>
@@ -828,7 +829,7 @@ function JobsPageContent() {
                             <TooltipTrigger asChild>
                               <h3 
                                 className="text-sm font-semibold text-[var(--foreground)] line-clamp-1 cursor-pointer hover:text-[var(--brand)] transition-colors"
-                                onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
+                                onClick={() => window.open(buildJobUrl(j), "_blank", "noopener,noreferrer")}
                               >
                                 {j.title}
                               </h3>
@@ -1060,7 +1061,7 @@ function JobsPageContent() {
                             <TooltipTrigger asChild>
                               <h3 
                                 className="text-sm font-semibold text-[var(--foreground)] line-clamp-1 cursor-pointer hover:text-[var(--brand)] transition-colors"
-                                onClick={() => window.open(`/jobs/${j.id}`, "_blank", "noopener,noreferrer")}
+                                onClick={() => window.open(buildJobUrl(j), "_blank", "noopener,noreferrer")}
                               >
                                 {j.title}
                               </h3>

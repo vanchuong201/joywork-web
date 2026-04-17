@@ -5,9 +5,11 @@ import { Briefcase, MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { buildJobUrl } from "@/lib/job-url";
 
 export type RelatedJobItem = {
   id: string;
+  slug?: string | null;
   title: string;
   location?: string;
   locations?: string[];
@@ -70,7 +72,7 @@ export default function RelatedJobCard({ job, size = "featured", className }: Re
   const salary = formatSalary(job);
 
   return (
-    <Link href={`/jobs/${job.id}`} className={cn("group block", className)}>
+    <Link href={buildJobUrl(job)} className={cn("group block", className)}>
       <Card
         className={cn(
           "h-full border-[var(--border)] bg-[var(--card)]/90 shadow-none transition-all hover:-translate-y-0.5 hover:border-[var(--brand)]/50 hover:shadow-sm",

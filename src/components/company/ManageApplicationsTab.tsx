@@ -6,6 +6,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import api from "@/lib/api";
+import { buildJobUrl } from "@/lib/job-url";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -413,7 +414,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                             <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
                               <span className="font-medium text-[var(--muted-foreground)]">Vị trí:</span>
                               <Link
-                                href={`/jobs/${application.job.id}`}
+                                href={buildJobUrl(application.job)}
                                 target="_blank"
                                 className="text-[var(--brand)] hover:underline font-medium"
                               >
@@ -546,7 +547,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                         <div className="text-[var(--muted-foreground)]">
                           <span className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">Vị trí:</span>
                           <Link
-                            href={`/jobs/${application.job.id}`}
+                            href={buildJobUrl(application.job)}
                             target="_blank"
                             className="text-[var(--brand)] hover:underline font-medium text-sm line-clamp-1"
                           >

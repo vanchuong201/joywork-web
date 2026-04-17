@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, usePathname } from "next/navigation";
 import api from "@/lib/api";
+import { buildJobUrl } from "@/lib/job-url";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
@@ -372,7 +373,7 @@ export default function ManageJobsTab({ company }: Props) {
                             <button
                               className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
                               onClick={() => {
-                                window.open(`/jobs/${job.id}`, "_blank", "noopener,noreferrer");
+                                window.open(buildJobUrl(job), "_blank", "noopener,noreferrer");
                                 setOpenMenuId(null);
                               }}
                             >
@@ -472,7 +473,7 @@ export default function ManageJobsTab({ company }: Props) {
                           <button
                             className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
                             onClick={() => {
-                              window.open(`/jobs/${job.id}`, "_blank", "noopener,noreferrer");
+                              window.open(buildJobUrl(job), "_blank", "noopener,noreferrer");
                               setOpenMenuId(null);
                             }}
                           >

@@ -14,6 +14,7 @@ import { LayoutGrid, List, MapPin, Briefcase, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { buildJobUrl } from "@/lib/job-url";
 
 type SavedPostsResponse = {
   data: {
@@ -30,6 +31,7 @@ type SavedJobsResponse = {
       createdAt: string;
       job: {
         id: string;
+        slug?: string | null;
         title: string;
         isActive?: boolean;
         company: { id: string; name: string; slug: string; logoUrl?: string | null };
@@ -227,7 +229,7 @@ function SavedPageContent() {
                         </Link>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Link href={`/jobs/${j.id}`} target="_blank" className="font-medium hover:underline text-[var(--foreground)] truncate">
+                            <Link href={buildJobUrl(j)} target="_blank" className="font-medium hover:underline text-[var(--foreground)] truncate">
                               {j.title}
                             </Link>
                             <Badge className={cn(
@@ -251,7 +253,7 @@ function SavedPageContent() {
                           </div>
                           <div className="mt-3 flex gap-2">
                             <Button asChild size="sm" variant="outline">
-                              <Link href={`/jobs/${j.id}`} target="_blank">Xem chi tiết</Link>
+                              <Link href={buildJobUrl(j)} target="_blank">Xem chi tiết</Link>
                             </Button>
                             <Button
                               size="sm"
@@ -306,7 +308,7 @@ function SavedPageContent() {
                             {isActive ? "Đang tuyển" : "Đã đóng"}
                           </Badge>
                         </div>
-                        <Link href={`/jobs/${j.id}`} target="_blank" className="font-semibold text-sm text-[var(--foreground)] hover:underline line-clamp-2">
+                        <Link href={buildJobUrl(j)} target="_blank" className="font-semibold text-sm text-[var(--foreground)] hover:underline line-clamp-2">
                           {j.title}
                         </Link>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--muted-foreground)]">
@@ -317,7 +319,7 @@ function SavedPageContent() {
                         </div>
                         <div className="mt-auto flex gap-2 pt-2 border-t border-[var(--border)]">
                           <Button asChild size="sm" variant="outline" className="flex-1">
-                            <Link href={`/jobs/${j.id}`} target="_blank">Xem chi tiết</Link>
+                            <Link href={buildJobUrl(j)} target="_blank">Xem chi tiết</Link>
                           </Button>
                           <Button
                             size="sm"

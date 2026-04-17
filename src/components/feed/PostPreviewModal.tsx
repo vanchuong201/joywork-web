@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Play, Maximize2, X } from "lucide-react";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { createPortal } from "react-dom";
+import { AutoLinkText } from "@/components/shared/AutoLinkText";
 
 // Video Modal for fullscreen video viewing
 function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => void }) {
@@ -212,12 +213,14 @@ function MediaGrid({ images }: { images: MediaItem[] }) {
 
 function PostContent({ content }: { content: string }) {
   if (!content.trim()) return null;
-  
+
   return (
     <div className="mt-3">
-      <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]">
-        {content}
-      </p>
+      <AutoLinkText
+        text={content}
+        className="whitespace-pre-wrap text-sm leading-6 text-[var(--muted-foreground)]"
+        linkClassName="text-sm"
+      />
     </div>
   );
 }

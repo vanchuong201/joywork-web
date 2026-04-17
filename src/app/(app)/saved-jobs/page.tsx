@@ -2,6 +2,7 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import { buildJobUrl } from "@/lib/job-url";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import EmptyState from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ type FavoriteItem = {
   createdAt: string;
   job: {
     id: string;
+    slug?: string | null;
     title: string;
     location?: string | null;
     remote: boolean;
@@ -141,7 +143,7 @@ export default function SavedJobsPage() {
               </p>
             )}
             <div className="pt-2">
-              <Link href={`/jobs/${favorite.job.id}`} target="_blank" className="text-[var(--brand)] hover:underline">
+              <Link href={buildJobUrl(favorite.job)} target="_blank" className="text-[var(--brand)] hover:underline">
                 Xem chi tiết việc làm
               </Link>
             </div>
