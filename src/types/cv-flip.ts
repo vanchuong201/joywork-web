@@ -38,6 +38,9 @@ export type CvFlipCandidateCard = {
   expectedSalaryMax: number | null;
   salaryCurrency: string | null;
   workMode: string | null;
+  gender: string | null;
+  yearOfBirth: number | null;
+  educationLevel: string | null;
   experiences: CvFlipCandidateExperience[];
   educations: CvFlipCandidateEducation[];
 };

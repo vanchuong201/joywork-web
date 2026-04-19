@@ -24,6 +24,16 @@ const SELECTED_COMPANY_KEY = "cvFlip.selectedCompanyId";
 const TAB_ALL = "all";
 const TAB_TALENT_POOL = "talent-pool";
 
+const EDUCATION_LEVEL_OPTIONS = [
+  { value: "", label: "Tất cả trình độ" },
+  { value: "BACHELOR", label: "Đại học" },
+  { value: "COLLEGE", label: "Cao đẳng" },
+  { value: "HIGH_SCHOOL", label: "Trung học" },
+  { value: "MASTER", label: "Thạc sỹ" },
+  { value: "PHD", label: "Tiến sĩ" },
+  { value: "TRAINING_CENTER", label: "Trung tâm đào tạo" },
+];
+
 function CandidatesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,6 +48,13 @@ function CandidatesPageContent() {
   const [salaryCurrency, setSalaryCurrency] = useState<"VND" | "USD">("VND");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
+
+  // New filter states
+  const [gender, setGender] = useState<string>("");
+  const [yearOfBirthMin, setYearOfBirthMin] = useState("");
+  const [yearOfBirthMax, setYearOfBirthMax] = useState("");
+  const [educationLevel, setEducationLevel] = useState("");
+
   const tab = searchParams.get("tab") === TAB_TALENT_POOL ? TAB_TALENT_POOL : TAB_ALL;
 
   useEffect(() => {
@@ -99,7 +116,7 @@ function CandidatesPageContent() {
 
   useEffect(() => {
     setPage(1);
-  }, [salaryCurrency, salaryMin, salaryMax]);
+  }, [salaryCurrency, salaryMin, salaryMax, gender, yearOfBirthMin, yearOfBirthMax, educationLevel]);
 
   const candidatesQuery = useQuery({
     queryKey: [
@@ -111,6 +128,10 @@ function CandidatesPageContent() {
       salaryCurrency,
       salaryMin,
       salaryMax,
+      gender,
+      yearOfBirthMin,
+      yearOfBirthMax,
+      educationLevel,
     ],
     queryFn: () =>
       listCvFlipCandidates({
@@ -122,6 +143,10 @@ function CandidatesPageContent() {
         salaryCurrency,
         salaryMin: salaryMin ? Number(salaryMin) : undefined,
         salaryMax: salaryMax ? Number(salaryMax) : undefined,
+        gender: (gender as "MALE" | "FEMALE" | "OTHER") || undefined,
+        yearOfBirthMin: yearOfBirthMin ? Number(yearOfBirthMin) : undefined,
+        yearOfBirthMax: yearOfBirthMax ? Number(yearOfBirthMax) : undefined,
+        educationLevel: (educationLevel as "HIGH_SCHOOL" | "COLLEGE" | "BACHELOR" | "MASTER" | "PHD" | "TRAINING_CENTER") || undefined,
       }),
     enabled: initialized && !loading && !!user && !!selectedCompanyId,
   });
@@ -152,6 +177,21 @@ function CandidatesPageContent() {
     const qs = next.toString();
     router.replace(qs ? `/candidates?${qs}` : "/candidates");
   };
+
+  function handleClearFilters() {
+    setKeywordInput("");
+    setKeyword("");
+    setLocations([]);
+    setWardCodes([]);
+    setSalaryMin("");
+    setSalaryMax("");
+    setSalaryCurrency("VND");
+    setGender("");
+    setYearOfBirthMin("");
+    setYearOfBirthMax("");
+    setEducationLevel("");
+    setPage(1);
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
@@ -226,6 +266,7 @@ function CandidatesPageContent() {
 
       {tab === TAB_ALL ? (
         <>
+          {/* Row 1: keyword, locations, wards */}
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <Input
               value={keywordInput}
@@ -250,6 +291,10 @@ function CandidatesPageContent() {
               }}
               placeholder="Chọn phường / xã"
             />
+          </div>
+
+          {/* Row 2: salary filters */}
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
             <Input
               value={salaryMin}
               onChange={(e) => setSalaryMin(e.target.value)}
@@ -263,13 +308,80 @@ function CandidatesPageContent() {
               type="number"
             />
             <select
-              className="h-10 rounded-md border border-[var(--border)] bg-white px-3 text-sm"
+              className="h-10 rounded-md border border-[var(--border)] bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               value={salaryCurrency}
               onChange={(e) => setSalaryCurrency(e.target.value as "VND" | "USD")}
             >
               <option value="VND">VND</option>
               <option value="USD">USD</option>
             </select>
+          </div>
+
+          {/* Row 3: gender, year of birth, education level */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Gender */}
+            <div className="min-w-[140px]">
+              <select
+                className="h-10 w-full rounded-md border border-[var(--border)] bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                value={gender}
+                onChange={(e) => {
+                  setGender(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">Tất cả giới tính</option>
+                <option value="MALE">Nam</option>
+                <option value="FEMALE">Nữ</option>
+                <option value="OTHER">Khác</option>
+              </select>
+            </div>
+
+            {/* Year of birth range */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-500 whitespace-nowrap">Năm sinh:</span>
+              <Input
+                type="number"
+                placeholder="Từ"
+                min={1950}
+                max={2010}
+                value={yearOfBirthMin}
+                onChange={(e) => setYearOfBirthMin(e.target.value)}
+                className="w-[100px]"
+              />
+              <span className="text-slate-400">—</span>
+              <Input
+                type="number"
+                placeholder="Đến"
+                min={1950}
+                max={2010}
+                value={yearOfBirthMax}
+                onChange={(e) => setYearOfBirthMax(e.target.value)}
+                className="w-[100px]"
+              />
+            </div>
+
+            {/* Education level */}
+            <div className="min-w-[200px]">
+              <select
+                className="h-10 w-full rounded-md border border-[var(--border)] bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                value={educationLevel}
+                onChange={(e) => {
+                  setEducationLevel(e.target.value);
+                  setPage(1);
+                }}
+              >
+                {EDUCATION_LEVEL_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Clear filters */}
+            <Button variant="outline" onClick={handleClearFilters}>
+              Xóa lọc
+            </Button>
           </div>
 
           {candidatesQuery.error ? (
@@ -295,6 +407,9 @@ function CandidatesPageContent() {
                   expectedSalaryMax: candidate.expectedSalaryMax,
                   salaryCurrency: candidate.salaryCurrency,
                   workMode: candidate.workMode,
+                  gender: candidate.gender,
+                  yearOfBirth: candidate.yearOfBirth,
+                  educationLevel: candidate.educationLevel,
                   experiences: candidate.experiences,
                   educations: candidate.educations,
                 }}

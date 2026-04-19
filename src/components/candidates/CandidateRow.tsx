@@ -32,6 +32,9 @@ export type CandidateRowData = {
     degree: string;
     period: string | null;
   }>;
+  gender?: string | null;
+  yearOfBirth?: number | null;
+  educationLevel?: string | null;
 };
 
 interface CandidateRowProps {
@@ -57,6 +60,9 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
     workMode,
     experiences,
     educations,
+    gender,
+    yearOfBirth,
+    educationLevel,
   } = candidate;
 
   const [modalOpen, setModalOpen] = useState(false);

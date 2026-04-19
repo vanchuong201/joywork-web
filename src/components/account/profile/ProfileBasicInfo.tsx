@@ -47,6 +47,9 @@ const schema = z.object({
   github: optionalUrl,
   cvUrl: optionalUrl,
   isPublic: z.boolean().optional(),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().nullable(),
+  yearOfBirth: z.coerce.number().int().min(1900).max(new Date().getFullYear() - 16, "Bạn phải đủ 16 tuổi trở lên"),
+  educationLevel: z.enum(["NONE", "HIGH_SCHOOL", "COLLEGE", "BACHELOR", "MASTER", "PHD", "TRAINING_CENTER"]).optional().nullable(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -94,6 +97,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       github: profile.profile?.github || "",
       cvUrl: profile.profile?.cvUrl || "",
       isPublic: profile.profile?.isPublic ?? true,
+      gender: profile.profile?.gender ?? undefined,
+      yearOfBirth: profile.profile?.yearOfBirth ?? undefined,
+      educationLevel: profile.profile?.educationLevel ?? undefined,
     },
   });
 
@@ -146,6 +152,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       github: profile.profile?.github || "",
       cvUrl: profile.profile?.cvUrl || "",
       isPublic: profile.profile?.isPublic ?? true,
+      gender: profile.profile?.gender ?? undefined,
+      yearOfBirth: profile.profile?.yearOfBirth ?? undefined,
+      educationLevel: profile.profile?.educationLevel ?? undefined,
     });
     // Fallback: profile.avatar || user.avatar || null
     setAvatar(profile.profile?.avatar || profile.avatar || null);
@@ -348,6 +357,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       linkedin: "LinkedIn",
       github: "GitHub",
       cvUrl: "File CV",
+      gender: "Giới tính",
+      yearOfBirth: "Năm sinh",
+      educationLevel: "Trình độ học vấn",
     };
     return labels[fieldName] || fieldName;
   };
@@ -579,6 +591,56 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               <Label htmlFor="github">GitHub</Label>
               <Input id="github" {...register("github")} placeholder="https://github.com/username" />
               {errors.github && <p className="mt-1 text-sm text-red-500">{errors.github.message}</p>}
+            </div>
+          </div>
+
+          {/* Personal Info for CV */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <Label htmlFor="gender">Giới tính</Label>
+              <select
+                id="gender"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                {...register("gender")}
+              >
+                <option value="">Chưa chọn</option>
+                <option value="MALE">Nam</option>
+                <option value="FEMALE">Nữ</option>
+                <option value="OTHER">Khác</option>
+              </select>
+              {errors.gender && <p className="mt-1 text-sm text-red-500">{errors.gender.message}</p>}
+            </div>
+            <div>
+              <Label htmlFor="yearOfBirth">Năm sinh <span className="text-red-500">*</span></Label>
+              <Input
+                id="yearOfBirth"
+                type="number"
+                min={1900}
+                max={new Date().getFullYear() - 16}
+                placeholder="1995"
+                {...register("yearOfBirth")}
+              />
+              {errors.yearOfBirth && <p className="mt-1 text-sm text-red-500">{errors.yearOfBirth.message}</p>}
+              {!errors.yearOfBirth && !watch("yearOfBirth") && (
+                <p className="mt-1 text-xs text-amber-600">Vui lòng nhập năm sinh.</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="educationLevel">Trình độ học vấn</Label>
+              <select
+                id="educationLevel"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                {...register("educationLevel")}
+              >
+                <option value="">Chưa chọn</option>
+                <option value="HIGH_SCHOOL">Trung học</option>
+                <option value="COLLEGE">Cao đẳng</option>
+                <option value="BACHELOR">Đại học</option>
+                <option value="MASTER">Thạc sỹ</option>
+                <option value="PHD">Tiến sĩ</option>
+                <option value="TRAINING_CENTER">Trung tâm đào tạo</option>
+              </select>
+              {errors.educationLevel && <p className="mt-1 text-sm text-red-500">{errors.educationLevel.message}</p>}
             </div>
           </div>
 

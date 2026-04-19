@@ -12,7 +12,6 @@ import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import CandidateRow, { type CandidateRowData } from "@/components/candidates/CandidateRow";
 
-// Local types matching API response
 type CandidateExpApi = {
   id: string;
   role: string;
@@ -44,6 +43,9 @@ type CandidateProfile = {
   expectedCulture: string | null;
   title: string | null;
   fullName: string | null;
+  gender: string | null;
+  yearOfBirth: number | null;
+  educationLevel: string | null;
 };
 
 type Candidate = {
@@ -54,6 +56,9 @@ type Candidate = {
   slug: string | null;
   isPublic: boolean;
   profile: CandidateProfile | null;
+  gender: string | null;
+  yearOfBirth: number | null;
+  educationLevel: string | null;
   experiences: CandidateExpApi[];
   educations: CandidateEduApi[];
 };
@@ -63,17 +68,49 @@ type CandidatesResponse = {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 };
 
+const EDUCATION_LEVEL_OPTIONS = [
+  { value: "", label: "Tất cả trình độ" },
+  { value: "BACHELOR", label: "Đại học" },
+  { value: "COLLEGE", label: "Cao đẳng" },
+  { value: "HIGH_SCHOOL", label: "Trung học" },
+  { value: "MASTER", label: "Thạc sỹ" },
+  { value: "PHD", label: "Tiến sĩ" },
+  { value: "TRAINING_CENTER", label: "Trung tâm đào tạo" },
+];
+
 export default function TalentPoolExplorer() {
   const [q, setQ] = useState("");
   const [provinceCode, setProvinceCode] = useState<string | null>(null);
   const [wardCode, setWardCode] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+
+  // New filter states
+  const [gender, setGender] = useState<string>("");
+  const [yearOfBirthMin, setYearOfBirthMin] = useState<string>("");
+  const [yearOfBirthMax, setYearOfBirthMax] = useState<string>("");
+  const [educationLevel, setEducationLevel] = useState<string>("");
+
+  // Debounced search values
   const [searchQ, setSearchQ] = useState("");
   const [searchLoc, setSearchLoc] = useState<string | null>(null);
   const [searchWard, setSearchWard] = useState<string | null>(null);
+  const [searchGender, setSearchGender] = useState<string>("");
+  const [searchYearOfBirthMin, setSearchYearOfBirthMin] = useState<string>("");
+  const [searchYearOfBirthMax, setSearchYearOfBirthMax] = useState<string>("");
+  const [searchEducationLevel, setSearchEducationLevel] = useState<string>("");
 
   const { data, isLoading } = useQuery<CandidatesResponse>({
-    queryKey: ["talent-pool-candidates", searchQ, searchLoc, searchWard, page],
+    queryKey: [
+      "talent-pool-candidates",
+      searchQ,
+      searchLoc,
+      searchWard,
+      searchGender,
+      searchYearOfBirthMin,
+      searchYearOfBirthMax,
+      searchEducationLevel,
+      page,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set("page", String(page));
@@ -81,6 +118,10 @@ export default function TalentPoolExplorer() {
       if (searchQ) params.set("q", searchQ);
       if (searchLoc) params.set("location", searchLoc);
       if (searchWard) params.set("ward", searchWard);
+      if (searchGender) params.set("gender", searchGender);
+      if (searchYearOfBirthMin) params.set("yearOfBirthMin", searchYearOfBirthMin);
+      if (searchYearOfBirthMax) params.set("yearOfBirthMax", searchYearOfBirthMax);
+      if (searchEducationLevel) params.set("educationLevel", searchEducationLevel);
       const res = await api.get(`/api/talent-pool/candidates?${params}`);
       return res.data.data;
     },
@@ -90,6 +131,28 @@ export default function TalentPoolExplorer() {
     setSearchQ(q.trim());
     setSearchLoc(provinceCode);
     setSearchWard(wardCode);
+    setSearchGender(gender);
+    setSearchYearOfBirthMin(yearOfBirthMin);
+    setSearchYearOfBirthMax(yearOfBirthMax);
+    setSearchEducationLevel(educationLevel);
+    setPage(1);
+  }
+
+  function handleClearFilters() {
+    setQ("");
+    setProvinceCode(null);
+    setWardCode(null);
+    setGender("");
+    setYearOfBirthMin("");
+    setYearOfBirthMax("");
+    setEducationLevel("");
+    setSearchQ("");
+    setSearchLoc(null);
+    setSearchWard(null);
+    setSearchGender("");
+    setSearchYearOfBirthMin("");
+    setSearchYearOfBirthMax("");
+    setSearchEducationLevel("");
     setPage(1);
   }
 
@@ -143,21 +206,67 @@ export default function TalentPoolExplorer() {
             placeholder={provinceCode ? "Chọn phường / xã" : "Chọn tỉnh / thành trước"}
           />
         </div>
+      </div>
+
+      {/* New filters: gender, year of birth, education level */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Gender */}
+        <div className="min-w-[140px]">
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="">Tất cả giới tính</option>
+            <option value="MALE">Nam</option>
+            <option value="FEMALE">Nữ</option>
+            <option value="OTHER">Khác</option>
+          </select>
+        </div>
+
+        {/* Year of birth range */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500 whitespace-nowrap">Năm sinh:</span>
+          <Input
+            type="number"
+            placeholder="Từ"
+            min={1950}
+            max={2010}
+            value={yearOfBirthMin}
+            onChange={(e) => setYearOfBirthMin(e.target.value)}
+            className="w-[100px]"
+          />
+          <span className="text-slate-400">—</span>
+          <Input
+            type="number"
+            placeholder="Đến"
+            min={1950}
+            max={2010}
+            value={yearOfBirthMax}
+            onChange={(e) => setYearOfBirthMax(e.target.value)}
+            className="w-[100px]"
+          />
+        </div>
+
+        {/* Education level */}
+        <div className="min-w-[200px]">
+          <select
+            value={educationLevel}
+            onChange={(e) => setEducationLevel(e.target.value)}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {EDUCATION_LEVEL_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <Button onClick={handleSearch}>
           <Search className="mr-2 h-4 w-4" />Tìm kiếm
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            setQ("");
-            setProvinceCode(null);
-            setWardCode(null);
-            setSearchQ("");
-            setSearchLoc(null);
-            setSearchWard(null);
-            setPage(1);
-          }}
-        >
+        <Button variant="outline" onClick={handleClearFilters}>
           Xóa lọc
         </Button>
       </div>
@@ -192,6 +301,9 @@ export default function TalentPoolExplorer() {
                 expectedSalaryMax: c.profile?.expectedSalaryMax ?? null,
                 salaryCurrency: c.profile?.salaryCurrency ?? null,
                 workMode: c.profile?.workMode ?? null,
+                gender: c.gender,
+                yearOfBirth: c.yearOfBirth,
+                educationLevel: c.educationLevel,
                 experiences: c.experiences,
                 educations: c.educations,
               }}

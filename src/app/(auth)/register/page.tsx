@@ -25,6 +25,7 @@ const schema = z.object({
     .optional()
     .or(z.literal("")),
   password: z.string().min(6, "Mật khẩu cần ít nhất 6 ký tự"),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().default("MALE"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -161,6 +162,20 @@ function RegisterPageContent() {
               )}
               {...register("phone")}
             />
+          </FormField>
+          <FormField label="Giới tính" error={errors.gender?.message}>
+            <select
+              className={cn(
+                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                errors.gender ? "border-red-500 focus-visible:ring-red-500" : undefined
+              )}
+              aria-invalid={Boolean(errors.gender)}
+              {...register("gender")}
+            >
+              <option value="MALE">Nam</option>
+              <option value="FEMALE">Nữ</option>
+              <option value="OTHER">Khác</option>
+            </select>
           </FormField>
           <FormField label="Mật khẩu" error={errors.password?.message}>
             <div className="relative">

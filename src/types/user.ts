@@ -64,6 +64,9 @@ export interface UserProfile {
   workMode?: string | null;
   expectedCulture?: string | null;
   careerGoals?: string[];
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
+  yearOfBirth: number;
+  educationLevel?: 'NONE' | 'HIGH_SCHOOL' | 'COLLEGE' | 'BACHELOR' | 'MASTER' | 'PHD' | 'TRAINING_CENTER' | null;
   createdAt: string;
   updatedAt: string;
 }
