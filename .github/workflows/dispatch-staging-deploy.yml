@@ -1,4 +1,4 @@
-name: Dispatch Staging Deploy
+name: WEB - Dispatch Staging Deploy
 
 on:
   push:
