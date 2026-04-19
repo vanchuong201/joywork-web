@@ -31,8 +31,35 @@ export type CvFlipCandidateCard = {
   name: string | null;
   avatar: string | null;
   headline: string | null;
+  title: string | null;
   skills: string[];
   locations: string[];
+  expectedSalaryMin: number | null;
+  expectedSalaryMax: number | null;
+  salaryCurrency: string | null;
+  workMode: string | null;
+  experiences: CvFlipCandidateExperience[];
+  educations: CvFlipCandidateEducation[];
+};
+
+export type CvFlipCandidateExperience = {
+  id: string;
+  role: string;
+  company: string;
+  period: string | null;
+  desc: string | null;
+  achievements: string[];
+  order: number;
+};
+
+export type CvFlipCandidateEducation = {
+  id: string;
+  school: string;
+  degree: string;
+  period: string | null;
+  gpa: string | null;
+  honors: string | null;
+  order: number;
 };
 
 export type CvFlipCandidatesResponse = {

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +11,7 @@ import {
 } from "@/lib/api/cv-flip";
 import CompanySelectorModal from "@/components/candidates/CompanySelectorModal";
 import CvFlipUsageBadge from "@/components/candidates/CvFlipUsageBadge";
+import CandidateRow from "@/components/candidates/CandidateRow";
 import TalentPoolExplorer from "@/components/talent-pool/TalentPoolExplorer";
 import TalentPoolLocked from "@/components/talent-pool/TalentPoolLocked";
 import { Button } from "@/components/ui/button";
@@ -278,26 +278,27 @@ function CandidatesPageContent() {
             </div>
           ) : null}
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="space-y-3">
             {(candidatesQuery.data?.candidates ?? []).map((candidate) => (
-              <div key={candidate.userId} className="rounded-xl border border-[var(--border)] bg-white p-4">
-                <p className="font-semibold">{candidate.name || "Ứng viên"}</p>
-                <p className="mt-1 text-sm text-[var(--muted-foreground)]">{candidate.headline || "Chưa cập nhật headline"}</p>
-                <p className="mt-2 text-xs text-[var(--muted-foreground)]">
-                  Kỹ năng: {candidate.skills.slice(0, 5).join(", ") || "Chưa cập nhật"}
-                </p>
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  Địa điểm: {candidate.locations.join(", ") || "Chưa cập nhật"}
-                </p>
-                <div className="mt-3">
-                  <Link
-                    href={`/candidates/${encodeURIComponent(candidate.slug || candidate.userId)}`}
-                    className="text-sm font-medium text-[var(--brand)] hover:underline"
-                  >
-                    Xem chi tiết
-                  </Link>
-                </div>
-              </div>
+              <CandidateRow
+                key={candidate.userId}
+                candidate={{
+                  userId: candidate.userId,
+                  slug: candidate.slug,
+                  name: candidate.name,
+                  avatar: candidate.avatar,
+                  headline: candidate.headline,
+                  title: candidate.title,
+                  skills: candidate.skills,
+                  locations: candidate.locations,
+                  expectedSalaryMin: candidate.expectedSalaryMin,
+                  expectedSalaryMax: candidate.expectedSalaryMax,
+                  salaryCurrency: candidate.salaryCurrency,
+                  workMode: candidate.workMode,
+                  experiences: candidate.experiences,
+                  educations: candidate.educations,
+                }}
+              />
             ))}
           </div>
 

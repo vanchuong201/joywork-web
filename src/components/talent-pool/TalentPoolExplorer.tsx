@@ -8,10 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Search, Sparkles, ChevronLeft, ChevronRight, User } from "lucide-react";
-import Link from "next/link";
-import { formatSalaryRange } from "@/lib/provinces";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
+import CandidateRow, { type CandidateRowData } from "@/components/candidates/CandidateRow";
+
+// Local types matching API response
+type CandidateExpApi = {
+  id: string;
+  role: string;
+  company: string;
+  period: string | null;
+};
+
+type CandidateEduApi = {
+  id: string;
+  school: string;
+  degree: string;
+  period: string | null;
+};
 
 type CandidateProfile = {
   avatar: string | null;
@@ -19,6 +33,7 @@ type CandidateProfile = {
   bio: string | null;
   skills: string[];
   location: string | null;
+  locations: string[];
   wardCodes?: string[];
   knowledge: string[];
   attitude: string[];
@@ -27,6 +42,8 @@ type CandidateProfile = {
   salaryCurrency: string | null;
   workMode: string | null;
   expectedCulture: string | null;
+  title: string | null;
+  fullName: string | null;
 };
 
 type Candidate = {
@@ -37,6 +54,8 @@ type Candidate = {
   slug: string | null;
   isPublic: boolean;
   profile: CandidateProfile | null;
+  experiences: CandidateExpApi[];
+  educations: CandidateEduApi[];
 };
 
 type CandidatesResponse = {
@@ -145,9 +164,9 @@ export default function TalentPoolExplorer() {
 
       {/* Results */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-52 rounded-xl" />
+            <Skeleton key={i} className="h-40 rounded-xl" />
           ))}
         </div>
       ) : candidates.length === 0 ? (
@@ -156,9 +175,27 @@ export default function TalentPoolExplorer() {
           <p className="text-slate-500">Không tìm thấy ứng viên phù hợp.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-3">
           {candidates.map((c) => (
-            <CandidateCard key={c.memberId} candidate={c} />
+            <CandidateRow
+              key={c.memberId}
+              candidate={{
+                userId: c.userId,
+                slug: c.slug,
+                name: c.profile?.fullName || c.name,
+                avatar: c.profile?.avatar ?? null,
+                headline: c.profile?.headline ?? null,
+                title: c.profile?.title ?? null,
+                skills: c.profile?.skills ?? [],
+                locations: c.profile?.locations ?? [],
+                expectedSalaryMin: c.profile?.expectedSalaryMin ?? null,
+                expectedSalaryMax: c.profile?.expectedSalaryMax ?? null,
+                salaryCurrency: c.profile?.salaryCurrency ?? null,
+                workMode: c.profile?.workMode ?? null,
+                experiences: c.experiences,
+                educations: c.educations,
+              }}
+            />
           ))}
         </div>
       )}
@@ -176,60 +213,5 @@ export default function TalentPoolExplorer() {
         </div>
       )}
     </div>
-  );
-}
-
-function CandidateCard({ candidate }: { candidate: Candidate }) {
-  const { name, slug, profile } = candidate;
-  const headline = profile?.headline?.trim() || "Chưa cập nhật tiêu đề nghề nghiệp";
-  const shortBio = profile?.bio?.trim() || "Ứng viên chưa cập nhật giới thiệu ngắn.";
-
-  return (
-    <Link
-      href={slug ? `/candidates/${slug}` : "#"}
-      className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
-    >
-      <div className="shrink-0">
-        {profile?.avatar ? (
-          <img src={profile.avatar} alt="" className="h-12 w-12 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-950/30">
-            <User className="h-6 w-6 text-blue-500" />
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-900 group-hover:text-blue-600 dark:text-white">
-          {name ?? "Ứng viên"}
-        </p>
-        <p className="mt-1 truncate text-xs text-slate-500">{headline}</p>
-        <p className="mt-2 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">{shortBio}</p>
-        {profile?.skills?.length ? (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {profile.skills.slice(0, 4).map((s) => (
-              <Badge key={s} variant="secondary" className="text-[10px]">
-                {s}
-              </Badge>
-            ))}
-            {profile.skills.length > 4 ? (
-              <Badge variant="outline" className="text-[10px]">
-                +{profile.skills.length - 4}
-              </Badge>
-            ) : null}
-          </div>
-        ) : null}
-        {(profile?.expectedSalaryMin != null || profile?.expectedSalaryMax != null) && (
-          <p className="mt-2 text-[11px] text-slate-500">
-            💰:{" "}
-            {formatSalaryRange(
-              profile?.expectedSalaryMin ?? null,
-              profile?.expectedSalaryMax ?? null,
-              (profile?.salaryCurrency as "VND" | "USD") || "VND"
-            )}{" "}
-            {profile?.salaryCurrency || "VND"}
-          </p>
-        )}
-      </div>
-    </Link>
   );
 }
