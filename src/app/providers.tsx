@@ -7,6 +7,7 @@ import { PropsWithChildren } from "react";
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/useAuth";
 import { AuthPromptProvider } from "@/contexts/AuthPromptContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function Providers({ children }: PropsWithChildren) {
   const fetchMe = useAuthStore((s) => s.fetchMe);
@@ -23,10 +24,12 @@ export default function Providers({ children }: PropsWithChildren) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
       <ReactQueryProvider>
-        <AuthPromptProvider>
-          {children}
-          <Toaster richColors />
-        </AuthPromptProvider>
+        <TooltipProvider delayDuration={200}>
+          <AuthPromptProvider>
+            {children}
+            <Toaster richColors />
+          </AuthPromptProvider>
+        </TooltipProvider>
       </ReactQueryProvider>
     </ThemeProvider>
   );

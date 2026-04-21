@@ -227,3 +227,17 @@ export function formatSalaryRange(
   if (!min && max) return `Đến ${formatSalary(max, currency)}`;
   return `${formatSalary(min!, currency)} - ${formatSalary(max!, currency)}`;
 }
+
+/**
+ * Resolve display label cho một ward code dạng "provinceCode/wardCode" (VD "ha-noi/001").
+ * Trả về "wardCode — Province Name" hoặc "Province Name" nếu không parse được.
+ * Lưu ý: tên phường/xã cần fetch từ API /api/locations/wards.
+ */
+export function getWardDisplayLabel(wardCode: string): string {
+  const parts = wardCode.split("/");
+  if (parts.length === 2) {
+    const provinceName = getProvinceNameByCode(parts[0]) || parts[0];
+    return `${parts[1]} — ${provinceName}`;
+  }
+  return getProvinceDisplayLabel(wardCode);
+}

@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import ProfileDiscoverySettings from "@/components/account/profile/ProfileDiscoverySettings";
 import { toast } from "sonner";
 import { uploadProfileAvatar, uploadProfileCV } from "@/lib/uploads";
 import Image from "next/image";
@@ -42,14 +41,15 @@ const schema = z.object({
   contactPhone: z.string().max(50, "Số điện thoại tối đa 50 ký tự").optional(),
   locations: z.array(z.string()).optional(),
   wardCodes: z.array(z.string()).optional(),
+  specificAddress: z.string().max(255, "Địa chỉ cụ thể tối đa 255 ký tự").optional(),
   website: optionalUrl,
   linkedin: optionalUrl,
   github: optionalUrl,
   cvUrl: optionalUrl,
   isPublic: z.boolean().optional(),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().nullable(),
-  yearOfBirth: z.coerce.number().int().min(1900).max(new Date().getFullYear() - 16, "Bạn phải đủ 16 tuổi trở lên"),
-  educationLevel: z.enum(["NONE", "HIGH_SCHOOL", "COLLEGE", "BACHELOR", "MASTER", "PHD", "TRAINING_CENTER"]).optional().nullable(),
+  yearOfBirth: z.coerce.number().int().min(1900).max(new Date().getFullYear() - 16, "Bạn phải đủ 16 tuổi trở lên").optional().nullable(),
+  educationLevel: z.enum(["TRAINING_CENTER", "INTERMEDIATE", "COLLEGE", "BACHELOR", "MASTER", "PHD"]).optional().nullable(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -81,7 +81,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     setError,
     formState: { errors, isDirty },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       // fullName: fallback to profile.name if fullName is not set
       fullName: profile.profile?.fullName || profile.name || "",
@@ -92,6 +92,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       bio: profile.profile?.bio || "",
       locations: profile.profile?.locations || [],
       wardCodes: profile.profile?.wardCodes || [],
+      specificAddress: profile.profile?.specificAddress || "",
       website: profile.profile?.website || "",
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
@@ -109,6 +110,10 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const contactEmailValue = watch("contactEmail");
   const contactPhoneValue = watch("contactPhone");
   const locationValues = watch("locations") || [];
+  const wardCodeValue = watch("wardCodes")?.[0] || null;
+  const genderValue = watch("gender");
+  const yearOfBirthValue = watch("yearOfBirth");
+  const educationLevelValue = watch("educationLevel");
 
   useEffect(() => {
     const allowed = new Set(locationValues);
@@ -121,6 +126,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
 
   const isAvatarMissing = !avatar;
   const isFullNameMissing = !fullNameValue?.trim();
+  const isGenderMissing = !genderValue?.trim();
+  const isYearOfBirthMissing = !yearOfBirthValue;
+  const isEducationLevelMissing = !educationLevelValue;
   const isTitleMissing = !titleValue?.trim();
   const isBioMissing = !bioValue?.trim();
   const isContactEmailMissing = !contactEmailValue?.trim();
@@ -129,11 +137,14 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const missingRequiredFields = [
     isAvatarMissing ? "Avatar" : null,
     isFullNameMissing ? "Họ tên đầy đủ" : null,
-    isTitleMissing ? "Tiêu đề nghề nghiệp" : null,
+    isTitleMissing ? "Vị trí ứng tuyển" : null,
     isBioMissing ? "Giới thiệu" : null,
     isContactEmailMissing ? "Email liên hệ trên CV" : null,
     isContactPhoneMissing ? "Số điện thoại liên hệ trên CV" : null,
     isLocationMissing ? "Địa điểm" : null,
+    isGenderMissing ? "Giới tính" : null,
+    isYearOfBirthMissing ? "Năm sinh" : null,
+    isEducationLevelMissing ? "Trình độ học vấn" : null,
   ].filter(Boolean) as string[];
 
   useEffect(() => {
@@ -147,6 +158,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       bio: profile.profile?.bio || "",
       locations: profile.profile?.locations || [],
       wardCodes: profile.profile?.wardCodes || [],
+      specificAddress: profile.profile?.specificAddress || "",
       website: profile.profile?.website || "",
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
@@ -347,12 +359,13 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const getFieldLabel = (fieldName: string): string => {
     const labels: Record<string, string> = {
       fullName: "Họ tên đầy đủ",
-      title: "Tiêu đề nghề nghiệp",
-      headline: "Tiêu đề ngắn",
+      title: "Vị trí ứng tuyển",
+      headline: "Mô tả ngắn",
       bio: "Giới thiệu",
       contactEmail: "Email liên hệ",
       contactPhone: "Số điện thoại",
       locations: "Địa điểm",
+      specificAddress: "Địa chỉ cụ thể",
       website: "Website",
       linkedin: "LinkedIn",
       github: "GitHub",
@@ -482,15 +495,15 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           {/* Title & Headline */}
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label htmlFor="title">Tiêu đề nghề nghiệp</Label>
+              <Label htmlFor="title">Vị trí ứng tuyển</Label>
               <Input id="title" {...register("title")} placeholder="Lập trình viên Full-stack" />
               {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>}
               {!errors.title && isTitleMissing && (
-                <p className="mt-1 text-xs text-amber-600">Vui lòng nhập tiêu đề nghề nghiệp.</p>
+                <p className="mt-1 text-xs text-amber-600">Vui lòng nhập vị trí ứng tuyển.</p>
               )}
             </div>
             <div>
-              <Label htmlFor="headline">Tiêu đề ngắn</Label>
+              <Label htmlFor="headline">Mô tả ngắn</Label>
               <Input id="headline" {...register("headline")} placeholder="Lập trình viên giàu kinh nghiệm..." />
               {errors.headline && <p className="mt-1 text-sm text-red-500">{errors.headline.message}</p>}
             </div>
@@ -547,36 +560,46 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           {/* Location & Website */}
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>Địa điểm</Label>
-              <ProvinceSelect
-                multiple
-                values={watch("locations") || []}
-                onChangeValues={(vals) => setValue("locations", vals, { shouldDirty: true })}
-                className="mt-1"
-              />
-              {errors.locations && <p className="mt-1 text-sm text-red-500">{errors.locations.message}</p>}
-              {!errors.locations && isLocationMissing && (
-                <p className="mt-1 text-xs text-amber-600">Vui lòng chọn ít nhất 1 địa điểm.</p>
-              )}
-            </div>
-            <div>
               <Label htmlFor="website">Website</Label>
               <Input id="website" {...register("website")} placeholder="https://your-website.com" />
               {errors.website && <p className="mt-1 text-sm text-red-500">{errors.website.message}</p>}
             </div>
           </div>
 
+          {/* Address: Province + Ward on same row, then Specific Address */}
           <div>
-            <Label>Phường / xã chi tiết (tùy chọn)</Label>
-            <WardSelect
-              className="mt-1"
-              provinceCodes={watch("locations") || []}
-              values={watch("wardCodes") || []}
-              onChangeValues={(vals) => setValue("wardCodes", vals, { shouldDirty: true })}
+            <Label>Địa chỉ nơi ở hiện tại</Label>
+            <div className="grid gap-4 md:grid-cols-2 mt-1">
+              <ProvinceSelect
+                value={locationValues[0] || null}
+                onChange={(val) => {
+                  setValue("locations", val ? [val] : [], { shouldDirty: true });
+                  // Clear ward when province changes
+                  setValue("wardCodes", [], { shouldDirty: true });
+                }}
+              />
+              <WardSelect
+                provinceCodes={locationValues}
+                value={wardCodeValue}
+                onChange={(val) => setValue("wardCodes", val ? [val] : [], { shouldDirty: true })}
+              />
+            </div>
+            {errors.locations && <p className="mt-1 text-sm text-red-500">{errors.locations.message}</p>}
+            {!errors.locations && isLocationMissing && (
+              <p className="mt-1 text-xs text-amber-600">Vui lòng chọn địa điểm.</p>
+            )}
+          </div>
+
+          <div>
+            {/* <Label htmlFor="specificAddress">Địa chỉ cụ thể</Label> */}
+            <Input
+              id="specificAddress"
+              {...register("specificAddress")}
+              placeholder="Số nhà, tên đường, khu xóm"
             />
-            {errors.wardCodes && <p className="mt-1 text-sm text-red-500">{errors.wardCodes.message}</p>}
+            {errors.specificAddress && <p className="mt-1 text-sm text-red-500">{errors.specificAddress.message}</p>}
             <p className="mt-1 text-xs text-slate-500">
-              Chọn sau khi đã chọn tỉnh/thành. Có thể bỏ qua nếu chỉ cần mức tỉnh/thành.
+              Ví dụ: 123 Nguyễn Trãi, Phường Bến Thành, Quận 1
             </p>
           </div>
 
@@ -606,7 +629,6 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
                 <option value="">Chưa chọn</option>
                 <option value="MALE">Nam</option>
                 <option value="FEMALE">Nữ</option>
-                <option value="OTHER">Khác</option>
               </select>
               {errors.gender && <p className="mt-1 text-sm text-red-500">{errors.gender.message}</p>}
             </div>
@@ -633,12 +655,12 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
                 {...register("educationLevel")}
               >
                 <option value="">Chưa chọn</option>
-                <option value="HIGH_SCHOOL">Trung học</option>
+                <option value="TRAINING_CENTER">Trung tâm đào tạo</option>
+                <option value="INTERMEDIATE">Trung cấp</option>
                 <option value="COLLEGE">Cao đẳng</option>
                 <option value="BACHELOR">Đại học</option>
                 <option value="MASTER">Thạc sỹ</option>
                 <option value="PHD">Tiến sĩ</option>
-                <option value="TRAINING_CENTER">Trung tâm đào tạo</option>
               </select>
               {errors.educationLevel && <p className="mt-1 text-sm text-red-500">{errors.educationLevel.message}</p>}
             </div>

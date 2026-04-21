@@ -15,45 +15,36 @@ import CandidateRow from "@/components/candidates/CandidateRow";
 import TalentPoolExplorer from "@/components/talent-pool/TalentPoolExplorer";
 import TalentPoolLocked from "@/components/talent-pool/TalentPoolLocked";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import ProvinceSelect from "@/components/ui/province-select";
-import WardSelect from "@/components/ui/ward-select";
 import api from "@/lib/api";
+import {
+  CandidateFilterControls,
+  useCandidateFilters,
+} from "@/components/candidates/CandidateFilters";
 
 const SELECTED_COMPANY_KEY = "cvFlip.selectedCompanyId";
 const TAB_ALL = "all";
 const TAB_TALENT_POOL = "talent-pool";
 
-const EDUCATION_LEVEL_OPTIONS = [
-  { value: "", label: "Tất cả trình độ" },
-  { value: "BACHELOR", label: "Đại học" },
-  { value: "COLLEGE", label: "Cao đẳng" },
-  { value: "HIGH_SCHOOL", label: "Trung học" },
-  { value: "MASTER", label: "Thạc sỹ" },
-  { value: "PHD", label: "Tiến sĩ" },
-  { value: "TRAINING_CENTER", label: "Trung tâm đào tạo" },
-];
-
 function CandidatesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, initialized, loading } = useAuthStore();
+  const { values: filters, setValues, clearFilters } = useCandidateFilters();
+  const {
+    keyword,
+    locations,
+    wardCodes,
+    salaryCurrency,
+    salaryMin,
+    salaryMax,
+    gender,
+    yearOfBirthMin,
+    yearOfBirthMax,
+    educationLevels,
+    page,
+  } = filters;
 
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
-  const [page, setPage] = useState(1);
-  const [keywordInput, setKeywordInput] = useState("");
-  const [keyword, setKeyword] = useState("");
-  const [locations, setLocations] = useState<string[]>([]);
-  const [wardCodes, setWardCodes] = useState<string[]>([]);
-  const [salaryCurrency, setSalaryCurrency] = useState<"VND" | "USD">("VND");
-  const [salaryMin, setSalaryMin] = useState("");
-  const [salaryMax, setSalaryMax] = useState("");
-
-  // New filter states
-  const [gender, setGender] = useState<string>("");
-  const [yearOfBirthMin, setYearOfBirthMin] = useState("");
-  const [yearOfBirthMax, setYearOfBirthMax] = useState("");
-  const [educationLevel, setEducationLevel] = useState("");
 
   const tab = searchParams.get("tab") === TAB_TALENT_POOL ? TAB_TALENT_POOL : TAB_ALL;
 
@@ -97,27 +88,6 @@ function CandidatesPageContent() {
     enabled: Boolean(selectedCompanyId),
   });
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setKeyword(keywordInput.trim());
-      setPage(1);
-    }, 350);
-    return () => window.clearTimeout(timer);
-  }, [keywordInput]);
-
-  useEffect(() => {
-    const validWards = wardCodes.filter((code) =>
-      locations.some((provinceCode) => code.startsWith(`${provinceCode}/`))
-    );
-    if (validWards.length !== wardCodes.length) {
-      setWardCodes(validWards);
-    }
-  }, [locations, wardCodes]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [salaryCurrency, salaryMin, salaryMax, gender, yearOfBirthMin, yearOfBirthMax, educationLevel]);
-
   const candidatesQuery = useQuery({
     queryKey: [
       "cv-flip-candidates",
@@ -131,7 +101,7 @@ function CandidatesPageContent() {
       gender,
       yearOfBirthMin,
       yearOfBirthMax,
-      educationLevel,
+      educationLevels,
     ],
     queryFn: () =>
       listCvFlipCandidates({
@@ -143,10 +113,20 @@ function CandidatesPageContent() {
         salaryCurrency,
         salaryMin: salaryMin ? Number(salaryMin) : undefined,
         salaryMax: salaryMax ? Number(salaryMax) : undefined,
-        gender: (gender as "MALE" | "FEMALE" | "OTHER") || undefined,
+        gender: (gender as "MALE" | "FEMALE") || undefined,
         yearOfBirthMin: yearOfBirthMin ? Number(yearOfBirthMin) : undefined,
         yearOfBirthMax: yearOfBirthMax ? Number(yearOfBirthMax) : undefined,
-        educationLevel: (educationLevel as "HIGH_SCHOOL" | "COLLEGE" | "BACHELOR" | "MASTER" | "PHD" | "TRAINING_CENTER") || undefined,
+        educationLevels:
+          educationLevels.length > 0
+            ? (educationLevels as (
+                | "TRAINING_CENTER"
+                | "INTERMEDIATE"
+                | "COLLEGE"
+                | "BACHELOR"
+                | "MASTER"
+                | "PHD"
+              )[])
+            : undefined,
       }),
     enabled: initialized && !loading && !!user && !!selectedCompanyId,
   });
@@ -161,7 +141,11 @@ function CandidatesPageContent() {
   });
 
   if (!initialized || loading || accessQuery.isLoading) {
-    return <div className="mx-auto max-w-6xl p-4 text-sm text-slate-500">Đang tải dữ liệu...</div>;
+    return (
+      <div className="mx-auto max-w-6xl p-4 text-sm text-slate-500">
+        Đang tải dữ liệu...
+      </div>
+    );
   }
 
   if (!user) return null;
@@ -177,21 +161,6 @@ function CandidatesPageContent() {
     const qs = next.toString();
     router.replace(qs ? `/candidates?${qs}` : "/candidates");
   };
-
-  function handleClearFilters() {
-    setKeywordInput("");
-    setKeyword("");
-    setLocations([]);
-    setWardCodes([]);
-    setSalaryMin("");
-    setSalaryMax("");
-    setSalaryCurrency("VND");
-    setGender("");
-    setYearOfBirthMin("");
-    setYearOfBirthMax("");
-    setEducationLevel("");
-    setPage(1);
-  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
@@ -209,7 +178,9 @@ function CandidatesPageContent() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Danh sách ứng viên</h1>
-          <p className="text-sm text-[var(--muted-foreground)]">Chỉ tài khoản đăng nhập mới truy cập được trang này.</p>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            Chỉ tài khoản đăng nhập mới truy cập được trang này.
+          </p>
         </div>
         {companies.length > 1 ? (
           <div className="flex items-center gap-2">
@@ -259,130 +230,18 @@ function CandidatesPageContent() {
             Talent Pool
           </Button>
         </div>
-        {selectedCompany ? (
-          <CvFlipUsageBadge usage={usageQuery.data} />
-        ) : null}
+        {selectedCompany ? <CvFlipUsageBadge usage={usageQuery.data} /> : null}
       </div>
 
       {tab === TAB_ALL ? (
         <>
-          {/* Row 1: keyword, locations, wards */}
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            <Input
-              value={keywordInput}
-              onChange={(e) => setKeywordInput(e.target.value)}
-              placeholder="Từ khóa trong CV (ưu tiên tiêu đề nghề nghiệp)"
-            />
-            <ProvinceSelect
-              multiple
-              values={locations}
-              onChangeValues={(values) => {
-                setLocations(values);
-                setPage(1);
-              }}
-              placeholder="Chọn tỉnh / thành phố"
-            />
-            <WardSelect
-              provinceCodes={locations}
-              values={wardCodes}
-              onChangeValues={(values) => {
-                setWardCodes(values);
-                setPage(1);
-              }}
-              placeholder="Chọn phường / xã"
-            />
-          </div>
-
-          {/* Row 2: salary filters */}
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-            <Input
-              value={salaryMin}
-              onChange={(e) => setSalaryMin(e.target.value)}
-              placeholder={`Lương tối thiểu (${salaryCurrency})`}
-              type="number"
-            />
-            <Input
-              value={salaryMax}
-              onChange={(e) => setSalaryMax(e.target.value)}
-              placeholder={`Lương tối đa (${salaryCurrency})`}
-              type="number"
-            />
-            <select
-              className="h-10 rounded-md border border-[var(--border)] bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              value={salaryCurrency}
-              onChange={(e) => setSalaryCurrency(e.target.value as "VND" | "USD")}
-            >
-              <option value="VND">VND</option>
-              <option value="USD">USD</option>
-            </select>
-          </div>
-
-          {/* Row 3: gender, year of birth, education level */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Gender */}
-            <div className="min-w-[140px]">
-              <select
-                className="h-10 w-full rounded-md border border-[var(--border)] bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                value={gender}
-                onChange={(e) => {
-                  setGender(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="">Tất cả giới tính</option>
-                <option value="MALE">Nam</option>
-                <option value="FEMALE">Nữ</option>
-                <option value="OTHER">Khác</option>
-              </select>
-            </div>
-
-            {/* Year of birth range */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500 whitespace-nowrap">Năm sinh:</span>
-              <Input
-                type="number"
-                placeholder="Từ"
-                min={1950}
-                max={2010}
-                value={yearOfBirthMin}
-                onChange={(e) => setYearOfBirthMin(e.target.value)}
-                className="w-[100px]"
-              />
-              <span className="text-slate-400">—</span>
-              <Input
-                type="number"
-                placeholder="Đến"
-                min={1950}
-                max={2010}
-                value={yearOfBirthMax}
-                onChange={(e) => setYearOfBirthMax(e.target.value)}
-                className="w-[100px]"
-              />
-            </div>
-
-            {/* Education level */}
-            <div className="min-w-[200px]">
-              <select
-                className="h-10 w-full rounded-md border border-[var(--border)] bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                value={educationLevel}
-                onChange={(e) => {
-                  setEducationLevel(e.target.value);
-                  setPage(1);
-                }}
-              >
-                {EDUCATION_LEVEL_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Clear filters */}
-            <Button variant="outline" onClick={handleClearFilters}>
-              Xóa lọc
-            </Button>
-          </div>
+          <CandidateFilterControls
+            values={filters}
+            onValuesChange={setValues}
+            showSalaryFilters={true}
+            compact={false}
+            onClear={clearFilters}
+          />
 
           {candidatesQuery.error ? (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
@@ -403,6 +262,7 @@ function CandidatesPageContent() {
                   title: candidate.title,
                   skills: candidate.skills,
                   locations: candidate.locations,
+                  wardCodes: candidate.wardCodes,
                   expectedSalaryMin: candidate.expectedSalaryMin,
                   expectedSalaryMax: candidate.expectedSalaryMax,
                   salaryCurrency: candidate.salaryCurrency,
@@ -420,16 +280,21 @@ function CandidatesPageContent() {
           {candidatesQuery.data?.pagination ? (
             <div className="flex items-center justify-between">
               <p className="text-sm text-[var(--muted-foreground)]">
-                Trang {candidatesQuery.data.pagination.page}/{candidatesQuery.data.pagination.totalPages}
+                Trang {candidatesQuery.data.pagination.page}/
+                {candidatesQuery.data.pagination.totalPages}
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+                <Button
+                  variant="outline"
+                  disabled={page <= 1}
+                  onClick={() => setValues((v) => ({ ...v, page: Math.max(1, v.page - 1) }))}
+                >
                   Trước
                 </Button>
                 <Button
                   variant="outline"
                   disabled={page >= candidatesQuery.data.pagination.totalPages}
-                  onClick={() => setPage((value) => value + 1)}
+                  onClick={() => setValues((v) => ({ ...v, page: v.page + 1 }))}
                 >
                   Sau
                 </Button>
@@ -444,7 +309,7 @@ function CandidatesPageContent() {
               Đang kiểm tra quyền truy cập Talent Pool...
             </div>
           ) : talentPoolAccessQuery.data?.hasAccess ? (
-            <TalentPoolExplorer />
+            <TalentPoolExplorer filters={filters} setFilters={setValues} onClearFilters={clearFilters} />
           ) : (
             <TalentPoolLocked reason={talentPoolAccessQuery.data?.reason} />
           )}
@@ -458,7 +323,9 @@ export default function CandidatesPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-6xl p-4 text-sm text-slate-500">Đang tải trang...</div>
+        <div className="mx-auto max-w-6xl p-4 text-sm text-slate-500">
+          Đang tải trang...
+        </div>
       }
     >
       <CandidatesPageContent />

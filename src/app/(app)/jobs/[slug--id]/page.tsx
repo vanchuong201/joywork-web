@@ -570,11 +570,11 @@ function translateEmploymentType(type?: string) {
     case "PART_TIME":
       return "Bán thời gian";
     case "CONTRACT":
-      return "Hợp đồng";
+      return "Hợp đồng thời vụ";
     case "INTERNSHIP":
       return "Thực tập";
-    case "FREELANCE":
-      return "Tự do";
+    case "REMOTE":
+      return "Làm việc từ xa (Remote)";
     default:
       return type ?? "";
   }
@@ -624,10 +624,10 @@ function translateJobLevel(level?: string) {
 
 function translateEducationLevel(level?: string) {
   switch (level) {
-    case "NONE":
-      return "Không yêu cầu";
-    case "HIGH_SCHOOL":
-      return "Trung học phổ thông";
+    case "TRAINING_CENTER":
+      return "Trung tâm đào tạo";
+    case "INTERMEDIATE":
+      return "Trung cấp";
     case "COLLEGE":
       return "Cao đẳng";
     case "BACHELOR":

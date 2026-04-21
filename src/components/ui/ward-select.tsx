@@ -8,8 +8,16 @@ import { getProvinceNameByCode } from "@/lib/provinces";
 
 interface WardSelectProps {
   provinceCodes: string[];
+  /** Single-select value */
+  value?: string | null;
+  /** Multi-select values */
   values?: string[];
+  /** Single-select callback */
+  onChange?: (value: string | null) => void;
+  /** Multi-select callback */
   onChangeValues?: (values: string[]) => void;
+  /** Enable multi-select mode (default: false for single-select) */
+  multiple?: boolean;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -22,8 +30,11 @@ function wardLabel(w: WardOption): string {
 
 export default function WardSelect({
   provinceCodes,
+  value,
   values = [],
+  onChange,
   onChangeValues,
+  multiple = false,
   placeholder = "Chọn phường / xã (tùy chọn)",
   className,
   disabled = false,
@@ -72,7 +83,11 @@ export default function WardSelect({
     });
   }, [wards, query]);
 
-  const displaySummary =
+  // Single-select display
+  const displaySingle = value ? byCode.get(value)?.fullName ?? byCode.get(value)?.name ?? value : "";
+
+  // Multi-select display
+  const displayMulti =
     values.length > 0
       ? values
           .slice(0, 2)
@@ -82,18 +97,28 @@ export default function WardSelect({
 
   const handleSelect = useCallback(
     (ward: WardOption) => {
-      const next = values.includes(ward.code)
-        ? values.filter((item) => item !== ward.code)
-        : [...values, ward.code];
-      onChangeValues?.(next);
-      setQuery("");
+      if (multiple) {
+        const next = values.includes(ward.code)
+          ? values.filter((item) => item !== ward.code)
+          : [...values, ward.code];
+        onChangeValues?.(next);
+      } else {
+        // Single-select: replace value, close dropdown
+        onChange?.(ward.code);
+        setOpen(false);
+        setQuery("");
+      }
     },
-    [values, onChangeValues]
+    [values, multiple, onChange, onChangeValues]
   );
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onChangeValues?.([]);
+    if (multiple) {
+      onChangeValues?.([]);
+    } else {
+      onChange?.(null);
+    }
     setQuery("");
   };
 
@@ -119,6 +144,7 @@ export default function WardSelect({
   }, []);
 
   const blocked = disabled || !provinceCodes.length;
+  const hasValue = multiple ? values.length > 0 : !!value;
 
   return (
     <div ref={containerRef} className={cn("relative", open && "z-[200]", className)}>
@@ -137,13 +163,13 @@ export default function WardSelect({
         <span
           className={cn(
             "flex items-center gap-2 truncate",
-            !displaySummary && "text-muted-foreground"
+            !hasValue && "text-muted-foreground"
           )}
         >
-          {displaySummary ? (
+          {hasValue ? (
             <>
               <MapPinned className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              {displaySummary}
+              {multiple ? displayMulti : displaySingle}
             </>
           ) : !provinceCodes.length ? (
             "Chọn tỉnh / thành trước"
@@ -152,7 +178,7 @@ export default function WardSelect({
           )}
         </span>
         <span className="flex items-center gap-1 shrink-0 ml-2">
-          {values.length > 0 && !blocked && (
+          {hasValue && !blocked && (
             <X
               className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-pointer"
               onClick={handleClear}
@@ -191,7 +217,7 @@ export default function WardSelect({
               </li>
             ) : (
               filtered.map((ward) => {
-                const isSelected = values.includes(ward.code);
+                const isSelected = multiple ? values.includes(ward.code) : value === ward.code;
                 return (
                   <li key={ward.code}>
                     <button

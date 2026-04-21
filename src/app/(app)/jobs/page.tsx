@@ -39,6 +39,8 @@ type Job = {
   employmentType: string;
   experienceLevel: string;
   jobLevel?: string | null;
+  educationLevel?: string | null;
+  gender?: string | null;
   salaryMin?: number | null;
   salaryMax?: number | null;
   currency?: string;
@@ -175,6 +177,8 @@ function JobsPageContent() {
   const employmentType = sp.get("employmentType") || undefined;
   const experienceLevel = sp.get("experienceLevel") || undefined;
   const jobLevel = sp.get("jobLevel") || undefined;
+  const educationLevel = sp.get("educationLevel") || undefined;
+  const gender = sp.get("gender") || undefined;
   const salaryCurrency = parseSalaryCurrency(sp.get("salaryCurrency"));
   const salaryMinParam = sp.get("salaryMin") || "";
   const salaryMaxParam = sp.get("salaryMax") || "";
@@ -190,24 +194,42 @@ function JobsPageContent() {
       employmentType ||
       experienceLevel ||
       jobLevel ||
+      educationLevel ||
+      gender ||
       salaryMinParam ||
       salaryMaxParam,
   );
   const hasAdvancedFilters = Boolean(
-    employmentType || experienceLevel || jobLevel || salaryMinParam || salaryMaxParam,
+    employmentType || experienceLevel || jobLevel || educationLevel || gender || salaryMinParam || salaryMaxParam,
   );
   const advancedFilterCount =
-    [employmentType, experienceLevel, jobLevel].filter(Boolean).length +
+    [employmentType, experienceLevel, jobLevel, educationLevel, gender].filter(Boolean).length +
     (salaryMinParam || salaryMaxParam ? 1 : 0);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const viewModeParam = sp.get("view") as ViewMode | null;
+  const [viewMode, setViewMode] = useState<ViewMode>(viewModeParam || "grid");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(hasAdvancedFilters);
   const page = Number(sp.get("page") || "1");
   const limit = 12;
   const featuredPage = Number(sp.get("featuredPage") || "1");
   const featuredLimit = 12;
 
+  // Sync viewMode to URL
+  useEffect(() => {
+    const currentView = sp.get("view");
+    if (viewMode !== currentView) {
+      const next = new URLSearchParams(sp.toString());
+      if (viewMode === "grid") {
+        next.delete("view");
+      } else {
+        next.set("view", viewMode);
+      }
+      const searchParams = next.toString();
+      window.history.replaceState(null, "", searchParams ? `?${searchParams}` : window.location.pathname);
+    }
+  }, [viewMode, sp]);
+
   const { data, isLoading, isFetching } = useQuery<{ jobs: Job[]; pagination: any }>({
-    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, salaryCurrency, salaryMin: salaryMinParam, salaryMax: salaryMaxParam, companyId, page }],
+    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, educationLevel, gender, salaryCurrency, salaryMin: salaryMinParam, salaryMax: salaryMaxParam, companyId, page }],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
         params: {
@@ -221,6 +243,8 @@ function JobsPageContent() {
           employmentType,
           experienceLevel,
           jobLevel,
+          educationLevel,
+          gender,
           salaryCurrency: (salaryMinParam || salaryMaxParam) ? salaryCurrency : undefined,
           salaryMin: salaryMinParam ? Number(salaryMinParam) : undefined,
           salaryMax: salaryMaxParam ? Number(salaryMaxParam) : undefined,
@@ -328,11 +352,11 @@ function JobsPageContent() {
       case "PART_TIME":
         return "Bán thời gian";
       case "CONTRACT":
-        return "Hợp đồng";
+        return "Hợp đồng thời vụ";
       case "INTERNSHIP":
         return "Thực tập";
-      case "FREELANCE":
-        return "Tự do";
+      case "REMOTE":
+        return "Làm việc từ xa (Remote)";
       default:
         return type;
     }
@@ -377,6 +401,29 @@ function JobsPageContent() {
         return "Điều hành";
       default:
         return level;
+    }
+  };
+
+  const translateGender = (g?: string | null) => {
+    if (!g) return "";
+    switch (g) {
+      case "MALE": return "Nam";
+      case "FEMALE": return "Nữ";
+      case "OTHER": return "Khác";
+      default: return g;
+    }
+  };
+
+  const translateEducationLevel = (level?: string | null) => {
+    if (!level) return "";
+    switch (level) {
+      case "TRAINING_CENTER": return "Trung tâm đào tạo";
+      case "INTERMEDIATE": return "Trung cấp";
+      case "COLLEGE": return "Cao đẳng";
+      case "BACHELOR": return "Đại học";
+      case "MASTER": return "Thạc sĩ";
+      case "PHD": return "Tiến sĩ";
+      default: return level;
     }
   };
 
@@ -437,10 +484,33 @@ function JobsPageContent() {
     return job.benefitsIncome || "Thương lượng";
   };
 
-  // Helper function to format location
+  // Helper function to format location with employment type
   const formatLocation = (job: Job) => {
-    if (job.remote) return "Làm việc từ xa";
-    return job.location || "Không ghi rõ";
+    const employmentLabel = job.employmentType ? translateEmploymentType(job.employmentType) : null;
+    
+    if (job.remote) {
+      return employmentLabel ? `${employmentLabel} - Làm việc từ xa` : "Làm việc từ xa";
+    }
+    
+    let locationStr = "";
+    if (job.locations && job.locations.length > 0) {
+      const firstLoc = job.locations[0];
+      const provinceName = getProvinceNameByCode(firstLoc);
+      if (job.locations.length === 1) {
+        locationStr = provinceName || firstLoc;
+      } else {
+        locationStr = `${provinceName || firstLoc} +${job.locations.length - 1}`;
+      }
+    } else if (job.location) {
+      locationStr = job.location;
+    }
+    
+    if (employmentLabel && locationStr) {
+      return `${employmentLabel} - ${locationStr}`;
+    }
+    if (employmentLabel) return employmentLabel;
+    if (locationStr) return locationStr;
+    return "Không ghi rõ";
   };
 
   return (
@@ -584,14 +654,14 @@ function JobsPageContent() {
               </label>
             </div> */}
             <div className="space-y-1.5 text-sm">
-              <div className="font-medium">Loại hợp đồng</div>
+              <div className="font-medium">Hình thức làm việc</div>
               <select
                 value={employmentType ?? ""}
                 onChange={(e) => toggleParam("employmentType", e.target.value || undefined, { resetPage: true })}
                 className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm"
               >
-                <option value="">Tất cả loại hợp đồng</option>
-                {["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"].map((t) => (
+                <option value="">Tất cả hình thức</option>
+                {["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE"].map((t) => (
                   <option key={t} value={t}>
                     {translateEmploymentType(t)}
                   </option>
@@ -626,6 +696,35 @@ function JobsPageContent() {
                     {translateJobLevel(t)}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div className="space-y-1.5 text-sm">
+              <div className="font-medium">Học vấn</div>
+              <select
+                value={educationLevel ?? ""}
+                onChange={(e) => toggleParam("educationLevel", e.target.value || undefined, { resetPage: true })}
+                className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm"
+              >
+                <option value="">Tất cả</option>
+                <option value="NONE">Không yêu cầu</option>
+                <option value="HIGH_SCHOOL">Trung học phổ thông</option>
+                <option value="COLLEGE">Cao đẳng</option>
+                <option value="BACHELOR">Đại học</option>
+                <option value="MASTER">Thạc sĩ</option>
+                <option value="PHD">Tiến sĩ</option>
+              </select>
+            </div>
+            <div className="space-y-1.5 text-sm">
+              <div className="font-medium">Giới tính</div>
+              <select
+                value={gender ?? ""}
+                onChange={(e) => toggleParam("gender", e.target.value || undefined, { resetPage: true })}
+                className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm"
+              >
+                <option value="">Tất cả</option>
+                <option value="MALE">Nam</option>
+                <option value="FEMALE">Nữ</option>
+                <option value="OTHER">Khác</option>
               </select>
             </div>
             <div className="space-y-1.5 text-sm md:col-span-2 xl:col-span-2">
@@ -693,7 +792,7 @@ function JobsPageContent() {
               ) : null}
               {employmentType ? (
                 <JobsFilterChip
-                  label={`Loại hợp đồng: ${translateEmploymentType(employmentType)}`}
+                  label={`Hình thức: ${translateEmploymentType(employmentType)}`}
                   onRemove={() => toggleParam("employmentType", undefined, { resetPage: true })}
                 />
               ) : null}
@@ -707,6 +806,18 @@ function JobsPageContent() {
                 <JobsFilterChip
                   label={`Cấp bậc: ${translateJobLevel(jobLevel)}`}
                   onRemove={() => toggleParam("jobLevel", undefined, { resetPage: true })}
+                />
+              ) : null}
+              {educationLevel ? (
+                <JobsFilterChip
+                  label={`Học vấn: ${translateEducationLevel(educationLevel)}`}
+                  onRemove={() => toggleParam("educationLevel", undefined, { resetPage: true })}
+                />
+              ) : null}
+              {gender ? (
+                <JobsFilterChip
+                  label={`Giới tính: ${translateGender(gender)}`}
+                  onRemove={() => toggleParam("gender", undefined, { resetPage: true })}
                 />
               ) : null}
               {salaryFilterLabel ? (

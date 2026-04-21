@@ -59,9 +59,9 @@ function translateEmploymentType(type?: string) {
   switch (type) {
     case "FULL_TIME": return "Toàn thời gian";
     case "PART_TIME": return "Bán thời gian";
-    case "CONTRACT": return "Hợp đồng";
+    case "CONTRACT": return "Hợp đồng thời vụ";
     case "INTERNSHIP": return "Thực tập";
-    case "FREELANCE": return "Tự do";
+    case "REMOTE": return "Làm việc từ xa (Remote)";
     default: return type ?? "";
   }
 }

@@ -57,11 +57,11 @@ function translateEmploymentType(type?: string) {
     case "PART_TIME":
       return "Bán thời gian";
     case "CONTRACT":
-      return "Hợp đồng";
+      return "Hợp đồng thời vụ";
     case "INTERNSHIP":
       return "Thực tập";
-    case "FREELANCE":
-      return "Tự do";
+    case "REMOTE":
+      return "Làm việc từ xa (Remote)";
     default:
       return "Hình thức linh hoạt";
   }

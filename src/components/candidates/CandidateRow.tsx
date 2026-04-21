@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { User } from "lucide-react";
+import { BriefcaseIcon, AcademicCapIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { Badge } from "@/components/ui/badge";
-import { formatSalaryRange } from "@/lib/provinces";
+import { formatSalaryRange, getProvinceDisplayLabel, getWardDisplayLabel } from "@/lib/provinces";
 import ExperienceEducationModal from "./ExperienceEducationModal";
 
 export type CandidateRowData = {
@@ -16,6 +17,7 @@ export type CandidateRowData = {
   title: string | null;
   skills: string[];
   locations: string[];
+  wardCodes?: string[];
   expectedSalaryMin: number | null;
   expectedSalaryMax: number | null;
   salaryCurrency: string | null;
@@ -46,43 +48,41 @@ const MAX_PREVIEW_EDUCATIONS = 3;
 
 export default function CandidateRow({ candidate }: CandidateRowProps) {
   const {
-    userId,
     slug,
     name,
     avatar,
-    headline,
     title,
     skills,
     locations,
+    wardCodes,
     expectedSalaryMin,
     expectedSalaryMax,
     salaryCurrency,
     workMode,
     experiences,
     educations,
-    gender,
-    yearOfBirth,
-    educationLevel,
   } = candidate;
 
   const [modalOpen, setModalOpen] = useState(false);
-  const hasMoreExperiences = experiences.length > MAX_PREVIEW_EXPERIENCES;
-  const hasMoreEducations = educations.length > MAX_PREVIEW_EDUCATIONS;
   const visibleExperiences = experiences.slice(0, MAX_PREVIEW_EXPERIENCES);
   const visibleEducations = educations.slice(0, MAX_PREVIEW_EDUCATIONS);
-  const hiddenExpCount = experiences.length - MAX_PREVIEW_EXPERIENCES;
-  const hiddenEduCount = educations.length - MAX_PREVIEW_EDUCATIONS;
 
   const detailHref = slug ? `/candidates/${encodeURIComponent(slug)}` : "#";
   const displayName = name || "Ứng viên";
-  const displayHeadline = headline || title || "Chưa cập nhật tiêu đề nghề nghiệp";
+  const displayTitle = title || "Không xác định";
   const salaryDisplay = formatSalaryRange(
     expectedSalaryMin ?? undefined,
     expectedSalaryMax ?? undefined,
     (salaryCurrency as "VND" | "USD") || "VND"
   );
   const currency = (salaryCurrency as "VND" | "USD") || "VND";
-  const locationDisplay = locations.length > 0 ? locations[0] : null;
+  const locationDisplay = (() => {
+    if (!locations.length) return null;
+    if (wardCodes && wardCodes.length > 0) {
+      return getWardDisplayLabel(wardCodes[0]);
+    }
+    return getProvinceDisplayLabel(locations[0]);
+  })();
 
   return (
     <>
@@ -110,7 +110,7 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
                 {displayName}
               </p>
               <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">
-                {displayHeadline}
+                {displayTitle}
               </p>
             </div>
             {/* Right top: salary + location */}
@@ -123,67 +123,67 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
               {locationDisplay && (
                 <p className="text-xs text-[var(--muted-foreground)]">{locationDisplay}</p>
               )}
-              {workMode && (
+              {/* {workMode && (
                 <p className="text-xs text-[var(--muted-foreground)]">{workMode}</p>
-              )}
+              )} */}
             </div>
           </div>
 
           {/* Experiences */}
           {experiences.length > 0 && (
             <div className="mt-3">
-              <p className="text-xs font-medium text-[var(--muted-foreground)]">Kinh nghiệm</p>
+              <div className="flex items-center gap-1.5 px-3">
+                <BriefcaseIcon className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                <p className="text-xs font-medium text-[var(--muted-foreground)]">Kinh nghiệm</p>
+              </div>
               <div className="mt-1 space-y-0.5">
                 {visibleExperiences.map((exp) => (
-                  <p key={exp.id} className="text-xs text-[var(--foreground)]">
+                  <p key={exp.id} className="flex items-center gap-2 px-3 text-xs text-[var(--foreground)]">
                     <span className="font-medium">{exp.role}</span>
-                    {exp.company && ` @ ${exp.company}`}
+                    {exp.company && ` – ${exp.company}`}
                     {exp.period && <span className="text-[var(--muted-foreground)]"> · {exp.period}</span>}
                   </p>
                 ))}
-                {hasMoreExperiences && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setModalOpen(true);
-                    }}
-                    className="text-xs text-[var(--brand)] hover:underline"
-                  >
-                    Xem thêm {hiddenExpCount} kinh nghiệm khác
-                  </button>
-                )}
               </div>
+              {experiences.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="mt-1 flex items-center gap-1 px-3 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                >
+                  <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+                  Chi tiết
+                </button>
+              )}
             </div>
           )}
 
           {/* Educations */}
           {educations.length > 0 && (
             <div className="mt-3">
-              <p className="text-xs font-medium text-[var(--muted-foreground)]">Học vấn</p>
+              <div className="flex items-center gap-1.5 px-3">
+                <AcademicCapIcon className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                <p className="text-xs font-medium text-[var(--muted-foreground)]">Học vấn</p>
+              </div>
               <div className="mt-1 space-y-0.5">
                 {visibleEducations.map((edu) => (
-                  <p key={edu.id} className="text-xs text-[var(--foreground)]">
+                  <p key={edu.id} className="flex items-center gap-2 px-3 text-xs text-[var(--foreground)]">
                     <span className="font-medium">{edu.degree}</span>
-                    {edu.school && ` @ ${edu.school}`}
+                    {edu.school && ` – ${edu.school}`}
                     {edu.period && <span className="text-[var(--muted-foreground)]"> · {edu.period}</span>}
                   </p>
                 ))}
-                {hasMoreEducations && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setModalOpen(true);
-                    }}
-                    className="text-xs text-[var(--brand)] hover:underline"
-                  >
-                    Xem thêm {hiddenEduCount} học vấn khác
-                  </button>
-                )}
               </div>
+              {educations.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="mt-1 flex items-center gap-1 px-3 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                >
+                  <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+                  Chi tiết
+                </button>
+              )}
             </div>
           )}
 
@@ -207,10 +207,13 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
             )}
             <Link
               href={detailHref}
-              className="shrink-0 text-sm font-medium text-[var(--brand)] hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 rounded-md border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--muted-foreground)] shadow-sm transition-colors hover:border-[var(--brand)] hover:bg-[var(--brand)]/5 hover:text-[var(--brand)]"
             >
-              Xem chi tiết
+              Xem hồ sơ
             </Link>
+       
           </div>
         </div>
       </div>

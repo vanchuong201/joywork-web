@@ -75,16 +75,24 @@ export default function JobDetailModal({ open, onOpenChange, jobId }: Props) {
               <Badge className="border border-[var(--border)] bg-transparent text-[var(--muted-foreground)]">
                 {translateExperienceLevel(job.experienceLevel)}
               </Badge>
-              <span>{job.remote ? "Làm việc từ xa" : job.location ?? "Không ghi rõ địa điểm"}</span>
+              {job.remote && (
+                <Badge className="border border-[var(--border)] bg-transparent text-[var(--muted-foreground)]">
+                  Làm việc từ xa
+                </Badge>
+              )}
+              {!job.remote && job.location && (
+                <span>{job.location}</span>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <section className="grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--card)]/60 p-4 text-sm text-[var(--muted-foreground)]">
               <InfoRow label="Mức lương" value={salary} />
               <InfoRow label="Hạn nộp" value={deadline} />
-              <InfoRow label="Hình thức" value={translateEmploymentType(job.employmentType)} />
+              <InfoRow label="Hình thức làm việc" value={translateEmploymentType(job.employmentType)} />
               <InfoRow label="Kinh nghiệm" value={translateExperienceLevel(job.experienceLevel)} />
               <InfoRow label="Địa điểm" value={job.remote ? "Làm việc từ xa" : job.location ?? "Không ghi rõ"} />
+              {job.remote && <InfoRow label="Hình thức làm việc" value="Cho phép làm từ xa" />}
               {job.tags?.length ? <InfoRow label="Kỹ năng" value={job.tags.join(", ")} /> : null}
             </section>
 
@@ -129,11 +137,11 @@ function translateEmploymentType(type?: string) {
     case "PART_TIME":
       return "Bán thời gian";
     case "CONTRACT":
-      return "Hợp đồng";
+      return "Hợp đồng thời vụ";
     case "INTERNSHIP":
       return "Thực tập";
-    case "FREELANCE":
-      return "Tự do";
+    case "REMOTE":
+      return "Làm việc từ xa (Remote)";
     default:
       return type ?? "";
   }

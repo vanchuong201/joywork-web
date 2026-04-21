@@ -14,8 +14,19 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
-const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"] as const;
+const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE"] as const;
 const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"] as const;
+
+const translateEmploymentType = (t: (typeof employmentTypes)[number]) => {
+  const map: Record<string, string> = {
+    FULL_TIME: "Toàn thời gian",
+    PART_TIME: "Bán thời gian",
+    CONTRACT: "Hợp đồng thời vụ",
+    INTERNSHIP: "Thực tập",
+    REMOTE: "Làm việc từ xa (Remote)",
+  };
+  return map[t] || t;
+};
 
 const schema = z.object({
   title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự"),
@@ -162,7 +173,7 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
         <Textarea rows={4} placeholder="Tóm tắt nhiệm vụ chính, yêu cầu và quyền lợi..." {...register("description")} />
       </FormField>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Hình thức làm việc">
           <select
             {...register("employmentType")}
@@ -170,7 +181,7 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
           >
             {employmentTypes.map((type) => (
               <option key={type} value={type}>
-                {type.replace("_", " ")}
+                {translateEmploymentType(type)}
               </option>
             ))}
           </select>
@@ -186,12 +197,6 @@ export default function JobComposer({ companyId, onCreated }: JobComposerProps) 
               </option>
             ))}
           </select>
-        </FormField>
-        <FormField label="Remote">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("remote")} />
-            Cho phép làm việc từ xa
-          </label>
         </FormField>
       </div>
 

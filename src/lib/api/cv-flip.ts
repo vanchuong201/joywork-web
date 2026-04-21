@@ -30,10 +30,10 @@ export async function listCvFlipCandidates(params: {
   salaryMax?: number;
   salaryCurrency?: "VND" | "USD";
   workMode?: string;
-  gender?: "MALE" | "FEMALE" | "OTHER";
+  gender?: "MALE" | "FEMALE";
   yearOfBirthMin?: number;
   yearOfBirthMax?: number;
-  educationLevel?: "NONE" | "HIGH_SCHOOL" | "COLLEGE" | "BACHELOR" | "MASTER" | "PHD" | "TRAINING_CENTER";
+  educationLevels?: ("TRAINING_CENTER" | "INTERMEDIATE" | "COLLEGE" | "BACHELOR" | "MASTER" | "PHD")[];
 }): Promise<CvFlipCandidatesResponse> {
   const searchParams: Record<string, string | number> = {
     page: params.page,
@@ -52,7 +52,9 @@ export async function listCvFlipCandidates(params: {
   if (params.gender) searchParams.gender = params.gender;
   if (params.yearOfBirthMin !== undefined) searchParams.yearOfBirthMin = params.yearOfBirthMin;
   if (params.yearOfBirthMax !== undefined) searchParams.yearOfBirthMax = params.yearOfBirthMax;
-  if (params.educationLevel) searchParams.educationLevel = params.educationLevel;
+  if (params.educationLevels && params.educationLevels.length > 0) {
+    searchParams.educationLevels = params.educationLevels.join(",");
+  }
 
   const res = await api.get("/api/cv-flip/candidates", { params: searchParams });
   return res.data.data;

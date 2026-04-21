@@ -2,11 +2,14 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText, Sparkles } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText, Sparkles, Download } from 'lucide-react';
 import { PublicUserProfile } from '@/types/user';
 import { useAuthStore } from '@/store/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
+import type { WardOption } from '@/lib/location-wards';
 
 /** Khi chưa mở CV: chỉ hiển thị chữ cái đầu mỗi từ, ví dụ "Nguyễn Văn Chương" → "NVC". */
 function nameToMaskedInitials(name: string | null | undefined): string {
@@ -43,15 +46,74 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
   const showCvMask = Boolean(cvFlip?.enabled && !cvFlip.revealed);
 
   const maskedInitials = nameToMaskedInitials(profile.name);
+  const [avatarError, setAvatarError] = useState(false);
   const avatarUrl =
-    profile.profile?.avatar ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      showCvMask ? maskedInitials : profile.name || "User"
-    )}&background=random&size=200`;
+    !avatarError && profile.profile?.avatar
+      ? profile.profile.avatar
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          showCvMask ? maskedInitials : profile.name || "User"
+        )}&background=random&size=200`;
   const status = profile.profile?.status;
   const statusLabel = status ? statusLabels[status] || status : null;
 
   const displayTitle = showCvMask ? maskedInitials : profile.name || "User";
+
+  // Fetch ward details for display
+  const [wards, setWards] = useState<WardOption[]>([]);
+  const provinceCodes = useMemo(() => {
+    const codes = new Set<string>();
+    for (const w of profile.profile?.wardCodes ?? []) {
+      const parts = w.split('/');
+      if (parts.length === 2) codes.add(parts[0]);
+    }
+    return Array.from(codes);
+  }, [profile.profile?.wardCodes]);
+
+  const provinceCodesKey = provinceCodes.join(',');
+
+  useEffect(() => {
+    if (!provinceCodes.length) {
+      setWards([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await api.get<{ data: { wards: WardOption[] } }>('/api/locations/wards', {
+          params: { provinceCodes: provinceCodes.join(',') },
+        });
+        if (!cancelled) setWards(data.data.wards);
+      } catch {
+        if (!cancelled) setWards([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provinceCodesKey]);
+
+  const wardByCode = useMemo(() => new Map(wards.map((w) => [w.code, w])), [wards]);
+
+  // Build full address: [specificAddress] - [wardName] - [provinceName]
+  const fullAddress = (() => {
+    const parts: string[] = [];
+    if (profile.profile?.specificAddress) parts.push(profile.profile.specificAddress);
+    const firstWard = profile.profile?.wardCodes?.[0];
+    if (firstWard) {
+      const wardInfo = wardByCode.get(firstWard);
+      if (wardInfo) {
+        parts.push(wardInfo.fullName ?? wardInfo.name);
+      }
+    }
+    if (profile.profile?.location) parts.push(profile.profile.location);
+    return parts.length > 0 ? parts.join(' - ') : null;
+  })();
+
+  const maskedAddress = '••• - ••• - •••';
+
+  // Address: [Địa chỉ cụ thể] - [Phường xã] - [Tỉnh/thành]
+  const hasAddress = profile.profile?.specificAddress || profile.profile?.location || profile.profile?.wardCodes?.length;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8 relative overflow-hidden">
@@ -59,7 +121,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
       <div className="relative flex flex-col md:flex-row items-start gap-6 pt-4">
         <div
           className={cn(
-            "w-32 h-32 rounded-full border-4 border-white shadow-lg relative -mt-4 overflow-hidden",
+            "w-32 h-32 rounded-full border-4 border-white shadow-lg relative -mt-4 overflow-hidden shrink-0",
             showCvMask && "ring-2 ring-slate-200"
           )}
         >
@@ -72,16 +134,17 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
               "w-full h-full rounded-full object-cover",
               showCvMask && "scale-110 blur-md"
             )}
+            onError={() => setAvatarError(true)}
           />
           <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full" title="Online"></div>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-black text-slate-900">{displayTitle}</h1>
+                <h1 className="text-3xl font-black text-slate-900 truncate">{displayTitle}</h1>
                 {profile.isTalentPoolMember && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-100 to-yellow-100 px-3 py-1 text-xs font-semibold text-amber-700 shadow-sm">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-100 to-yellow-100 px-3 py-1 text-xs font-semibold text-amber-700 shadow-sm shrink-0">
                     <Sparkles size={14} /> Talent Pool
                   </span>
                 )}
@@ -93,20 +156,29 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                 <p className="text-base text-slate-500 mb-3">{profile.profile.headline}</p>
               )}
               <div className="flex flex-wrap gap-4 text-sm text-slate-500">
-                {profile.profile?.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin size={16} /> {profile.profile.location}
+                {/* Address - Protected info like email/phone */}
+                {hasAddress && (
+                  <span
+                    className={cn(
+                      "flex items-center gap-1",
+                      showCvMask && "select-none blur-[5px]"
+                    )}
+                  >
+                    <MapPin size={16} className="shrink-0" />
+                    <span>
+                      {showCvMask ? maskedAddress : fullAddress}
+                    </span>
                   </span>
                 )}
                 {(showCvMask || profile.profile?.contactEmail) && (
                   <span
                     className={cn(
-                      "flex max-w-[min(100%,280px)] items-center gap-1",
+                      "flex items-center gap-1",
                       showCvMask && "select-none blur-[5px]"
                     )}
                   >
                     <Mail size={16} className="shrink-0" />
-                    <span className="truncate">
+                    <span className="truncate max-w-[200px]">
                       {showCvMask ? "email@••••••" : profile.profile?.contactEmail}
                     </span>
                   </span>
@@ -114,106 +186,85 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                 {(showCvMask || profile.profile?.contactPhone) && (
                   <span
                     className={cn(
-                      "flex max-w-[min(100%,220px)] items-center gap-1",
+                      "flex items-center gap-1",
                       showCvMask && "select-none blur-[5px]"
                     )}
                   >
                     <Phone size={16} className="shrink-0" />
-                    <span className="truncate">
+                    <span>
                       {showCvMask ? "••• ••• •••" : profile.profile?.contactPhone}
                     </span>
                   </span>
                 )}
                 {(showCvMask || profile.profile?.website) && (
-                  <span
+                  <a
+                    href={showCvMask ? "#" : (profile.profile?.website || "#")}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={cn(
-                      "flex max-w-full min-w-0 items-start gap-1 break-all",
-                      showCvMask && "select-none blur-[5px]",
-                      !showCvMask && "text-slate-700"
+                      "flex items-center gap-1 hover:text-[var(--brand)]",
+                      showCvMask && "pointer-events-none select-none blur-[5px]"
                     )}
                   >
-                    <Globe size={16} className="mt-0.5 shrink-0" />
-                    {showCvMask ? (
-                      <span>https://••••••</span>
-                    ) : (
-                      <a
-                        href={profile.profile?.website || "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-[var(--brand)]"
-                      >
-                        {profile.profile?.website}
-                      </a>
-                    )}
-                  </span>
+                    <Globe size={16} className="shrink-0" />
+                    <span>{showCvMask ? "https://••••••" : "Website"}</span>
+                  </a>
                 )}
+                {/* LinkedIn - Icon button style */}
                 {(showCvMask || profile.profile?.linkedin) && (
-                  <span
+                  <a
+                    href={showCvMask ? "#" : (profile.profile?.linkedin || "#")}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={cn(
-                      "flex max-w-full min-w-0 items-start gap-1 break-all",
-                      showCvMask && "select-none blur-[5px]",
-                      !showCvMask && "text-slate-700"
+                      "flex items-center gap-1 hover:text-[#0077b5]",
+                      showCvMask && "pointer-events-none select-none blur-[5px]"
                     )}
+                    title="LinkedIn"
                   >
-                    <Linkedin size={16} className="mt-0.5 shrink-0" />
-                    {showCvMask ? (
-                      <span>linkedin.com/in/••••••</span>
-                    ) : (
-                      <a
-                        href={profile.profile?.linkedin || "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-[var(--brand)]"
-                      >
-                        {profile.profile?.linkedin}
-                      </a>
-                    )}
-                  </span>
+                    <Linkedin size={16} className="shrink-0" fill="currentColor" />
+                    <span>{showCvMask ? "••••••" : "LinkedIn"}</span>
+                  </a>
                 )}
+                {/* GitHub - Icon button style */}
                 {(showCvMask || profile.profile?.github) && (
-                  <span
+                  <a
+                    href={showCvMask ? "#" : (profile.profile?.github || "#")}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={cn(
-                      "flex max-w-full min-w-0 items-start gap-1 break-all",
-                      showCvMask && "select-none blur-[5px]",
-                      !showCvMask && "text-slate-700"
+                      "flex items-center gap-1 hover:text-[#333]",
+                      showCvMask && "pointer-events-none select-none blur-[5px]"
                     )}
+                    title="GitHub"
                   >
-                    <Github size={16} className="mt-0.5 shrink-0" />
-                    {showCvMask ? (
-                      <span>github.com/••••••</span>
-                    ) : (
-                      <a
-                        href={profile.profile?.github || "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-[var(--brand)]"
-                      >
-                        {profile.profile?.github}
-                      </a>
-                    )}
-                  </span>
+                    <Github size={16} className="shrink-0" />
+                    <span>{showCvMask ? "••••••" : "GitHub"}</span>
+                  </a>
                 )}
+                {/* CV File - Download button style */}
                 {(showCvMask || profile.profile?.cvUrl) && (
-                  <span
+                  <a
+                    href={showCvMask ? "#" : (profile.profile?.cvUrl || "#")}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={cn(
-                      "flex max-w-[min(100%,320px)] items-center gap-1",
-                      showCvMask && "select-none blur-[5px]"
+                      "flex items-center gap-1 text-[var(--brand)] hover:underline",
+                      showCvMask && "pointer-events-none select-none blur-[5px]"
                     )}
                   >
-                    <FileText size={16} className="shrink-0" />
                     {showCvMask ? (
-                      <span className="truncate text-slate-500">file-cv••••••</span>
+                      <>
+                        <FileText size={16} className="shrink-0" />
+                        <span>file-cv••••••</span>
+                      </>
                     ) : (
-                      <a
-                        href={profile.profile?.cvUrl || "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="truncate text-[var(--brand)] hover:underline"
-                      >
-                        {profile.profile?.cvUrl}
-                      </a>
+                      <>
+                        <Download size={16} className="shrink-0" />
+                        <span>Tải CV</span>
+                      </>
                     )}
-                  </span>
+                  </a>
                 )}
               </div>
             </div>
@@ -237,4 +288,3 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
     </div>
   );
 }
-

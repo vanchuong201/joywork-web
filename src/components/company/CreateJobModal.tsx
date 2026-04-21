@@ -14,10 +14,11 @@ import DOMPurify from "dompurify";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 
-const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"] as const;
+const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE"] as const;
 const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"] as const;
 const jobLevels = ["INTERN_STUDENT", "FRESH_GRAD", "EMPLOYEE", "SPECIALIST_TEAM_LEAD", "MANAGER_HEAD", "DIRECTOR", "EXECUTIVE"] as const;
-const educationLevels = ["NONE", "HIGH_SCHOOL", "COLLEGE", "BACHELOR", "MASTER", "PHD"] as const;
+const educationLevels = ["TRAINING_CENTER", "INTERMEDIATE", "COLLEGE", "BACHELOR", "MASTER", "PHD"] as const;
+const genders = ["MALE", "FEMALE", "OTHER"] as const;
 
 // Helper function to strip HTML tags and get plain text length
 function getPlainTextLength(html: string): number {
@@ -53,6 +54,7 @@ const schema = z
     department: z.string().max(100, "Bộ phận tối đa 100 ký tự").optional().or(z.literal("")),
     jobLevel: optionalEnum(jobLevels, "Cấp bậc không hợp lệ"),
     educationLevel: optionalEnum(educationLevels, "Học vấn không hợp lệ"),
+    gender: optionalEnum(genders, "Giới tính không hợp lệ"),
     
     // Required JD fields (HTML from Tiptap)
     generalInfo: z.string().optional(),
@@ -253,6 +255,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
         department: values.department?.trim() || undefined,
         jobLevel: values.jobLevel || undefined,
         educationLevel: values.educationLevel || undefined,
+        gender: values.gender || undefined,
         // Optional/required fields - sanitize HTML
         generalInfo: values.generalInfo ? sanitizeHtml(values.generalInfo) : undefined,
         mission: sanitizeHtml(values.mission),
@@ -305,9 +308,9 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
     const map: Record<string, string> = {
       FULL_TIME: "Toàn thời gian",
       PART_TIME: "Bán thời gian",
-      CONTRACT: "Hợp đồng",
+      CONTRACT: "Hợp đồng thời vụ",
       INTERNSHIP: "Thực tập",
-      FREELANCE: "Tự do",
+      REMOTE: "Làm việc từ xa (Remote)",
     };
     return map[t] || t;
   };
@@ -340,8 +343,8 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
 
   const translateEducationLevel = (l: (typeof educationLevels)[number]) => {
     const map: Record<string, string> = {
-      NONE: "Không yêu cầu",
-      HIGH_SCHOOL: "Trung học phổ thông",
+      TRAINING_CENTER: "Trung tâm đào tạo",
+      INTERMEDIATE: "Trung cấp",
       COLLEGE: "Cao đẳng",
       BACHELOR: "Đại học",
       MASTER: "Thạc sĩ",
@@ -521,6 +524,22 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
                     onChangeValues={(vals) => setValue("wardCodes", vals, { shouldDirty: true })}
                   />
                 </FormField>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* TODO: Re-enable remote checkbox when backend supports separate remote field */}
+                {/*
+                <FormField label="Hình thức làm việc">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      {...register("remote")}
+                      className="h-4 w-4 rounded border-[var(--border)]"
+                    />
+                    Cho phép làm việc từ xa (Remote)
+                  </label>
+                </FormField>
+                */}
                 <FormField label="Hình thức làm việc">
                   <select {...register("employmentType")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
                     {employmentTypes.map((type) => (
@@ -588,6 +607,14 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
                         {translateEducationLevel(level)}
                       </option>
                     ))}
+                  </select>
+                </FormField>
+                <FormField label="Giới tính (tuỳ chọn)">
+                  <select {...register("gender")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
+                    <option value="">-- Không giới hạn --</option>
+                    <option value="MALE">Nam</option>
+                    <option value="FEMALE">Nữ</option>
+                    <option value="OTHER">Khác</option>
                   </select>
                 </FormField>
               </div>

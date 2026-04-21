@@ -45,6 +45,7 @@ export interface UserProfile {
   location?: string | null;
   locations?: string[];
   wardCodes?: string[];
+  specificAddress?: string | null;
   website?: string | null;
   linkedin?: string | null;
   github?: string | null;
@@ -66,7 +67,7 @@ export interface UserProfile {
   careerGoals?: string[];
   gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
   yearOfBirth: number;
-  educationLevel?: 'NONE' | 'HIGH_SCHOOL' | 'COLLEGE' | 'BACHELOR' | 'MASTER' | 'PHD' | 'TRAINING_CENTER' | null;
+  educationLevel?: 'TRAINING_CENTER' | 'INTERMEDIATE' | 'COLLEGE' | 'BACHELOR' | 'MASTER' | 'PHD' | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -86,6 +87,7 @@ export interface PublicUserProfile {
     location?: string | null;
     locations?: string[];
     wardCodes?: string[];
+    specificAddress?: string | null;
     website?: string | null;
     linkedin?: string | null;
     github?: string | null;

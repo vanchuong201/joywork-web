@@ -34,6 +34,7 @@ export type CvFlipCandidateCard = {
   title: string | null;
   skills: string[];
   locations: string[];
+  wardCodes?: string[];
   expectedSalaryMin: number | null;
   expectedSalaryMax: number | null;
   salaryCurrency: string | null;

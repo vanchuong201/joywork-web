@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Search, Sparkles, ChevronLeft, ChevronRight, User } from "lucide-react";
-import ProvinceSelect from "@/components/ui/province-select";
-import WardSelect from "@/components/ui/ward-select";
-import CandidateRow, { type CandidateRowData } from "@/components/candidates/CandidateRow";
+import { Sparkles, ChevronLeft, ChevronRight, User } from "lucide-react";
+import CandidateRow from "@/components/candidates/CandidateRow";
+import {
+  CandidateFilterControls,
+  type CandidateFilterValues,
+} from "@/components/candidates/CandidateFilters";
 
 type CandidateExpApi = {
   id: string;
@@ -68,92 +68,45 @@ type CandidatesResponse = {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 };
 
-const EDUCATION_LEVEL_OPTIONS = [
-  { value: "", label: "Tất cả trình độ" },
-  { value: "BACHELOR", label: "Đại học" },
-  { value: "COLLEGE", label: "Cao đẳng" },
-  { value: "HIGH_SCHOOL", label: "Trung học" },
-  { value: "MASTER", label: "Thạc sỹ" },
-  { value: "PHD", label: "Tiến sĩ" },
-  { value: "TRAINING_CENTER", label: "Trung tâm đào tạo" },
-];
+type Props = {
+  filters: CandidateFilterValues;
+  setFilters: (next: CandidateFilterValues | ((prev: CandidateFilterValues) => CandidateFilterValues)) => void;
+  onClearFilters: () => void;
+};
 
-export default function TalentPoolExplorer() {
-  const [q, setQ] = useState("");
-  const [provinceCode, setProvinceCode] = useState<string | null>(null);
-  const [wardCode, setWardCode] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-
-  // New filter states
-  const [gender, setGender] = useState<string>("");
-  const [yearOfBirthMin, setYearOfBirthMin] = useState<string>("");
-  const [yearOfBirthMax, setYearOfBirthMax] = useState<string>("");
-  const [educationLevel, setEducationLevel] = useState<string>("");
-
-  // Debounced search values
-  const [searchQ, setSearchQ] = useState("");
-  const [searchLoc, setSearchLoc] = useState<string | null>(null);
-  const [searchWard, setSearchWard] = useState<string | null>(null);
-  const [searchGender, setSearchGender] = useState<string>("");
-  const [searchYearOfBirthMin, setSearchYearOfBirthMin] = useState<string>("");
-  const [searchYearOfBirthMax, setSearchYearOfBirthMax] = useState<string>("");
-  const [searchEducationLevel, setSearchEducationLevel] = useState<string>("");
-
+export default function TalentPoolExplorer({ filters, setFilters, onClearFilters }: Props) {
   const { data, isLoading } = useQuery<CandidatesResponse>({
     queryKey: [
       "talent-pool-candidates",
-      searchQ,
-      searchLoc,
-      searchWard,
-      searchGender,
-      searchYearOfBirthMin,
-      searchYearOfBirthMax,
-      searchEducationLevel,
-      page,
+      filters.keyword,
+      filters.locations[0] ?? "",
+      filters.wardCodes[0] ?? "",
+      filters.gender,
+      filters.yearOfBirthMin,
+      filters.yearOfBirthMax,
+      filters.educationLevels,
+      filters.page,
     ],
     queryFn: async () => {
       const params = new URLSearchParams();
-      params.set("page", String(page));
+      params.set("page", String(filters.page));
       params.set("limit", "12");
-      if (searchQ) params.set("q", searchQ);
-      if (searchLoc) params.set("location", searchLoc);
-      if (searchWard) params.set("ward", searchWard);
-      if (searchGender) params.set("gender", searchGender);
-      if (searchYearOfBirthMin) params.set("yearOfBirthMin", searchYearOfBirthMin);
-      if (searchYearOfBirthMax) params.set("yearOfBirthMax", searchYearOfBirthMax);
-      if (searchEducationLevel) params.set("educationLevel", searchEducationLevel);
+      if (filters.keyword) params.set("q", filters.keyword);
+      if (filters.locations[0]) params.set("location", filters.locations[0]);
+      if (filters.wardCodes[0]) params.set("ward", filters.wardCodes[0]);
+      if (filters.gender) params.set("gender", filters.gender);
+      if (filters.yearOfBirthMin) params.set("yearOfBirthMin", filters.yearOfBirthMin);
+      if (filters.yearOfBirthMax) params.set("yearOfBirthMax", filters.yearOfBirthMax);
+      if (filters.educationLevels.length > 0) {
+        params.set("educationLevels", filters.educationLevels.join(","));
+      }
       const res = await api.get(`/api/talent-pool/candidates?${params}`);
       return res.data.data;
     },
   });
 
   function handleSearch() {
-    setSearchQ(q.trim());
-    setSearchLoc(provinceCode);
-    setSearchWard(wardCode);
-    setSearchGender(gender);
-    setSearchYearOfBirthMin(yearOfBirthMin);
-    setSearchYearOfBirthMax(yearOfBirthMax);
-    setSearchEducationLevel(educationLevel);
-    setPage(1);
-  }
-
-  function handleClearFilters() {
-    setQ("");
-    setProvinceCode(null);
-    setWardCode(null);
-    setGender("");
-    setYearOfBirthMin("");
-    setYearOfBirthMax("");
-    setEducationLevel("");
-    setSearchQ("");
-    setSearchLoc(null);
-    setSearchWard(null);
-    setSearchGender("");
-    setSearchYearOfBirthMin("");
-    setSearchYearOfBirthMax("");
-    setSearchEducationLevel("");
-    setPage(1);
+    setFilters((v) => ({ ...v, page: 1 }));
   }
 
   const totalPages = data?.pagination?.totalPages ?? 1;
@@ -168,108 +121,14 @@ export default function TalentPoolExplorer() {
         <Badge variant="outline" className="ml-2">{total} ứng viên</Badge>
       </div>
 
-      {/* Search + location filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            placeholder="Tìm theo tiêu đề nghề nghiệp, từ khóa trong phần giới thiệu..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="pl-9"
-          />
-        </div>
-        <div className="min-w-[220px]">
-          <ProvinceSelect
-            value={provinceCode}
-            onChange={(value) => {
-              setProvinceCode(value);
-              if (!value) {
-                setWardCode(null);
-              } else if (wardCode && !wardCode.startsWith(`${value}/`)) {
-                setWardCode(null);
-              }
-            }}
-            placeholder="Chọn tỉnh / thành"
-          />
-        </div>
-        <div className="min-w-[260px]">
-          <WardSelect
-            provinceCodes={provinceCode ? [provinceCode] : []}
-            disabled={!provinceCode}
-            values={wardCode ? [wardCode] : []}
-            onChangeValues={(vals) => {
-              const value = vals.length ? vals[vals.length - 1] : null;
-              setWardCode(value);
-            }}
-            placeholder={provinceCode ? "Chọn phường / xã" : "Chọn tỉnh / thành trước"}
-          />
-        </div>
-      </div>
-
-      {/* New filters: gender, year of birth, education level */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Gender */}
-        <div className="min-w-[140px]">
-          <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="">Tất cả giới tính</option>
-            <option value="MALE">Nam</option>
-            <option value="FEMALE">Nữ</option>
-            <option value="OTHER">Khác</option>
-          </select>
-        </div>
-
-        {/* Year of birth range */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-500 whitespace-nowrap">Năm sinh:</span>
-          <Input
-            type="number"
-            placeholder="Từ"
-            min={1950}
-            max={2010}
-            value={yearOfBirthMin}
-            onChange={(e) => setYearOfBirthMin(e.target.value)}
-            className="w-[100px]"
-          />
-          <span className="text-slate-400">—</span>
-          <Input
-            type="number"
-            placeholder="Đến"
-            min={1950}
-            max={2010}
-            value={yearOfBirthMax}
-            onChange={(e) => setYearOfBirthMax(e.target.value)}
-            className="w-[100px]"
-          />
-        </div>
-
-        {/* Education level */}
-        <div className="min-w-[200px]">
-          <select
-            value={educationLevel}
-            onChange={(e) => setEducationLevel(e.target.value)}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {EDUCATION_LEVEL_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <Button onClick={handleSearch}>
-          <Search className="mr-2 h-4 w-4" />Tìm kiếm
-        </Button>
-        <Button variant="outline" onClick={handleClearFilters}>
-          Xóa lọc
-        </Button>
-      </div>
+      <CandidateFilterControls
+        values={filters}
+        onValuesChange={setFilters}
+        showSalaryFilters={false}
+        compact={true}
+        onSearch={handleSearch}
+        onClear={onClearFilters}
+      />
 
       {/* Results */}
       {isLoading ? (
@@ -297,6 +156,7 @@ export default function TalentPoolExplorer() {
                 title: c.profile?.title ?? null,
                 skills: c.profile?.skills ?? [],
                 locations: c.profile?.locations ?? [],
+                wardCodes: c.profile?.wardCodes,
                 expectedSalaryMin: c.profile?.expectedSalaryMin ?? null,
                 expectedSalaryMax: c.profile?.expectedSalaryMax ?? null,
                 salaryCurrency: c.profile?.salaryCurrency ?? null,
@@ -315,11 +175,21 @@ export default function TalentPoolExplorer() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 pt-4">
-          <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={filters.page <= 1}
+            onClick={() => setFilters((v) => ({ ...v, page: v.page - 1 }))}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm text-slate-500">{page} / {totalPages}</span>
-          <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+          <span className="text-sm text-slate-500">{filters.page} / {totalPages}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={filters.page >= totalPages}
+            onClick={() => setFilters((v) => ({ ...v, page: v.page + 1 }))}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
