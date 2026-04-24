@@ -223,9 +223,10 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
   }, [open, job, reset]);
 
   const locationSelected = watch("location");
+  const wardCodeValue = watch("wardCode");
 
   useEffect(() => {
-    if (locationSelected) {
+    if (locationSelected && wardCodeValue && !wardCodeValue.startsWith(locationSelected + "/")) {
       setValue("wardCode", "");
     }
   }, [locationSelected, setValue]);
@@ -236,7 +237,7 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
       const payload = {
         title: values.title.trim(),
         location: values.location || null,
-        wardCodes: values.wardCode ? [values.wardCode] : undefined,
+        wardCodes: values.wardCode ? [values.wardCode] : [],
         specificAddress: values.specificAddress?.trim() || null,
         remote: values.remote ?? false,
         employmentType: values.employmentType,

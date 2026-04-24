@@ -43,6 +43,7 @@ export default function WardSelect({
   const [query, setQuery] = useState("");
   const [wards, setWards] = useState<WardOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [wardName, setWardName] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -58,10 +59,19 @@ export default function WardSelect({
       setLoading(true);
       try {
         const list = await fetchWardsByProvinceCodes(provinceCodes);
-        if (!cancelled) setWards(list);
-      } catch {
-        if (!cancelled) setWards([]);
-      } finally {
+        if (!cancelled) {
+          setWards(list);
+          setLoading(false);
+          // Update wardName for current value
+          if (value) {
+            const matched = list.find((w) => w.code === value);
+            if (matched) setWardName(matched.fullName ?? matched.name);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setWards([]);
+        }
         if (!cancelled) setLoading(false);
       }
     })();
@@ -83,8 +93,8 @@ export default function WardSelect({
     });
   }, [wards, query]);
 
-  // Single-select display
-  const displaySingle = value ? byCode.get(value)?.fullName ?? byCode.get(value)?.name ?? value : "";
+  // Single-select display - use wardName if wards not loaded yet, otherwise lookup
+  const displaySingle = value ? wardName ?? byCode.get(value)?.fullName ?? byCode.get(value)?.name ?? value : "";
 
   // Multi-select display
   const displayMulti =

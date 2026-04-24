@@ -245,7 +245,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       const payload = {
         title: values.title.trim(),
         location: values.location || undefined,
-        wardCodes: values.wardCode ? [values.wardCode] : undefined,
+        wardCodes: values.wardCode ? [values.wardCode] : [],
         specificAddress: values.specificAddress?.trim() || undefined,
         remote: values.remote ?? false,
         employmentType: values.employmentType,

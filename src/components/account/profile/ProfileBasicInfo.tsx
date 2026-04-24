@@ -52,9 +52,18 @@ const schema = z.object({
     z.enum(["MALE", "FEMALE", "OTHER"]),
     z.literal("")
   ]).optional().nullable(),
-  dayOfBirth: z.coerce.number().int().min(1).max(31).optional().nullable(),
-  monthOfBirth: z.coerce.number().int().min(1).max(12).optional().nullable(),
-  yearOfBirth: z.coerce.number().int().min(1900).max(new Date().getFullYear() - 16, "Bạn phải đủ 16 tuổi trở lên").optional().nullable(),
+  dayOfBirth: z.union([
+    z.coerce.number().int().min(1).max(31),
+    z.literal("")
+  ]).optional().nullable(),
+  monthOfBirth: z.union([
+    z.coerce.number().int().min(1).max(12),
+    z.literal("")
+  ]).optional().nullable(),
+  yearOfBirth: z.union([
+    z.coerce.number().int().min(1900).max(new Date().getFullYear() - 16),
+    z.literal("")
+  ]).optional().nullable(),
   educationLevel: z.union([
     z.enum(["TRAINING_CENTER", "INTERMEDIATE", "COLLEGE", "BACHELOR", "MASTER", "PHD"]),
     z.literal("")
@@ -204,6 +213,11 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       // Convert gender and educationLevel from empty string to null if needed
       if (cleanedData.gender === "") cleanedData.gender = null;
       if (cleanedData.educationLevel === "") cleanedData.educationLevel = null;
+      
+      // Convert date fields from empty string to null if needed
+      if (cleanedData.dayOfBirth === "" || cleanedData.dayOfBirth === undefined) cleanedData.dayOfBirth = null;
+      if (cleanedData.monthOfBirth === "" || cleanedData.monthOfBirth === undefined) cleanedData.monthOfBirth = null;
+      if (cleanedData.yearOfBirth === "" || cleanedData.yearOfBirth === undefined) cleanedData.yearOfBirth = null;
       
       const payload = {
         ...cleanedData,
@@ -672,12 +686,21 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           <div>
             <Label htmlFor="dateOfBirth">Ngày sinh <span className="text-red-500">*</span></Label>
             <DateOfBirthPicker
-              day={dayOfBirthValue}
-              month={monthOfBirthValue}
-              year={yearOfBirthValue}
-              onChangeDay={(val) => setValue("dayOfBirth", val ?? undefined, { shouldDirty: true })}
-              onChangeMonth={(val) => setValue("monthOfBirth", val ?? undefined, { shouldDirty: true })}
-              onChangeYear={(val) => setValue("yearOfBirth", val ?? undefined, { shouldDirty: true })}
+              day={dayOfBirthValue as number | null}
+              month={monthOfBirthValue as number | null}
+              year={yearOfBirthValue as number | null}
+              onChangeDay={(val) => {
+                const numVal = val as number | null | "";
+                setValue("dayOfBirth", numVal === "" ? undefined : (numVal ?? undefined) as number | null, { shouldDirty: true });
+              }}
+              onChangeMonth={(val) => {
+                const numVal = val as number | null | "";
+                setValue("monthOfBirth", numVal === "" ? undefined : (numVal ?? undefined) as number | null, { shouldDirty: true });
+              }}
+              onChangeYear={(val) => {
+                const numVal = val as number | null | "";
+                setValue("yearOfBirth", numVal === "" ? undefined : (numVal ?? undefined) as number | null, { shouldDirty: true });
+              }}
             />
             {errors.yearOfBirth && <p className="mt-1 text-sm text-red-500">{errors.yearOfBirth.message}</p>}
             {!errors.yearOfBirth && !yearOfBirthValue && (
