@@ -1,35 +1,17 @@
 /**
  * Shared utilities for Job URL slug generation, building, and parsing.
- * Used across the frontend to build canonical SEO-friendly URLs and parse URL params.
- *
- * NOTE: This file must stay in sync with the backend's `src/shared/job-slug.ts`.
- * The slugification algorithm is identical on both sides.
+ * Uses the slugify package with Vietnamese locale.
+ * NOTE: This must stay in sync with the backend's `src/shared/job-slug.ts`.
  */
+import slugifyLib from 'slugify';
 
 const CUID_REGEX = /^[a-z][a-z0-9]{24}$/;
 
 /**
  * Normalize a Vietnamese title string to a URL-friendly slug.
- *
- * Steps:
- * 1. Decompose Unicode (NFD) to separate base chars from diacritics
- * 2. Remove Vietnamese diacritics (combining marks \u0300-\u036f)
- * 3. Lowercase
- * 4. Replace any non-alphanumeric / space / hyphen chars with space
- * 5. Trim and collapse multiple spaces to single hyphen
- * 6. Collapse multiple hyphens to single hyphen
- * 7. Trim leading/trailing hyphens
  */
-export function slugifyVietnamese(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, ' ')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
-}
+export const slugifyVietnamese = (text: string): string =>
+  slugifyLib(text, { locale: 'vi', lower: true, trim: true });
 
 /**
  * Build the canonical SEO-friendly URL for a job.
@@ -37,7 +19,11 @@ export function slugifyVietnamese(text: string): string {
  * Uses stored slug if available, otherwise falls back to generating
  * one from the job title (useful for jobs created before this feature).
  */
-export function buildJobUrl(job: { id: string; slug?: string | null; title: string }): string {
+export function buildJobUrl(job: {
+  id: string;
+  slug?: string | null;
+  title: string;
+}): string {
   const slug = job.slug ?? slugifyVietnamese(job.title);
   return `/jobs/${slug}--${job.id}`;
 }
@@ -53,7 +39,9 @@ export function buildJobUrl(job: { id: string; slug?: string | null; title: stri
  * - ID portion doesn't match Prisma cuid pattern
  * - Slug is empty
  */
-export function parseJobUrlParam(param: string): { slug: string; id: string } | null {
+export function parseJobUrlParam(
+  param: string,
+): { slug: string; id: string } | null {
   const lastSepIdx = param.lastIndexOf('--');
   if (lastSepIdx === -1) return null;
   const id = param.slice(lastSepIdx + 2);

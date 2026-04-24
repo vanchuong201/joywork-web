@@ -7,7 +7,7 @@
  * - Uses React nodes (no dangerouslySetInnerHTML)
  * - All hrefs are validated through the URL constructor
  * - Only http/https protocols are allowed
- * - External links get rel="noopener noreferrer" and target="_blank"
+ * - External links get rel="noopener noreferrer nofollow" and target="_blank"
  *
  * Features:
  * - Preserves whitespace and line breaks
@@ -83,14 +83,17 @@ const AutoLinkText = memo(function AutoLinkText({
           );
         }
 
-        const isExternal = newTab;
-        const rel = isExternal ? "noopener noreferrer" : undefined;
+        // All external links (newTab=true, the default) get noopener + nofollow.
+        // noopener: prevents the opened page from accessing window.opener (security)
+        // nofollow: prevents SEO PageRank flow (required for user-generated content links)
+        // ugc: explicitly marks these as user-generated content (Google best practice)
+        const rel = newTab ? "noopener noreferrer nofollow ugc" : undefined;
 
         return (
           <a
             key={urlKey}
             href={part.href}
-            target={isExternal ? "_blank" : undefined}
+            target={newTab ? "_blank" : undefined}
             rel={rel}
             className={cn(
               "break-all font-medium text-[var(--brand)] underline underline-offset-2 hover:opacity-80",

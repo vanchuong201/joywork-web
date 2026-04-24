@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText, Sparkles, Download } from 'lucide-react';
+import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText, Sparkles, Download, Cake } from 'lucide-react';
 import { PublicUserProfile } from '@/types/user';
 import { useAuthStore } from '@/store/useAuth';
 import { Button } from '@/components/ui/button';
@@ -115,6 +115,21 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
   // Address: [Địa chỉ cụ thể] - [Phường xã] - [Tỉnh/thành]
   const hasAddress = profile.profile?.specificAddress || profile.profile?.location || profile.profile?.wardCodes?.length;
 
+  // Build full date of birth display
+  const fullDateOfBirth = (() => {
+    const day = profile.profile?.dayOfBirth;
+    const month = profile.profile?.monthOfBirth;
+    const year = profile.profile?.yearOfBirth;
+    if (!year) return null;
+    const parts: string[] = [];
+    if (day) parts.push(String(day));
+    if (month) parts.push(String(month));
+    parts.push(String(year));
+    return parts.join('/');
+  })();
+
+  const hasDateOfBirth = !!profile.profile?.yearOfBirth;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-24 opacity-10" style={{ background: `linear-gradient(to right, var(--brand), var(--brand-secondary))` }}></div>
@@ -156,7 +171,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                 <p className="text-base text-slate-500 mb-3">{profile.profile.headline}</p>
               )}
               <div className="flex flex-wrap gap-4 text-sm text-slate-500">
-                {/* Address - Protected info like email/phone */}
+                {/* Address */}
                 {hasAddress && (
                   <span
                     className={cn(
@@ -170,6 +185,19 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     </span>
                   </span>
                 )}
+                {/* Date of Birth */}
+                {(showCvMask || hasDateOfBirth) && (
+                  <span
+                    className={cn(
+                      "flex items-center gap-1",
+                      showCvMask && "select-none blur-[5px]"
+                    )}
+                  >
+                    <Cake size={16} className="shrink-0" />
+                    <span>{showCvMask ? "••/••/••••" : fullDateOfBirth}</span>
+                  </span>
+                )}
+                {/* Email */}
                 {(showCvMask || profile.profile?.contactEmail) && (
                   <span
                     className={cn(
@@ -183,6 +211,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     </span>
                   </span>
                 )}
+                {/* Phone */}
                 {(showCvMask || profile.profile?.contactPhone) && (
                   <span
                     className={cn(
@@ -196,6 +225,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     </span>
                   </span>
                 )}
+                {/* Website */}
                 {(showCvMask || profile.profile?.website) && (
                   <a
                     href={showCvMask ? "#" : (profile.profile?.website || "#")}
@@ -210,7 +240,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     <span>{showCvMask ? "https://••••••" : "Website"}</span>
                   </a>
                 )}
-                {/* LinkedIn - Icon button style */}
+                {/* LinkedIn */}
                 {(showCvMask || profile.profile?.linkedin) && (
                   <a
                     href={showCvMask ? "#" : (profile.profile?.linkedin || "#")}
@@ -226,7 +256,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     <span>{showCvMask ? "••••••" : "LinkedIn"}</span>
                   </a>
                 )}
-                {/* GitHub - Icon button style */}
+                {/* GitHub */}
                 {(showCvMask || profile.profile?.github) && (
                   <a
                     href={showCvMask ? "#" : (profile.profile?.github || "#")}
@@ -242,7 +272,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     <span>{showCvMask ? "••••••" : "GitHub"}</span>
                   </a>
                 )}
-                {/* CV File - Download button style */}
+                {/* CV Download */}
                 {(showCvMask || profile.profile?.cvUrl) && (
                   <a
                     href={showCvMask ? "#" : (profile.profile?.cvUrl || "#")}

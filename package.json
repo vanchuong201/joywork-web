@@ -52,6 +52,7 @@
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^10.0.0",
     "react-photo-view": "^1.2.7",
+    "slugify": "^1.6.9",
     "sonner": "2.0.7",
     "tailwind-merge": "3.3.1",
     "turndown": "^7.2.2",
@@ -78,5 +79,8 @@
     "tailwindcss": "^3.4.13",
     "typescript": "^5",
     "vitest": "^4.1.4"
+  },
+  "overrides": {
+    "@opentelemetry/instrumentation": "^0.212.0"
   }
 }

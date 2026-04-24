@@ -299,10 +299,9 @@ export default function JobDetailPage() {
           <div className="space-y-3 border-t border-[var(--border)] pt-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {job.department ? <InfoItem icon={Briefcase} label="Bộ phận" value={job.department} /> : null}
-              {jobProvinceLine || job.location ? (
-                <InfoItem icon={MapPin} label="Tỉnh/thành" value={jobProvinceLine || String(job.location)} />
+              {(jobProvinceLine || job.location || job.specificAddress || jobWardLine) ? (
+                <InfoItem icon={MapPin} label="Địa điểm" value={[job.specificAddress, jobWardLine, jobProvinceLine || job.location].filter(Boolean).join(" - ")} />
               ) : null}
-              {jobWardLine ? <InfoItem icon={MapPinned} label="Phường/xã" value={jobWardLine} /> : null}
               {job.remote ? <InfoItem icon={Globe2} label="Làm việc từ xa" value="Có thể làm remote" /> : null}
               <InfoItem icon={Clock} label="Hình thức" value={translateEmploymentType(job.employmentType)} />
               <InfoItem icon={DollarSign} label="Mức lương" value={salary} />

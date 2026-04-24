@@ -13,11 +13,11 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 import DOMPurify from "dompurify";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
+import { educationLevels, translateEducationLevel } from "@/lib/education-levels";
 
 const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE"] as const;
 const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"] as const;
 const jobLevels = ["INTERN_STUDENT", "FRESH_GRAD", "EMPLOYEE", "SPECIALIST_TEAM_LEAD", "MANAGER_HEAD", "DIRECTOR", "EXECUTIVE"] as const;
-const educationLevels = ["TRAINING_CENTER", "INTERMEDIATE", "COLLEGE", "BACHELOR", "MASTER", "PHD"] as const;
 const genders = ["MALE", "FEMALE", "OTHER"] as const;
 
 // Helper function to strip HTML tags and get plain text length
@@ -40,8 +40,9 @@ const schema = z
   .object({
     // Basic info
     title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự").max(200, "Tiêu đề tối đa 200 ký tự"),
-    locations: z.array(z.string()).optional(),
-    wardCodes: z.array(z.string()).optional(),
+    location: z.string().optional(),
+    wardCode: z.string().optional(),
+    specificAddress: z.string().max(500, "Địa chỉ cụ thể tối đa 500 ký tự").optional().or(z.literal("")),
     remote: z.boolean().optional().default(false),
     employmentType: z.enum(employmentTypes).default("FULL_TIME"),
     experienceLevel: z.enum(experienceLevels).default("NO_EXPERIENCE"),
@@ -165,8 +166,9 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
     reValidateMode: "onChange",
     defaultValues: {
       title: "",
-      locations: [],
-      wardCodes: [],
+      location: "",
+      wardCode: "",
+      specificAddress: "",
       remote: false,
       employmentType: "FULL_TIME",
       experienceLevel: "NO_EXPERIENCE",
@@ -214,6 +216,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       salaryMax: "Lương tối đa",
       currency: "Đơn vị tiền tệ",
       applicationDeadline: "Hạn nộp hồ sơ",
+      specificAddress: "Địa chỉ cụ thể",
     };
     return {
       field,
@@ -241,8 +244,9 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       // Sanitize all HTML fields
       const payload = {
         title: values.title.trim(),
-        locations: values.locations || [],
-        wardCodes: values.wardCodes?.length ? values.wardCodes : undefined,
+        location: values.location || undefined,
+        wardCodes: values.wardCode ? [values.wardCode] : undefined,
+        specificAddress: values.specificAddress?.trim() || undefined,
         remote: values.remote ?? false,
         employmentType: values.employmentType,
         experienceLevel: values.experienceLevel,
@@ -341,31 +345,13 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
     return map[l] || l;
   };
 
-  const translateEducationLevel = (l: (typeof educationLevels)[number]) => {
-    const map: Record<string, string> = {
-      TRAINING_CENTER: "Trung tâm đào tạo",
-      INTERMEDIATE: "Trung cấp",
-      COLLEGE: "Cao đẳng",
-      BACHELOR: "Đại học",
-      MASTER: "Thạc sĩ",
-      PHD: "Tiến sĩ",
-    };
-    return map[l] || l;
-  };
-
-  const locationsSelected = watch("locations");
-  const locationsKey = useMemo(() => (locationsSelected ?? []).join(","), [locationsSelected]);
-  const locationValues = locationsSelected ?? [];
+  const locationSelected = watch("location");
 
   useEffect(() => {
-    const locs = getValues("locations") ?? [];
-    const allowed = new Set(locs);
-    const current = getValues("wardCodes") || [];
-    const next = current.filter((w) => allowed.has(w.split("/")[0]));
-    if (next.length !== current.length) {
-      setValue("wardCodes", next, { shouldDirty: true });
+    if (locationSelected) {
+      setValue("wardCode", "");
     }
-  }, [locationsKey, getValues, setValue]);
+  }, [locationSelected, setValue]);
 
   // Scroll to top when modal opens
   useEffect(() => {
@@ -395,7 +381,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       
       // Expand the section containing the error
       const sectionMap: Record<string, string> = {
-        title: "basic", locations: "basic", wardCodes: "basic", employmentType: "basic", experienceLevel: "basic",
+        title: "basic", location: "basic", wardCode: "basic", specificAddress: "basic", employmentType: "basic", experienceLevel: "basic",
         salaryMin: "basic", salaryMax: "basic", currency: "basic", applicationDeadline: "basic", tags: "basic",
         department: "basic", jobLevel: "basic", educationLevel: "basic",
         mission: "mission",
@@ -508,22 +494,27 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
                 </FormField>
               </div>
               
-              <div className="grid gap-4 md:grid-cols-2">
-                <FormField label="Địa điểm làm việc" error={errors.locations?.message}>
+              <div className="space-y-3">
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium text-[var(--foreground)]">Địa điểm làm việc</span>
+                </label>
+                <div className="grid gap-3 md:grid-cols-2">
                   <ProvinceSelect
-                    multiple
-                    values={watch("locations") || []}
-                    onChangeValues={(vals) => setValue("locations", vals, { shouldDirty: true })}
+                    value={watch("location")}
+                    onChange={(val) => setValue("location", val ?? undefined, { shouldDirty: true })}
+                    placeholder="Chọn tỉnh/thành phố"
                   />
-                </FormField>
-                <FormField label="Phường / xã (tuỳ chọn)" error={errors.wardCodes?.message}>
                   <WardSelect
-                    provinceCodes={locationValues}
-                    disabled={!locationValues.length}
-                    values={watch("wardCodes") || []}
-                    onChangeValues={(vals) => setValue("wardCodes", vals, { shouldDirty: true })}
+                    provinceCodes={locationSelected ? [locationSelected] : []}
+                    disabled={!locationSelected}
+                    value={watch("wardCode") ?? undefined}
+                    onChange={(val) => setValue("wardCode", val ?? undefined, { shouldDirty: true })}
                   />
-                </FormField>
+                </div>
+                <Input
+                  placeholder="Số nhà, phố..."
+                  {...register("specificAddress")}
+                />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">

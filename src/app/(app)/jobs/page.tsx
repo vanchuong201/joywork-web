@@ -6,6 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { buildJobUrl } from "@/lib/job-url";
+import { EDUCATION_LEVEL_OPTIONS, translateEducationLevel } from "@/lib/education-levels";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -414,19 +415,6 @@ function JobsPageContent() {
     }
   };
 
-  const translateEducationLevel = (level?: string | null) => {
-    if (!level) return "";
-    switch (level) {
-      case "TRAINING_CENTER": return "Trung tâm đào tạo";
-      case "INTERMEDIATE": return "Trung cấp";
-      case "COLLEGE": return "Cao đẳng";
-      case "BACHELOR": return "Đại học";
-      case "MASTER": return "Thạc sĩ";
-      case "PHD": return "Tiến sĩ";
-      default: return level;
-    }
-  };
-
   const commitSalaryParam = (key: "salaryMin" | "salaryMax", rawValue: string) => {
     const next = new URLSearchParams(sp.toString());
     const trimmed = rawValue.trim();
@@ -706,12 +694,9 @@ function JobsPageContent() {
                 className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm"
               >
                 <option value="">Tất cả</option>
-                <option value="NONE">Không yêu cầu</option>
-                <option value="HIGH_SCHOOL">Trung học phổ thông</option>
-                <option value="COLLEGE">Cao đẳng</option>
-                <option value="BACHELOR">Đại học</option>
-                <option value="MASTER">Thạc sĩ</option>
-                <option value="PHD">Tiến sĩ</option>
+                {EDUCATION_LEVEL_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-1.5 text-sm">

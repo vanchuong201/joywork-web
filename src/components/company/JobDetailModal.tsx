@@ -91,7 +91,7 @@ export default function JobDetailModal({ open, onOpenChange, jobId }: Props) {
               <InfoRow label="Hạn nộp" value={deadline} />
               <InfoRow label="Hình thức làm việc" value={translateEmploymentType(job.employmentType)} />
               <InfoRow label="Kinh nghiệm" value={translateExperienceLevel(job.experienceLevel)} />
-              <InfoRow label="Địa điểm" value={job.remote ? "Làm việc từ xa" : job.location ?? "Không ghi rõ"} />
+              <InfoRow label="Địa điểm" value={job.remote ? "Làm việc từ xa" : ([job.specificAddress, job.location].filter(Boolean).join(" - ") || "Không ghi rõ")} />
               {job.remote && <InfoRow label="Hình thức làm việc" value="Cho phép làm từ xa" />}
               {job.tags?.length ? <InfoRow label="Kỹ năng" value={job.tags.join(", ")} /> : null}
             </section>

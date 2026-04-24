@@ -66,7 +66,9 @@ export interface UserProfile {
   expectedCulture?: string | null;
   careerGoals?: string[];
   gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
-  yearOfBirth: number;
+  dayOfBirth?: number | null;
+  monthOfBirth?: number | null;
+  yearOfBirth?: number | null;
   educationLevel?: 'TRAINING_CENTER' | 'INTERMEDIATE' | 'COLLEGE' | 'BACHELOR' | 'MASTER' | 'PHD' | null;
   createdAt: string;
   updatedAt: string;
@@ -108,6 +110,11 @@ export interface PublicUserProfile {
     expectedCulture?: string | null;
     careerGoals?: string[];
     visibility?: UserProfileVisibility | null;
+    gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
+    dayOfBirth?: number | null;
+    monthOfBirth?: number | null;
+    yearOfBirth?: number | null;
+    educationLevel?: 'TRAINING_CENTER' | 'INTERMEDIATE' | 'COLLEGE' | 'BACHELOR' | 'MASTER' | 'PHD' | null;
   };
   experiences?: UserExperience[];
   educations?: UserEducation[];

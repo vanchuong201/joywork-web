@@ -18,6 +18,7 @@ import Image from "next/image";
 import { Loader2, Upload, FileText, X } from "lucide-react";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
+import DateOfBirthPicker from "@/components/ui/date-of-birth-picker";
 
 // Helper for optional URL fields - accepts empty string
 const optionalUrl = z.union([
@@ -47,9 +48,17 @@ const schema = z.object({
   github: optionalUrl,
   cvUrl: optionalUrl,
   isPublic: z.boolean().optional(),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().nullable(),
+  gender: z.union([
+    z.enum(["MALE", "FEMALE", "OTHER"]),
+    z.literal("")
+  ]).optional().nullable(),
+  dayOfBirth: z.coerce.number().int().min(1).max(31).optional().nullable(),
+  monthOfBirth: z.coerce.number().int().min(1).max(12).optional().nullable(),
   yearOfBirth: z.coerce.number().int().min(1900).max(new Date().getFullYear() - 16, "Bạn phải đủ 16 tuổi trở lên").optional().nullable(),
-  educationLevel: z.enum(["TRAINING_CENTER", "INTERMEDIATE", "COLLEGE", "BACHELOR", "MASTER", "PHD"]).optional().nullable(),
+  educationLevel: z.union([
+    z.enum(["TRAINING_CENTER", "INTERMEDIATE", "COLLEGE", "BACHELOR", "MASTER", "PHD"]),
+    z.literal("")
+  ]).optional().nullable(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -99,6 +108,8 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       cvUrl: profile.profile?.cvUrl || "",
       isPublic: profile.profile?.isPublic ?? true,
       gender: profile.profile?.gender ?? undefined,
+      dayOfBirth: profile.profile?.dayOfBirth ?? undefined,
+      monthOfBirth: profile.profile?.monthOfBirth ?? undefined,
       yearOfBirth: profile.profile?.yearOfBirth ?? undefined,
       educationLevel: profile.profile?.educationLevel ?? undefined,
     },
@@ -112,6 +123,8 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const locationValues = watch("locations") || [];
   const wardCodeValue = watch("wardCodes")?.[0] || null;
   const genderValue = watch("gender");
+  const dayOfBirthValue = watch("dayOfBirth");
+  const monthOfBirthValue = watch("monthOfBirth");
   const yearOfBirthValue = watch("yearOfBirth");
   const educationLevelValue = watch("educationLevel");
 
@@ -142,9 +155,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     isContactEmailMissing ? "Email liên hệ trên CV" : null,
     isContactPhoneMissing ? "Số điện thoại liên hệ trên CV" : null,
     isLocationMissing ? "Địa điểm" : null,
-    isGenderMissing ? "Giới tính" : null,
-    isYearOfBirthMissing ? "Năm sinh" : null,
-    isEducationLevelMissing ? "Trình độ học vấn" : null,
+    isYearOfBirthMissing ? "Ngày sinh" : null,
   ].filter(Boolean) as string[];
 
   useEffect(() => {
@@ -165,6 +176,8 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       cvUrl: profile.profile?.cvUrl || "",
       isPublic: profile.profile?.isPublic ?? true,
       gender: profile.profile?.gender ?? undefined,
+      dayOfBirth: profile.profile?.dayOfBirth ?? undefined,
+      monthOfBirth: profile.profile?.monthOfBirth ?? undefined,
       yearOfBirth: profile.profile?.yearOfBirth ?? undefined,
       educationLevel: profile.profile?.educationLevel ?? undefined,
     });
@@ -187,6 +200,10 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           cleanedData[key] = value;
         }
       }
+      
+      // Convert gender and educationLevel from empty string to null if needed
+      if (cleanedData.gender === "") cleanedData.gender = null;
+      if (cleanedData.educationLevel === "") cleanedData.educationLevel = null;
       
       const payload = {
         ...cleanedData,
@@ -618,7 +635,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           </div>
 
           {/* Personal Info for CV */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="gender">Giới tính</Label>
               <select
@@ -633,21 +650,6 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               {errors.gender && <p className="mt-1 text-sm text-red-500">{errors.gender.message}</p>}
             </div>
             <div>
-              <Label htmlFor="yearOfBirth">Năm sinh <span className="text-red-500">*</span></Label>
-              <Input
-                id="yearOfBirth"
-                type="number"
-                min={1900}
-                max={new Date().getFullYear() - 16}
-                placeholder="1995"
-                {...register("yearOfBirth")}
-              />
-              {errors.yearOfBirth && <p className="mt-1 text-sm text-red-500">{errors.yearOfBirth.message}</p>}
-              {!errors.yearOfBirth && !watch("yearOfBirth") && (
-                <p className="mt-1 text-xs text-amber-600">Vui lòng nhập năm sinh.</p>
-              )}
-            </div>
-            <div>
               <Label htmlFor="educationLevel">Trình độ học vấn</Label>
               <select
                 id="educationLevel"
@@ -659,11 +661,28 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
                 <option value="INTERMEDIATE">Trung cấp</option>
                 <option value="COLLEGE">Cao đẳng</option>
                 <option value="BACHELOR">Đại học</option>
-                <option value="MASTER">Thạc sỹ</option>
+                <option value="MASTER">Thạc sĩ</option>
                 <option value="PHD">Tiến sĩ</option>
               </select>
               {errors.educationLevel && <p className="mt-1 text-sm text-red-500">{errors.educationLevel.message}</p>}
             </div>
+          </div>
+
+          {/* Date of Birth - Full width */}
+          <div>
+            <Label htmlFor="dateOfBirth">Ngày sinh <span className="text-red-500">*</span></Label>
+            <DateOfBirthPicker
+              day={dayOfBirthValue}
+              month={monthOfBirthValue}
+              year={yearOfBirthValue}
+              onChangeDay={(val) => setValue("dayOfBirth", val ?? undefined, { shouldDirty: true })}
+              onChangeMonth={(val) => setValue("monthOfBirth", val ?? undefined, { shouldDirty: true })}
+              onChangeYear={(val) => setValue("yearOfBirth", val ?? undefined, { shouldDirty: true })}
+            />
+            {errors.yearOfBirth && <p className="mt-1 text-sm text-red-500">{errors.yearOfBirth.message}</p>}
+            {!errors.yearOfBirth && !yearOfBirthValue && (
+              <p className="mt-1 text-xs text-amber-600">Vui lòng nhập năm sinh.</p>
+            )}
           </div>
 
           {/* CV File */}

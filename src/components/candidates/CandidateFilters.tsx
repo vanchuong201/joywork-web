@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,7 @@ import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import MultiSelect from "@/components/ui/multi-select";
 import { Search, X } from "lucide-react";
-
-const EDUCATION_LEVEL_OPTIONS = [
-  { value: "TRAINING_CENTER", label: "Trung tâm đào tạo" },
-  { value: "INTERMEDIATE", label: "Trung cấp" },
-  { value: "COLLEGE", label: "Cao đẳng" },
-  { value: "BACHELOR", label: "Đại học" },
-  { value: "MASTER", label: "Thạc sỹ" },
-  { value: "PHD", label: "Tiến sĩ" },
-];
+import { EDUCATION_LEVEL_OPTIONS } from "@/lib/education-levels";
 
 const GENDER_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -36,6 +28,47 @@ function generateYearOptions() {
 }
 
 const YEAR_OPTIONS = generateYearOptions();
+
+/** Input that debounces onChange to avoid excessive updates while typing. */
+function DebouncedInput({
+  value,
+  onChange,
+  onDebounce,
+  debounceMs = 400,
+  ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> & {
+  value: string;
+  onChange: (value: string) => void;
+  onDebounce?: (value: string) => void;
+  debounceMs?: number;
+}) {
+  const [localValue, setLocalValue] = useState(value);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      onChange(localValue);
+      onDebounce?.(localValue);
+    }, debounceMs);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localValue, debounceMs]);
+
+  return (
+    <input
+      {...props}
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+    />
+  );
+}
 
 export type CandidateFilterValues = {
   keyword: string;
@@ -68,13 +101,15 @@ export function CandidateFilterControls({
   onValuesChange: (v: CandidateFilterValues) => void;
   showSalaryFilters?: boolean;
   compact?: boolean;
-  onSearch?: () => void;
+  onSearch?: (keyword?: string) => void;
   onClear?: () => void;
 }) {
   const set = (patch: Partial<CandidateFilterValues>) =>
     onValuesChange({ ...values, ...patch, page: 1 });
 
-  const inputClass = compact ? "h-9 text-xs" : "h-10";
+  const inputClass = compact
+    ? "h-9 text-xs rounded-md border border-[var(--border)] bg-background px-2 focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-offset-1"
+    : "h-10 rounded-md border border-[var(--border)] bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-offset-2";
   const selectClass = compact
     ? "h-9 rounded-md border border-[var(--border)] bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-offset-1"
     : "h-10 rounded-md border border-[var(--border)] bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-offset-2";
@@ -84,19 +119,21 @@ export function CandidateFilterControls({
       {/* Row 1: keyword + locations + wards */}
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {showSalaryFilters ? (
-          <Input
+          <DebouncedInput
             className={inputClass}
             value={values.keyword}
-            onChange={(e) => set({ keyword: e.target.value })}
-            placeholder="Từ khóa trong CV (ưu tiên tiêu đề nghề nghiệp)"
+            onChange={() => {}}
+            onDebounce={(kw) => set({ keyword: kw })}
+            placeholder="Từ khóa trong CV (ưu tiên vị trí ứng tuyển)"
           />
         ) : (
           <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <DebouncedInput
               className={`${inputClass} pl-9`}
               value={values.keyword}
-              onChange={(e) => set({ keyword: e.target.value })}
+              onChange={() => {}}
+              onDebounce={(kw) => set({ keyword: kw })}
               onKeyDown={(e) => e.key === "Enter" && onSearch?.()}
               placeholder="Từ khóa trong CV (ưu tiên vị trí ứng tuyển)"
             />
@@ -211,7 +248,7 @@ export function CandidateFilterControls({
             </Button>
           ) : (
             <>
-              <Button size="sm" onClick={onSearch}>
+              <Button size="sm" onClick={() => onSearch?.()}>
                 <Search className="mr-1 h-3 w-3" />Tìm
               </Button>
               <Button variant="outline" size="sm" onClick={onClear}>
@@ -263,7 +300,7 @@ export function useCandidateFilters() {
       if (nextVals.page > 1) params.set("page", String(nextVals.page));
 
       const qs = params.toString();
-      router.replace(qs ? `?${qs}` : ".", { scroll: false });
+      router.replace(qs ? `?${qs}` : window.location.pathname, { scroll: false });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [router],
