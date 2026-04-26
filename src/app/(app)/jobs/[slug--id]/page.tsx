@@ -26,6 +26,7 @@ import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 import {
   Briefcase,
   MapPin,
@@ -349,6 +350,43 @@ export default function JobDetailPage() {
             <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.kpis) }} />
           </SectionCard>
         ) : null}
+
+        {/* 3.5. Tìm hiểu thêm về công ty */}
+        <Link
+          href={`/companies/${job.company.slug}`}
+          className="group block rounded-2xl border border-[var(--border)] bg-gradient-to-r from-[var(--muted)]/60 to-[var(--card)] p-4 transition-all hover:border-[var(--brand)]/40 hover:shadow-md sm:p-5"
+        >
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
+            {/* Logo công ty */}
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition-transform group-hover:scale-105">
+              {job.company.logoUrl ? (
+                <CompanyLogo
+                  src={job.company.logoUrl}
+                  alt={job.company.name}
+                  className="h-full w-full object-cover"
+                  width={56}
+                  height={56}
+                />
+              ) : (
+                <Briefcase className="h-6 w-6 text-[var(--muted-foreground)]" />
+              )}
+            </div>
+            {/* Text + CTA */}
+            <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <p className="text-sm text-[var(--muted-foreground)] sm:text-base">
+                Hãy tìm hiểu thêm về văn hóa doanh nghiệp của{" "}
+                <span className="font-semibold text-[var(--foreground)]">{job.company.name}</span>{" "}
+                trước khi ứng tuyển
+              </p>
+              <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[var(--brand)]/30 bg-[var(--brand)]/10 px-4 py-2 text-sm font-medium text-[var(--brand)] transition-all group-hover:border-[var(--brand)]/60 group-hover:bg-[var(--brand)]/20 group-hover:shadow-sm">
+                Xem hồ sơ công ty
+                <svg className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </span>
+            </div>
+          </div>
+        </Link>
 
         {/* 4. Yêu cầu (KSA - Knowledge, Skills, Attitude) */}
         {job.knowledge || job.skills || job.attitude ? (
