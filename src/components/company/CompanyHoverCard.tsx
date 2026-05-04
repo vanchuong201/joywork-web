@@ -149,7 +149,7 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
                     </div>
                   )}
                   <div>
-                    <Link href={`/companies/${data.slug}`} className="text-base font-semibold text-[var(--foreground)] hover:underline">
+                    <Link href={`/companies/${data.slug}`} className="text-base font-semibold text-[var(--brand)] underline">
                       {data.name}
                     </Link>
                     {data.tagline ? (
