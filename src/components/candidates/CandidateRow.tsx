@@ -70,12 +70,16 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
   const detailHref = slug ? `/candidates/${encodeURIComponent(slug)}` : "#";
   const displayName = name || "Ứng viên";
   const displayTitle = title || "Không xác định";
-  const salaryDisplay = formatSalaryRange(
-    expectedSalaryMin ?? undefined,
-    expectedSalaryMax ?? undefined,
-    (salaryCurrency as "VND" | "USD") || "VND"
-  );
   const currency = (salaryCurrency as "VND" | "USD") || "VND";
+  const isNegotiableSalary =
+    expectedSalaryMin == null && expectedSalaryMax == null;
+  const salaryDisplay = isNegotiableSalary
+    ? "Thỏa thuận"
+    : formatSalaryRange(
+        expectedSalaryMin ?? undefined,
+        expectedSalaryMax ?? undefined,
+        currency
+      );
   const locationDisplay = (() => {
     if (!locations.length) return null;
     if (wardCodes && wardCodes.length > 0) {
@@ -117,7 +121,8 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
             <div className="shrink-0 text-right">
               {salaryDisplay && (
                 <p className="text-sm font-medium text-[var(--brand)]">
-                  {salaryDisplay} {currency}
+                  {salaryDisplay}
+                  {!isNegotiableSalary ? ` ${currency}` : null}
                 </p>
               )}
               {locationDisplay && (

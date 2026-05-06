@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuth";
 import {
   getCvFlipAccessCompanies,
@@ -24,6 +24,7 @@ import {
 const SELECTED_COMPANY_KEY = "cvFlip.selectedCompanyId";
 const TAB_ALL = "all";
 const TAB_TALENT_POOL = "talent-pool";
+const CV_FLIP_PAGE_SIZE = 12;
 
 function CandidatesPageContent() {
   const router = useRouter();
@@ -41,7 +42,6 @@ function CandidatesPageContent() {
     yearOfBirthMin,
     yearOfBirthMax,
     educationLevels,
-    page,
   } = filters;
 
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
@@ -88,10 +88,10 @@ function CandidatesPageContent() {
     enabled: Boolean(selectedCompanyId),
   });
 
-  const candidatesQuery = useQuery({
+  const candidatesInfiniteQuery = useInfiniteQuery({
     queryKey: [
       "cv-flip-candidates",
-      page,
+      selectedCompanyId,
       keyword,
       locations,
       wardCodes[0] ?? "",
@@ -103,10 +103,11 @@ function CandidatesPageContent() {
       yearOfBirthMax,
       educationLevels,
     ],
-    queryFn: () =>
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
       listCvFlipCandidates({
-        page,
-        limit: 12,
+        page: pageParam,
+        limit: CV_FLIP_PAGE_SIZE,
         keyword: keyword || undefined,
         locations: locations.length > 0 ? locations : undefined,
         ward: wardCodes[0] || undefined,
@@ -128,8 +129,19 @@ function CandidatesPageContent() {
               )[])
             : undefined,
       }),
+    getNextPageParam: (lastPage) => {
+      const { page: lastPageNo, totalPages } = lastPage.pagination;
+      return lastPageNo < totalPages ? lastPageNo + 1 : undefined;
+    },
     enabled: initialized && !loading && !!user && !!selectedCompanyId,
   });
+
+  const loadedCandidates =
+    candidatesInfiniteQuery.data?.pages.flatMap((p) => p.candidates) ?? [];
+  const totalCount =
+    candidatesInfiniteQuery.data?.pages[candidatesInfiniteQuery.data.pages.length - 1]?.pagination
+      .total ?? 0;
+  const hasMoreCandidates = Boolean(candidatesInfiniteQuery.hasNextPage);
 
   const talentPoolAccessQuery = useQuery<{ hasAccess: boolean; reason?: string }>({
     queryKey: ["talent-pool-access"],
@@ -243,14 +255,17 @@ function CandidatesPageContent() {
             onClear={clearFilters}
           />
 
-          {candidatesQuery.error ? (
+          {candidatesInfiniteQuery.error ? (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
               Không tải được danh sách ứng viên.
             </div>
           ) : null}
 
           <div className="space-y-3">
-            {(candidatesQuery.data?.candidates ?? []).map((candidate) => (
+            {candidatesInfiniteQuery.isPending ? (
+              <p className="text-sm text-[var(--muted-foreground)]">Đang tải danh sách...</p>
+            ) : null}
+            {loadedCandidates.map((candidate) => (
               <CandidateRow
                 key={candidate.userId}
                 candidate={{
@@ -277,28 +292,22 @@ function CandidatesPageContent() {
             ))}
           </div>
 
-          {candidatesQuery.data?.pagination ? (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-[var(--muted-foreground)]">
-                Trang {candidatesQuery.data.pagination.page}/
-                {candidatesQuery.data.pagination.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  disabled={page <= 1}
-                  onClick={() => setValues((v) => ({ ...v, page: Math.max(1, v.page - 1) }))}
-                >
-                  Trước
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={page >= candidatesQuery.data.pagination.totalPages}
-                  onClick={() => setValues((v) => ({ ...v, page: v.page + 1 }))}
-                >
-                  Sau
-                </Button>
-              </div>
+          {!candidatesInfiniteQuery.isPending && loadedCandidates.length > 0 ? (
+            <p className="text-center text-sm text-[var(--muted-foreground)]">
+              Đang hiển thị {loadedCandidates.length}
+              {totalCount > 0 ? ` / ${totalCount}` : ""} ứng viên
+            </p>
+          ) : null}
+
+          {hasMoreCandidates ? (
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="outline"
+                disabled={candidatesInfiniteQuery.isFetchingNextPage}
+                onClick={() => candidatesInfiniteQuery.fetchNextPage()}
+              >
+                {candidatesInfiniteQuery.isFetchingNextPage ? "Đang tải..." : "Bấm để xem thêm"}
+              </Button>
             </div>
           ) : null}
         </>

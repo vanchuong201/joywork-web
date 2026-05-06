@@ -283,9 +283,12 @@ export function useCandidateFilters() {
     page: Number(sp.get("page")) || 1,
   };
 
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
+
   const setValues = useCallback(
     (next: CandidateFilterValues | ((prev: CandidateFilterValues) => CandidateFilterValues)) => {
-      const nextVals = typeof next === "function" ? next(values) : next;
+      const nextVals = typeof next === "function" ? next(valuesRef.current) : next;
       const params = new URLSearchParams();
       if (nextVals.keyword) params.set("keyword", nextVals.keyword);
       nextVals.locations.forEach((l) => params.append("location", l));
@@ -302,7 +305,6 @@ export function useCandidateFilters() {
       const qs = params.toString();
       router.replace(qs ? `?${qs}` : window.location.pathname, { scroll: false });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [router],
   );
 

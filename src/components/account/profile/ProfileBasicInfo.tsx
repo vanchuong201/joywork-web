@@ -20,6 +20,8 @@ import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import DateOfBirthPicker from "@/components/ui/date-of-birth-picker";
 
+const maxBirthYear = new Date().getFullYear() - 16;
+
 // Helper for optional URL fields - accepts empty string
 const optionalUrl = z.union([
   z.literal(""),
@@ -60,17 +62,21 @@ const schema = z.object({
     z.coerce.number().int().min(1).max(12),
     z.literal("")
   ]).optional().nullable(),
-  yearOfBirth: z.union([
-    z.coerce.number().int().min(1900).max(new Date().getFullYear() - 16),
-    z.literal("")
-  ]).optional().nullable(),
+  yearOfBirth: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z
+      .number("Vui lòng chọn năm sinh.")
+      .int()
+      .min(1900, "Năm sinh không hợp lệ.")
+      .max(maxBirthYear, "Bạn phải từ 16 tuổi trở lên.")
+  ),
   educationLevel: z.union([
     z.enum(["TRAINING_CENTER", "INTERMEDIATE", "COLLEGE", "BACHELOR", "MASTER", "PHD"]),
     z.literal("")
   ]).optional().nullable(),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.input<typeof schema>;
 
 interface ProfileBasicInfoProps {
   profile: OwnUserProfile;
@@ -164,7 +170,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     isContactEmailMissing ? "Email liên hệ trên CV" : null,
     isContactPhoneMissing ? "Số điện thoại liên hệ trên CV" : null,
     isLocationMissing ? "Địa điểm" : null,
-    isYearOfBirthMissing ? "Ngày sinh" : null,
+    isYearOfBirthMissing ? "Năm sinh" : null,
   ].filter(Boolean) as string[];
 
   useEffect(() => {
@@ -686,6 +692,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           <div>
             <Label htmlFor="dateOfBirth">Ngày sinh <span className="text-red-500">*</span></Label>
             <DateOfBirthPicker
+              yearRequired
               day={dayOfBirthValue as number | null}
               month={monthOfBirthValue as number | null}
               year={yearOfBirthValue as number | null}

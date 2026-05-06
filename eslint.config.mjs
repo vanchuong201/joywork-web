@@ -10,7 +10,7 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // Chỉ object `ignores` (không kèm rules) mới áp dụng ignore toàn repo (Flat Config).
   {
     ignores: [
       "node_modules/**",
@@ -19,6 +19,9 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
     ],
+  },
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
     rules: {
       "prettier/prettier": "off",
     },

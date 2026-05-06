@@ -10,6 +10,8 @@ interface DateOfBirthPickerProps {
   onChangeDay: (day: number | null) => void;
   onChangeMonth: (month: number | null) => void;
   onChangeYear: (year: number | null) => void;
+  /** Nếu true, trình duyệt nhắc chọn năm trước khi gửi form (kết hợp validation Zod). */
+  yearRequired?: boolean;
   className?: string;
 }
 
@@ -33,6 +35,7 @@ export default function DateOfBirthPicker({
   onChangeDay,
   onChangeMonth,
   onChangeYear,
+  yearRequired = false,
   className,
 }: DateOfBirthPickerProps) {
   // Get max days for given month/year
@@ -150,6 +153,8 @@ export default function DateOfBirthPicker({
       <select
         value={year ?? ""}
         onChange={(e) => handleYearChange(e.target.value)}
+        required={yearRequired}
+        aria-required={yearRequired || undefined}
         className="flex h-10 flex-1 min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <option value="">Năm</option>
