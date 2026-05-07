@@ -371,8 +371,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     />
                  )}
 
-                 {isEditable && !uploadingCover && (
-                    <div className="absolute top-6 right-6 z-20 opacity-0 group-hover/hero:opacity-100 transition-opacity">
+                {isEditable && !uploadingCover && (
+                    <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2">
                         <input 
                             type="file" 
                             accept="image/jpeg,image/png,image/webp" 
@@ -380,23 +380,21 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             ref={coverInputRef}
                             onChange={handleUploadCover}
                         />
-                        <div className="flex flex-col items-end gap-2">
-                            <Button 
-                                variant="secondary" 
-                                size="sm" 
-                                className="bg-[var(--card)]/90 hover:bg-[var(--card)] shadow-lg" 
-                                onClick={() => coverInputRef.current?.click()}
-                                disabled={uploadingCover}
-                            >
-                                {uploadingCover ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
-                                Chỉnh sửa ảnh bìa
-                            </Button>
-                            <div className="bg-black/70 text-white text-xs px-2 py-1 rounded text-right backdrop-blur-sm">
-                                Tỷ lệ đề xuất: 21:9 hoặc 16:9
-                            </div>
+                        <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="bg-white text-black hover:bg-white shadow-lg" 
+                            onClick={() => coverInputRef.current?.click()}
+                            disabled={uploadingCover}
+                        >
+                            {uploadingCover ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
+                            Chỉnh sửa ảnh bìa
+                        </Button>
+                        <div className="bg-black/70 text-white text-xs px-2 py-1 rounded text-right backdrop-blur-sm">
+                            Tỷ lệ đề xuất: 21:9 hoặc 16:9
                         </div>
                     </div>
-                 )}
+                )}
              </div>
 
              {/* Dialog: Xem ảnh bìa */}

@@ -429,7 +429,7 @@ export default function CompanyProfileForm({
                   alt="Logo"
                   width={120}
                   height={120}
-                  className="h-[120px] w-[120px] rounded-lg border border-[var(--border)] object-cover"
+                  className="h-[120px] w-[120px] rounded-lg border border-[var(--border)] object-contain"
                 />
                 {logoUploading && (
                   <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xs text-white">

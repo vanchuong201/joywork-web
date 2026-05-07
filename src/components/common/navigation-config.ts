@@ -63,7 +63,7 @@ export const mobilePersonalNav: NavItem[] = leftPersonalNav.filter((item) => ite
 
 export const accountDropdownItems: AccountDropdownItem[] = [
   { label: "Quản lý tài khoản", href: "/account" },
-  { label: "Quản lý hồ sơ ứng tuyển", href: "/account/profile" },
+  { label: "CV của tôi", href: "/account/profile" },
 ];
 
 export function buildHeaderExploreNav(user: AuthUser | null): NavItem[] {

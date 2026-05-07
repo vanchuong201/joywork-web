@@ -60,11 +60,12 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
 
   // Fetch ward details for display
   const [wards, setWards] = useState<WardOption[]>([]);
+  // Extract province codes from ward codes (must be in "provinceCode/wardCode" format)
   const provinceCodes = useMemo(() => {
     const codes = new Set<string>();
     for (const w of profile.profile?.wardCodes ?? []) {
-      const parts = w.split('/');
-      if (parts.length === 2) codes.add(parts[0]);
+      const parts = w.split("/");
+      if (parts.length === 2 && parts[0] && parts[1]) codes.add(parts[0]);
     }
     return Array.from(codes);
   }, [profile.profile?.wardCodes]);
@@ -100,35 +101,37 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
     const parts: string[] = [];
     if (profile.profile?.specificAddress) parts.push(profile.profile.specificAddress);
     const firstWard = profile.profile?.wardCodes?.[0];
-    if (firstWard) {
+    // Only process ward if it's in valid "provinceCode/wardCode" format
+    if (firstWard && firstWard.includes("/")) {
       const wardInfo = wardByCode.get(firstWard);
       if (wardInfo) {
         parts.push(wardInfo.fullName ?? wardInfo.name);
       }
     }
     if (profile.profile?.location) parts.push(profile.profile.location);
-    return parts.length > 0 ? parts.join(' - ') : null;
+    return parts.length > 0 ? parts.join(" - ") : null;
   })();
 
   const maskedAddress = '••• - ••• - •••';
 
   // Address: [Địa chỉ cụ thể] - [Phường xã] - [Tỉnh/thành]
-  const hasAddress = profile.profile?.specificAddress || profile.profile?.location || profile.profile?.wardCodes?.length;
+  // Only show if there's actual address data (check for valid ward code format too)
+  const hasAddress = profile.profile?.specificAddress || profile.profile?.location || (profile.profile?.wardCodes?.[0]?.includes("/") ?? false);
 
   // Build full date of birth display
   const fullDateOfBirth = (() => {
     const day = profile.profile?.dayOfBirth;
     const month = profile.profile?.monthOfBirth;
     const year = profile.profile?.yearOfBirth;
-    if (!year) return null;
+    if (!year || year === 0) return null;
     const parts: string[] = [];
-    if (day) parts.push(String(day));
-    if (month) parts.push(String(month));
+    if (day && day > 0) parts.push(String(day));
+    if (month && month > 0) parts.push(String(month));
     parts.push(String(year));
     return parts.join('/');
   })();
 
-  const hasDateOfBirth = !!profile.profile?.yearOfBirth;
+  const hasDateOfBirth = !!(profile.profile?.yearOfBirth && profile.profile.yearOfBirth > 0);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8 relative overflow-hidden">

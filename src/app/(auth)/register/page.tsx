@@ -54,6 +54,7 @@ function RegisterPageContent() {
   const watchedPhone = watch("phone");
   const watchedPassword = watch("password");
   const [showPassword, setShowPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     if (serverError) {
@@ -201,7 +202,28 @@ function RegisterPageContent() {
             </div>
           </FormField>
           {serverError ? <p className="text-sm text-red-500">{serverError}</p> : null}
-          <Button className="w-full" disabled={isSubmitting}>
+          <div className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              id="agree-terms"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-[var(--border)] accent-[var(--brand)]"
+            />
+            <label htmlFor="agree-terms" className="cursor-pointer text-sm text-[var(--muted-foreground)]">
+              Tôi đồng ý với các{" "}
+              <a
+                href="/dieu-khoan-hoat-dong"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--brand)] underline-offset-2 hover:underline"
+              >
+                điều khoản
+              </a>{" "}
+              của JOYWORK
+            </label>
+          </div>
+          <Button className="w-full" disabled={isSubmitting || !agreedToTerms}>
             {isSubmitting ? "Đang đăng ký..." : "Đăng ký"}
           </Button>
         </form>

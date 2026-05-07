@@ -90,7 +90,7 @@ export default function RelatedJobCard({ job, size = "featured", className }: Re
               <CompanyLogo
                 src={job.company.logoUrl}
                 alt={job.company.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
                 width={48}
                 height={48}
               />

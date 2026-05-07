@@ -83,7 +83,7 @@ export default function ProfileTab() {
   if (isError || !data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold sm:text-2xl">Hồ sơ ứng tuyển</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">CV của tôi</h1>
         <EmptyState
           title="Không tải được hồ sơ"
           subtitle="Vui lòng thử lại hoặc liên hệ đội hỗ trợ nếu lỗi tiếp diễn."
@@ -105,7 +105,7 @@ export default function ProfileTab() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
-          <h1 className="text-xl font-bold sm:text-2xl">Hồ sơ ứng tuyển</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">CV của tôi</h1>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="text-sm text-[var(--muted-foreground)]">Quản lý thông tin hồ sơ và CV của bạn</p>
             <button

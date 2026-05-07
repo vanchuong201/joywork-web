@@ -729,7 +729,7 @@ const PostCard = memo(function PostCard({
               alt={post.company.name}
               width={28}
               height={28}
-              className="h-7 w-7 rounded-full border border-[var(--border)] object-cover"
+              className="h-7 w-7 rounded-full border border-[var(--border)] object-contain"
             />
           ) : (
             <div className="h-7 w-7 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold text-[var(--muted-foreground)]">

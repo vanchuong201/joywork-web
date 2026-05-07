@@ -543,7 +543,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           {/* Bio */}
           <div>
             <Label htmlFor="bio">Giới thiệu</Label>
-            <Textarea id="bio" rows={6} {...register("bio")} placeholder="Giới thiệu về bản thân..." />
+            <Textarea id="bio" rows={6} {...register("bio")} placeholder={"Gợi ý:\n\n[Chức danh] với [X] năm kinh nghiệm chuyên sâu trong [lĩnh vực/ngành]. Có thế mạnh về [kỹ năng chuyên môn 1], [kỹ năng chuyên môn 2] và [kỹ năng mềm]. Đã [thành tựu định lượng: VD tăng doanh thu X%, quản lý team Y người, triển khai Z dự án]. Định hướng phát triển thành [vị trí mục tiêu] trong [khung thời gian]."} />
             {errors.bio && <p className="mt-1 text-sm text-red-500">{errors.bio.message}</p>}
             {!errors.bio && isBioMissing && (
               <p className="mt-1 text-xs text-amber-600">Vui lòng thêm phần giới thiệu về bản thân.</p>

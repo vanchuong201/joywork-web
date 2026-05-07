@@ -15,7 +15,7 @@ export default function UserProfileBio({ bio, careerGoals }: UserProfileBioProps
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
       <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 uppercase tracking-wide">
-        <UserCheck className="text-blue-600" size={20} /> Giới thiệu bản thân (Sứ Mệnh)
+        <UserCheck className="text-blue-600" size={20} /> Giới thiệu bản thân
       </h3>
       {bio && (
         <p className="text-slate-700 leading-relaxed text-lg whitespace-pre-line">{bio}</p>

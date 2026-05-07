@@ -656,7 +656,9 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Pro
                       <TiptapEditor
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder={`Đóng góp giá trị vào mục tiêu chung của công ty trong việc lan tỏa triết lý "Quản trị đúng" và "đi làm là phải vui" đến doanh nghiệp Việt Nam.
+                        placeholder={`Ví dụ:
+
+Đóng góp giá trị vào mục tiêu chung của công ty trong việc lan tỏa triết lý "Quản trị đúng" và "đi làm là phải vui" đến doanh nghiệp Việt Nam.
 
 Lãnh đạo mảng cộng đồng, kết nối, chăm lo và phát triển cộng đồng các nhà quản lý, người đi làm - những người cùng niềm tin về công việc hạnh phúc.`}
                         className={errors.mission ? "border-red-500" : ""}
@@ -689,7 +691,9 @@ Lãnh đạo mảng cộng đồng, kết nối, chăm lo và phát triển cộ
                       <TiptapEditor
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder={`Nhóm nhiệm vụ phát triển cộng đồng:
+                        placeholder={`Ví dụ:
+
+Nhóm nhiệm vụ phát triển cộng đồng:
 • Phát triển thành viên các cộng đồng
 • Tạo ra môi trường, hoạt động để thành viên có thể cùng tham gia
 
@@ -707,15 +711,10 @@ Nhóm nhiệm vụ vận hành cộng đồng:
             {/* Section 4: Kết quả chuyên môn cần đạt */}
             <FormSection
               title="4. Kết quả chuyên môn cần đạt"
-              description="Mô tả các KPI/OKR mà vị trí này cần đạt được. Trên trang hiển thị sẽ có thông báo về quản trị bằng mục tiêu và OKRs."
+              description="Mô tả các KPI hoặc mục tiêu vị trí này cần đạt được."
               isExpanded={expandedSections.has("kpis")}
               onToggle={() => toggleSection("kpis")}
             >
-              <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <p className="text-xs text-slate-600">
-                  <strong>ℹ️ Lưu ý:</strong> Trên trang hiển thị JD sẽ tự động thêm dòng: "Công ty vận hành theo hướng quản trị bằng mục tiêu. Vị trí này sẽ cùng CEO/Quản lý xây dựng và thỏa thuận OKRs theo từng chu kỳ."
-                </p>
-              </div>
               <FormField label="Mô tả các KPI/OKR cần đạt" error={errors.kpis?.message}>
                 <Controller
                   name="kpis"
@@ -724,7 +723,9 @@ Nhóm nhiệm vụ vận hành cộng đồng:
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder={`• Số lượng và chất lượng thành viên các cộng đồng
+                      placeholder={`Ví dụ:
+
+• Số lượng và chất lượng thành viên các cộng đồng
 • Tỷ lệ thành viên hoạt động và tương tác
 • Doanh thu từ cộng đồng
 • Số lượng và chất lượng sự kiện/hội thảo được tổ chức`}
@@ -757,7 +758,9 @@ Nhóm nhiệm vụ vận hành cộng đồng:
                         <TiptapEditor
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder={`• Có kinh nghiệm tối thiểu trong việc phát triển, quản lý cộng đồng
+                          placeholder={`Ví dụ:
+
+• Có kinh nghiệm tối thiểu trong việc phát triển, quản lý cộng đồng
 • Ưu tiên đã có kinh nghiệm quản lý cộng đồng kinh doanh, doanh nghiệp
 • Hiểu biết về điều phối, dẫn dắt thảo luận cộng đồng
 • Hiểu biết về MBO, OKRs là lợi thế`}
@@ -777,7 +780,9 @@ Nhóm nhiệm vụ vận hành cộng đồng:
                           <TiptapEditor
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder={`• Khả năng lập và kiểm soát kế hoạch tốt
+                            placeholder={`Ví dụ:
+
+• Khả năng lập và kiểm soát kế hoạch tốt
 • Làm việc đa tác vụ
 • Tư duy chiến lược, khả năng nhìn bao quát`}
                             className={errors.skills ? "border-red-500" : ""}
@@ -795,7 +800,9 @@ Nhóm nhiệm vụ vận hành cộng đồng:
                           <TiptapEditor
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder={`• Phù hợp với văn hóa và 5 giá trị cốt lõi công ty
+                            placeholder={`Ví dụ:
+
+• Phù hợp với văn hóa và 5 giá trị cốt lõi công ty
 • Đam mê tạo ra giá trị, muốn mang lại điều tốt đẹp cho người khác
 • Tinh thần phụng sự`}
                             className={errors.attitude ? "border-red-500" : ""}
@@ -823,7 +830,9 @@ Nhóm nhiệm vụ vận hành cộng đồng:
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder={`• Kế hoạch hoạt động hàng ngày của cộng đồng
+                      placeholder={`Ví dụ:
+
+• Kế hoạch hoạt động hàng ngày của cộng đồng
 • Nội dung và hình thức tương tác với thành viên
 • Điều phối các hoạt động trong phạm vi được giao`}
                     />
@@ -847,7 +856,9 @@ Nhóm nhiệm vụ vận hành cộng đồng:
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder={`Quan hệ nội bộ:
+                      placeholder={`Ví dụ:
+
+Quan hệ nội bộ:
 • CEO Mai Xuân Đạt - nhận định hướng và báo cáo trực tiếp
 • Nhóm chuyên môn (đào tạo, huấn luyện) - để tạo nội dung giá trị
 
@@ -879,7 +890,9 @@ Quan hệ bên ngoài:
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder={`• Xây dựng và quản lý team khi cộng đồng phát triển
+                      placeholder={`Ví dụ:
+
+• Xây dựng và quản lý team khi cộng đồng phát triển
 • Mở rộng phạm vi quản lý sang các mảng khác của công ty`}
                     />
                   )}
@@ -906,7 +919,9 @@ Quan hệ bên ngoài:
                     <TiptapEditor
                       value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder={`• Làm việc linh hoạt ở bất cứ đâu (Công ty vận hành theo hướng quản trị bằng mục tiêu)
+                      placeholder={`Ví dụ:
+
+• Làm việc linh hoạt ở bất cứ đâu (Công ty vận hành theo hướng quản trị bằng mục tiêu)
 • Được tiếp cận và học hỏi trực tiếp từ CEO về quản trị
 • Môi trường làm việc với triết lý "đi làm là phải vui"`}
                     />
@@ -931,7 +946,9 @@ Quan hệ bên ngoài:
                       <TiptapEditor
                         value={field.value || ""}
                         onChange={field.onChange}
-                        placeholder={`● Tên vị trí: Phụ trách Phát triển Cộng đồng
+                        placeholder={`Ví dụ:
+
+● Tên vị trí: Phụ trách Phát triển Cộng đồng
 ● Bộ phận: Cộng đồng
 ● Báo cáo cho: CEO Mai Xuân Đạt (trực tiếp)`}
                         className={errors.generalInfo ? "border-red-500" : ""}

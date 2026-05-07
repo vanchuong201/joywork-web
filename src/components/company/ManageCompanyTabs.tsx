@@ -132,11 +132,11 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
   };
 
   const tabItems = [
-    { value: "overview", label: "Tổng quan", mobileLabel: "Tổng quan", icon: LayoutDashboard },
-    { value: "activity", label: "Hoạt động", mobileLabel: "Hoạt động", icon: FileText },
+    { value: "overview", label: "Hồ sơ văn hóa", mobileLabel: "Hồ sơ văn hóa", icon: LayoutDashboard },
+    { value: "activity", label: "Câu chuyện", mobileLabel: "Câu chuyện", icon: FileText },
     { value: "jobs", label: "Việc làm", mobileLabel: "Việc làm", icon: Briefcase },
     { value: "applications", label: "Ứng tuyển", mobileLabel: "Ứng tuyển", icon: Users },
-    { value: "members", label: "Thành viên", mobileLabel: "Thành viên", icon: UserRound },
+    { value: "members", label: "Quản trị viên", mobileLabel: "Quản trị viên", icon: UserRound },
     { value: "tickets", label: "Trao đổi", mobileLabel: "Trao đổi", icon: MessageSquareText },
   ];
 

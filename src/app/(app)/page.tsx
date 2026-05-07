@@ -133,7 +133,6 @@ function FeedPageContent() {
           >
             <TabsList className="w-full justify-start gap-1 overflow-x-auto p-1 sm:w-auto sm:overflow-visible">
               <TabsTrigger className="whitespace-nowrap" value="all">Tất cả</TabsTrigger>
-              <TabsTrigger className="whitespace-nowrap" value="trending">Nổi bật</TabsTrigger>
               <TabsTrigger className="whitespace-nowrap" value="following">Theo dõi</TabsTrigger>
             </TabsList>
           </Tabs>
