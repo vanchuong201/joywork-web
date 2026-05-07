@@ -24,7 +24,7 @@ const STAT_LABELS: Record<keyof SystemStats, string> = {
   companies: "Doanh nghiệp",
   posts: "Bài viết",
   jobs: "Việc làm",
-  applications: "Hồ sơ ứng tuyển",
+  applications: "CV của tôi",
   follows: "Lượt theo dõi",
   jobFavorites: "Việc được lưu",
 };

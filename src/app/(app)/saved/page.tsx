@@ -318,7 +318,7 @@ function SavedPageContent() {
                           <span>{salary}</span>
                         </div>
                         <div className="mt-auto flex gap-2 pt-2 border-t border-[var(--border)]">
-                          <Button asChild size="sm" variant="outline" className="flex-1">
+                          <Button asChild size="sm" variant="outline" className="min-w-[120px] shrink-0 whitespace-nowrap">
                             <Link href={buildJobUrl(j)} target="_blank">Xem chi tiết</Link>
                           </Button>
                           <Button

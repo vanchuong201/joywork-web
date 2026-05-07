@@ -433,7 +433,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                             )}
                             {application.notes && (
                               <div className="border-t border-[var(--border)] pt-2">
-                                <p className="mb-1 text-xs font-medium text-[var(--muted-foreground)]">Ghi chú:</p>
+                                <p className="mb-1 text-xs font-medium text-[var(--muted-foreground)]">Phản hồi của doanh nghiệp:</p>
                                 <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">{application.notes}</p>
                               </div>
                             )}
@@ -666,12 +666,12 @@ export default function ManageApplicationsTab({ company }: Props) {
               </select>
             </div>
             <div>
-              <Label htmlFor="notes">Ghi chú (tùy chọn)</Label>
+              <Label htmlFor="notes">Phản hồi của doanh nghiệp (tùy chọn)</Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Thêm ghi chú về ứng viên này..."
+                placeholder="Thêm phản hồi cho ứng viên này..."
                 rows={4}
                 maxLength={1000}
               />

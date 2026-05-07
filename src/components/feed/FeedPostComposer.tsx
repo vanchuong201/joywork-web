@@ -460,7 +460,7 @@ export default function FeedPostComposer() {
                 alt={selectedCompany.company.name}
                 width={40}
                 height={40}
-                className="h-10 w-10 rounded-full border border-[var(--border)] object-cover"
+                className="h-10 w-10 rounded-full border border-[var(--border)] object-contain"
               />
             ) : user.avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -508,7 +508,7 @@ export default function FeedPostComposer() {
                         alt={selectedCompany.company.name}
                         width={20}
                         height={20}
-                        className="h-5 w-5 rounded-full object-cover"
+                        className="h-5 w-5 rounded-full object-contain"
                       />
                     ) : (
                       <div className="h-5 w-5 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold">
@@ -544,7 +544,7 @@ export default function FeedPostComposer() {
                             alt={membership.company.name}
                             width={24}
                             height={24}
-                            className="h-6 w-6 rounded-full object-cover"
+                            className="h-6 w-6 rounded-full object-contain"
                           />
                         ) : (
                           <div className="h-6 w-6 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold">

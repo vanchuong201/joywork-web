@@ -391,14 +391,14 @@ function CompanyCard({ company }: { company: CompanyListItem }) {
 function CompanyAvatar({ name, logoUrl }: { name: string; logoUrl?: string | null }) {
   if (logoUrl) {
     return (
-      <div className="h-12 w-12 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
-        <CompanyLogo src={logoUrl} alt={name} className="h-full w-full object-cover" width={48} height={48} />
+      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+        <CompanyLogo src={logoUrl} alt={name} className="h-full w-full object-cover" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--muted)] text-base font-semibold text-[var(--muted-foreground)]">
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--muted)] text-base font-semibold text-[var(--muted-foreground)]">
       {name.slice(0, 2).toUpperCase()}
     </div>
   );

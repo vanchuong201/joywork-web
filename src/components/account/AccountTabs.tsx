@@ -16,7 +16,7 @@ interface Tab {
 
 const tabs: Tab[] = [
   { id: "account", label: "Quản lý tài khoản", shortLabel: "Tài khoản", icon: User },
-  { id: "profile", label: "Hồ sơ ứng tuyển", shortLabel: "Hồ sơ ứng tuyển", icon: FileText },
+  { id: "profile", label: "CV của tôi", shortLabel: "CV của tôi", icon: FileText },
   { id: "security", label: "Bảo mật", shortLabel: "Bảo mật", icon: Shield },
 ];
 

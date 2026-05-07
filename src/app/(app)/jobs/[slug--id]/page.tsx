@@ -247,7 +247,6 @@ export default function JobDetailPage() {
   const deadline = job.applicationDeadline ? formatDateUTC(job.applicationDeadline) : "Không giới hạn";
   const isDeadlinePassed = Boolean(job.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now());
   const relatedJobs = relatedJobsData ?? [];
-  const featuredRelatedJobs = relatedJobs.slice(0, 2);
   const slideRelatedJobs = relatedJobs.slice(0, 10);
 
   return (
@@ -321,9 +320,9 @@ export default function JobDetailPage() {
 
       {/* Content Sections - keep existing display order */}
       <div className="space-y-4">
-        {/* 1. Sứ mệnh / Vai trò tổng quát */}
+        {/* 1. Sứ mệnh / Vai trò tổng quát của vị trí ứng tuyển */}
         {job.mission ? (
-          <SectionCard title="1. Sứ mệnh / Vai trò tổng quát">
+          <SectionCard title="1. Sứ mệnh / Vai trò tổng quát của vị trí ứng tuyển">
             <div
               className={cn(
                 richTextClass,
@@ -344,9 +343,6 @@ export default function JobDetailPage() {
         {/* 3. Kết quả chuyên môn cần đạt */}
         {job.kpis ? (
           <SectionCard title="3. Kết quả chuyên môn cần đạt">
-            <p className="mb-3 text-sm text-[var(--muted-foreground)]">
-              Công ty vận hành theo hướng quản trị bằng mục tiêu. Vị trí này sẽ cùng CEO/Quản lý xây dựng và thỏa thuận OKRs theo từng chu kỳ.
-            </p>
             <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.kpis) }} />
           </SectionCard>
         ) : null}
@@ -378,9 +374,9 @@ export default function JobDetailPage() {
                 <span className="font-semibold text-[var(--foreground)]">{job.company.name}</span>{" "}
                 trước khi ứng tuyển
               </p>
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[var(--brand)]/30 bg-[var(--brand)]/10 px-4 py-2 text-sm font-medium text-[var(--brand)] transition-all group-hover:border-[var(--brand)]/60 group-hover:bg-[var(--brand)]/20 group-hover:shadow-sm">
+              <span className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full border border-[var(--brand)]/30 bg-[var(--brand)]/10 px-4 py-2 text-sm font-medium text-[var(--brand)] transition-all group-hover:border-[var(--brand)]/60 group-hover:bg-[var(--brand)]/20 group-hover:shadow-sm">
                 Xem hồ sơ công ty
-                <svg className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <svg className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>
               </span>
@@ -426,22 +422,6 @@ export default function JobDetailPage() {
             <h4 className="mb-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">Có thể tự quyết</h4>
             <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.authority) }} />
           </SectionCard>
-        ) : null}
-
-        {featuredRelatedJobs.length > 0 ? (
-          <section className="rounded-xl border border-[var(--brand)]/20 bg-gradient-to-r from-[var(--brand)]/[0.04] via-[var(--card)] to-[var(--brand)]/[0.02] p-3 sm:p-4">
-            <div className="mb-2.5 flex items-center justify-between gap-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Việc làm liên quan</h3>
-              <Badge className="rounded-full border border-[var(--brand)]/30 bg-[var(--brand)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--brand)]">
-                Gợi ý
-              </Badge>
-            </div>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {featuredRelatedJobs.map((relatedJob) => (
-                <RelatedJobCard key={relatedJob.id} job={relatedJob} size="featured" />
-              ))}
-            </div>
-          </section>
         ) : null}
 
         {/* 6. Quan hệ công việc */}
