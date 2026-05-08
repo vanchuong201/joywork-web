@@ -10,6 +10,7 @@ import {
   listCvFlipCandidates,
 } from "@/lib/api/cv-flip";
 import CompanySelectorModal from "@/components/candidates/CompanySelectorModal";
+import CompanySelect from "@/components/candidates/CompanySelect";
 import CvFlipUsageBadge from "@/components/candidates/CvFlipUsageBadge";
 import CandidateRow from "@/components/candidates/CandidateRow";
 import TalentPoolExplorer from "@/components/talent-pool/TalentPoolExplorer";
@@ -196,20 +197,11 @@ function CandidatesPageContent() {
         </div>
         {companies.length > 1 ? (
           <div className="flex items-center gap-2">
-            <select
-              className="h-10 rounded-md border border-[var(--border)] bg-white px-3 text-sm"
+            <CompanySelect
               value={selectedCompanyId}
-              onChange={(e) => setSelectedCompanyId(e.target.value)}
-            >
-              <option value="" disabled>
-                Chọn doanh nghiệp
-              </option>
-              {companies.map((company) => (
-                <option key={company.id} value={company.id}>
-                  {company.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedCompanyId}
+              companies={companies}
+            />
             <Button variant="outline" onClick={() => setSelectedCompanyId("")}>
               Chọn lại
             </Button>

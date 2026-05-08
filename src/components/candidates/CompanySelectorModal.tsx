@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { CvFlipCompanyAccess } from "@/types/cv-flip";
+import CompanySelect from "./CompanySelect";
 
 type Props = {
   open: boolean;
@@ -43,20 +44,11 @@ export default function CompanySelectorModal({
         </DialogHeader>
 
         {hasCompanies ? (
-          <select
+          <CompanySelect
             value={selectedCompanyId}
-            onChange={(e) => onSelectedCompanyIdChange(e.target.value)}
-            className="h-10 w-full rounded-md border border-[var(--border)] bg-white px-3 text-sm"
-          >
-            <option value="" disabled>
-              Chọn doanh nghiệp
-            </option>
-            {companies.map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.name} ({company.role})
-              </option>
-            ))}
-          </select>
+            onChange={onSelectedCompanyIdChange}
+            companies={companies}
+          />
         ) : null}
 
         <DialogFooter>

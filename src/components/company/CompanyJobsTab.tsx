@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Briefcase, Calendar, List, Grid } from "lucide-react";
+import { Briefcase, Calendar, List, Grid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -81,9 +81,6 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
                           </h4>
                           <div className="flex flex-wrap gap-3 text-sm text-[var(--muted-foreground)] items-center">
                             <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" /> {job.location || "Remote"}
-                            </span>
-                            <span className="flex items-center gap-1">
                               <Briefcase className="w-3 h-3" /> {translateEmploymentType(job.employmentType)}
                             </span>
                             <span className="flex items-center gap-1">
@@ -147,10 +144,6 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
                     )}
                   </div>
                   <div className="space-y-2 text-sm text-[var(--muted-foreground)]">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      <span>{job.location || "Remote"}</span>
-                    </div>
                     <div className="flex items-center gap-1">
                       <Briefcase className="w-3 h-3" />
                       <span>{translateEmploymentType(job.employmentType)}</span>

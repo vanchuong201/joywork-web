@@ -384,9 +384,9 @@ export default function JobDetailPage() {
           </div>
         </Link>
 
-        {/* 4. Yêu cầu (KSA - Knowledge, Skills, Attitude) */}
+        {/* 4. Yêu cầu vị trí */}
         {job.knowledge || job.skills || job.attitude ? (
-          <SectionCard title="4. Yêu cầu (KSA - Knowledge, Skills, Attitude)">
+          <SectionCard title="4. Yêu cầu vị trí">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {job.knowledge ? (
                 <div className="md:col-span-2">
