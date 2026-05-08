@@ -180,6 +180,11 @@ function JobsPageContent() {
   const jobLevel = sp.get("jobLevel") || undefined;
   const educationLevel = sp.get("educationLevel") || undefined;
   const gender = sp.get("gender") || undefined;
+  const worksOnSaturdayRaw = sp.get("worksOnSaturday") || undefined;
+  const worksOnSaturday =
+    worksOnSaturdayRaw === "WORK" || worksOnSaturdayRaw === "REST" || worksOnSaturdayRaw === "UNSPECIFIED"
+      ? worksOnSaturdayRaw
+      : undefined;
   const salaryCurrency = parseSalaryCurrency(sp.get("salaryCurrency"));
   const salaryMinParam = sp.get("salaryMin") || "";
   const salaryMaxParam = sp.get("salaryMax") || "";
@@ -197,14 +202,22 @@ function JobsPageContent() {
       jobLevel ||
       educationLevel ||
       gender ||
+      worksOnSaturday ||
       salaryMinParam ||
       salaryMaxParam,
   );
   const hasAdvancedFilters = Boolean(
-    employmentType || experienceLevel || jobLevel || educationLevel || gender || salaryMinParam || salaryMaxParam,
+    employmentType ||
+      experienceLevel ||
+      jobLevel ||
+      educationLevel ||
+      gender ||
+      worksOnSaturday ||
+      salaryMinParam ||
+      salaryMaxParam,
   );
   const advancedFilterCount =
-    [employmentType, experienceLevel, jobLevel, educationLevel, gender].filter(Boolean).length +
+    [employmentType, experienceLevel, jobLevel, educationLevel, gender, worksOnSaturday].filter(Boolean).length +
     (salaryMinParam || salaryMaxParam ? 1 : 0);
   const viewModeParam = sp.get("view") as ViewMode | null;
   const [viewMode, setViewMode] = useState<ViewMode>(viewModeParam || "grid");
@@ -230,7 +243,7 @@ function JobsPageContent() {
   }, [viewMode, sp]);
 
   const { data, isLoading, isFetching } = useQuery<{ jobs: Job[]; pagination: any }>({
-    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, educationLevel, gender, salaryCurrency, salaryMin: salaryMinParam, salaryMax: salaryMaxParam, companyId, page }],
+    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, educationLevel, gender, worksOnSaturday, salaryCurrency, salaryMin: salaryMinParam, salaryMax: salaryMaxParam, companyId, page }],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
         params: {
@@ -246,6 +259,7 @@ function JobsPageContent() {
           jobLevel,
           educationLevel,
           gender,
+          worksOnSaturday,
           salaryCurrency: (salaryMinParam || salaryMaxParam) ? salaryCurrency : undefined,
           salaryMin: salaryMinParam ? Number(salaryMinParam) : undefined,
           salaryMax: salaryMaxParam ? Number(salaryMaxParam) : undefined,
@@ -340,7 +354,7 @@ function JobsPageContent() {
 
   const clearAllFilters = () => {
     const next = new URLSearchParams(sp.toString());
-    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "jobLevel", "salaryMin", "salaryMax", "salaryCurrency", "page"].forEach((key) =>
+    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "jobLevel", "educationLevel", "gender", "worksOnSaturday", "salaryMin", "salaryMax", "salaryCurrency", "page"].forEach((key) =>
       next.delete(key),
     );
     applyParams(next);
@@ -753,6 +767,31 @@ function JobsPageContent() {
                 </select>
               </div>
             </div>
+            <div className="space-y-1.5 text-sm md:col-span-2 xl:col-span-3">
+              <div className="font-medium">Lịch làm việc thứ 7</div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+                {[
+                  { value: "", label: "Không lọc" },
+                  { value: "WORK", label: "Làm thứ 7" },
+                  { value: "REST", label: "Nghỉ thứ 7" },
+                  { value: "UNSPECIFIED", label: "Tin đăng không đề cập" },
+                ].map((opt) => (
+                  <label key={opt.value || "all"} className="flex cursor-pointer items-center gap-2 text-sm text-[var(--foreground)]">
+                    <input
+                      type="radio"
+                      name="worksOnSaturday"
+                      value={opt.value}
+                      checked={(worksOnSaturday ?? "") === opt.value}
+                      onChange={() =>
+                        toggleParam("worksOnSaturday", opt.value || undefined, { resetPage: true })
+                      }
+                      className="h-4 w-4 accent-[var(--brand)]"
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
             </div>
           ) : null}
           {hasActiveFilters ? (
@@ -803,6 +842,18 @@ function JobsPageContent() {
                 <JobsFilterChip
                   label={`Giới tính: ${translateGender(gender)}`}
                   onRemove={() => toggleParam("gender", undefined, { resetPage: true })}
+                />
+              ) : null}
+              {worksOnSaturday ? (
+                <JobsFilterChip
+                  label={`Nghỉ thứ 7: ${
+                    worksOnSaturday === "WORK"
+                      ? "Làm thứ 7"
+                      : worksOnSaturday === "REST"
+                        ? "Nghỉ thứ 7"
+                        : "Tin đăng không đề cập"
+                  }`}
+                  onRemove={() => toggleParam("worksOnSaturday", undefined, { resetPage: true })}
                 />
               ) : null}
               {salaryFilterLabel ? (

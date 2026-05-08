@@ -14,11 +14,31 @@ import DOMPurify from "dompurify";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import { educationLevels, translateEducationLevel } from "@/lib/education-levels";
+import {
+  WORKING_DAYS,
+  WORKING_DAY_INDEX,
+  TIME_PATTERN,
+  type WorkingTimeRange,
+} from "@/lib/working-time";
+import { WorkingTimeEditor } from "@/components/jobs/WorkingTimeEditor";
 
 const employmentTypes = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE"] as const;
 const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "Y3_5", "Y5_10", "GT_10"] as const;
 const jobLevels = ["INTERN_STUDENT", "FRESH_GRAD", "EMPLOYEE", "SPECIALIST_TEAM_LEAD", "MANAGER_HEAD", "DIRECTOR", "EXECUTIVE"] as const;
 const genders = ["MALE", "FEMALE", "OTHER"] as const;
+
+const workingTimeRangeSchema = z
+  .object({
+    dayFrom: z.enum(WORKING_DAYS),
+    dayTo: z.enum(WORKING_DAYS),
+    timeStart: z.string().regex(TIME_PATTERN, "Định dạng giờ không hợp lệ (HH:mm)"),
+    timeEnd: z.string().regex(TIME_PATTERN, "Định dạng giờ không hợp lệ (HH:mm)"),
+  })
+  .refine(
+    (range) => WORKING_DAY_INDEX[range.dayFrom] <= WORKING_DAY_INDEX[range.dayTo],
+    "Ngày bắt đầu phải đứng trước hoặc bằng ngày kết thúc",
+  )
+  .refine((range) => range.timeStart < range.timeEnd, "Giờ bắt đầu phải nhỏ hơn giờ kết thúc");
 
 // Helper function to strip HTML tags and get plain text length
 function getPlainTextLength(html: string): number {
@@ -72,6 +92,9 @@ const schema = z
     careerPath: z.string().optional(),
     benefitsIncome: z.string().max(200, "Thu nhập tối đa 200 ký tự").optional().or(z.literal("")),
     benefitsPerks: z.string().optional(),
+    // Working time
+    workingTimeRanges: z.array(workingTimeRangeSchema).max(7, "Tối đa 7 dòng thời gian").optional(),
+    workingTimeNote: z.string().max(1000, "Ghi chú thời gian làm việc tối đa 1000 ký tự").optional().or(z.literal("")),
   })
   .superRefine((vals, ctx) => {
     // Validate text length limits (strip HTML)
@@ -189,6 +212,8 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       careerPath: "",
       benefitsIncome: "",
       benefitsPerks: "",
+      workingTimeRanges: [],
+      workingTimeNote: "",
     },
   });
 
@@ -217,6 +242,8 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       currency: "Đơn vị tiền tệ",
       applicationDeadline: "Hạn nộp hồ sơ",
       specificAddress: "Địa chỉ cụ thể",
+      workingTimeRanges: "Thời gian làm việc",
+      workingTimeNote: "Ghi chú thời gian làm việc",
     };
     return {
       field,
@@ -274,6 +301,10 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
         careerPath: values.careerPath ? sanitizeHtml(values.careerPath) : undefined,
         benefitsIncome: values.benefitsIncome?.trim() || undefined,
         benefitsPerks: values.benefitsPerks ? sanitizeHtml(values.benefitsPerks) : undefined,
+        workingTimeRanges: values.workingTimeRanges && values.workingTimeRanges.length > 0
+          ? values.workingTimeRanges
+          : undefined,
+        workingTimeNote: values.workingTimeNote?.trim() || undefined,
       };
 
       await api.post(`/api/jobs/companies/${companyId}/jobs`, payload);
@@ -392,6 +423,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
         relationships: "relationships",
         careerPath: "careerPath",
         benefitsIncome: "benefits", benefitsPerks: "benefits",
+        workingTimeRanges: "workingTime", workingTimeNote: "workingTime",
         generalInfo: "general",
       };
       
@@ -913,9 +945,43 @@ Quan hệ bên ngoài:
               </FormField>
             </FormSection>
 
-            {/* Section 10: Thông tin bổ sung */}
+            {/* Section 10: Thời gian làm việc */}
             <FormSection
-              title="10. Thông tin bổ sung"
+              title="10. Thời gian làm việc"
+              description="Mô tả lịch làm việc thông thường. Thông tin này được dùng cho bộ lọc nâng cao (ví dụ: nghỉ thứ 7, làm thứ 7)."
+              isExpanded={expandedSections.has("workingTime")}
+              onToggle={() => toggleSection("workingTime")}
+            >
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-700">
+                  <strong>💡 Gợi ý:</strong> Có thể thêm nhiều khung thời gian (ví dụ Thứ 2 - Thứ 6: 08:30 - 17:00, Thứ 7: 08:00 - 12:00). Ghi chú phía dưới dùng để mô tả thêm các trường hợp linh hoạt.
+                </p>
+              </div>
+              <Controller
+                name="workingTimeRanges"
+                control={control}
+                render={({ field: rangesField }) => (
+                  <Controller
+                    name="workingTimeNote"
+                    control={control}
+                    render={({ field: noteField }) => (
+                      <WorkingTimeEditor
+                        ranges={(rangesField.value as WorkingTimeRange[] | undefined) ?? []}
+                        onRangesChange={(next) => rangesField.onChange(next)}
+                        note={noteField.value ?? ""}
+                        onNoteChange={(next) => noteField.onChange(next)}
+                        rangeError={errors.workingTimeRanges?.message as string | undefined}
+                        noteError={errors.workingTimeNote?.message as string | undefined}
+                      />
+                    )}
+                  />
+                )}
+              />
+            </FormSection>
+
+            {/* Section 11: Thông tin bổ sung */}
+            <FormSection
+              title="11. Thông tin bổ sung"
               description="Thông tin bổ sung về vị trí (tên vị trí, báo cáo cho ai, v.v.). Section này sẽ hiển thị ở cuối trang JD."
               isExpanded={expandedSections.has("general")}
               onToggle={() => toggleSection("general")}
