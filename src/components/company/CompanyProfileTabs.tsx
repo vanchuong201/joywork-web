@@ -42,7 +42,7 @@ export default function CompanyProfileTabs({ initialTab, overview, activity, job
     <Tabs value={tab} onValueChange={handleTabChange} className="space-y-4">
       <TabsList>
         <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-        <TabsTrigger value="activity">Hoạt động</TabsTrigger>
+        <TabsTrigger value="activity">Câu chuyện</TabsTrigger>
         <TabsTrigger value="jobs">Việc làm</TabsTrigger>
       </TabsList>
 

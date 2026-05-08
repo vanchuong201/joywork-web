@@ -158,7 +158,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
                   : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               }`}
             >
-              Hồ sơ
+              Hồ sơ văn hóa
             </Link>
             <Link
               href={`/companies/${company.slug}?tab=activity`}
@@ -169,7 +169,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
                   : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               }`}
             >
-              Hoạt động
+              Câu chuyện
             </Link>
             <Link
               href={`/companies/${company.slug}?tab=jobs`}

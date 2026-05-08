@@ -53,7 +53,7 @@ export default function CompanyManageTabs({
     <Tabs value={tab} onValueChange={handleTabChange} className="space-y-4">
       <TabsList>
         <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-        <TabsTrigger value="activity">Hoạt động</TabsTrigger>
+        <TabsTrigger value="activity">Câu chuyện</TabsTrigger>
         <TabsTrigger value="jobs">Tuyển dụng</TabsTrigger>
         <TabsTrigger value="applications">Ứng tuyển</TabsTrigger>
         <TabsTrigger value="members">Thành viên</TabsTrigger>

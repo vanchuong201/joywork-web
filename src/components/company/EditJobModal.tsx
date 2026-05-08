@@ -737,7 +737,7 @@ Nhóm nhiệm vụ vận hành cộng đồng:
 
             {/* Section 5: Yêu cầu (KSA) */}
             <FormSection
-              title="5. Yêu cầu (KSA - Knowledge, Skills, Attitude)"
+              title="5. Yêu cầu vị trí"
               description="Mô tả chi tiết các yêu cầu về Kiến thức, Kỹ năng và Thái độ. Trên trang hiển thị sẽ được chia thành 3 cột với icon tương ứng."
               isExpanded={expandedSections.has("ksa")}
               onToggle={() => toggleSection("ksa")}

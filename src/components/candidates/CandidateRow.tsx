@@ -154,9 +154,9 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
                 <button
                   type="button"
                   onClick={() => setModalOpen(true)}
-                  className="mt-1 flex items-center gap-1 px-3 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                  className="mt-1 flex items-center gap-1 px-3 text-xs text-[var(--brand)] hover:text-[var(--brand-hover)]"
                 >
-                  <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+                  <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5 text-[var(--brand)]" />
                   Chi tiết
                 </button>
               )}
@@ -183,9 +183,9 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
                 <button
                   type="button"
                   onClick={() => setModalOpen(true)}
-                  className="mt-1 flex items-center gap-1 px-3 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                  className="mt-1 flex items-center gap-1 px-3 text-xs text-[var(--brand)] hover:text-[var(--brand-hover)]"
                 >
-                  <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+                  <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5 text-[var(--brand)]" />
                   Chi tiết
                 </button>
               )}
@@ -214,11 +214,10 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
               href={detailHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 rounded-md border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--muted-foreground)] shadow-sm transition-colors hover:border-[var(--brand)] hover:bg-[var(--brand)]/5 hover:text-[var(--brand)]"
+              className="shrink-0 rounded-md border border-[var(--brand)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--brand)] shadow-sm transition-colors hover:border-[var(--brand-hover)] hover:text-[var(--brand-hover)]"
             >
-              Xem hồ sơ
+              Xem hồ sơ đầy đủ
             </Link>
-       
           </div>
         </div>
       </div>
