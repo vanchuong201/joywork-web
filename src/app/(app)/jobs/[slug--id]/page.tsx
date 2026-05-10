@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { buildJobUrl, parseJobUrlParam } from "@/lib/job-url";
+import { buildJobUrl, resolveJobIdFromSlugParam } from "@/lib/job-url";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { toast } from "sonner";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
+import JobShareMenu from "@/components/jobs/JobShareMenu";
 import RelatedJobCard, { type RelatedJobItem } from "@/components/jobs/RelatedJobCard";
 import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
@@ -128,9 +129,7 @@ export default function JobDetailPage() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
 
-  // Parse URL param: extract job ID and validate format
-  const parsed = useMemo(() => parseJobUrlParam(paramValue), [paramValue]);
-  const jobId = parsed?.id ?? paramValue; // fallback to raw param for old-style URLs
+  const jobId = useMemo(() => resolveJobIdFromSlugParam(paramValue) ?? paramValue, [paramValue]);
 
   // Backward compat: redirect old /jobs/:id and slug-mismatch to canonical URL
   useEffect(() => {
@@ -282,18 +281,21 @@ export default function JobDetailPage() {
               Mô tả công việc
               <span className="mt-1 block text-[var(--brand)]">{job.title}</span>
             </h1>
-            {job.isActive !== undefined ? (
-              <Badge
-                className={cn(
-                  "w-fit rounded-full border px-3 py-1 text-xs font-medium",
-                  job.isActive
-                    ? "border-green-200 bg-green-50 text-green-700"
-                    : "border-slate-200 bg-slate-100 text-slate-600"
-                )}
-              >
-                {job.isActive ? "Đang tuyển" : "Đã đóng"}
-              </Badge>
-            ) : null}
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {job.isActive !== undefined ? (
+                <Badge
+                  className={cn(
+                    "w-fit rounded-full border px-3 py-1 text-xs font-medium",
+                    job.isActive
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-slate-200 bg-slate-100 text-slate-600"
+                  )}
+                >
+                  {job.isActive ? "Đang tuyển" : "Đã đóng"}
+                </Badge>
+              ) : null}
+              <JobShareMenu />
+            </div>
           </div>
 
           <div className="space-y-3 border-t border-[var(--border)] pt-4">
