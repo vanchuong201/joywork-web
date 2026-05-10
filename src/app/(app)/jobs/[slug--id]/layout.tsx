@@ -5,7 +5,8 @@ import { htmlToOgDescription } from "@/lib/html-to-og-description";
 import { fetchJobForOpenGraph } from "@/lib/server-job-metadata";
 
 const SITE_NAME = "JOYWORK";
-const DEFAULT_OG_IMAGE = "/thumbnail.jpg";
+/** Ảnh OG tối ưu 1200×630 (~100KB); tránh thumbnail.jpg gốc quá nặng cho crawler Facebook */
+const DEFAULT_OG_IMAGE = "/og-share.jpg";
 
 type JobLayoutParams = Promise<{ "slug--id": string }>;
 
