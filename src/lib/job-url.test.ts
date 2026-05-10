@@ -11,7 +11,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { slugifyVietnamese, buildJobUrl, parseJobUrlParam } from "./job-url";
+import { slugifyVietnamese, buildJobUrl, parseJobUrlParam, resolveJobIdFromSlugParam } from "./job-url";
 
 const CUID_EXAMPLE = "cmo0bjkc000q0lm0ungrjs2a0";
 
@@ -322,5 +322,19 @@ describe("parseJobUrlParam", () => {
       const result = parseJobUrlParam("a--cmabc12345678901234567890");
       expect(result).toEqual({ slug: "a", id: "cmabc12345678901234567890" });
     });
+  });
+});
+
+describe("resolveJobIdFromSlugParam", () => {
+  it("returns id from slug--cuid param", () => {
+    expect(resolveJobIdFromSlugParam(`nhan-vien-ke-toan--${CUID_EXAMPLE}`)).toBe(CUID_EXAMPLE);
+  });
+
+  it("returns bare cuid for legacy URLs", () => {
+    expect(resolveJobIdFromSlugParam(CUID_EXAMPLE)).toBe(CUID_EXAMPLE);
+  });
+
+  it("returns null for invalid param", () => {
+    expect(resolveJobIdFromSlugParam("not-a-job")).toBeNull();
   });
 });
