@@ -49,10 +49,8 @@ export async function generateMetadata({
 
   const title = `${job.title} tại ${job.company.name}`;
   const fromMission = htmlToOgDescription(job.mission ?? undefined, 200);
-  const fromGeneral = htmlToOgDescription(job.generalInfo ?? undefined, 200);
   const description =
     fromMission ||
-    fromGeneral ||
     `Mô tả công việc ${job.title} tại ${job.company.name} — ${SITE_NAME}.`;
 
   const path = buildJobUrl({
