@@ -49,6 +49,7 @@ import DOMPurify from "dompurify";
 import { cn, formatDateUTC } from "@/lib/utils";
 import { getProvinceNameByCode } from "@/lib/provinces";
 import { fetchWardsByProvinceCodes } from "@/lib/location-wards";
+import { formatWorkingTimeRange, parseWorkingTimeRanges } from "@/lib/working-time";
 
 type JobDetail = any;
 
@@ -460,6 +461,36 @@ export default function JobDetailPage() {
             ) : null}
           </SectionCard>
         ) : null}
+
+        {/* Thời gian làm việc */}
+        {(() => {
+          const workingTimeRanges = parseWorkingTimeRanges(job.workingTimeRanges);
+          const workingTimeNote =
+            typeof job.workingTimeNote === "string" ? job.workingTimeNote.trim() : "";
+          if (workingTimeRanges.length === 0 && !workingTimeNote) return null;
+          return (
+            <SectionCard title="Thời gian làm việc">
+              {workingTimeRanges.length > 0 ? (
+                <ul className="space-y-2">
+                  {workingTimeRanges.map((range, idx) => (
+                    <li
+                      key={`${range.dayFrom}-${range.dayTo}-${range.timeStart}-${range.timeEnd}-${idx}`}
+                      className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/60 px-3 py-2 text-sm text-[var(--foreground)]"
+                    >
+                      <Clock className="h-4 w-4 shrink-0 text-[var(--brand)]" />
+                      <span>{formatWorkingTimeRange(range)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {workingTimeNote ? (
+                <p className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--muted)]/40 px-3 py-2 text-sm text-[var(--muted-foreground)]">
+                  {workingTimeNote}
+                </p>
+              ) : null}
+            </SectionCard>
+          );
+        })()}
 
         {/* Thông tin bổ sung */}
         {job.generalInfo ? (
