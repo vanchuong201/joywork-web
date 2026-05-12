@@ -10,8 +10,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { X } from "lucide-react";
-
-const sizeOptions = ["STARTUP", "SMALL", "MEDIUM", "LARGE", "ENTERPRISE"] as const;
+import { COMPANY_SIZE_OPTIONS, normalizeCompanySize } from "@/lib/company-size";
 
 const schema = z.object({
   name: z.string().min(1, "Tên công ty (Thương hiệu) là bắt buộc").min(2, "Tên công ty cần ít nhất 2 ký tự"),
@@ -30,7 +29,7 @@ const schema = z.object({
     }),
   location: z.string().max(120, "Địa điểm tối đa 120 ký tự").optional().or(z.literal("")),
   industry: z.string().max(60, "Ngành tối đa 60 ký tự").optional().or(z.literal("")),
-  size: z.enum(sizeOptions).optional().or(z.literal("")),
+  size: z.enum(COMPANY_SIZE_OPTIONS).optional().or(z.literal("")),
   foundedYear: z
     .string()
     .optional()
@@ -82,7 +81,7 @@ export default function EditCompanyInfoModal({
       website: initialData.website ?? "",
       location: initialData.location ?? "",
       industry: initialData.industry ?? "",
-      size: (initialData.size as FormValues["size"]) ?? "",
+      size: (normalizeCompanySize(initialData.size) as FormValues["size"]) ?? "",
       foundedYear: initialData.foundedYear ? String(initialData.foundedYear) : "",
     },
   });
@@ -97,7 +96,7 @@ export default function EditCompanyInfoModal({
         website: initialData.website ?? "",
         location: initialData.location ?? "",
         industry: initialData.industry ?? "",
-        size: (initialData.size as FormValues["size"]) ?? "",
+        size: (normalizeCompanySize(initialData.size) as FormValues["size"]) ?? "",
         foundedYear: initialData.foundedYear ? String(initialData.foundedYear) : "",
       });
     }
@@ -187,11 +186,11 @@ export default function EditCompanyInfoModal({
                   className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                 >
                   <option value="">Chọn quy mô</option>
-                  <option value="STARTUP">Startup (1-20)</option>
-                  <option value="SMALL">Nhỏ (20-50)</option>
-                  <option value="MEDIUM">Vừa (50-200)</option>
-                  <option value="LARGE">Lớn (200-1000)</option>
-                  <option value="ENTERPRISE">Tập đoàn (&gt;1000)</option>
+                  {COMPANY_SIZE_OPTIONS.map((band) => (
+                    <option key={band} value={band}>
+                      {band} nhân viên
+                    </option>
+                  ))}
                 </select>
               </FormField>
               <FormField label="Năm thành lập" error={errors.foundedYear?.message}>

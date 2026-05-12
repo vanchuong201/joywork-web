@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import React from "react";
 import { uploadCompanyPostImage } from "@/lib/uploads";
+import { COMPANY_SIZE_OPTIONS, normalizeCompanySize } from "@/lib/company-size";
 
 // Icon Mapping
 const iconMap: any = {
@@ -387,7 +388,7 @@ const SAMPLE_SALARY_AND_BONUS = {
 const SAMPLE_TRAINING = {
   description:
     'Tại TechCorp, chúng tôi xây dựng môi trường làm việc nơi mỗi cá nhân được trao quyền phát triển và tạo tác động thực sự.',
-  workforceSize: '200+ nhân sự toàn thời gian',
+  workforceSize: '200-300',
   image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800',
   programs: [
     {
@@ -1684,7 +1685,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               training: {
                 programs: initialData.training?.programs || [],
                 description: initialData.training?.description ?? company.description ?? '',
-                workforceSize: initialData.training?.workforceSize ?? company.size ?? '',
+                workforceSize:
+                  normalizeCompanySize(initialData.training?.workforceSize ?? company.size) ?? '',
                 image: initialData.training?.image ?? '',
               },
             };
@@ -2008,18 +2010,29 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       ? salaryAndBonus.bonus || []
       : SAMPLE_SALARY_AND_BONUS.bonus;
 
+  // companies.size is the canonical workforce-size source. Fall back to the legacy
+  // training.workforceSize / budget fields for older records that have not yet been migrated.
+  // Unknown legacy strings are passed through verbatim so they still render on screen.
+  const rawWorkforceSize = (
+    company.size ||
+    training.workforceSize ||
+    training.budget ||
+    ''
+  ).trim();
+  const effectiveWorkforceSize = rawWorkforceSize
+    ? normalizeCompanySize(rawWorkforceSize) ?? rawWorkforceSize
+    : null;
+
   const usingSampleTraining =
     isEditable &&
     !(training.description || training.workforceSize || training.budget || (training.programs || []).length > 0) &&
-    !(company.description || company.size);
+    !(company.description || effectiveWorkforceSize);
   const trainingDescriptionToRender =
     training.description ||
     company.description ||
     (usingSampleTraining ? SAMPLE_TRAINING.description : '');
   const trainingWorkforceSizeToRender =
-    training.workforceSize ||
-    training.budget ||
-    company.size ||
+    effectiveWorkforceSize ||
     (usingSampleTraining ? SAMPLE_TRAINING.workforceSize : undefined);
   const trainingImageToRender =
     training.image || SAMPLE_TRAINING.image;
@@ -2027,6 +2040,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     (training.programs?.length || 0) > 0 || !isEditable
       ? training.programs || []
       : SAMPLE_TRAINING.programs;
+  const trainingWorkforceSizeValue = formData.training?.workforceSize ?? '';
 
   const usingSampleLeaders = isEditable && leaders.length === 0;
   const leadersToRender = !isEditable || leaders.length > 0 ? leaders : SAMPLE_LEADERS;
@@ -3965,13 +3979,27 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
                 <div className="space-y-3">
                   <Label>Quy mô nhân sự</Label>
-                  <Input
-                    value={formData.training?.workforceSize || ''}
-                    onChange={e => setFormData({ ...formData, training: { ...formData.training, workforceSize: e.target.value } })}
-                    placeholder="Ví dụ: 100-200 nhân sự hoặc 500+ nhân sự"
-                  />
+                  <select
+                    className={cn(
+                      "flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 py-2 text-sm outline-none ring-offset-background transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2"
+                    )}
+                    value={normalizeCompanySize(trainingWorkforceSizeValue) ?? ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        training: { ...formData.training, workforceSize: e.target.value },
+                      })
+                    }
+                  >
+                    <option value="">-- Chọn khoảng quy mô --</option>
+                    {COMPANY_SIZE_OPTIONS.map((band) => (
+                      <option key={band} value={band}>
+                        {band} nhân viên
+                      </option>
+                    ))}
+                  </select>
                   <p className="text-xs text-[var(--muted-foreground)]">
-                    Trường này sẽ hiển thị ngay trong section Giới thiệu DN.
+                    Đây là khoảng nhân sự công khai. Khi lưu, giá trị sẽ được đồng bộ về trường &ldquo;Quy mô doanh nghiệp&rdquo; ở phần thông tin chung.
                   </p>
                 </div>
 

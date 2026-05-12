@@ -16,9 +16,8 @@ import { CompanyLogo } from "@/components/company/CompanyLogo";
 
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
-import { COMPANY_SIZE_OPTIONS, resolveProvinceCode } from "@/lib/provinces";
-
-const sizeOptions = COMPANY_SIZE_OPTIONS;
+import { resolveProvinceCode } from "@/lib/provinces";
+import { COMPANY_SIZE_OPTIONS, normalizeCompanySize } from "@/lib/company-size";
 
 const DESCRIPTION_SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
@@ -96,7 +95,7 @@ const schema = z.object({
     .optional()
     .or(z.literal(""))
     .refine((val) => !val || /^\d+$/.test(val), {
-      message: "Quy mô nhân sự phải là số",
+      message: "Số nhân sự phải là số nguyên",
     }),
   headcountNote: z.string().max(200, "Ghi chú tối đa 200 ký tự").optional().or(z.literal("")),
   // logoUrl and coverUrl are set automatically via file upload, not user input
@@ -175,7 +174,7 @@ export default function CompanyProfileForm({
       location: initialData.location ?? "",
       wardCodes: initialData.wardCodes ?? [],
       industry: initialData.industry ?? "",
-      size: initialData.size ?? "",
+      size: normalizeCompanySize(initialData.size) ?? "",
       foundedYear: initialData.foundedYear ? String(initialData.foundedYear) : "",
       headcount: initialData.headcount ? String(initialData.headcount) : "",
       headcountNote: initialData.headcountNote ?? "",
@@ -196,7 +195,7 @@ export default function CompanyProfileForm({
       location: initialData.location ?? "",
       wardCodes: initialData.wardCodes ?? [],
       industry: initialData.industry ?? "",
-      size: initialData.size ?? "",
+      size: normalizeCompanySize(initialData.size) ?? "",
       foundedYear: initialData.foundedYear ? String(initialData.foundedYear) : "",
       headcount: initialData.headcount ? String(initialData.headcount) : "",
       headcountNote: initialData.headcountNote ?? "",
@@ -392,13 +391,13 @@ export default function CompanyProfileForm({
         <FormField label="Ngành nghề" error={errors.industry?.message}>
           <Input placeholder="Công nghệ, Giáo dục..." {...register("industry")} />
         </FormField>
-        <FormField label="Quy mô doanh nghiệp" error={errors.size?.message}>
+        <FormField label="Quy mô doanh nghiệp (công khai)" error={errors.size?.message}>
           <select
             {...register("size")}
             className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
           >
             <option value="">Chọn quy mô</option>
-            {sizeOptions.map((option) => (
+            {COMPANY_SIZE_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option} nhân viên
               </option>
@@ -408,10 +407,10 @@ export default function CompanyProfileForm({
         <FormField label="Năm thành lập" error={errors.foundedYear?.message}>
           <Input placeholder="2020" inputMode="numeric" {...register("foundedYear")} />
         </FormField>
-        <FormField label="Quy mô nhân sự" error={errors.headcount?.message}>
+        <FormField label="Số nhân sự ước tính (nội bộ)" error={errors.headcount?.message}>
           <Input placeholder="Ví dụ: 120" inputMode="numeric" {...register("headcount")} />
         </FormField>
-        <FormField label="Ghi chú quy mô" error={errors.headcountNote?.message}>
+        <FormField label="Ghi chú số nhân sự" error={errors.headcountNote?.message}>
           <Input placeholder="Ví dụ: Bao gồm cả đội part-time" {...register("headcountNote")} />
         </FormField>
       </div>

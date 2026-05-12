@@ -18,6 +18,10 @@ import { Badge } from "@/components/ui/badge";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { useAuthStore } from "@/store/useAuth";
+import { COMPANY_SIZE_OPTIONS, getCompanySizeLabel } from "@/lib/company-size";
+import ProvinceSelect from "@/components/ui/province-select";
+import IndustrySelect from "@/components/ui/industry-select";
+import { getProvinceDisplayLabel } from "@/lib/provinces";
 
 type Membership = {
   membershipId: string;
@@ -53,13 +57,9 @@ type CompaniesResponse = {
 };
 
 const PAGE_SIZE = 12;
-const SIZE_OPTIONS: { value: string; label: string }[] = [
+const SIZE_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: "", label: "Tất cả quy mô" },
-  { value: "STARTUP", label: "Startup (1-20)" },
-  { value: "SMALL", label: "Nhỏ (20-50)" },
-  { value: "MEDIUM", label: "Vừa (50-200)" },
-  { value: "LARGE", label: "Lớn (200-1000)" },
-  { value: "ENTERPRISE", label: "Tập đoàn (>1000)" },
+  ...COMPANY_SIZE_OPTIONS.map((band) => ({ value: band, label: `${band} nhân viên` })),
 ];
 
 export default function CompaniesPage() {
@@ -67,14 +67,15 @@ export default function CompaniesPage() {
   const user = useAuthStore((s) => s.user);
   const [search, setSearch] = useState("");
   const [industry, setIndustry] = useState("");
-  const [location, setLocation] = useState("");
+  /** Mã tỉnh/thành (theo registry), khớp query `location` của API */
+  const [locationCode, setLocationCode] = useState<string | null>(null);
   const [size, setSize] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredSearch = useDeferredValue(search.trim());
   const deferredIndustry = useDeferredValue(industry.trim());
-  const deferredLocation = useDeferredValue(location.trim());
+  const deferredLocationCode = useDeferredValue(locationCode);
   const sizeParam = size || undefined;
-  const advancedFiltersApplied = Boolean(industry.trim() || location.trim() || size);
+  const advancedFiltersApplied = Boolean(industry.trim() || locationCode || size);
 
   const membershipsQuery = useQuery<{ memberships: Membership[] }>({
     queryKey: ["my-companies"],
@@ -87,14 +88,14 @@ export default function CompaniesPage() {
   const companiesQuery = useInfiniteQuery<CompaniesResponse>({
     queryKey: [
       "companies-discover",
-      { search: deferredSearch, industry: deferredIndustry, location: deferredLocation, size: sizeParam },
+      { search: deferredSearch, industry: deferredIndustry, location: deferredLocationCode ?? undefined, size: sizeParam },
     ],
     queryFn: async ({ pageParam = 1 }) => {
       const res = await api.get("/api/companies", {
         params: {
           q: deferredSearch || undefined,
           industry: deferredIndustry || undefined,
-          location: deferredLocation || undefined,
+          location: deferredLocationCode || undefined,
           size: sizeParam,
           page: pageParam,
           limit: PAGE_SIZE,
@@ -127,9 +128,17 @@ export default function CompaniesPage() {
   const createCompanyHref = user ? "/companies/new" : `/login?redirect=${encodeURIComponent("/companies/new")}`;
   const clearAdvancedFilters = () => {
     setIndustry("");
-    setLocation("");
+    setLocationCode(null);
     setSize("");
   };
+
+  const activeFilterLabels = useMemo(() => {
+    const items: string[] = [];
+    if (industry.trim()) items.push(industry.trim());
+    if (locationCode) items.push(getProvinceDisplayLabel(locationCode));
+    if (size) items.push(getCompanySizeLabel(size) ?? size);
+    return items;
+  }, [industry, locationCode, size]);
 
   return (
     <div className="space-y-10">
@@ -211,7 +220,7 @@ export default function CompaniesPage() {
           </div>
         </div>
 
-        <div className="flex w-full flex-wrap items-center gap-3 md:justify-start">
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:justify-start">
           <div className="w-full flex-1 min-w-[260px] md:max-w-xl">
             <Input
               placeholder="Tìm theo tên doanh nghiệp..."
@@ -224,70 +233,108 @@ export default function CompaniesPage() {
               <Button
                 variant={advancedFiltersApplied ? "secondary" : "outline"}
                 size="sm"
-                className="flex h-10 shrink-0 items-center gap-2 rounded-md border border-[var(--border)] px-4 text-sm font-medium md:w-[150px] md:justify-center"
+                className="flex h-10 shrink-0 items-center gap-2 rounded-md border border-[var(--border)] px-4 text-sm font-medium sm:w-auto md:min-w-[160px] md:justify-center"
               >
-                <Settings2 className="h-4 w-4" />
-                Bộ lọc nâng cao
+                <Settings2 className="h-4 w-4 shrink-0" />
+                <span className="truncate">Bộ lọc nâng cao</span>
                 {advancedFiltersApplied ? (
-                  <span className="ml-1 inline-flex h-2 w-2 rounded-full bg-[var(--brand)]" />
+                  <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[10px] font-bold text-white">
+                    {activeFilterLabels.length}
+                  </span>
                 ) : null}
               </Button>
             </Popover.Trigger>
-            <Popover.Content className="z-50 mt-2 w-[320px] rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-xl">
-              <div className="space-y-4 text-sm">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Ngành nghề</label>
-                  <Input
-                    placeholder="Ví dụ: Fintech"
-                    value={industry}
-                    onChange={(event) => setIndustry(event.target.value)}
+            <Popover.Content
+              align="end"
+              sideOffset={8}
+              className="z-50 flex w-[min(100vw-1.5rem,22rem)] max-h-[min(75vh,28rem)] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-0 shadow-xl"
+            >
+              <div className="border-b border-[var(--border)] px-4 py-3">
+                <p className="text-sm font-semibold text-[var(--foreground)]">Lọc doanh nghiệp</p>
+                <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
+                  Chọn ngành và tỉnh/thành từ danh sách để kết quả khớp dữ liệu hồ sơ.
+                </p>
+              </div>
+              <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                    Ngành nghề
+                  </label>
+                  <IndustrySelect
+                    id="companies-discover-industry"
+                    value={industry.trim() ? industry : null}
+                    onChange={(v) => setIndustry(v ?? "")}
+                    placeholder="Chọn ngành nghề"
+                    className="w-full [&_button]:min-h-10 [&_button]:w-full [&_button]:rounded-md [&_button]:border [&_button]:border-[var(--border)] [&_button]:bg-[var(--input)] [&_button]:text-[var(--foreground)]"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Địa điểm</label>
-                  <Input
-                    placeholder="Ví dụ: Hà Nội"
-                    value={location}
-                    onChange={(event) => setLocation(event.target.value)}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                    Địa điểm
+                  </label>
+                  <p className="text-xs text-[var(--muted-foreground)]">Chỉ lọc theo tỉnh / thành phố trụ sở.</p>
+                  <ProvinceSelect
+                    value={locationCode}
+                    onChange={(code) => setLocationCode(code)}
+                    placeholder="Tất cả tỉnh / thành phố"
+                    className="w-full [&_button]:min-h-10 [&_button]:w-full [&_button]:rounded-md [&_button]:border [&_button]:border-[var(--border)] [&_button]:bg-[var(--input)] [&_button]:text-[var(--foreground)]"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Quy mô</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                    Quy mô nhân sự
+                  </label>
                   <select
                     value={size}
                     onChange={(event) => setSize(event.target.value)}
                     className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm text-[var(--foreground)] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2"
                   >
-                    {SIZE_OPTIONS.map((option) => (
+                    {SIZE_FILTER_OPTIONS.map((option) => (
                       <option key={option.value || "all"} value={option.value}>
                         {option.label}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div className="flex items-center justify-between pt-2">
-                  {advancedFiltersApplied ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        clearAdvancedFilters();
-                        setFiltersOpen(false);
-                      }}
-                    >
-                      Xoá bộ lọc
-                    </Button>
-                  ) : (
-                    <span />
-                  )}
-                  <Button size="sm" onClick={() => setFiltersOpen(false)}>
-                    Đóng
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] bg-[var(--muted)]/25 px-4 py-3">
+                {advancedFiltersApplied ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    onClick={() => {
+                      clearAdvancedFilters();
+                    }}
+                  >
+                    Xoá bộ lọc
                   </Button>
-                </div>
+                ) : (
+                  <span className="text-xs text-[var(--muted-foreground)]">Chưa áp dụng lọc</span>
+                )}
+                <Button size="sm" onClick={() => setFiltersOpen(false)}>
+                  Xong
+                </Button>
               </div>
             </Popover.Content>
           </Popover.Root>
         </div>
+
+        {advancedFiltersApplied ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-medium text-[var(--muted-foreground)]">Đang lọc:</span>
+            {activeFilterLabels.map((label) => (
+              <Badge
+                key={label}
+                variant="secondary"
+                className="max-w-[220px] truncate border border-[var(--border)] bg-[var(--muted)] font-normal text-[var(--foreground)]"
+                title={label}
+              >
+                {label}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
 
         {companiesQuery.isLoading ? (
           <CompanySkeletonGrid />
@@ -367,7 +414,7 @@ function CompanyCard({ company }: { company: CompanyListItem }) {
           ) : null}
           {company.size ? (
             <span className="inline-flex items-center gap-1">
-              <Users size={14} /> {translateCompanySize(company.size)}
+              <Users size={14} /> {getCompanySizeLabel(company.size) ?? "Quy mô đang cập nhật"}
             </span>
           ) : null}
         </div>
@@ -399,23 +446,6 @@ function CompanyAvatar({ name, logoUrl }: { name: string; logoUrl?: string | nul
       {name.slice(0, 2).toUpperCase()}
     </div>
   );
-}
-
-function translateCompanySize(size?: string | null) {
-  switch (size) {
-    case "STARTUP":
-      return "Startup (1-20)";
-    case "SMALL":
-      return "Nhỏ (20-50)";
-    case "MEDIUM":
-      return "Vừa (50-200)";
-    case "LARGE":
-      return "Lớn (200-1000)";
-    case "ENTERPRISE":
-      return "Tập đoàn (>1000)";
-    default:
-      return "Quy mô đang cập nhật";
-  }
 }
 
 
