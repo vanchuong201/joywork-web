@@ -2,11 +2,9 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuth";
@@ -17,6 +15,17 @@ import { COMPANY_INDUSTRY_SET } from "@/lib/company-industries";
 const schema = z.object({
   name: z.string().min(2, "Tên doanh nghiệp cần ít nhất 2 ký tự"),
   legalName: z.string().min(2, "Tên pháp lý đầy đủ cần ít nhất 2 ký tự").max(200, "Tên pháp lý tối đa 200 ký tự"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Vui lòng nhập email doanh nghiệp")
+    .max(200, "Email tối đa 200 ký tự")
+    .refine((value) => value.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), "Email không đúng định dạng"),
+  phone: z
+    .string()
+    .trim()
+    .min(8, "Số điện thoại cần ít nhất 8 ký tự")
+    .max(50, "Số điện thoại tối đa 50 ký tự"),
   slug: z
     .string()
     .regex(/^[a-z0-9-]+$/, "Slug chỉ được chứa chữ thường (không dấu), số và dấu gạch ngang")
@@ -70,28 +79,57 @@ export default function CreateCompanyPage() {
     watch,
     setValue,
     setError,
-    clearErrors,
-    formState: { isSubmitting, errors },
+    formState: { isSubmitting, errors, touchedFields, submitCount },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    mode: "onChange",
-    defaultValues: { name: "", legalName: "", slug: "", tagline: "", industry: undefined, description: "" },
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    defaultValues: { name: "", legalName: "", email: "", phone: "", slug: "", tagline: "", industry: undefined, description: "" },
   });
 
-  const nameField = register("name");
-  const slugField = register("slug");
+  const nameField = register("name", {
+    required: "Vui lòng nhập tên doanh nghiệp",
+    minLength: { value: 2, message: "Tên doanh nghiệp cần ít nhất 2 ký tự" },
+  });
+  const legalNameField = register("legalName", {
+    required: "Vui lòng nhập tên pháp lý đầy đủ",
+    minLength: { value: 2, message: "Tên pháp lý đầy đủ cần ít nhất 2 ký tự" },
+    maxLength: { value: 200, message: "Tên pháp lý tối đa 200 ký tự" },
+  });
+  const emailField = register("email", {
+    required: "Vui lòng nhập email doanh nghiệp",
+    maxLength: { value: 200, message: "Email tối đa 200 ký tự" },
+    pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Email không đúng định dạng" },
+  });
+  const phoneField = register("phone", {
+    required: "Vui lòng nhập số điện thoại doanh nghiệp",
+    minLength: { value: 8, message: "Số điện thoại cần ít nhất 8 ký tự" },
+    maxLength: { value: 50, message: "Số điện thoại tối đa 50 ký tự" },
+  });
+  const slugField = register("slug", {
+    required: "Vui lòng nhập slug",
+    minLength: { value: 2, message: "Slug cần ít nhất 2 ký tự" },
+    pattern: {
+      value: /^[a-z0-9-]+$/,
+      message: "Slug chỉ được chứa chữ thường (không dấu), số và dấu gạch ngang",
+    },
+  });
+  const showFieldError = (field: keyof FormValues) => Boolean(errors[field]) && (Boolean(touchedFields[field]) || submitCount > 0);
 
   const nameValue = watch("name");
   const legalNameValue = watch("legalName");
+  const emailValue = watch("email");
+  const phoneValue = watch("phone");
   const slugValue = watch("slug");
   const sanitizedSlugValue = useMemo(() => slugify(slugValue || ""), [slugValue, slugify]);
   const isFormValid = useMemo(() => {
     const nameValid = (nameValue || "").trim().length >= 2;
     const legalNameValid = (legalNameValue || "").trim().length >= 2;
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((emailValue || "").trim());
+    const phoneValid = (phoneValue || "").trim().length >= 8;
     const slugValid = sanitizedSlugValue.length >= 2 && /^[a-z0-9-]+$/.test(sanitizedSlugValue);
-    const hasErrors = Boolean(errors.name) || Boolean(errors.legalName) || Boolean(errors.slug);
-    return nameValid && legalNameValid && slugValid && !hasErrors;
-  }, [nameValue, legalNameValue, sanitizedSlugValue, errors.name, errors.legalName, errors.slug]);
+    const hasErrors = Boolean(errors.name) || Boolean(errors.legalName) || Boolean(errors.email) || Boolean(errors.phone) || Boolean(errors.slug);
+    return nameValid && legalNameValid && emailValid && phoneValid && slugValid && !hasErrors;
+  }, [nameValue, legalNameValue, emailValue, phoneValue, sanitizedSlugValue, errors.name, errors.legalName, errors.email, errors.phone, errors.slug]);
 
   useEffect(() => {
     if (!slugManuallyEdited) {
@@ -116,10 +154,30 @@ export default function CreateCompanyPage() {
     try {
       setSubmitError(null);
       const sanitizedSlug = slugify(values.slug);
-      const { industry, ...rest } = values;
+      const normalizedValues: FormValues = {
+        ...values,
+        name: values.name.trim(),
+        legalName: values.legalName.trim(),
+        email: values.email.trim(),
+        phone: values.phone.trim(),
+        slug: sanitizedSlug,
+      };
+
+      const parsed = schema.safeParse(normalizedValues);
+      if (!parsed.success) {
+        parsed.error.issues.forEach((issue) => {
+          const field = issue.path[0];
+          if (typeof field === "string" && field in normalizedValues) {
+            setError(field as keyof FormValues, { type: "manual", message: issue.message });
+          }
+        });
+        return;
+      }
+
+      const { industry, tagline: _tagline, description: _description, ...rest } = parsed.data;
       const payload = {
         ...rest,
-        slug: sanitizedSlug,
+        slug: parsed.data.slug,
         ...(industry ? { industry } : {}),
       };
       const { data } = await api.post("/api/companies", payload);
@@ -159,66 +217,59 @@ export default function CreateCompanyPage() {
         <div>
           <label className="text-sm font-medium text-[var(--foreground)]">Tên doanh nghiệp *</label>
           <Input
-            className="mt-1"
+            className={showFieldError("name") ? "mt-1 border-red-500 focus-visible:ring-red-500" : "mt-1"}
             placeholder="Ví dụ: JOYWORK Studio"
             {...nameField}
-            onChange={(event) => {
-              nameField.onChange(event).catch(() => {});
-              const v = (event.target.value || "").trim();
-              if (v.length >= 2) {
-                clearErrors("name");
-              }
-            }}
-            onBlur={(event) => {
-              nameField.onBlur(event).catch(() => {});
-              const v = (event.target.value || "").trim();
-              if (v.length < 2) {
-                setError("name", { type: "manual", message: "Tên doanh nghiệp cần ít nhất 2 ký tự" });
-              } else {
-                clearErrors("name");
-              }
-            }}
           />
-          {errors.name ? <p className="mt-1 text-sm text-red-500">{errors.name.message}</p> : null}
+          {showFieldError("name") ? <p className="mt-1 text-sm text-red-500">{errors.name?.message}</p> : null}
         </div>
 
         <div>
           <label className="text-sm font-medium text-[var(--foreground)]">Tên pháp lý đầy đủ *</label>
           <Input
-            className="mt-1"
+            className={showFieldError("legalName") ? "mt-1 border-red-500 focus-visible:ring-red-500" : "mt-1"}
             placeholder="Ví dụ: Công ty Cổ phần Công nghệ..."
-            {...register("legalName")}
+            {...legalNameField}
           />
-          {errors.legalName ? <p className="mt-1 text-sm text-red-500">{errors.legalName.message}</p> : null}
+          {showFieldError("legalName") ? <p className="mt-1 text-sm text-red-500">{errors.legalName?.message}</p> : null}
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-[var(--foreground)]">Email doanh nghiệp *</label>
+          <Input
+            className={showFieldError("email") ? "mt-1 border-red-500 focus-visible:ring-red-500" : "mt-1"}
+            type="email"
+            placeholder="contact@company.vn"
+            {...emailField}
+          />
+          {showFieldError("email") ? <p className="mt-1 text-sm text-red-500">{errors.email?.message}</p> : null}
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-[var(--foreground)]">Số điện thoại doanh nghiệp *</label>
+          <Input
+            className={showFieldError("phone") ? "mt-1 border-red-500 focus-visible:ring-red-500" : "mt-1"}
+            placeholder="Ví dụ: 0909 123 456"
+            {...phoneField}
+          />
+          {showFieldError("phone") ? <p className="mt-1 text-sm text-red-500">{errors.phone?.message}</p> : null}
         </div>
 
         <div>
           <label className="text-sm font-medium text-[var(--foreground)]">Slug (đường dẫn) *</label>
           <Input
-            className="mt-1"
+            className={showFieldError("slug") ? "mt-1 border-red-500 focus-visible:ring-red-500" : "mt-1"}
             placeholder="ví dụ: joywork-studio"
             {...slugField}
             value={slugValue}
             onChange={(event) => {
-              slugField.onChange(event).catch(() => {});
               setSlugManuallyEdited(true);
               const sanitized = slugify(event.target.value, { trimEdge: false });
-              setValue("slug", sanitized, { shouldDirty: true, shouldTouch: true, shouldValidate: false });
-              if (/^[a-z0-9-]*$/.test(sanitized)) {
-                clearErrors("slug");
-              }
+              setValue("slug", sanitized, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
             }}
-            onBlur={(event) => {
-              slugField.onBlur(event).catch(() => {});
+            onBlur={() => {
               const trimmed = slugify(slugValue || "");
-              setValue("slug", trimmed, { shouldDirty: true, shouldTouch: true, shouldValidate: false });
-              if (trimmed.length < 2) {
-                setError("slug", { type: "manual", message: "Slug cần ít nhất 2 ký tự" });
-              } else if (!/^[a-z0-9-]+$/.test(trimmed)) {
-                setError("slug", { type: "manual", message: "Slug chỉ được chứa chữ thường (không dấu), số và dấu gạch ngang" });
-              } else {
-                clearErrors("slug");
-              }
+              setValue("slug", trimmed, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
             }}
           />
           <p className="mt-1 text-xs text-[var(--muted-foreground)]">
@@ -227,20 +278,15 @@ export default function CreateCompanyPage() {
               https://joywork.vn/companies/{slugValue || "ten-doanh-nghiep"}
             </span>
           </p>
-          {errors.slug ? (
+          {showFieldError("slug") ? (
             <p className="mt-1 text-sm text-red-500">
-              {errors.slug.message} (ví dụ: <code className="font-mono">joywork-studio</code>)
+              {errors.slug?.message} (ví dụ: <code className="font-mono">joywork-studio</code>)
             </p>
           ) : (
             <p className="mt-1 text-xs text-[var(--muted-foreground)]">
               Hãy dùng chữ thường, không dấu, thay khoảng trắng bằng dấu gạch ngang.
             </p>
           )}
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-[var(--foreground)]">Tagline (tuỳ chọn)</label>
-          <Input className="mt-1" placeholder="Câu mô tả ngắn gọn" {...register("tagline")} />
         </div>
 
         <div>
@@ -274,11 +320,6 @@ export default function CreateCompanyPage() {
               Giúp ứng viên và đối tác hiểu rõ ngành nghề chính của doanh nghiệp.
             </p>
           )}
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-[var(--foreground)]">Mô tả chi tiết</label>
-          <Textarea className="mt-1" placeholder="Giới thiệu về sứ mệnh, sản phẩm, văn hoá..." rows={5} {...register("description")} />
         </div>
 
         <div>

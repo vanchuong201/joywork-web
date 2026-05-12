@@ -152,9 +152,6 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
                     <Link href={`/companies/${data.slug}`} className="text-base font-semibold text-[var(--brand)] underline">
                       {data.name}
                     </Link>
-                    {data.tagline ? (
-                      <p className="text-sm text-[var(--muted-foreground)]">{data.tagline}</p>
-                    ) : null}
                     {data.location ? (
                       <p className="text-xs text-[var(--muted-foreground)]">{data.location}</p>
                     ) : null}

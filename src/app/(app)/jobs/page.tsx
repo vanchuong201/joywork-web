@@ -81,7 +81,6 @@ type HomepageShowcaseCompany = {
   name: string;
   slug: string;
   logoUrl?: string | null;
-  tagline?: string | null;
   coverUrl?: string | null;
   order: number;
 };
@@ -1087,8 +1086,7 @@ function JobsPageContent() {
                               </TooltipContent>
                             </Tooltip>
                             <p className="mt-0.5 line-clamp-1 text-left text-xs text-[var(--muted-foreground)]">
-                              {company.tagline ||
-                                "Khám phá cơ hội nghề nghiệp mới cùng doanh nghiệp hàng đầu."}
+                              Khám phá cơ hội nghề nghiệp mới cùng doanh nghiệp hàng đầu.
                             </p>
                           </div>
                         </div>

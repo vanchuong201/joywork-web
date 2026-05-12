@@ -214,7 +214,7 @@ export default function CompaniesPage() {
         <div className="flex w-full flex-wrap items-center gap-3 md:justify-start">
           <div className="w-full flex-1 min-w-[260px] md:max-w-xl">
             <Input
-              placeholder="Tìm theo tên, tagline..."
+              placeholder="Tìm theo tên doanh nghiệp..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -353,9 +353,6 @@ function CompanyCard({ company }: { company: CompanyListItem }) {
           >
             {company.name}
           </Link>
-          {company.tagline ? (
-            <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">{company.tagline}</p>
-          ) : null}
         </div>
       </CardHeader>
       <CardContent className="mt-auto space-y-4 text-sm text-[var(--muted-foreground)]">

@@ -100,7 +100,6 @@ export default function FollowingCompaniesPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-[var(--foreground)]">
-            <p>{item.company.tagline ?? "Chưa có tagline"}</p>
             <div className="text-xs text-[var(--muted-foreground)]">
               {item.company.industry && <span>{item.company.industry}</span>}
               {item.company.industry && item.company.location ? " • " : ""}

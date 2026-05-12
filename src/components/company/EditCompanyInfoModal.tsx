@@ -168,12 +168,6 @@ export default function EditCompanyInfoModal({
               </FormField>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-1">
-              <FormField label="Tagline" error={errors.tagline?.message}>
-                <Input placeholder="Thông điệp ngắn gọn" {...register("tagline")} />
-              </FormField>
-            </div>
-
             <div className="grid gap-4 md:grid-cols-2">
               <FormField label="Website" error={errors.website?.message}>
                 <Input placeholder="https://your-company.com" {...register("website")} />

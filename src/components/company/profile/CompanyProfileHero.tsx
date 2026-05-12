@@ -70,9 +70,13 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             phone: company.phone || "",
         });
         setEmailError(null);
+        setLegalNameError(null);
+        setLegalNameTouched(false);
         setEditDialogOpen(true);
     };
     const [emailError, setEmailError] = useState<string | null>(null);
+    const [legalNameError, setLegalNameError] = useState<string | null>(null);
+    const [legalNameTouched, setLegalNameTouched] = useState(false);
 
     // Get owner email for verification notification
     const ownerMember = useMemo(() => {
@@ -122,6 +126,18 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             toast.error("Vui lòng nhập tên công ty (Thương hiệu)");
             return;
         }
+        const legalName = formData.legalName?.trim() || "";
+        if (!legalName) {
+            setLegalNameTouched(true);
+            setLegalNameError("Vui lòng nhập tên pháp lý đầy đủ");
+            return;
+        }
+        if (legalName.length < 2) {
+            setLegalNameTouched(true);
+            setLegalNameError("Tên pháp lý đầy đủ cần ít nhất 2 ký tự");
+            return;
+        }
+        setLegalNameError(null);
 
         // Validate email format if provided
         const email = formData.email?.trim();
@@ -138,7 +154,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         
         const payload: any = {
             name: formData.name.trim(),
-            legalName: formData.legalName?.trim() || null,
+            legalName,
             location: formData.location?.trim() || null,
             industry: formData.industry?.trim() ? formData.industry.trim() : null,
             website: normalizeWebsite(formData.website),
@@ -618,12 +634,39 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Tên pháp lý đầy đủ</Label>
+                            <Label>Tên pháp lý đầy đủ <span className="text-red-500">*</span></Label>
                             <Input 
                                 value={formData.legalName} 
-                                onChange={(e) => setFormData({...formData, legalName: e.target.value})} 
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setFormData({ ...formData, legalName: value });
+                                    if (!legalNameTouched) return;
+                                    const trimmed = value.trim();
+                                    if (!trimmed) {
+                                        setLegalNameError("Vui lòng nhập tên pháp lý đầy đủ");
+                                    } else if (trimmed.length < 2) {
+                                        setLegalNameError("Tên pháp lý đầy đủ cần ít nhất 2 ký tự");
+                                    } else {
+                                        setLegalNameError(null);
+                                    }
+                                }} 
+                                onBlur={() => {
+                                    setLegalNameTouched(true);
+                                    const trimmed = formData.legalName.trim();
+                                    if (!trimmed) {
+                                        setLegalNameError("Vui lòng nhập tên pháp lý đầy đủ");
+                                    } else if (trimmed.length < 2) {
+                                        setLegalNameError("Tên pháp lý đầy đủ cần ít nhất 2 ký tự");
+                                    } else {
+                                        setLegalNameError(null);
+                                    }
+                                }}
                                 placeholder="VD: Công ty Cổ phần Công nghệ..."
+                                className={legalNameError && legalNameTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
+                            {legalNameError && legalNameTouched ? (
+                                <p className="text-xs text-red-500">{legalNameError}</p>
+                            ) : null}
                             {/* Warning when changing legal name on verified company */}
                             {showReVerificationWarning && (
                                 <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs">
