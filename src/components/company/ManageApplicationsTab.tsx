@@ -31,22 +31,24 @@ type Props = {
 };
 
 type ViewMode = "list" | "grid";
-type StatusFilter = "all" | "PENDING" | "REVIEWING" | "SHORTLISTED" | "REJECTED" | "HIRED";
+type StatusFilter = "all" | "RECEIVED" | "SUITABLE" | "INTERVIEW_SCHEDULED" | "OFFER_SENT" | "HIRED" | "NOT_SUITABLE";
 
 const STATUS_LABEL: Record<string, string> = {
-  PENDING: "Đang chờ",
-  REVIEWING: "Đang xem xét",
-  SHORTLISTED: "Đã shortlist",
-  REJECTED: "Từ chối",
-  HIRED: "Đã tuyển",
+  RECEIVED: "Tiếp nhận",
+  SUITABLE: "Phù hợp",
+  INTERVIEW_SCHEDULED: "Hẹn phỏng vấn",
+  OFFER_SENT: "Gửi đề nghị",
+  HIRED: "Nhận việc",
+  NOT_SUITABLE: "Chưa phù hợp",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  REVIEWING: "bg-blue-100 text-blue-700 border-blue-200",
-  SHORTLISTED: "bg-green-100 text-green-700 border-green-200",
-  REJECTED: "bg-red-100 text-red-700 border-red-200",
+  RECEIVED: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  SUITABLE: "bg-blue-100 text-blue-700 border-blue-200",
+  INTERVIEW_SCHEDULED: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  OFFER_SENT: "bg-green-100 text-green-700 border-green-200",
   HIRED: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  NOT_SUITABLE: "bg-red-100 text-red-700 border-red-200",
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -223,11 +225,12 @@ export default function ManageApplicationsTab({ company }: Props) {
               className="h-9 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-sm text-[var(--foreground)] transition-colors focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 sm:w-[180px]"
             >
               <option value="all">Tất cả</option>
-              <option value="PENDING">Đang chờ</option>
-              <option value="REVIEWING">Đang xem xét</option>
-              <option value="SHORTLISTED">Đã shortlist</option>
-              <option value="REJECTED">Từ chối</option>
-              <option value="HIRED">Đã tuyển</option>
+              <option value="RECEIVED">Tiếp nhận</option>
+              <option value="SUITABLE">Phù hợp</option>
+              <option value="INTERVIEW_SCHEDULED">Hẹn phỏng vấn</option>
+              <option value="OFFER_SENT">Gửi đề nghị</option>
+              <option value="HIRED">Nhận việc</option>
+              <option value="NOT_SUITABLE">Chưa phù hợp</option>
             </select>
           </div>
 
@@ -658,11 +661,12 @@ export default function ManageApplicationsTab({ company }: Props) {
                 onChange={(e) => setNewStatus(e.target.value)}
                 className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20"
               >
-                <option value="PENDING">Đang chờ</option>
-                <option value="REVIEWING">Đang xem xét</option>
-                <option value="SHORTLISTED">Đã shortlist</option>
-                <option value="REJECTED">Từ chối</option>
-                <option value="HIRED">Đã tuyển</option>
+                <option value="RECEIVED">Tiếp nhận</option>
+                <option value="SUITABLE">Phù hợp</option>
+                <option value="INTERVIEW_SCHEDULED">Hẹn phỏng vấn</option>
+                <option value="OFFER_SENT">Gửi đề nghị</option>
+                <option value="HIRED">Nhận việc</option>
+                <option value="NOT_SUITABLE">Chưa phù hợp</option>
               </select>
             </div>
             <div>
