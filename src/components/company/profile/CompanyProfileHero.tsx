@@ -18,6 +18,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import IndustrySelect from "@/components/ui/industry-select";
+import ProvinceSelect from "@/components/ui/province-select";
 
 export default function CompanyProfileHero({ company, isEditable = false }: { company: Company, isEditable?: boolean }) {
     const router = useRouter();
@@ -70,11 +71,17 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             phone: company.phone || "",
         });
         setEmailError(null);
+        setEmailTouched(false);
+        setPhoneError(null);
+        setPhoneTouched(false);
         setLegalNameError(null);
         setLegalNameTouched(false);
         setEditDialogOpen(true);
     };
     const [emailError, setEmailError] = useState<string | null>(null);
+    const [emailTouched, setEmailTouched] = useState(false);
+    const [phoneError, setPhoneError] = useState<string | null>(null);
+    const [phoneTouched, setPhoneTouched] = useState(false);
     const [legalNameError, setLegalNameError] = useState<string | null>(null);
     const [legalNameTouched, setLegalNameTouched] = useState(false);
 
@@ -141,11 +148,30 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
 
         // Validate email format if provided
         const email = formData.email?.trim();
-        if (email && !isValidEmail(email)) {
+        if (!email) {
+            setEmailTouched(true);
+            setEmailError("Vui lòng nhập email công ty");
+            return;
+        }
+        if (!isValidEmail(email)) {
+            setEmailTouched(true);
             setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
             return;
         }
         setEmailError(null);
+
+        const phone = formData.phone?.trim() || "";
+        if (!phone) {
+            setPhoneTouched(true);
+            setPhoneError("Vui lòng nhập số điện thoại");
+            return;
+        }
+        if (phone.length < 8) {
+            setPhoneTouched(true);
+            setPhoneError("Số điện thoại cần ít nhất 8 ký tự");
+            return;
+        }
+        setPhoneError(null);
         
         // Check if legal name changed for verified company
         const legalNameChanged = verificationStatus === "VERIFIED" && 
@@ -158,8 +184,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             location: formData.location?.trim() || null,
             industry: formData.industry?.trim() ? formData.industry.trim() : null,
             website: normalizeWebsite(formData.website),
-            email: formData.email?.trim() || null,
-            phone: formData.phone?.trim() || null,
+            email,
+            phone,
         };
 
         // If legal name changed on verified company, trigger re-verification
@@ -618,7 +644,20 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
              </div>
 
              {/* Dialog: Chỉnh sửa thông tin cơ bản */}
-             <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) setEmailError(null); }}>
+             <Dialog
+                open={editDialogOpen}
+                onOpenChange={(open) => {
+                    setEditDialogOpen(open);
+                    if (!open) {
+                        setEmailError(null);
+                        setEmailTouched(false);
+                        setPhoneError(null);
+                        setPhoneTouched(false);
+                        setLegalNameError(null);
+                        setLegalNameTouched(false);
+                    }
+                }}
+             >
                 <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Chỉnh sửa thông tin cơ bản</DialogTitle>
@@ -696,10 +735,14 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         </div>
                         <div className="space-y-2">
                             <Label>Địa chỉ trụ sở</Label>
-                            <Input 
-                                value={formData.location} 
-                                onChange={(e) => setFormData({...formData, location: e.target.value})} 
+                            <ProvinceSelect
+                                value={formData.location || null}
+                                onChange={(value) => setFormData({ ...formData, location: value ?? "" })}
+                                placeholder="Chọn tỉnh / thành phố"
                             />
+                            <p className="text-xs text-[var(--muted-foreground)]">
+                                Chỉ chọn từ danh sách chuẩn để hệ thống lưu đúng mã địa phương.
+                            </p>
                         </div>
                         <div className="space-y-2">
                             <Label>Website</Label>
@@ -723,30 +766,71 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <Label>Email công ty</Label>
+                            <Label>Email công ty <span className="text-red-500">*</span></Label>
                             <Input 
                                 type="email"
                                 value={formData.email} 
                                 onChange={(e) => {
-                                    setFormData({...formData, email: e.target.value});
-                                    if (emailError) setEmailError(null);
+                                    const value = e.target.value;
+                                    setFormData({ ...formData, email: value });
+                                    if (!emailTouched) return;
+                                    const trimmed = value.trim();
+                                    if (!trimmed) {
+                                        setEmailError("Vui lòng nhập email công ty");
+                                    } else if (!isValidEmail(trimmed)) {
+                                        setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
+                                    } else {
+                                        setEmailError(null);
+                                    }
                                 }}
                                 onBlur={() => {
+                                    setEmailTouched(true);
                                     const v = formData.email?.trim();
-                                    if (v && !isValidEmail(v)) setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
-                                    else setEmailError(null);
+                                    if (!v) {
+                                        setEmailError("Vui lòng nhập email công ty");
+                                    } else if (!isValidEmail(v)) {
+                                        setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
+                                    } else {
+                                        setEmailError(null);
+                                    }
                                 }}
                                 placeholder="contact@company.vn"
-                                className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
+                                className={emailError && emailTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
-                            {emailError && <p className="text-xs text-red-500">{emailError}</p>}
+                            {emailError && emailTouched ? <p className="text-xs text-red-500">{emailError}</p> : null}
                         </div>
                         <div className="space-y-2">
-                            <Label>Số điện thoại</Label>
+                            <Label>Số điện thoại <span className="text-red-500">*</span></Label>
                             <Input 
                                 value={formData.phone} 
-                                onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setFormData({ ...formData, phone: value });
+                                    if (!phoneTouched) return;
+                                    const trimmed = value.trim();
+                                    if (!trimmed) {
+                                        setPhoneError("Vui lòng nhập số điện thoại");
+                                    } else if (trimmed.length < 8) {
+                                        setPhoneError("Số điện thoại cần ít nhất 8 ký tự");
+                                    } else {
+                                        setPhoneError(null);
+                                    }
+                                }}
+                                onBlur={() => {
+                                    setPhoneTouched(true);
+                                    const value = formData.phone.trim();
+                                    if (!value) {
+                                        setPhoneError("Vui lòng nhập số điện thoại");
+                                    } else if (value.length < 8) {
+                                        setPhoneError("Số điện thoại cần ít nhất 8 ký tự");
+                                    } else {
+                                        setPhoneError(null);
+                                    }
+                                }}
+                                placeholder="Ví dụ: 0909 123 456"
+                                className={phoneError && phoneTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
+                            {phoneError && phoneTouched ? <p className="text-xs text-red-500">{phoneError}</p> : null}
                         </div>
                     </div>
                     <DialogFooter>

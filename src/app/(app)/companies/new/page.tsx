@@ -291,7 +291,7 @@ export default function CreateCompanyPage() {
 
         <div>
           <label htmlFor="create-company-industry" className="text-sm font-medium text-[var(--foreground)]">
-            Lĩnh vực hoạt động (tuỳ chọn)
+            Lĩnh vực hoạt động
           </label>
           <Controller
             name="industry"
@@ -317,7 +317,7 @@ export default function CreateCompanyPage() {
             <p className="mt-1 text-sm text-red-500">{errors.industry.message}</p>
           ) : (
             <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-              Giúp ứng viên và đối tác hiểu rõ ngành nghề chính của doanh nghiệp.
+              Có thể để trống. Giá trị cũ không nằm trong danh sách vẫn hiển thị cho đến khi bạn đổi.
             </p>
           )}
         </div>
