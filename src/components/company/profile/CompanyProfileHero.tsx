@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import IndustrySelect from "@/components/ui/industry-select";
 import ProvinceSelect from "@/components/ui/province-select";
+import WardSelect from "@/components/ui/ward-select";
 
 export default function CompanyProfileHero({ company, isEditable = false }: { company: Company, isEditable?: boolean }) {
     const router = useRouter();
@@ -53,6 +54,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         name: company.name,
         legalName: company.legalName || "",
         location: company.location || "",
+        wardCode: company.wardCodes?.[0] || "",
+        specificAddress: (company as any).specificAddress || "",
         industry: company.industry || "",
         // Let user type domain only; we'll normalize on blur/submit.
         website: (company.website || "").replace(/^https?:\/\//i, ""),
@@ -65,6 +68,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             name: company.name,
             legalName: company.legalName || "",
             location: company.location || "",
+            wardCode: company.wardCodes?.[0] || "",
+            specificAddress: (company as any).specificAddress || "",
             industry: company.industry || "",
             website: (company.website || "").replace(/^https?:\/\//i, ""),
             email: company.email || "",
@@ -74,6 +79,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         setEmailTouched(false);
         setPhoneError(null);
         setPhoneTouched(false);
+        setLocationError(null);
+        setLocationTouched(false);
+        setWardCodeError(null);
+        setWardCodeTouched(false);
+        setSpecificAddressError(null);
+        setSpecificAddressTouched(false);
         setLegalNameError(null);
         setLegalNameTouched(false);
         setEditDialogOpen(true);
@@ -82,6 +93,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const [emailTouched, setEmailTouched] = useState(false);
     const [phoneError, setPhoneError] = useState<string | null>(null);
     const [phoneTouched, setPhoneTouched] = useState(false);
+    const [locationError, setLocationError] = useState<string | null>(null);
+    const [locationTouched, setLocationTouched] = useState(false);
+    const [wardCodeError, setWardCodeError] = useState<string | null>(null);
+    const [wardCodeTouched, setWardCodeTouched] = useState(false);
+    const [specificAddressError, setSpecificAddressError] = useState<string | null>(null);
+    const [specificAddressTouched, setSpecificAddressTouched] = useState(false);
     const [legalNameError, setLegalNameError] = useState<string | null>(null);
     const [legalNameTouched, setLegalNameTouched] = useState(false);
 
@@ -172,6 +189,30 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             return;
         }
         setPhoneError(null);
+
+        const locationCode = formData.location?.trim() || "";
+        if (!locationCode) {
+            setLocationTouched(true);
+            setLocationError("Vui lòng chọn tỉnh/thành phố");
+            return;
+        }
+        setLocationError(null);
+
+        const wardCode = formData.wardCode?.trim() || "";
+        if (!wardCode) {
+            setWardCodeTouched(true);
+            setWardCodeError("Vui lòng chọn phường/xã");
+            return;
+        }
+        setWardCodeError(null);
+
+        const specificAddress = formData.specificAddress?.trim() || "";
+        if (!specificAddress) {
+            setSpecificAddressTouched(true);
+            setSpecificAddressError("Vui lòng nhập địa chỉ chi tiết");
+            return;
+        }
+        setSpecificAddressError(null);
         
         // Check if legal name changed for verified company
         const legalNameChanged = verificationStatus === "VERIFIED" && 
@@ -181,7 +222,9 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         const payload: any = {
             name: formData.name.trim(),
             legalName,
-            location: formData.location?.trim() || null,
+            location: locationCode,
+            wardCodes: [wardCode],
+            specificAddress,
             industry: formData.industry?.trim() ? formData.industry.trim() : null,
             website: normalizeWebsite(formData.website),
             email,
@@ -653,6 +696,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         setEmailTouched(false);
                         setPhoneError(null);
                         setPhoneTouched(false);
+                        setLocationError(null);
+                        setLocationTouched(false);
+                        setWardCodeError(null);
+                        setWardCodeTouched(false);
+                        setSpecificAddressError(null);
+                        setSpecificAddressTouched(false);
                         setLegalNameError(null);
                         setLegalNameTouched(false);
                     }
@@ -734,15 +783,56 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <Label>Địa chỉ trụ sở</Label>
+                            <Label>Địa chỉ trụ sở - Tỉnh/Thành <span className="text-red-500">*</span></Label>
                             <ProvinceSelect
                                 value={formData.location || null}
-                                onChange={(value) => setFormData({ ...formData, location: value ?? "" })}
+                                onChange={(value) => {
+                                    setFormData({ ...formData, location: value ?? "", wardCode: "" });
+                                    setLocationTouched(true);
+                                    if (!value) setLocationError("Vui lòng chọn tỉnh/thành phố");
+                                    else setLocationError(null);
+                                    setWardCodeTouched(true);
+                                    setWardCodeError("Vui lòng chọn phường/xã");
+                                }}
                                 placeholder="Chọn tỉnh / thành phố"
                             />
-                            <p className="text-xs text-[var(--muted-foreground)]">
-                                Chỉ chọn từ danh sách chuẩn để hệ thống lưu đúng mã địa phương.
-                            </p>
+                            {locationError && locationTouched ? <p className="text-xs text-red-500">{locationError}</p> : null}
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Địa chỉ trụ sở - Phường/Xã <span className="text-red-500">*</span></Label>
+                            <WardSelect
+                                provinceCodes={formData.location ? [formData.location] : []}
+                                value={formData.wardCode || null}
+                                onChange={(value) => {
+                                    setWardCodeTouched(true);
+                                    const next = value ?? "";
+                                    setFormData({ ...formData, wardCode: next });
+                                    if (!next) setWardCodeError("Vui lòng chọn phường/xã");
+                                    else setWardCodeError(null);
+                                }}
+                            />
+                            {wardCodeError && wardCodeTouched ? <p className="text-xs text-red-500">{wardCodeError}</p> : null}
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Địa chỉ chi tiết <span className="text-red-500">*</span></Label>
+                            <Input
+                                value={formData.specificAddress}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setFormData({ ...formData, specificAddress: value });
+                                    if (!specificAddressTouched) return;
+                                    if (!value.trim()) setSpecificAddressError("Vui lòng nhập địa chỉ chi tiết");
+                                    else setSpecificAddressError(null);
+                                }}
+                                onBlur={() => {
+                                    setSpecificAddressTouched(true);
+                                    if (!formData.specificAddress.trim()) setSpecificAddressError("Vui lòng nhập địa chỉ chi tiết");
+                                    else setSpecificAddressError(null);
+                                }}
+                                placeholder="Ví dụ: Tầng 5, toà nhà ABC, số 12 đường XYZ"
+                                className={specificAddressError && specificAddressTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
+                            />
+                            {specificAddressError && specificAddressTouched ? <p className="text-xs text-red-500">{specificAddressError}</p> : null}
                         </div>
                         <div className="space-y-2">
                             <Label>Website</Label>
