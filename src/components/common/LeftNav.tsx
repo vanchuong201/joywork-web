@@ -14,19 +14,17 @@ import CreateTicketModal from "@/components/tickets/CreateTicketModal";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import {
+  buildBusinessSpaceNav,
   buildCompanyManageNav,
   buildLeftAdminNav,
-  buildLeftExploreNav,
   isNavItemActive,
   leftPersonalNav,
   type NavItem,
 } from "./navigation-config";
 
-const MAX_COMPANY_NAV_ITEMS = 6;
-
 function StaticPageLinks() {
   return (
-    <div className="mt-auto border-t border-[var(--border)] pt-3 text-xs text-[var(--muted-foreground)]">
+    <div className="text-xs text-[var(--muted-foreground)]">
       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
         <Link
           href="/gioi-thieu"
@@ -69,25 +67,39 @@ function NavSection({
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = isNavItemActive(pathname, item);
+          const className = cn(
+            "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
+            isActive
+              ? "bg-[var(--muted)] text-[var(--foreground)]"
+              : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+          );
+          const label = (
+            <>
+              <Icon size={16} />
+              <span className={cn("flex-1 font-medium", truncateLabel && "truncate")}>{item.label}</span>
+              {item.badge ? (
+                <span className="rounded-full bg-[var(--brand)]/10 px-2 py-0.5 text-[11px] text-[var(--brand)]">
+                  {item.badge}
+                </span>
+              ) : null}
+            </>
+          );
           return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
-                  isActive
-                    ? "bg-[var(--muted)] text-[var(--foreground)]"
-                    : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-                )}
-              >
-                <Icon size={16} />
-                <span className={cn("flex-1 font-medium", truncateLabel && "truncate")}>{item.label}</span>
-                {item.badge ? (
-                  <span className="rounded-full bg-[var(--brand)]/10 px-2 py-0.5 text-[11px] text-[var(--brand)]">
-                    {item.badge}
-                  </span>
-                ) : null}
-              </Link>
+            <li key={`${item.href}-${item.label}`}>
+              {item.external ? (
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                >
+                  {label}
+                </a>
+              ) : (
+                <Link href={item.href} className={className}>
+                  {label}
+                </Link>
+              )}
             </li>
           );
         })}
@@ -190,11 +202,9 @@ export default function LeftNav() {
     );
   }
 
-  const primaryNav = buildLeftExploreNav();
   const personalNav = leftPersonalNav;
-  const companyItems = buildCompanyManageNav(memberships);
-  const visibleCompanyItems = companyItems.slice(0, MAX_COMPANY_NAV_ITEMS);
-  const hasMoreCompanyItems = companyItems.length > MAX_COMPANY_NAV_ITEMS;
+  const businessSpaceNav = buildBusinessSpaceNav();
+  const companyManageNav = buildCompanyManageNav(memberships);
   const adminNav = buildLeftAdminNav(user);
 
   return (
@@ -226,56 +236,39 @@ export default function LeftNav() {
           </div>
         </div>
 
-        <NavSection title="Khám phá" items={primaryNav} pathname={pathname} />
-        
-        {/* Support Section - Highlighted */}
-        {user && joyworkCompanyId && (
-          <div>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Hỗ trợ</div>
-            <ul className="space-y-1">
-              <li>
-                <button
-                  onClick={() => {
-                    if (joyworkCompany) {
-                      setSupportModalOpen(true);
-                    } else {
-                      // Show loading or error toast if company not loaded
-                      // Modal will handle the case when company is not available
-                      setSupportModalOpen(true);
-                    }
-                  }}
-                  disabled={!joyworkCompany}
-                  className={cn(
-                    "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
-                    "bg-[var(--brand)]/10 text-[var(--brand)] hover:bg-[var(--brand)]/20 font-semibold",
-                    !joyworkCompany && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <LifeBuoy size={16} />
-                  <span className="flex-1 font-medium">Hỗ trợ</span>
-                </button>
-              </li>
-            </ul>
-          </div>
-        )}
+        <NavSection title="Không gian của ứng viên" items={personalNav} pathname={pathname} />
 
-        <NavSection title="Không gian của tôi" items={personalNav} pathname={pathname} />
+        <NavSection title="Không gian của doanh nghiệp" items={businessSpaceNav} pathname={pathname} />
 
-        {companyItems.length > 0 ? (
-          <div>
-            <NavSection title="Công ty của tôi" items={visibleCompanyItems} pathname={pathname} truncateLabel />
-            {hasMoreCompanyItems ? (
-              <Link
-                href="/companies"
-                className="mt-1 inline-block px-2 text-xs font-medium text-[var(--brand)] hover:underline"
-              >
-                Xem thêm ({companyItems.length - MAX_COMPANY_NAV_ITEMS})
-              </Link>
-            ) : null}
-          </div>
+        {companyManageNav.length > 0 ? (
+          <NavSection title="Công ty của tôi" items={companyManageNav} pathname={pathname} truncateLabel />
         ) : null}
 
         {adminNav.length > 0 ? <NavSection title="Hệ thống" items={adminNav} pathname={pathname} /> : null}
+        </div>
+
+        <div className="mt-3 shrink-0 space-y-3 border-t border-[var(--border)] pt-3">
+        {user && joyworkCompanyId ? (
+            <button
+              type="button"
+              onClick={() => setSupportModalOpen(true)}
+              disabled={!joyworkCompany}
+              className={cn(
+                "flex w-full items-start gap-3 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-left transition-colors",
+                "hover:border-[var(--brand)]/35 hover:bg-[var(--muted)]/50",
+                !joyworkCompany && "cursor-not-allowed opacity-50"
+              )}
+            >
+              <LifeBuoy size={18} className="mt-0.5 shrink-0 text-[var(--brand)]" aria-hidden />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-[var(--foreground)]">Hỗ trợ</span>
+                <span className="mt-0.5 block text-xs leading-snug text-[var(--muted-foreground)]">
+                  Mở ticket với đội JOYWORK khi bạn cần trợ giúp.
+                </span>
+              </span>
+            </button>
+          ) : null}
+          <StaticPageLinks />
         </div>
 
         {/* Support Modal */}
@@ -303,7 +296,6 @@ export default function LeftNav() {
             }}
           />
         )}
-        <StaticPageLinks />
       </nav>
     </aside>
   );

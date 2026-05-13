@@ -2,7 +2,6 @@ import {
   Home,
   Briefcase,
   Building2,
-  Settings,
   ClipboardList,
   UserRound,
   Bookmark,
@@ -39,12 +38,6 @@ const exploreNavBase: NavItem[] = [
   { icon: Sparkles, label: "Talent Pool", href: "/candidates?tab=talent-pool" },
 ];
 
-const headerAdminNavItem: NavItem = {
-  icon: Settings,
-  label: "Hệ thống",
-  href: "/system",
-};
-
 const leftAdminNavItem: NavItem = {
   icon: ClipboardList,
   label: "Kiểm duyệt",
@@ -52,7 +45,7 @@ const leftAdminNavItem: NavItem = {
 };
 
 export const leftPersonalNav: NavItem[] = [
-  { icon: UserRound, label: "Hồ sơ của tôi", href: "/account" },
+  { icon: UserRound, label: "CV của tôi", href: "/account" },
   { icon: ClipboardList, label: "Ứng tuyển của tôi", href: "/applications" },
   { icon: Bookmark, label: "Đã lưu", href: "/saved" },
   { icon: Heart, label: "Công ty theo dõi", href: "/following" },
@@ -66,25 +59,26 @@ export const accountDropdownItems: AccountDropdownItem[] = [
   { label: "CV của tôi", href: "/account/profile" },
 ];
 
+const headerPrimaryNav: NavItem[] = exploreNavBase.slice(0, 3);
+
+/** Header: Bảng tin, Việc làm, Doanh nghiệp (khách ẩn Việc làm). */
 export function buildHeaderExploreNav(user: AuthUser | null): NavItem[] {
-  const internalSurveyItem: NavItem = user
-    ? {
-        icon: FileQuestion,
-        label: "Khảo sát nội bộ",
-        href: "https://survey.joywork.vn/",
-        external: true,
-      }
-    : {
-        icon: FileQuestion,
-        label: "Khảo sát nội bộ",
-        href: "/login?redirect=%2F",
-      };
-  const baseItems = user ? exploreNavBase : exploreNavBase.filter((item) => item.href !== "/jobs");
-  const items = [...baseItems, internalSurveyItem];
-  if (user?.role === "ADMIN") {
-    return [...items, headerAdminNavItem];
-  }
-  return items;
+  return user ? headerPrimaryNav : headerPrimaryNav.filter((item) => item.href !== "/jobs");
+}
+
+/** Sidebar “Không gian của doanh nghiệp” — khảo sát ở cuối danh sách. */
+export function buildBusinessSpaceNav(): NavItem[] {
+  return [
+    { icon: Users, label: "Ứng viên", href: "/candidates" },
+    { icon: GraduationCap, label: "Khóa học", href: "/courses" },
+    { icon: Sparkles, label: "Talent Pool", href: "/candidates?tab=talent-pool" },
+    {
+      icon: FileQuestion,
+      label: "Khảo sát nội bộ",
+      href: "https://survey.joywork.vn/",
+      external: true,
+    },
+  ];
 }
 
 export function buildLeftExploreNav(): NavItem[] {

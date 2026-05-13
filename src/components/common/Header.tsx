@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Search,
   ChevronDown,
   LogOut,
   Lock,
@@ -21,8 +20,10 @@ import Image from "next/image";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import {
   accountDropdownItems,
+  buildBusinessSpaceNav,
   buildCompanyManageNav,
   buildHeaderExploreNav,
+  buildLeftAdminNav,
   isNavItemActive,
   mobilePersonalNav,
   type NavItem,
@@ -47,7 +48,9 @@ export default function Header() {
   const showProfileWarningDot = Boolean(user) && !isProfileCompletionLoading && hasProfile && !isComplete;
 
   const navItems = useMemo(() => buildHeaderExploreNav(user), [user]);
-  const mobileCompanyItems = useMemo(() => buildCompanyManageNav(memberships), [memberships]);
+  const mobileBusinessSpaceItems = useMemo(() => buildBusinessSpaceNav(), []);
+  const mobileCompanyManageItems = useMemo(() => buildCompanyManageNav(memberships), [memberships]);
+  const mobileAdminItems = useMemo(() => buildLeftAdminNav(user), [user]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -185,7 +188,7 @@ export default function Header() {
                   </Link>
                 );
               })
-            : Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-7 w-16" />)}
+            : Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-7 w-16" />)}
         </nav>
         <div className="ml-auto flex items-center justify-end gap-3">
           {/* <div className="relative hidden w-full max-w-[320px] lg:max-w-md md:block">
@@ -285,25 +288,43 @@ export default function Header() {
               <div className="space-y-1">
                 {isReady
                   ? renderMobileMenuItems(navItems)
-                  : Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
+                  : Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
               </div>
             </div>
 
             {isReady && user && (
               <div>
                 <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                  Không gian của tôi
+                  Không gian của ứng viên
                 </div>
                 <div className="space-y-1">{renderMobileMenuItems(mobilePersonalNav)}</div>
               </div>
             )}
 
-            {isReady && user && mobileCompanyItems.length > 0 && (
+            {isReady && user && (
+              <div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                  Không gian của doanh nghiệp
+                </div>
+                <div className="space-y-1">{renderMobileMenuItems(mobileBusinessSpaceItems)}</div>
+              </div>
+            )}
+
+            {isReady && user && mobileCompanyManageItems.length > 0 && (
               <div>
                 <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
                   Công ty của tôi
                 </div>
-                <div className="space-y-1">{renderMobileMenuItems(mobileCompanyItems)}</div>
+                <div className="space-y-1">{renderMobileMenuItems(mobileCompanyManageItems)}</div>
+              </div>
+            )}
+
+            {isReady && user && mobileAdminItems.length > 0 && (
+              <div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                  Hệ thống
+                </div>
+                <div className="space-y-1">{renderMobileMenuItems(mobileAdminItems)}</div>
               </div>
             )}
           </nav>
