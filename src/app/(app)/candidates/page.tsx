@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuth";
@@ -10,7 +10,7 @@ import {
   listCvFlipCandidates,
 } from "@/lib/api/cv-flip";
 import CompanySelectorModal from "@/components/candidates/CompanySelectorModal";
-import CompanySelect from "@/components/candidates/CompanySelect";
+import SelectedCompanySummary from "@/components/candidates/SelectedCompanySummary";
 import CvFlipUsageBadge from "@/components/candidates/CvFlipUsageBadge";
 import CandidateRow from "@/components/candidates/CandidateRow";
 import TalentPoolExplorer from "@/components/talent-pool/TalentPoolExplorer";
@@ -46,6 +46,10 @@ function CandidatesPageContent() {
   } = filters;
 
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [selectionModalDismissed, setSelectionModalDismissed] = useState(false);
+  const [reselectModalOpen, setReselectModalOpen] = useState(false);
+  const [modalDraftCompanyId, setModalDraftCompanyId] = useState("");
+  const companyModalWasOpen = useRef(false);
 
   const tab = searchParams.get("tab") === TAB_TALENT_POOL ? TAB_TALENT_POOL : TAB_ALL;
 
@@ -153,6 +157,42 @@ function CandidatesPageContent() {
     enabled: initialized && !loading && !!user && tab === TAB_TALENT_POOL,
   });
 
+  const blockingNoCompanySelected = companies.length > 1 && !selectedCompanyId;
+  const hasNoCompanies = companies.length === 0;
+  const companyModalOpen =
+    reselectModalOpen ||
+    (blockingNoCompanySelected && !selectionModalDismissed) ||
+    (hasNoCompanies && !selectionModalDismissed);
+
+  useEffect(() => {
+    if (companyModalOpen && !companyModalWasOpen.current) {
+      setModalDraftCompanyId(selectedCompanyId || "");
+    }
+    companyModalWasOpen.current = companyModalOpen;
+  }, [companyModalOpen, selectedCompanyId]);
+
+  const handleCompanyModalOpenChange = useCallback(
+    (next: boolean) => {
+      if (!next) {
+        setReselectModalOpen(false);
+        if (blockingNoCompanySelected) setSelectionModalDismissed(true);
+        if (hasNoCompanies) setSelectionModalDismissed(true);
+      }
+    },
+    [blockingNoCompanySelected, hasNoCompanies],
+  );
+
+  const handleConfirmCompanySelection = useCallback(() => {
+    if (!modalDraftCompanyId) return;
+    setSelectedCompanyId(modalDraftCompanyId);
+    setReselectModalOpen(false);
+    setSelectionModalDismissed(false);
+  }, [modalDraftCompanyId]);
+
+  const openCompanyPickerForProfile = useCallback(() => {
+    setSelectionModalDismissed(false);
+  }, []);
+
   if (!initialized || loading || accessQuery.isLoading) {
     return (
       <div className="mx-auto max-w-6xl p-4 text-sm text-slate-500">
@@ -163,7 +203,6 @@ function CandidatesPageContent() {
 
   if (!user) return null;
 
-  const modalOpen = companies.length === 0 || (companies.length > 1 && !selectedCompanyId);
   const switchTab = (nextTab: typeof TAB_ALL | typeof TAB_TALENT_POOL) => {
     const next = new URLSearchParams(searchParams.toString());
     if (nextTab === TAB_ALL) {
@@ -178,13 +217,12 @@ function CandidatesPageContent() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
       <CompanySelectorModal
-        open={modalOpen}
+        open={companyModalOpen}
+        onOpenChange={handleCompanyModalOpenChange}
         companies={companies}
-        selectedCompanyId={selectedCompanyId}
-        onSelectedCompanyIdChange={setSelectedCompanyId}
-        onConfirm={() => {
-          if (!selectedCompanyId) return;
-        }}
+        draftCompanyId={modalDraftCompanyId}
+        onDraftCompanyIdChange={setModalDraftCompanyId}
+        onConfirm={handleConfirmCompanySelection}
         onCreateCompany={() => router.push("/companies/new")}
       />
 
@@ -195,14 +233,10 @@ function CandidatesPageContent() {
             Chỉ tài khoản đăng nhập mới truy cập được trang này.
           </p>
         </div>
-        {companies.length > 1 ? (
-          <div className="flex items-center gap-2">
-            <CompanySelect
-              value={selectedCompanyId}
-              onChange={setSelectedCompanyId}
-              companies={companies}
-            />
-            <Button variant="outline" onClick={() => setSelectedCompanyId("")}>
+        {companies.length > 1 && selectedCompany ? (
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <SelectedCompanySummary company={selectedCompany} />
+            <Button type="button" variant="outline" onClick={() => setReselectModalOpen(true)}>
               Chọn lại
             </Button>
           </div>
@@ -260,6 +294,8 @@ function CandidatesPageContent() {
             {loadedCandidates.map((candidate) => (
               <CandidateRow
                 key={candidate.userId}
+                blockFullProfileUntilCompany={blockingNoCompanySelected}
+                onRequireCompanyForProfile={openCompanyPickerForProfile}
                 candidate={{
                   userId: candidate.userId,
                   slug: candidate.slug,

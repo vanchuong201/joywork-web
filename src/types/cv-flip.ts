@@ -1,6 +1,7 @@
 export type CvFlipCompanyAccess = {
   id: string;
   name: string;
+  legalName?: string | null;
   slug: string;
   logoUrl: string | null;
   role: string;
