@@ -803,7 +803,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
                   <div>
                     <p className="font-medium text-slate-900">Tự động điền hồ sơ từ CV này?</p>
                     <p className="text-xs text-slate-600">
-                      JoyWork đọc file CV PDF/DOCX của bạn và đề xuất cập nhật các phần còn thiếu trong hồ sơ. Bạn sẽ xem trước trước khi áp dụng.
+                      JOYWORK đọc file CV PDF/DOCX của bạn và đề xuất cập nhật các phần còn thiếu trong hồ sơ. Bạn sẽ xem trước trước khi áp dụng.
                     </p>
                   </div>
                 </div>

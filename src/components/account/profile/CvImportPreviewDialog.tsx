@@ -317,9 +317,9 @@ export default function CvImportPreviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Tạo hồ sơ JoyWork từ CV</DialogTitle>
+          <DialogTitle>Tạo hồ sơ JOYWORK từ CV</DialogTitle>
           <DialogDescription>
-            Xem trước dữ liệu JoyWork đã trích xuất từ CV của bạn trước khi cập nhật hồ sơ.
+            Xem trước dữ liệu JOYWORK đã trích xuất từ CV của bạn trước khi cập nhật hồ sơ.
           </DialogDescription>
         </DialogHeader>
 
@@ -327,7 +327,7 @@ export default function CvImportPreviewDialog({
           <div className="space-y-3 py-4">
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <Loader2 className="h-4 w-4 animate-spin" />
-              JoyWork đang đọc CV của bạn, có thể mất vài giây...
+              JOYWORK đang đọc CV của bạn, có thể mất vài giây...
             </div>
             <Skeleton className="h-5 w-2/3" />
             <Skeleton className="h-5 w-3/4" />
