@@ -15,10 +15,11 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { uploadProfileAvatar, uploadProfileCV } from "@/lib/uploads";
 import Image from "next/image";
-import { Loader2, Upload, FileText, X } from "lucide-react";
+import { Loader2, Upload, FileText, X, Sparkles } from "lucide-react";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import DateOfBirthPicker from "@/components/ui/date-of-birth-picker";
+import CvImportPreviewDialog from "@/components/account/profile/CvImportPreviewDialog";
 
 const maxBirthYear = new Date().getFullYear() - 16;
 
@@ -94,6 +95,13 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const [cvUrl, setCvUrl] = useState<string | null>(profile.profile?.cvUrl || null);
   const [uploadingCV, setUploadingCV] = useState(false);
   const cvFileInputRef = useRef<HTMLInputElement>(null);
+  const [cvImportOpen, setCvImportOpen] = useState(false);
+
+  const isCvDocxOrPdf = (() => {
+    if (!cvUrl) return false;
+    const lower = cvUrl.toLowerCase();
+    return lower.endsWith(".pdf") || lower.endsWith(".docx");
+  })();
 
   const {
     register,
@@ -787,7 +795,39 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
             <p className="mt-1 text-xs text-slate-500">
               Bạn có thể tải file CV trực tiếp (PDF, DOC, DOCX - tối đa 10MB) hoặc dán link từ Google Drive, Dropbox, v.v.
             </p>
+
+            {cvUrl && isCvDocxOrPdf && (
+              <div className="mt-3 flex flex-col gap-2 rounded-md border border-[var(--brand)]/30 bg-[var(--brand-light,_#eef4ff)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-2 text-sm">
+                  <Sparkles className="mt-0.5 h-4 w-4 text-[var(--brand)]" />
+                  <div>
+                    <p className="font-medium text-slate-900">Tự động điền hồ sơ từ CV này?</p>
+                    <p className="text-xs text-slate-600">
+                      JoyWork đọc file CV PDF/DOCX của bạn và đề xuất cập nhật các phần còn thiếu trong hồ sơ. Bạn sẽ xem trước trước khi áp dụng.
+                    </p>
+                  </div>
+                </div>
+                <Button type="button" size="sm" onClick={() => setCvImportOpen(true)}>
+                  Tạo hồ sơ từ CV
+                </Button>
+              </div>
+            )}
+
+            {cvUrl && !isCvDocxOrPdf && (
+              <p className="mt-2 text-xs text-slate-500">
+                Tính năng đề xuất hồ sơ từ CV hiện chỉ hỗ trợ file PDF hoặc DOCX bạn upload trực tiếp.
+              </p>
+            )}
           </div>
+
+          {cvUrl && isCvDocxOrPdf && (
+            <CvImportPreviewDialog
+              open={cvImportOpen}
+              onOpenChange={setCvImportOpen}
+              cvUrl={cvUrl}
+              profile={profile}
+            />
+          )}
 
           {/* Tìm việc, hiển thị danh sách, mở CV — dùng chung ProfileDiscoverySettings (có thể mở nhanh từ nút Cài đặt ở tab Hồ sơ) */}
           {/* <ProfileDiscoverySettings profile={profile} /> */}
