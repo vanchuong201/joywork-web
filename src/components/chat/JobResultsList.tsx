@@ -1,48 +1,73 @@
 "use client";
 
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { List, Grid, ChevronLeft, ChevronRight, Building2, X } from "lucide-react";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import Link from "next/link";
-import Image from "next/image";
-import { MapPin, Briefcase, DollarSign } from "lucide-react";
+import { buildJobUrl } from "@/lib/job-url";
+import { getProvinceNameByCode } from "@/lib/provinces";
 
-export interface JobSearchResult {
-  id: string;
-  title: string;
-  slug: string | null;
-  companyName: string;
-  companySlug: string;
-  logoUrl: string | null;
-  locations: string[];
-  employmentType: string;
-  jobLevel: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  currency: string;
-  benefitsIncome: string | null;
-  similarity: number;
-  url: string;
-}
+const formatSalary = (job: any) => {
+    if (job.salaryMin || job.salaryMax) {
+      if (job.salaryMin && job.salaryMax) {
+        return `${job.salaryMin.toLocaleString("vi-VN")} - ${job.salaryMax.toLocaleString("vi-VN")} ${job.currency || "VND"}`;
+      } else if (job.salaryMin) {
+        return `${job.salaryMin.toLocaleString("vi-VN")} ${job.currency || "VND"}`;
+      } else if (job.salaryMax) {
+        return `${job.salaryMax.toLocaleString("vi-VN")} ${job.currency || "VND"}`;
+      }
+    }
+    return job.benefitsIncome || "Thương lượng";
+  };
 
-const EMPLOYMENT_TYPE_LABEL: Record<string, string> = {
-  FULL_TIME: "Toàn thời gian",
-  PART_TIME: "Bán thời gian",
-  CONTRACT: "Hợp đồng",
-  INTERNSHIP: "Thực tập",
-  REMOTE: "Remote",
-};
+  const translateEmploymentType = (type: string) => {
+    switch (type) {
+      case "FULL_TIME":
+        return "Toàn thời gian";
+      case "PART_TIME":
+        return "Bán thời gian";
+      case "CONTRACT":
+        return "Hợp đồng thời vụ";
+      case "INTERNSHIP":
+        return "Thực tập";
+      case "REMOTE":
+        return "Làm việc từ xa (Remote)";
+      default:
+        return type;
+    }
+  };
 
-function formatSalary(min: number | null, max: number | null, currency: string): string | null {
-  if (!min && !max) return null;
-  const fmt = (n: number) =>
-    currency === "VND"
-      ? `${(n / 1_000_000).toFixed(0)}tr`
-      : `$${n.toLocaleString()}`;
-  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
-  if (min) return `Từ ${fmt(min)}`;
-  if (max) return `Đến ${fmt(max)}`;
-  return null;
-}
+  const formatLocation = (job: any) => {
+      const employmentLabel = job.employmentType ? translateEmploymentType(job.employmentType) : null;
+      
+      if (job.remote) {
+        return employmentLabel ? `${employmentLabel} - Làm việc từ xa` : "Làm việc từ xa";
+      }
+      
+      let locationStr = "";
+      if (job.locations && job.locations.length > 0) {
+        const firstLoc = job.locations[0];
+        const provinceName = getProvinceNameByCode(firstLoc);
+        if (job.locations.length === 1) {
+          locationStr = provinceName || firstLoc;
+        } else {
+          locationStr = `${provinceName || firstLoc} +${job.locations.length - 1}`;
+        }
+      } else if (job.location) {
+        locationStr = job.location;
+      }
+      
+      if (employmentLabel && locationStr) {
+        return `${employmentLabel} - ${locationStr}`;
+      }
+      if (employmentLabel) return employmentLabel;
+      if (locationStr) return locationStr;
+      return "Không ghi rõ";
+    };
 
-export function JobResultsList({ jobs }: { jobs: JobSearchResult[] }) {
+export function JobResultsList({ jobs }: { jobs: any[] }) {
   if (!jobs || jobs.length === 0) {
     return (
       <p className="text-sm text-gray-500 italic">Không tìm thấy việc làm phù hợp.</p>
@@ -51,51 +76,65 @@ export function JobResultsList({ jobs }: { jobs: JobSearchResult[] }) {
 
   return (
     <div className="flex flex-col gap-2 mt-1">
-      {jobs.map(job => (
-        <Link
-          key={job.id}
-          href={job.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 hover:bg-[var(--muted)] transition-colors"
+      {jobs.map(j => (
+        <Card
+          key={j.id}
+          className="bg-white/70 border border-[var(--border)] hover:border-[var(--brand)]/40 transition-colors"
         >
-          <div className="flex items-start gap-2">
-            {job.logoUrl ? (
-              <Image
-                src={job.logoUrl}
-                alt={job.companyName}
-                width={32}
-                height={32}
-                className="rounded object-contain flex-shrink-0 mt-0.5"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded bg-[var(--muted)] flex items-center justify-center flex-shrink-0">
-                <Briefcase size={14} className="text-[var(--muted-foreground)]" />
+          <CardContent className="p-4">
+            <div className="flex gap-3">
+              {/* Company Avatar */}
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
+                {j.company.logoUrl ? (
+                  <CompanyLogo
+                    src={j.company.logoUrl}
+                    alt={j.company.name}
+                    className="h-full w-full object-cover"
+                    width={32}
+                    height={32}
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
+                    <Building2 className="h-8 w-8" />
+                  </div>
+                )}
               </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-[var(--foreground)] truncate">{job.title}</p>
-              <p className="text-xs text-[var(--muted-foreground)] truncate">{job.companyName}</p>
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                {job.locations.length > 0 && (
-                  <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
-                    <MapPin size={10} />
-                    {job.locations[0]}
-                  </span>
-                )}
-                <span className="text-xs text-[var(--muted-foreground)]">
-                  {EMPLOYMENT_TYPE_LABEL[job.employmentType] ?? job.employmentType}
-                </span>
-                {(job.benefitsIncome || formatSalary(job.salaryMin, job.salaryMax, job.currency)) && (
-                  <span className="flex items-center gap-1 text-xs text-green-600">
-                    <DollarSign size={10} />
-                    {job.benefitsIncome ?? formatSalary(job.salaryMin, job.salaryMax, job.currency)}
-                  </span>
-                )}
+              {/* Job Info */}
+              <div className="flex-1 min-w-0 space-y-1">
+                {/* Job Title with Tooltip */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <h3
+                      className="text-base font-semibold text-[var(--foreground)] line-clamp-1 cursor-pointer hover:text-[var(--brand)] transition-colors"
+                      onClick={() => window.open(buildJobUrl(j), "_blank", "noopener,noreferrer")}
+                    >
+                      {j.title}
+                    </h3>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{j.title}</p>
+                  </TooltipContent>
+                </Tooltip>
+                {/* Company Legal Name with HoverCard and Link */}
+                <CompanyHoverCard companyId={j.company.id} slug={j.company.slug} companyName={j.company.name}>
+                  <Link
+                    href={`/companies/${j.company.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-xs text-[var(--muted-foreground)] line-clamp-1 hover:text-[var(--brand)] hover:underline"
+                  >
+                    {j.company.legalName || j.company.name}
+                  </Link>
+                </CompanyHoverCard>
+                <p className="text-xs font-medium text-red-600 line-clamp-1">
+                  {formatSalary(j)}
+                </p>
+                <p className="text-xs text-[var(--muted-foreground)] line-clamp-1">
+                  {formatLocation(j)}
+                </p>
               </div>
             </div>
-          </div>
-        </Link>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

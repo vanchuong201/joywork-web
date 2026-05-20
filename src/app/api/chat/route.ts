@@ -1,4 +1,4 @@
-import { streamText, tool } from 'ai';
+import { streamText, tool, jsonSchema, UIMessage, convertToModelMessages } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { z } from 'zod';
 
@@ -16,6 +16,7 @@ Quy trình:
 7. Hỏi người dùng có muốn tìm thêm hoặc điều chỉnh tiêu chí không.
 
 Quy tắc:
+- luôn sử dụng searchJobsTool khi tìm kiếm công việc
 - Luôn trả lời bằng tiếng Việt.
 - Thân thiện, ngắn gọn, không hỏi quá 2 câu một lần.
 - Không hỏi thêm nếu đã đủ thông tin để tìm kiếm.
@@ -27,47 +28,38 @@ const openai = createOpenAI({
 });
 
 const searchJobsTool = tool({
-  description: 'Tìm kiếm việc làm phù hợp theo từ khoá tự nhiên và các bộ lọc cấu trúc',
-  parameters: z.object({
-    query: z.string().describe('Mô tả vị trí, ngành nghề, kỹ năng mong muốn bằng tiếng Việt hoặc tiếng Anh'),
-    location: z.string().optional().describe('Mã tỉnh/thành phố, ví dụ: ha-noi, ho-chi-minh, da-nang'),
-    employmentType: z
-      .enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'REMOTE'])
-      .optional()
-      .describe('Loại hình công việc'),
-    jobLevel: z
-      .enum(['INTERN_STUDENT', 'FRESH_GRAD', 'EMPLOYEE', 'SPECIALIST_TEAM_LEAD', 'MANAGER_HEAD', 'DIRECTOR', 'EXECUTIVE'])
-      .optional()
-      .describe('Cấp bậc công việc'),
-    salaryMin: z.number().optional().describe('Mức lương tối thiểu (VND)'),
-    salaryMax: z.number().optional().describe('Mức lương tối đa (VND)'),
-    limit: z.number().min(1).max(10).default(5).describe('Số lượng kết quả trả về'),
+  description: 'Get the weather in a location',
+  inputSchema: z.object({
+    q: z.string().describe('Mô tả vị trí, ngành nghề, kỹ năng mong muốn bằng tiếng Việt hoặc tiếng Anh'),
+    location: z.string().describe('Mã tỉnh/thành phố, ví dụ: ha-noi, ho-chi-minh, da-nang'),
+    salaryMin: z.number().describe('Mức lương tối thiểu (VND)'),
+    salaryMax: z.number().describe('Mức lương tối đa (VND)'),
   }),
-  execute: async params => {
+  execute: async (params: any) => {
+    const q = new URLSearchParams({...params, limit: 6})
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
-    const res = await fetch(`${apiBase}/api/jobs/semantic-search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
+    const res = await fetch(`${apiBase}/api/jobs?${q}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
     });
+    const data = await res.json();
     if (!res.ok) {
       return { jobs: [], error: 'Không thể tìm kiếm việc làm lúc này. Vui lòng thử lại.' };
     }
-    const data = await res.json();
     return data.data ?? data;
   },
 });
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const { messages }: { messages: UIMessage[] } = await req.json();
 
   const result = streamText({
     model: openai('gpt-4o'),
     system: SYSTEM_PROMPT,
-    messages,
-    tools: { searchJobs: searchJobsTool },
+    messages: await convertToModelMessages(messages),
+    tools: { searchJobsTool },
     maxSteps: 5,
   });
 
-  return result.toDataStreamResponse();
+  return result.toUIMessageStreamResponse();
 }

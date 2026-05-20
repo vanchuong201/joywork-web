@@ -1,14 +1,14 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { JobResultsList, JobSearchResult } from "./JobResultsList";
 
 export function JobSearchChat() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: "/api/chat",
-  });
+  const { messages, sendMessage, status } = useChat();
+  const [input, setInput] = useState("");
+  const isLoading = status === "submitted" || status === "streaming";
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -33,27 +33,32 @@ export function JobSearchChat() {
             className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                message.role === "user"
-                  ? "bg-[var(--primary)] text-[var(--primary-foreground)] rounded-br-sm"
-                  : "bg-[var(--muted)] text-[var(--foreground)] rounded-bl-sm"
-              }`}
+              className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${message.role === "user"
+                ? "bg-[var(--primary)] text-[var(--primary-foreground)] rounded-br-sm"
+                : "bg-[var(--muted)] text-[var(--foreground)] rounded-bl-sm"
+                }`}
             >
-              {/* Tool invocation results (job search results) */}
-              {message.parts?.map((part, i) => {
-                if (part.type === "tool-invocation" && part.toolInvocation.state === "result") {
-                  const result = part.toolInvocation.result as { jobs?: JobSearchResult[] };
-                  if (result?.jobs && result.jobs.length > 0) {
-                    return <JobResultsList key={i} jobs={result.jobs} />;
+              {message.parts.map((part, i) => {
+
+                if (part.type === "text") {
+                  return <p key={`${message.id}-${i}`} className="whitespace-pre-wrap">{part.text}</p>
+                }
+
+                if (part.type === "tool-searchJobsTool") {
+                  if (part.state === "output-available") {
+                    return part.output.jobs.length > 0 ? (
+                      <>
+                        <p className="whitespace-pre-wrap">Chúng tôi thấy một vài công việc phù hợp với bạn.</p>
+                        <JobResultsList key={`${message.id}-${i}`} jobs={part.output.jobs} />
+                      </>
+                    ) : (
+                      <p className="whitespace-pre-wrap">Không tìm thấy công việc nào phù hợp.</p>
+                    )
                   }
                 }
+
                 return null;
               })}
-
-              {/* Text content */}
-              {message.content && (
-                <p className="whitespace-pre-wrap">{message.content}</p>
-              )}
             </div>
           </div>
         ))}
@@ -71,12 +76,17 @@ export function JobSearchChat() {
 
       {/* Input */}
       <form
-        onSubmit={handleSubmit}
+        onSubmit={e => {
+          e.preventDefault();
+          if (!input.trim()) return;
+          sendMessage({ text: input });
+          setInput("");
+        }}
         className="flex gap-2 p-3 border-t border-[var(--border)]"
       >
         <input
           value={input}
-          onChange={handleInputChange}
+          onChange={e => setInput(e.currentTarget.value)}
           placeholder="Nhập vị trí, ngành nghề mong muốn..."
           disabled={isLoading}
           className="flex-1 text-sm rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] disabled:opacity-50"
