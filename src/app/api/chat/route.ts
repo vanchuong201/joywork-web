@@ -16,7 +16,8 @@ Quy trình:
 7. Hỏi người dùng có muốn tìm thêm hoặc điều chỉnh tiêu chí không.
 
 Quy tắc:
-- luôn sử dụng searchJobsTool khi tìm kiếm công việc
+- Luôn sử dụng searchJobsTool khi tìm kiếm công việc
+- Luôn sử dụng searchCompanyTool để tìm kiếm công ty
 - Luôn trả lời bằng tiếng Việt.
 - Thân thiện, ngắn gọn, không hỏi quá 2 câu một lần.
 - Không hỏi thêm nếu đã đủ thông tin để tìm kiếm.
@@ -27,13 +28,40 @@ const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const searchCompaniesTool = tool({
+  description: "Tìm kiếm các công ty đang tuyển dụng",
+  inputSchema: z.object({
+    q: z.string().describe('Tên công ty'),
+    // industry: z.string().describe('Lĩnh vực hoạt động'),
+  }),
+  execute: async (params: any) => {
+    const q = new URLSearchParams({...params, limit: 6})
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
+    const res = await fetch(`${apiBase}/api/companies?${q}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) {
+      return []
+    }
+    const data = await res.json();
+    return data.data.companies ?? [];
+  }
+})
+
 const searchJobsTool = tool({
   description: 'Get the weather in a location',
   inputSchema: z.object({
     q: z.string().describe('Mô tả vị trí, ngành nghề, kỹ năng mong muốn bằng tiếng Việt hoặc tiếng Anh'),
     location: z.string().describe('Mã tỉnh/thành phố, ví dụ: ha-noi, ho-chi-minh, da-nang'),
+    remote: z.boolean().describe('Công việc làm từ xa'),
     salaryMin: z.number().describe('Mức lương tối thiểu (VND)'),
     salaryMax: z.number().describe('Mức lương tối đa (VND)'),
+    employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'REMOTE']).describe("Hình thức làm việc, Loại hình công việc"),
+    experienceLevel: z.enum(['NO_EXPERIENCE', 'LT_1_YEAR', 'Y1_2', 'Y2_3', 'Y3_5', 'Y5_10', 'GT_10']).describe("Số năm kinh nghiệm làm việc"),
+    jobLevel: z.enum(['INTERN_STUDENT', 'FRESH_GRAD', 'EMPLOYEE', 'SPECIALIST_TEAM_LEAD', 'MANAGER_HEAD', 'DIRECTOR', 'EXECUTIVE']).describe("Vị trí công việc"),
+    salaryCurrency: z.enum(["VND", "USD"]).describe("Đơn vị tiền tệ thanh toán lương"),
+    skills: z.string().describe("Kỹ năng nghề nghiệp, cách nhau bằng dấu ,")
   }),
   execute: async (params: any) => {
     const q = new URLSearchParams({...params, limit: 6})
@@ -57,7 +85,7 @@ export async function POST(req: Request) {
     model: openai('gpt-4o'),
     system: SYSTEM_PROMPT,
     messages: await convertToModelMessages(messages),
-    tools: { searchJobsTool }
+    tools: { searchCompaniesTool, searchJobsTool }
   });
 
   return result.toUIMessageStreamResponse();

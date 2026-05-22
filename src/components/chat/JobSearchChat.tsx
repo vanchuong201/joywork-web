@@ -3,9 +3,12 @@
 import { useChat } from "@ai-sdk/react";
 import { useState, useEffect, useRef } from "react";
 import { Send, Loader2 } from "lucide-react";
-import { JobResultsList, JobSearchResult } from "./JobResultsList";
+import { JobResultsList } from "./JobResultsList";
+import { useRouter } from "next/navigation";
+import { CompanyLogo } from "@/components/company/CompanyLogo";
 
 export function JobSearchChat() {
+  const router = useRouter();
   const { messages, sendMessage, status } = useChat();
   const [input, setInput] = useState("");
   const isLoading = status === "submitted" || status === "streaming";
@@ -38,7 +41,7 @@ export function JobSearchChat() {
                 : "bg-[var(--muted)] text-[var(--foreground)] rounded-bl-sm"
                 }`}
             >
-              {message.parts.map((part, i) => {
+              {message.parts.map((part: any, i) => {
 
                 if (part.type === "text") {
                   return <p key={`${message.id}-${i}`} className="whitespace-pre-wrap">{part.text}</p>
@@ -52,7 +55,44 @@ export function JobSearchChat() {
                         <JobResultsList key={`${message.id}-${i}`} jobs={part.output.jobs} />
                       </>
                     ) : (
-                      <p className="whitespace-pre-wrap">Không tìm thấy công việc nào phù hợp.</p>
+                      <p key={`${message.id}-${i}`} className="whitespace-pre-wrap">Không tìm thấy công việc nào phù hợp.</p>
+                    )
+                  }
+                }
+
+                if (part.type === "tool-searchCompaniesTool") {
+                  if (part.state === "output-available") {
+                    return part.output.length > 0 ? (
+                      <div key={`${message.id}-${i}`}>
+                        <p className="whitespace-pre-wrap">Các công ty phù hợp.</p>
+                        <div className="flex flex-col gap-2 mt-1">
+                          {part.output.map((c: any) => (
+                            <div
+                              key={c.id}
+                              onClick={() => router.push(`/companies/${c.slug}/manage`)}
+                              className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3.5 transition-all hover:border-[var(--brand)]/30 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                            >
+                              {c.logoUrl ? (
+                                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+                                  <CompanyLogo src={c.logoUrl} alt={c.name} className="h-full w-full object-cover" />
+                                </div>
+                              ) : (
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--muted)] text-base font-semibold text-[var(--muted-foreground)]">
+                                  {c.name.slice(0, 2).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-[var(--foreground)] group-hover:text-[var(--brand)] transition-colors">
+                                  {c.name}
+                                </p>
+                                <p>{c.size}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p key={`${message.id}-${i}`} className="whitespace-pre-wrap">Chúng tôi không thấy công ty nào phù hợp với yêu cầu của bạn.</p>
                     )
                   }
                 }
