@@ -1,31 +1,102 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import type { UIMessage } from "ai";
 import { useState, useEffect, useRef } from "react";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Trash2 } from "lucide-react";
 import { JobResultsList } from "./JobResultsList";
 import { useRouter } from "next/navigation";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
 
+const STORAGE_KEY = "joywork-ai-chat-messages";
+
+function readStoredMessages(): UIMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed as UIMessage[];
+  } catch {
+    try {
+      window.sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore storage errors (private mode, quota)
+    }
+  }
+  return [];
+}
+
 export function JobSearchChat() {
   const router = useRouter();
-  const { messages, sendMessage, status } = useChat();
+  const { messages, sendMessage, status, setMessages } = useChat();
   const [input, setInput] = useState("");
+  const [hydrated, setHydrated] = useState(false);
   const isLoading = status === "submitted" || status === "streaming";
+  const hasMessages = messages.length > 0;
 
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (hydrated) return;
+    const stored = readStoredMessages();
+    if (stored.length > 0) {
+      setMessages(stored);
+    }
+    setHydrated(true);
+  }, [hydrated, setMessages]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (typeof window === "undefined") return;
+    try {
+      if (messages.length === 0) {
+        window.sessionStorage.removeItem(STORAGE_KEY);
+      } else {
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      }
+    } catch {
+      // ignore storage errors (private mode, quota)
+    }
+  }, [messages, hydrated]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleClearChat = () => {
+    setMessages([]);
+    if (typeof window !== "undefined") {
+      try {
+        window.sessionStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore storage errors (private mode, quota)
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
+      {hasMessages && (
+        <div className="flex items-center justify-end px-3 py-1.5 border-b border-[var(--border)] bg-[var(--background)]">
+          <button
+            type="button"
+            onClick={handleClearChat}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Xóa đoạn chat"
+          >
+            <Trash2 size={12} />
+            <span>Xóa đoạn chat</span>
+          </button>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.length === 0 && (
           <div className="text-center text-sm text-[var(--muted-foreground)] mt-8 px-4">
-            <p className="font-medium text-[var(--foreground)] mb-1">Tìm việc cùng JoyWork</p>
+            <p className="font-medium text-[var(--foreground)] mb-1">Tìm việc cùng JOYWORK</p>
             <p>Hãy mô tả vị trí bạn đang tìm kiếm và tôi sẽ giúp bạn tìm công việc phù hợp!</p>
           </div>
         )}
