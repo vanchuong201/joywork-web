@@ -57,8 +57,7 @@ export async function POST(req: Request) {
     model: openai('gpt-4o'),
     system: SYSTEM_PROMPT,
     messages: await convertToModelMessages(messages),
-    tools: { searchJobsTool },
-    maxSteps: 5,
+    tools: { searchJobsTool }
   });
 
   return result.toUIMessageStreamResponse();
