@@ -6,7 +6,6 @@ import { Suspense } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlidersHorizontal } from "lucide-react";
 import EmptyState from "@/components/ui/empty-state";
@@ -120,22 +119,40 @@ function FeedPageContent() {
 
       <div className="sticky top-[64px] z-40 -mx-2 bg-[var(--background)]/80 px-2 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/60">
         <div className="flex items-center gap-2 py-2">
-          <Tabs
-            className="min-w-0 flex-1"
-            value={tab}
-            onValueChange={(v) => {
-              if (v === "following" && !user) {
-                openPrompt("login");
-                return;
-              }
-              setTab(v as any);
-            }}
+          <div
+            role="tablist"
+            aria-orientation="horizontal"
+            aria-label="Lọc bảng tin"
+            className="inline-flex min-w-0 flex-1 items-center gap-1 overflow-x-auto rounded-md border border-[var(--border)] bg-[var(--card)] p-1 sm:flex-none sm:overflow-visible"
           >
-            <TabsList className="w-full justify-start gap-1 overflow-x-auto p-1 sm:w-auto sm:overflow-visible">
-              <TabsTrigger className="whitespace-nowrap" value="all">Tất cả</TabsTrigger>
-              <TabsTrigger className="whitespace-nowrap" value="following">Theo dõi</TabsTrigger>
-            </TabsList>
-          </Tabs>
+            {(
+              [
+                { value: "all", label: "Tất cả" },
+                { value: "following", label: "Theo dõi" },
+              ] as const
+            ).map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={tab === value}
+                onClick={() => {
+                  if (value === "following" && !user) {
+                    openPrompt("login");
+                    return;
+                  }
+                  setTab(value);
+                }}
+                className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors ${
+                  tab === value
+                    ? "bg-[var(--brand)] text-white"
+                    : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <Button
             className="h-9 w-9 shrink-0 sm:w-auto"
             variant="outline"

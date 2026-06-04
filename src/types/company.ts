@@ -88,7 +88,9 @@ export interface Company {
   coverUrl?: string;
   website?: string;
   location?: string;
+  locationName?: string | null;
   wardCodes?: string[];
+  specificAddress?: string | null;
   email?: string;
   phone?: string;
   industry?: string;

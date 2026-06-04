@@ -27,9 +27,15 @@ function readStoredMessages(): UIMessage[] {
   return [];
 }
 
+const QUICK_PROMPTS = [
+  "Lập trình viên React tại Hà Nội",
+  "Marketing bán thời gian TP.HCM",
+  "Thực tập IT",
+];
+
 export function JobSearchChat() {
   const router = useRouter();
-  const { messages, sendMessage, status, setMessages } = useChat();
+  const { messages, sendMessage, status, setMessages, error } = useChat();
   const [input, setInput] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const isLoading = status === "submitted" || status === "streaming";
@@ -98,6 +104,19 @@ export function JobSearchChat() {
           <div className="text-center text-sm text-[var(--muted-foreground)] mt-8 px-4">
             <p className="font-medium text-[var(--foreground)] mb-1">Tìm việc cùng JOYWORK</p>
             <p>Hãy mô tả vị trí bạn đang tìm kiếm và tôi sẽ giúp bạn tìm công việc phù hợp!</p>
+            <div className="flex flex-wrap justify-center gap-2 mt-4">
+              {QUICK_PROMPTS.map(prompt => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => sendMessage({ text: prompt })}
+                  disabled={isLoading}
+                  className="rounded-full border border-[var(--border)] bg-[var(--background)] px-3 py-1 text-xs text-[var(--foreground)] hover:border-[var(--brand)]/40 hover:text-[var(--brand)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -121,12 +140,11 @@ export function JobSearchChat() {
                 if (part.type === "tool-searchJobsTool") {
                   if (part.state === "output-available") {
                     return part.output.jobs.length > 0 ? (
-                      <>
-                        <p className="whitespace-pre-wrap">Chúng tôi thấy một vài công việc phù hợp với bạn.</p>
-                        <JobResultsList key={`${message.id}-${i}`} jobs={part.output.jobs} />
-                      </>
+                      <JobResultsList key={`${message.id}-${i}`} jobs={part.output.jobs} />
                     ) : (
-                      <p key={`${message.id}-${i}`} className="whitespace-pre-wrap">Không tìm thấy công việc nào phù hợp.</p>
+                      <p key={`${message.id}-${i}`} className="whitespace-pre-wrap">
+                        Chưa tìm thấy công việc phù hợp. Bạn thử mô tả khác hoặc bỏ bớt tiêu chí (địa điểm, mức lương) xem nhé.
+                      </p>
                     )
                   }
                 }
@@ -140,7 +158,7 @@ export function JobSearchChat() {
                           {part.output.map((c: any) => (
                             <div
                               key={c.id}
-                              onClick={() => router.push(`/companies/${c.slug}/manage`)}
+                              onClick={() => router.push(`/companies/${c.slug}`)}
                               className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3.5 transition-all hover:border-[var(--brand)]/30 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                             >
                               {c.logoUrl ? (
@@ -178,6 +196,14 @@ export function JobSearchChat() {
           <div className="flex justify-start">
             <div className="bg-[var(--muted)] rounded-2xl rounded-bl-sm px-3 py-2">
               <Loader2 size={14} className="animate-spin text-[var(--muted-foreground)]" />
+            </div>
+          </div>
+        )}
+
+        {error && !isLoading && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] rounded-2xl rounded-bl-sm bg-red-50 text-red-700 px-3 py-2 text-sm border border-red-100">
+              JOYWORK AI tạm thời không phản hồi. Vui lòng thử lại sau ít phút.
             </div>
           </div>
         )}

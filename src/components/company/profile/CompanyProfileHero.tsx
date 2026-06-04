@@ -20,6 +20,8 @@ import { useRouter } from "next/navigation";
 import IndustrySelect from "@/components/ui/industry-select";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
+import { resolveProvinceCode } from "@/lib/provinces";
+import { buildHeadquartersAddressLabel, fetchWardsByProvinceCodes, hasHeadquartersAddressData, type WardOption } from "@/lib/location-wards";
 
 export default function CompanyProfileHero({ company, isEditable = false }: { company: Company, isEditable?: boolean }) {
     const router = useRouter();
@@ -101,6 +103,79 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const [specificAddressTouched, setSpecificAddressTouched] = useState(false);
     const [legalNameError, setLegalNameError] = useState<string | null>(null);
     const [legalNameTouched, setLegalNameTouched] = useState(false);
+    const [wardByCode, setWardByCode] = useState<Map<string, WardOption>>(new Map());
+
+    const companyProvinceCodes = useMemo(() => {
+        const codes = new Set<string>();
+        const normalizedLocationCode = resolveProvinceCode(company.location ?? "");
+        if (normalizedLocationCode) {
+            codes.add(normalizedLocationCode);
+        }
+        (company.wardCodes ?? []).forEach((code) => {
+            const provinceCode = code.split("/")[0];
+            if (provinceCode) {
+                codes.add(provinceCode);
+            }
+        });
+        return Array.from(codes);
+    }, [company.location, company.wardCodes]);
+
+    const companyProvinceCodesKey = useMemo(
+        () => [...companyProvinceCodes].sort().join(","),
+        [companyProvinceCodes],
+    );
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            if (!companyProvinceCodes.length) {
+                setWardByCode(new Map());
+                return;
+            }
+            try {
+                const wards = await fetchWardsByProvinceCodes(companyProvinceCodes);
+                if (cancelled) return;
+                setWardByCode(new Map(wards.map((ward) => [ward.code, ward])));
+            } catch {
+                if (!cancelled) {
+                    setWardByCode(new Map());
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [companyProvinceCodes, companyProvinceCodesKey]);
+
+    const hasHeadquartersAddress = useMemo(
+        () =>
+            hasHeadquartersAddressData({
+                specificAddress: company.specificAddress,
+                wardCodes: company.wardCodes,
+                location: company.location,
+                locationName: company.locationName,
+            }),
+        [company.specificAddress, company.wardCodes, company.location, company.locationName],
+    );
+
+    const headquartersAddressLabel = useMemo(
+        () =>
+            buildHeadquartersAddressLabel(
+                {
+                    specificAddress: company.specificAddress,
+                    wardCodes: company.wardCodes,
+                    location: company.location,
+                    locationName: company.locationName,
+                },
+                wardByCode,
+            ),
+        [company.specificAddress, company.wardCodes, company.location, company.locationName, wardByCode],
+    );
+
+    const editProvinceCode = useMemo(
+        () => resolveProvinceCode(formData.location?.trim() ?? ""),
+        [formData.location],
+    );
 
     // Get owner email for verification notification
     const ownerMember = useMemo(() => {
@@ -190,7 +265,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         }
         setPhoneError(null);
 
-        const locationCode = formData.location?.trim() || "";
+        const locationCode = resolveProvinceCode(formData.location?.trim() || "") ?? formData.location?.trim() || "";
         if (!locationCode) {
             setLocationTouched(true);
             setLocationError("Vui lòng chọn tỉnh/thành phố");
@@ -616,10 +691,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                               <span className="text-left leading-snug text-[var(--foreground)]">{company.industry}</span>
                             </div>
                         )}
-                        {company.location && (
-                            <div className="relative flex items-center gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
-                              <MapPin className="text-[var(--muted-foreground)] shrink-0" size={20} />
-                              <span className="truncate">{company.location}</span>
+                        {hasHeadquartersAddress && (
+                            <div className="relative flex items-start gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
+                              <MapPin className="mt-0.5 text-[var(--muted-foreground)] shrink-0" size={20} />
+                              <span className="text-left leading-snug text-[var(--foreground)]">
+                                {headquartersAddressLabel ?? company.locationName ?? company.location}
+                              </span>
                             </div>
                         )}
                         {company.website && (
@@ -801,7 +878,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         <div className="space-y-2">
                             <Label>Địa chỉ trụ sở - Phường/Xã <span className="text-red-500">*</span></Label>
                             <WardSelect
-                                provinceCodes={formData.location ? [formData.location] : []}
+                                provinceCodes={editProvinceCode ? [editProvinceCode] : []}
                                 value={formData.wardCode || null}
                                 onChange={(value) => {
                                     setWardCodeTouched(true);

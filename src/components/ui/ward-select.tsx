@@ -43,7 +43,6 @@ export default function WardSelect({
   const [query, setQuery] = useState("");
   const [wards, setWards] = useState<WardOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [wardName, setWardName] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,11 +61,6 @@ export default function WardSelect({
         if (!cancelled) {
           setWards(list);
           setLoading(false);
-          // Update wardName for current value
-          if (value) {
-            const matched = list.find((w) => w.code === value);
-            if (matched) setWardName(matched.fullName ?? matched.name);
-          }
         }
       } catch (e) {
         if (!cancelled) {
@@ -78,7 +72,7 @@ export default function WardSelect({
     return () => {
       cancelled = true;
     };
-  }, [key]);
+  }, [key, provinceCodes]);
 
   const byCode = useMemo(() => new Map(wards.map((w) => [w.code, w])), [wards]);
 
@@ -93,8 +87,9 @@ export default function WardSelect({
     });
   }, [wards, query]);
 
-  // Single-select display - use wardName if wards not loaded yet, otherwise lookup
-  const displaySingle = value ? wardName ?? byCode.get(value)?.fullName ?? byCode.get(value)?.name ?? value : "";
+  // Single-select display - always resolve from current option map.
+  // This ensures selecting a different ward updates the label immediately.
+  const displaySingle = value ? byCode.get(value)?.fullName ?? byCode.get(value)?.name ?? value : "";
 
   // Multi-select display
   const displayMulti =
@@ -201,8 +196,8 @@ export default function WardSelect({
       </button>
 
       {open && !blocked && (
-        <div className="absolute z-[140] mt-1 w-full rounded-md border border-border bg-white shadow-xl ring-1 ring-black/10 dark:bg-slate-900 dark:ring-white/10">
-          <div className="flex items-center border-b border-border bg-white px-3 py-2 gap-2 dark:bg-slate-900">
+        <div className="absolute z-[140] mt-1 w-full rounded-md border border-border bg-white shadow-xl ring-1 ring-black/10">
+          <div className="flex items-center border-b border-border bg-white px-3 py-2 gap-2">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <input
               ref={inputRef}
@@ -218,7 +213,7 @@ export default function WardSelect({
               </button>
             )}
           </div>
-          <ul className="max-h-56 overflow-y-auto bg-white py-1 dark:bg-slate-900">
+          <ul className="max-h-56 overflow-y-auto bg-white py-1">
             {loading ? (
               <li className="px-3 py-6 text-center text-sm text-muted-foreground">Đang tải...</li>
             ) : filtered.length === 0 ? (
@@ -234,7 +229,7 @@ export default function WardSelect({
                       type="button"
                       onClick={() => handleSelect(ward)}
                       className={cn(
-                        "flex w-full flex-col bg-white px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors dark:bg-slate-900",
+                        "flex w-full flex-col bg-white px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
                         isSelected && "bg-accent/50 font-medium"
                       )}
                     >
