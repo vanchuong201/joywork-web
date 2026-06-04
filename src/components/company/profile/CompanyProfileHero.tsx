@@ -222,7 +222,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const handleSave = () => {
         // Validate required field
         if (!formData.name || formData.name.trim() === "") {
-            toast.error("Vui lòng nhập tên công ty (Thương hiệu)");
+            toast.error("Vui lòng nhập Tên doanh nghiệp (Hiển thị trên trang)");
             return;
         }
         const legalName = formData.legalName?.trim() || "";
@@ -706,7 +706,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                 href={company.website}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="truncate hover:text-[var(--brand)] hover:underline"
+                                className="truncate text-[var(--foreground)] hover:text-[var(--brand)] hover:underline"
                               >
                                 {company.website.replace(/^https?:\/\//, '')}
                               </a>
@@ -717,7 +717,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                               <Mail className="text-[var(--muted-foreground)] shrink-0" size={20} />
                               <a
                                 href={`mailto:${company.email}`}
-                                className="truncate hover:text-[var(--brand)] hover:underline"
+                                className="truncate text-[var(--foreground)] hover:text-[var(--brand)] hover:underline"
                               >
                                 {company.email}
                               </a>
@@ -726,7 +726,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         {company.phone && (
                             <div className="relative flex items-center gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
                               <Phone className="text-[var(--muted-foreground)] shrink-0" size={20} />
-                              <span className="truncate">{company.phone}</span>
+                              <span className="truncate text-[var(--foreground)]">{company.phone}</span>
                             </div>
                         )}
                       </div>
@@ -791,7 +791,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Tên công ty (Thương hiệu) <span className="text-red-500">*</span></Label>
+                            <Label>Tên doanh nghiệp (Hiển thị trên trang) <span className="text-red-500">*</span></Label>
                             <Input 
                                 value={formData.name} 
                                 onChange={(e) => setFormData({...formData, name: e.target.value})} 
@@ -799,7 +799,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Tên pháp lý đầy đủ <span className="text-red-500">*</span></Label>
+                            <Label>Tên pháp lý đầy đủ (Theo ĐKKD) <span className="text-red-500">*</span></Label>
                             <Input 
                                 value={formData.legalName} 
                                 onChange={(e) => {
@@ -1045,7 +1045,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
 
                         {/* Legal name input */}
                         <div className="space-y-2">
-                            <Label>Tên pháp lý đầy đủ</Label>
+                            <Label>Tên pháp lý đầy đủ (Theo ĐKKD)</Label>
                             <Input
                                 value={verificationLegalName}
                                 onChange={(e) => setVerificationLegalName(e.target.value)}

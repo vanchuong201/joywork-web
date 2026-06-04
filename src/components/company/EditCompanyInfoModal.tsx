@@ -13,7 +13,7 @@ import { X } from "lucide-react";
 import { COMPANY_SIZE_OPTIONS, normalizeCompanySize } from "@/lib/company-size";
 
 const schema = z.object({
-  name: z.string().min(1, "Tên công ty (Thương hiệu) là bắt buộc").min(2, "Tên công ty cần ít nhất 2 ký tự"),
+  name: z.string().min(1, "Tên doanh nghiệp (Hiển thị trên trang) là bắt buộc").min(2, "Tên công ty cần ít nhất 2 ký tự"),
   legalName: z.string().max(200, "Tên đăng ký kinh doanh tối đa 200 ký tự").optional().or(z.literal("")),
   tagline: z
     .string()
@@ -159,7 +159,7 @@ export default function EditCompanyInfoModal({
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <FormField label="Tên công ty (Thương hiệu)" required error={errors.name?.message}>
+              <FormField label="Tên doanh nghiệp (Hiển thị trên trang)" required error={errors.name?.message}>
                 <Input placeholder="Ví dụ: JOYWORK Studio" {...register("name")} />
               </FormField>
               <FormField label="Tên đăng ký kinh doanh" error={errors.legalName?.message}>

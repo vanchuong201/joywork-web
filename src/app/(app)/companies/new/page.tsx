@@ -56,11 +56,10 @@ const schema = z.object({
   industry: z.preprocess(
     (v) => (v === null || v === undefined || v === "" ? undefined : v),
     z
-      .string()
+      .string({ required_error: "Vui lòng chọn lĩnh vực hoạt động" })
       .refine((s) => COMPANY_INDUSTRY_SET.has(s), {
         message: "Vui lòng chọn lĩnh vực từ danh sách",
       })
-      .optional()
   ),
   description: z.string().optional(),
 });
@@ -164,6 +163,7 @@ export default function CreateCompanyPage() {
   const locationValue = watch("location");
   const wardCodeValue = watch("wardCode");
   const specificAddressValue = watch("specificAddress");
+  const industryValue = watch("industry");
   const slugValue = watch("slug");
   const sanitizedSlugValue = useMemo(() => slugify(slugValue || ""), [slugValue, slugify]);
   const isFormValid = useMemo(() => {
@@ -174,6 +174,7 @@ export default function CreateCompanyPage() {
     const locationValid = (locationValue || "").trim().length > 0;
     const wardCodeValid = (wardCodeValue || "").trim().length > 0;
     const specificAddressValid = (specificAddressValue || "").trim().length > 0;
+    const industryValid = (industryValue || "").trim().length > 0;
     const slugValid = sanitizedSlugValue.length >= 2 && /^[a-z0-9-]+$/.test(sanitizedSlugValue);
     const hasErrors =
       Boolean(errors.name) ||
@@ -183,9 +184,10 @@ export default function CreateCompanyPage() {
       Boolean(errors.location) ||
       Boolean(errors.wardCode) ||
       Boolean(errors.specificAddress) ||
+      Boolean(errors.industry) ||
       Boolean(errors.slug);
-    return nameValid && legalNameValid && emailValid && phoneValid && locationValid && wardCodeValid && specificAddressValid && slugValid && !hasErrors;
-  }, [nameValue, legalNameValue, emailValue, phoneValue, locationValue, wardCodeValue, specificAddressValue, sanitizedSlugValue, errors.name, errors.legalName, errors.email, errors.phone, errors.location, errors.wardCode, errors.specificAddress, errors.slug]);
+    return nameValid && legalNameValid && emailValid && phoneValid && locationValid && wardCodeValid && specificAddressValid && industryValid && slugValid && !hasErrors;
+  }, [nameValue, legalNameValue, emailValue, phoneValue, locationValue, wardCodeValue, specificAddressValue, industryValue, sanitizedSlugValue, errors.name, errors.legalName, errors.email, errors.phone, errors.location, errors.wardCode, errors.specificAddress, errors.industry, errors.slug]);
 
   const normalizeWebsite = (input?: string | null): string | undefined => {
     const raw = (input ?? "").trim();
@@ -240,14 +242,13 @@ export default function CreateCompanyPage() {
         return;
       }
 
-      const { industry, wardCode, website, tagline: _tagline, description: _description, ...rest } = parsed.data;
+      const { wardCode, website, tagline: _tagline, description: _description, ...rest } = parsed.data;
       const payload = {
         ...rest,
         slug: parsed.data.slug,
         ...(normalizeWebsite(website) ? { website: normalizeWebsite(website) } : {}),
         wardCodes: [wardCode],
         specificAddress: parsed.data.specificAddress,
-        ...(industry ? { industry } : {}),
       };
       const { data } = await api.post("/api/companies", payload);
       const company = data.data.company;
@@ -400,7 +401,7 @@ export default function CreateCompanyPage() {
 
           <div className="min-w-0">
             <label htmlFor="create-company-industry" className="text-sm font-medium text-[var(--foreground)]">
-              Lĩnh vực hoạt động
+              Lĩnh vực hoạt động *
             </label>
             <Controller
               name="industry"
@@ -412,7 +413,7 @@ export default function CreateCompanyPage() {
                     value={field.value ?? null}
                     onChange={(v) =>
                       setValue("industry", v ?? undefined, {
-                        shouldValidate: false,
+                        shouldValidate: true,
                         shouldDirty: true,
                         shouldTouch: true,
                       })
@@ -426,7 +427,7 @@ export default function CreateCompanyPage() {
               <p className="mt-1 text-sm text-red-500">{errors.industry.message}</p>
             ) : (
               <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                Có thể để trống. Giá trị cũ không nằm trong danh sách vẫn hiển thị cho đến khi bạn đổi.
+                Vui lòng chọn lĩnh vực theo danh sách chuẩn.
               </p>
             )}
           </div>
