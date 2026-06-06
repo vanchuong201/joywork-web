@@ -1816,6 +1816,14 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       if (editingSection === 'gallery' && Array.isArray(data)) {
         data = data.filter((item: any) => item.url && item.url.trim() !== '');
       }
+      if (editingSection === 'training' && data && typeof data === 'object') {
+        const rawImage = (data as { image?: unknown }).image;
+        const normalizedImage = typeof rawImage === 'string' ? rawImage.trim() : rawImage;
+        data = {
+          ...(data as Record<string, unknown>),
+          image: normalizedImage || undefined,
+        };
+      }
       payload[editingSection!] = data;
     }
 

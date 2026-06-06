@@ -3,10 +3,9 @@
 import { Company } from "@/types/company";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { Button } from "@/components/ui/button";
-import { Globe, MapPin, Users, CheckCircle, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle, Briefcase } from "lucide-react";
+import { Globe, MapPin, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle, Briefcase } from "lucide-react";
 import CompanyMessageButton from "@/components/company/CompanyMessageButton";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
-import { Badge } from "@/components/ui/badge";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { uploadCompanyCover, uploadCompanyLogo } from "@/lib/uploads";
 import { Loader2 } from "lucide-react";
@@ -22,6 +21,31 @@ import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import { resolveProvinceCode } from "@/lib/provinces";
 import { buildHeadquartersAddressLabel, fetchWardsByProvinceCodes, hasHeadquartersAddressData, type WardOption } from "@/lib/location-wards";
+import { COMPANY_SIZE_OPTIONS, normalizeCompanySize } from "@/lib/company-size";
+
+type CompanyUpdatePayload = {
+    name?: string;
+    legalName?: string;
+    location?: string;
+    wardCodes?: string[];
+    specificAddress?: string;
+    industry?: string | null;
+    size?: string | null;
+    website?: string | null;
+    email?: string;
+    phone?: string;
+    requestReVerification?: boolean;
+};
+
+type ApiErrorResponse = {
+    response?: {
+        data?: {
+            error?: {
+                message?: string;
+            };
+        };
+    };
+};
 
 export default function CompanyProfileHero({ company, isEditable = false }: { company: Company, isEditable?: boolean }) {
     const router = useRouter();
@@ -57,8 +81,9 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         legalName: company.legalName || "",
         location: company.location || "",
         wardCode: company.wardCodes?.[0] || "",
-        specificAddress: (company as any).specificAddress || "",
+        specificAddress: company.specificAddress || "",
         industry: company.industry || "",
+        size: normalizeCompanySize(company.size) ?? "",
         // Let user type domain only; we'll normalize on blur/submit.
         website: (company.website || "").replace(/^https?:\/\//i, ""),
         email: company.email || "",
@@ -71,8 +96,9 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             legalName: company.legalName || "",
             location: company.location || "",
             wardCode: company.wardCodes?.[0] || "",
-            specificAddress: (company as any).specificAddress || "",
+            specificAddress: company.specificAddress || "",
             industry: company.industry || "",
+            size: normalizeCompanySize(company.size) ?? "",
             website: (company.website || "").replace(/^https?:\/\//i, ""),
             email: company.email || "",
             phone: company.phone || "",
@@ -206,7 +232,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((value ?? "").trim());
 
     const mutation = useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: CompanyUpdatePayload) => {
             await api.patch(`/api/companies/${company.id}`, data);
         },
         onSuccess: () => {
@@ -294,13 +320,14 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             formData.legalName.trim() !== originalLegalName.trim() &&
             formData.legalName.trim() !== "";
         
-        const payload: any = {
+        const payload: CompanyUpdatePayload = {
             name: formData.name.trim(),
             legalName,
             location: locationCode,
             wardCodes: [wardCode],
             specificAddress,
             industry: formData.industry?.trim() ? formData.industry.trim() : null,
+            size: formData.size || null,
             website: normalizeWebsite(formData.website),
             email,
             phone,
@@ -340,7 +367,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         try {
             const currentLegalName = (company.legalName || "").trim();
             if (legalName !== currentLegalName) {
-                const payload: any = { legalName };
+                const payload: CompanyUpdatePayload = { legalName };
                 const legalNameChangedVerified =
                     verificationStatus === "VERIFIED" && legalName !== originalLegalName.trim();
                 if (legalNameChangedVerified) {
@@ -365,8 +392,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             }
             setVerificationDialogOpen(false);
             router.refresh();
-        } catch (error: any) {
-            const message = error?.response?.data?.error?.message ?? "Tải file xác thực thất bại";
+        } catch (error: unknown) {
+            const message = (error as ApiErrorResponse)?.response?.data?.error?.message ?? "Tải file xác thực thất bại";
             toast.error(message);
         } finally {
             setUploadingVerification(false);
@@ -380,8 +407,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             });
             const url = res.data.data.url as string;
             window.open(url, "_blank", "noopener,noreferrer");
-        } catch (error: any) {
-            const message = error?.response?.data?.error?.message ?? "Không thể tải hồ sơ xác thực";
+        } catch (error: unknown) {
+            const message = (error as ApiErrorResponse)?.response?.data?.error?.message ?? "Không thể tải hồ sơ xác thực";
             toast.error(message);
         }
     };
@@ -421,17 +448,17 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     });
                     toast.success("Cập nhật ảnh bìa thành công");
                     router.refresh();
-                } catch (error: any) {
+                } catch (error: unknown) {
                     console.error(error);
-                    const message = error?.response?.data?.error?.message ?? "Tải ảnh bìa thất bại";
+                    const message = (error as ApiErrorResponse)?.response?.data?.error?.message ?? "Tải ảnh bìa thất bại";
                     toast.error(message);
                 } finally {
                     setUploadingCover(false);
                 }
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            const message = error?.response?.data?.error?.message ?? "Đã xảy ra lỗi khi xử lý ảnh";
+            const message = (error as ApiErrorResponse)?.response?.data?.error?.message ?? "Đã xảy ra lỗi khi xử lý ảnh";
             toast.error(message);
             setUploadingCover(false);
         }
@@ -858,6 +885,26 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             <p className="text-xs text-[var(--muted-foreground)]">
                                 Có thể để trống. Giá trị cũ không nằm trong danh sách vẫn hiển thị cho đến khi bạn đổi.
                             </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Quy mô doanh nghiệp</Label>
+                            <select
+                                value={formData.size}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        size: e.target.value,
+                                    })
+                                }
+                                className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                            >
+                                <option value="">Chọn quy mô</option>
+                                {COMPANY_SIZE_OPTIONS.map((band) => (
+                                    <option key={band} value={band}>
+                                        {band} nhân viên
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="space-y-2">
                             <Label>Địa chỉ trụ sở - Tỉnh/Thành <span className="text-red-500">*</span></Label>

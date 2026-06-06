@@ -13,6 +13,7 @@ import IndustrySelect from "@/components/ui/industry-select";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import { COMPANY_INDUSTRY_SET } from "@/lib/company-industries";
+import { COMPANY_SIZE_OPTIONS } from "@/lib/company-size";
 
 const schema = z.object({
   name: z.string().min(2, "Tên doanh nghiệp cần ít nhất 2 ký tự"),
@@ -61,10 +62,21 @@ const schema = z.object({
         message: "Vui lòng chọn lĩnh vực từ danh sách",
       })
   ),
+  size: z.enum(COMPANY_SIZE_OPTIONS).optional().or(z.literal("")),
   description: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
+
+type ApiErrorResponse = {
+  response?: {
+    data?: {
+      error?: {
+        message?: string;
+      };
+    };
+  };
+};
 
 export default function CreateCompanyPage() {
   const router = useRouter();
@@ -116,6 +128,7 @@ export default function CreateCompanyPage() {
       slug: "",
       tagline: "",
       industry: undefined,
+      size: "",
       description: "",
     },
   });
@@ -242,11 +255,17 @@ export default function CreateCompanyPage() {
         return;
       }
 
-      const { wardCode, website, tagline: _tagline, description: _description, ...rest } = parsed.data;
+      const { wardCode, website } = parsed.data;
       const payload = {
-        ...rest,
+        name: parsed.data.name,
+        legalName: parsed.data.legalName,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        location: parsed.data.location,
+        industry: parsed.data.industry,
         slug: parsed.data.slug,
         ...(normalizeWebsite(website) ? { website: normalizeWebsite(website) } : {}),
+        ...(parsed.data.size ? { size: parsed.data.size } : {}),
         wardCodes: [wardCode],
         specificAddress: parsed.data.specificAddress,
       };
@@ -270,8 +289,8 @@ export default function CreateCompanyPage() {
       await fetchMe();
       toast.success("Đã tạo doanh nghiệp");
       router.push(`/companies/${company.slug}/manage`);
-    } catch (e: any) {
-      const message = e?.response?.data?.error?.message ?? "Không thể tạo doanh nghiệp";
+    } catch (e: unknown) {
+      const message = (e as ApiErrorResponse)?.response?.data?.error?.message ?? "Không thể tạo doanh nghiệp";
       setSubmitError(message);
       toast.error(message);
     }
@@ -440,6 +459,22 @@ export default function CreateCompanyPage() {
               {...websiteField}
             />
             {showFieldError("website") ? <p className="mt-1 text-sm text-red-500">{errors.website?.message}</p> : null}
+          </div>
+
+          <div className="min-w-0">
+            <label className="text-sm font-medium text-[var(--foreground)]">Quy mô doanh nghiệp (tuỳ chọn)</label>
+            <select
+              {...register("size")}
+              className="mt-1 h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+            >
+              <option value="">Chọn quy mô</option>
+              {COMPANY_SIZE_OPTIONS.map((band) => (
+                <option key={band} value={band}>
+                  {band} nhân viên
+                </option>
+              ))}
+            </select>
+            {showFieldError("size") ? <p className="mt-1 text-sm text-red-500">{errors.size?.message}</p> : null}
           </div>
 
           <div className="min-w-0 md:col-span-2">
