@@ -291,7 +291,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         }
         setPhoneError(null);
 
-        const locationCode = resolveProvinceCode(formData.location?.trim() || "") ?? formData.location?.trim() || "";
+        const locationCode = (resolveProvinceCode(formData.location?.trim() || "") ?? formData.location?.trim()) || "";
+   
         if (!locationCode) {
             setLocationTouched(true);
             setLocationError("Vui lòng chọn tỉnh/thành phố");
