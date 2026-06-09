@@ -57,7 +57,7 @@ const schema = z.object({
   industry: z.preprocess(
     (v) => (v === null || v === undefined || v === "" ? undefined : v),
     z
-      .string({ required_error: "Vui lòng chọn lĩnh vực hoạt động" })
+      .string({ message: "Vui lòng chọn lĩnh vực hoạt động" })
       .refine((s) => COMPANY_INDUSTRY_SET.has(s), {
         message: "Vui lòng chọn lĩnh vực từ danh sách",
       })
@@ -431,7 +431,7 @@ export default function CreateCompanyPage() {
                     id="create-company-industry"
                     value={field.value ?? null}
                     onChange={(v) =>
-                      setValue("industry", v ?? undefined, {
+                      setValue("industry", v ?? "", {
                         shouldValidate: true,
                         shouldDirty: true,
                         shouldTouch: true,
