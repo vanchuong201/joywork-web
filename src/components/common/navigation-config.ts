@@ -45,7 +45,7 @@ const leftAdminNavItem: NavItem = {
 };
 
 export const leftPersonalNav: NavItem[] = [
-  { icon: UserRound, label: "CV của tôi", href: "/account" },
+  { icon: UserRound, label: "CV của tôi", href: "/account?tab=profile" },
   { icon: ClipboardList, label: "Ứng tuyển của tôi", href: "/applications" },
   { icon: Bookmark, label: "Đã lưu", href: "/saved" },
   { icon: Heart, label: "Công ty theo dõi", href: "/following" },
@@ -56,7 +56,6 @@ export const mobilePersonalNav: NavItem[] = leftPersonalNav.filter((item) => ite
 
 export const accountDropdownItems: AccountDropdownItem[] = [
   { label: "Quản lý tài khoản", href: "/account" },
-  { label: "CV của tôi", href: "/account/profile" },
 ];
 
 const headerPrimaryNav: NavItem[] = exploreNavBase.slice(0, 3);
