@@ -62,7 +62,9 @@ const schema = z.object({
         message: "Vui lòng chọn lĩnh vực từ danh sách",
       })
   ),
-  size: z.enum(COMPANY_SIZE_OPTIONS).optional().or(z.literal("")),
+  size: z.enum(COMPANY_SIZE_OPTIONS, {
+    errorMap: () => ({ message: "Vui lòng chọn quy mô doanh nghiệp" }),
+  }).or(z.literal("")),
   description: z.string().optional(),
 });
 
@@ -307,7 +309,7 @@ export default function CreateCompanyPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-x-6 md:gap-y-4">
           <div className="min-w-0">
-            <label className="text-sm font-medium text-[var(--foreground)]">Tên doanh nghiệp *</label>
+            <label className="text-sm font-medium text-[var(--foreground)]">Tên doanh nghiệp (Hiển thị trên trang) *</label>
             <Input
               className={showFieldError("name") ? "mt-1 border-red-500 focus-visible:ring-red-500" : "mt-1"}
               placeholder="Ví dụ: JOYWORK Studio"
@@ -317,7 +319,7 @@ export default function CreateCompanyPage() {
           </div>
 
           <div className="min-w-0">
-            <label className="text-sm font-medium text-[var(--foreground)]">Tên pháp lý đầy đủ *</label>
+            <label className="text-sm font-medium text-[var(--foreground)]">Tên pháp lý đầy đủ (Theo ĐKKD) *</label>
             <Input
               className={showFieldError("legalName") ? "mt-1 border-red-500 focus-visible:ring-red-500" : "mt-1"}
               placeholder="Ví dụ: Công ty Cổ phần Công nghệ..."
@@ -462,10 +464,12 @@ export default function CreateCompanyPage() {
           </div>
 
           <div className="min-w-0">
-            <label className="text-sm font-medium text-[var(--foreground)]">Quy mô doanh nghiệp (tuỳ chọn)</label>
+            <label className="text-sm font-medium text-[var(--foreground)]">Quy mô doanh nghiệp <span className="text-red-500">*</span></label>
             <select
-              {...register("size")}
-              className="mt-1 h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+              {...register("size", {
+                required: "Vui lòng chọn quy mô doanh nghiệp",
+              })}
+              className={`mt-1 h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)] ${showFieldError("size") ? "border-red-500 focus-visible:ring-red-500" : ""}`}
             >
               <option value="">Chọn quy mô</option>
               {COMPANY_SIZE_OPTIONS.map((band) => (

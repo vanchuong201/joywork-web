@@ -115,6 +115,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         setSpecificAddressTouched(false);
         setLegalNameError(null);
         setLegalNameTouched(false);
+        setIndustryError(null);
+        setIndustryTouched(false);
         setEditDialogOpen(true);
     };
     const [emailError, setEmailError] = useState<string | null>(null);
@@ -129,6 +131,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const [specificAddressTouched, setSpecificAddressTouched] = useState(false);
     const [legalNameError, setLegalNameError] = useState<string | null>(null);
     const [legalNameTouched, setLegalNameTouched] = useState(false);
+    const [industryError, setIndustryError] = useState<string | null>(null);
+    const [industryTouched, setIndustryTouched] = useState(false);
     const [wardByCode, setWardByCode] = useState<Map<string, WardOption>>(new Map());
 
     const companyProvinceCodes = useMemo(() => {
@@ -263,6 +267,14 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             return;
         }
         setLegalNameError(null);
+
+        const industry = formData.industry?.trim() || "";
+        if (!industry) {
+            setIndustryTouched(true);
+            setIndustryError("Vui lòng chọn lĩnh vực hoạt động");
+            return;
+        }
+        setIndustryError(null);
 
         // Validate email format if provided
         const email = formData.email?.trim();
@@ -811,6 +823,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         setSpecificAddressTouched(false);
                         setLegalNameError(null);
                         setLegalNameTouched(false);
+                        setIndustryError(null);
+                        setIndustryTouched(false);
                     }
                 }}
              >
@@ -874,20 +888,34 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             )}
                         </div>
                         <div className="space-y-2">
-                            <Label>Lĩnh vực hoạt động</Label>
+                            <Label>Lĩnh vực hoạt động <span className="text-red-500">*</span></Label>
                             <IndustrySelect
                                 value={formData.industry || null}
-                                onChange={(v) =>
+                                onChange={(v) => {
                                     setFormData({
                                         ...formData,
                                         industry: v ?? "",
-                                    })
-                                }
+                                    });
+                                    if (industryTouched && !v) {
+                                        setIndustryError("Vui lòng chọn lĩnh vực hoạt động");
+                                    } else {
+                                        setIndustryError(null);
+                                    }
+                                }}
+                                onBlur={() => {
+                                    setIndustryTouched(true);
+                                    if (!formData.industry) {
+                                        setIndustryError("Vui lòng chọn lĩnh vực hoạt động");
+                                    } else {
+                                        setIndustryError(null);
+                                    }
+                                }}
                                 placeholder="Chọn lĩnh vực theo danh sách chuẩn"
+                                className={industryError && industryTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
-                            <p className="text-xs text-[var(--muted-foreground)]">
-                                Có thể để trống. Giá trị cũ không nằm trong danh sách vẫn hiển thị cho đến khi bạn đổi.
-                            </p>
+                            {industryError && industryTouched ? (
+                                <p className="text-xs text-red-500">{industryError}</p>
+                            ) : null}
                         </div>
                         <div className="space-y-2">
                             <Label>Quy mô doanh nghiệp</Label>
