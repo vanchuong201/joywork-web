@@ -63,7 +63,7 @@ const schema = z.object({
       })
   ),
   size: z.enum(COMPANY_SIZE_OPTIONS, {
-    errorMap: () => ({ message: "Vui lòng chọn quy mô doanh nghiệp" }),
+    error: "Vui lòng chọn quy mô doanh nghiệp",
   }).or(z.literal("")),
   description: z.string().optional(),
 });
