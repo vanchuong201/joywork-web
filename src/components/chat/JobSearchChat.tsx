@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { Send, Loader2, Trash2 } from "lucide-react";
 import { JobResultsList } from "./JobResultsList";
 import { useRouter } from "next/navigation";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 
 const STORAGE_KEY = "joywork-ai-chat-messages";
 
@@ -161,15 +161,19 @@ export function JobSearchChat() {
                               onClick={() => router.push(`/companies/${c.slug}`)}
                               className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3.5 transition-all hover:border-[var(--brand)]/30 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                             >
-                              {c.logoUrl ? (
-                                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
-                                  <CompanyLogo src={c.logoUrl} alt={c.name} className="h-full w-full object-cover" />
-                                </div>
-                              ) : (
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--muted)] text-base font-semibold text-[var(--muted-foreground)]">
-                                  {c.name.slice(0, 2).toUpperCase()}
-                                </div>
-                              )}
+                              <CompanyAvatar
+                                logoUrl={c.logoUrl}
+                                isGood={c.isGood}
+                                name={c.name}
+                                size={48}
+                                shape="square"
+                                imgClassName="object-cover"
+                                fallback={
+                                  <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)] text-base font-semibold text-[var(--muted-foreground)]">
+                                    {c.name.slice(0, 2).toUpperCase()}
+                                  </div>
+                                }
+                              />
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-semibold text-[var(--foreground)] group-hover:text-[var(--brand)] transition-colors">
                                   {c.name}

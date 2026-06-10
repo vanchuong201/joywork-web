@@ -214,6 +214,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
             jobs={jobs}
             companyName={company.name}
             companyLogoUrl={company.logoUrl}
+            companyIsGood={company.isGood}
           />
         )}
       </div>

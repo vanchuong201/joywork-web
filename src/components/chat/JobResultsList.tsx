@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { List, Grid, ChevronLeft, ChevronRight, Building2, X } from "lucide-react";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import Link from "next/link";
@@ -84,21 +84,19 @@ export function JobResultsList({ jobs }: { jobs: any[] }) {
           <CardContent className="p-4">
             <div className="flex gap-3">
               {/* Company Avatar */}
-              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
-                {j.company.logoUrl ? (
-                  <CompanyLogo
-                    src={j.company.logoUrl}
-                    alt={j.company.name}
-                    className="h-full w-full object-cover"
-                    width={32}
-                    height={32}
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
+              <CompanyAvatar
+                logoUrl={j.company.logoUrl}
+                isGood={j.company.isGood}
+                name={j.company.name}
+                size={64}
+                shape="square"
+                imgClassName="object-cover"
+                fallback={
+                  <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)] text-[var(--muted-foreground)]">
                     <Building2 className="h-8 w-8" />
                   </div>
-                )}
-              </div>
+                }
+              />
               {/* Job Info */}
               <div className="flex-1 min-w-0 space-y-1">
                 {/* Job Title with Tooltip */}

@@ -27,7 +27,7 @@ import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import {
   Briefcase,
   MapPin,
@@ -357,19 +357,20 @@ export default function JobDetailPage() {
         >
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
             {/* Logo công ty */}
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition-transform group-hover:scale-105">
-              {job.company.logoUrl ? (
-                <CompanyLogo
-                  src={job.company.logoUrl}
-                  alt={job.company.name}
-                  className="h-full w-full object-cover"
-                  width={56}
-                  height={56}
-                />
-              ) : (
-                <Briefcase className="h-6 w-6 text-[var(--muted-foreground)]" />
-              )}
-            </div>
+            <CompanyAvatar
+              logoUrl={job.company.logoUrl}
+              isGood={job.company.isGood}
+              name={job.company.name}
+              size={56}
+              shape="square"
+              imgClassName="object-cover"
+              className="shadow-sm transition-transform group-hover:scale-105"
+              fallback={
+                <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--card)]">
+                  <Briefcase className="h-6 w-6 text-[var(--muted-foreground)]" />
+                </div>
+              }
+            />
             {/* Text + CTA */}
             <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <p className="text-sm text-[var(--muted-foreground)] sm:text-base">

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Briefcase, Calendar, List, Grid } from "lucide-react";
@@ -15,11 +15,12 @@ type Props = {
   jobs: any[];
   companyName: string;
   companyLogoUrl?: string | null;
+  companyIsGood?: boolean;
 };
 
 type ViewMode = "list" | "grid";
 
-export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Props) {
+export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl, companyIsGood }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   if (jobs.length === 0) {
@@ -89,15 +90,13 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
                           </div>
                         </div>
                         {companyLogoUrl && (
-                          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-1">
-                            <CompanyLogo
-                              src={companyLogoUrl}
-                              alt={companyName}
-                              width={40}
-                              height={40}
-                              className="max-h-full max-w-full object-contain"
-                            />
-                          </div>
+                          <CompanyAvatar
+                            logoUrl={companyLogoUrl}
+                            isGood={companyIsGood}
+                            name={companyName}
+                            size={48}
+                            shape="square"
+                          />
                         )}
                       </div>
                       {job.tags && job.tags.length > 0 && (
@@ -132,15 +131,13 @@ export default function CompanyJobsTab({ jobs, companyName, companyLogoUrl }: Pr
                       {job.title}
                     </h4>
                     {companyLogoUrl && (
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-1">
-                        <CompanyLogo
-                          src={companyLogoUrl}
-                          alt={companyName}
-                          width={32}
-                          height={32}
-                          className="max-h-full max-w-full object-contain"
-                        />
-                      </div>
+                      <CompanyAvatar
+                        logoUrl={companyLogoUrl}
+                        isGood={companyIsGood}
+                        name={companyName}
+                        size={40}
+                        shape="square"
+                      />
                     )}
                   </div>
                   <div className="space-y-2 text-sm text-[var(--muted-foreground)]">

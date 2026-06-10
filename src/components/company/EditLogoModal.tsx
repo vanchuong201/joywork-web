@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { uploadCompanyLogo } from "@/lib/uploads";
 import api from "@/lib/api";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { X } from "lucide-react";
 
 type Props = {
@@ -162,21 +162,20 @@ export default function EditLogoModal({
           <div className="space-y-4">
             <div className="flex justify-center">
               {previewUrl ? (
-                <div className="relative">
-                  <CompanyLogo
-                    src={previewUrl}
-                    alt="Logo preview"
-                    width={160}
-                    height={160}
-                    priority
-                    className="h-40 w-40 rounded-2xl border border-[var(--border)] object-cover"
-                  />
+                <CompanyAvatar
+                  logoUrl={previewUrl}
+                  name={companyName}
+                  size={160}
+                  shape="square"
+                  priority
+                  imgClassName="object-cover"
+                >
                   {uploading && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 text-xs text-white">
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/40 text-xs text-white">
                       Đang tải...
                     </div>
                   )}
-                </div>
+                </CompanyAvatar>
               ) : (
                 <div className="flex h-40 w-40 items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--muted)] text-3xl font-semibold text-[var(--muted-foreground)]">
                   {companyName.slice(0, 1).toUpperCase()}

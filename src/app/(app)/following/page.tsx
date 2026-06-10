@@ -6,7 +6,7 @@ import EmptyState from "@/components/ui/empty-state";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 
 type FollowItem = {
   followId: string;
@@ -19,6 +19,7 @@ type FollowItem = {
     industry?: string | null;
     location?: string | null;
     logoUrl?: string | null;
+    isGood?: boolean;
     coverUrl?: string | null;
   };
 };
@@ -74,19 +75,19 @@ export default function FollowingCompaniesPage() {
             </div>
           ) : null}
           <CardHeader className="flex flex-row items-center gap-3">
-            {item.company.logoUrl ? (
-              <CompanyLogo
-                src={item.company.logoUrl}
-                alt={item.company.name}
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-md object-cover"
-              />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[var(--muted)] text-sm font-semibold text-[var(--muted-foreground)]">
-                {item.company.name.slice(0, 1)}
-              </div>
-            )}
+            <CompanyAvatar
+              logoUrl={item.company.logoUrl}
+              isGood={item.company.isGood}
+              name={item.company.name}
+              size={40}
+              shape="square"
+              imgClassName="object-cover"
+              fallback={
+                <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)] text-sm font-semibold text-[var(--muted-foreground)]">
+                  {item.company.name.slice(0, 1)}
+                </div>
+              }
+            />
             <div>
               <Link
                 href={`/companies/${item.company.slug}`}

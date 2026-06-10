@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { LayoutGrid, List, MapPin, Briefcase, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { buildJobUrl } from "@/lib/job-url";
 
 type SavedPostsResponse = {
@@ -34,7 +34,7 @@ type SavedJobsResponse = {
         slug?: string | null;
         title: string;
         isActive?: boolean;
-        company: { id: string; name: string; slug: string; logoUrl?: string | null };
+        company: { id: string; name: string; slug: string; logoUrl?: string | null; isGood?: boolean };
         location?: string | null;
         remote: boolean;
         employmentType: string;
@@ -213,19 +213,19 @@ function SavedPageContent() {
                     return (
                       <li key={fav.id} className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 flex items-start gap-4">
                         <Link href={`/companies/${j.company.slug}`} className="shrink-0">
-                          {j.company.logoUrl ? (
-                            <CompanyLogo
-                              src={j.company.logoUrl}
-                              alt={j.company.name}
-                              width={48}
-                              height={48}
-                              className="rounded-lg border border-[var(--border)] object-cover"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-[var(--muted)] flex items-center justify-center">
-                              <Building2 className="w-5 h-5 text-[var(--muted-foreground)]" />
-                            </div>
-                          )}
+                          <CompanyAvatar
+                            logoUrl={j.company.logoUrl}
+                            isGood={j.company.isGood}
+                            name={j.company.name}
+                            size={48}
+                            shape="square"
+                            imgClassName="object-cover"
+                            fallback={
+                              <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)]">
+                                <Building2 className="w-5 h-5 text-[var(--muted-foreground)]" />
+                              </div>
+                            }
+                          />
                         </Link>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -280,19 +280,19 @@ function SavedPageContent() {
                       <div key={fav.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-3">
                           <Link href={`/companies/${j.company.slug}`} className="shrink-0">
-                            {j.company.logoUrl ? (
-                              <CompanyLogo
-                                src={j.company.logoUrl}
-                                alt={j.company.name}
-                                width={40}
-                                height={40}
-                                className="rounded-lg border border-[var(--border)] object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-lg bg-[var(--muted)] flex items-center justify-center">
-                                <Building2 className="w-4 h-4 text-[var(--muted-foreground)]" />
-                              </div>
-                            )}
+                            <CompanyAvatar
+                              logoUrl={j.company.logoUrl}
+                              isGood={j.company.isGood}
+                              name={j.company.name}
+                              size={40}
+                              shape="square"
+                              imgClassName="object-cover"
+                              fallback={
+                                <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)]">
+                                  <Building2 className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                </div>
+                              }
+                            />
                           </Link>
                           <div className="min-w-0 flex-1">
                             <Link href={`/companies/${j.company.slug}`} className="text-xs text-[var(--muted-foreground)] hover:underline truncate block">

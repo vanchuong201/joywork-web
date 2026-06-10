@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar as SharedCompanyAvatar } from "@/components/company/CompanyAvatar";
 import { useAuthStore } from "@/store/useAuth";
 import { COMPANY_SIZE_OPTIONS, getCompanySizeLabel } from "@/lib/company-size";
 import ProvinceSelect from "@/components/ui/province-select";
@@ -32,6 +32,7 @@ type Membership = {
     slug: string;
     tagline?: string | null;
     logoUrl?: string | null;
+    isGood?: boolean;
   };
 };
 
@@ -41,6 +42,7 @@ type CompanyListItem = {
   slug: string;
   tagline?: string | null;
   logoUrl?: string | null;
+  isGood?: boolean;
   location?: string | null;
   industry?: string | null;
   size?: string | null;
@@ -175,7 +177,7 @@ export default function CompaniesPage() {
                   }}
                   className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3.5 transition-all hover:border-[var(--brand)]/30 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                 >
-                  <CompanyAvatar name={membership.company.name} logoUrl={membership.company.logoUrl} />
+                  <CompanyAvatar name={membership.company.name} logoUrl={membership.company.logoUrl} isGood={membership.company.isGood} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-[var(--foreground)] group-hover:text-[var(--brand)] transition-colors">
                       {membership.company.name}
@@ -392,7 +394,7 @@ function CompanyCard({ company }: { company: CompanyListItem }) {
   return (
     <Card className="flex h-full flex-col border border-[var(--border)] bg-[var(--card)]">
       <CardHeader className="flex flex-row items-start gap-3 pb-3">
-        <CompanyAvatar name={company.name} logoUrl={company.logoUrl} />
+        <CompanyAvatar name={company.name} logoUrl={company.logoUrl} isGood={company.isGood} />
         <div className="space-y-1">
           <Link
             href={`/companies/${company.slug}`}
@@ -432,19 +434,21 @@ function CompanyCard({ company }: { company: CompanyListItem }) {
   );
 }
 
-function CompanyAvatar({ name, logoUrl }: { name: string; logoUrl?: string | null }) {
-  if (logoUrl) {
-    return (
-      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
-        <CompanyLogo src={logoUrl} alt={name} className="h-full w-full object-cover" />
-      </div>
-    );
-  }
-
+function CompanyAvatar({ name, logoUrl, isGood }: { name: string; logoUrl?: string | null; isGood?: boolean }) {
   return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--muted)] text-base font-semibold text-[var(--muted-foreground)]">
-      {name.slice(0, 2).toUpperCase()}
-    </div>
+    <SharedCompanyAvatar
+      logoUrl={logoUrl}
+      name={name}
+      isGood={isGood}
+      size={48}
+      shape="square"
+      imgClassName="object-cover"
+      fallback={
+        <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)] text-base font-semibold text-[var(--muted-foreground)]">
+          {name.slice(0, 2).toUpperCase()}
+        </div>
+      }
+    />
   );
 }
 

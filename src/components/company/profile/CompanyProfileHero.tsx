@@ -1,7 +1,7 @@
 "use client";
 
 import { Company } from "@/types/company";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { Button } from "@/components/ui/button";
 import { Globe, MapPin, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle, Briefcase } from "lucide-react";
 import CompanyMessageButton from "@/components/company/CompanyMessageButton";
@@ -622,32 +622,31 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                   )}
 
                   <div className="relative mx-auto shrink-0 md:mx-0 group/avatar">
-                      <div className="relative h-28 w-28 overflow-hidden rounded-full bg-[var(--muted)] p-1 sm:h-32 sm:w-32 md:h-40 md:w-40">
-                        {company.logoUrl ? (
-                            <CompanyLogo
-                              src={company.logoUrl}
-                              alt={company.name}
-                              width={160}
-                              height={160}
-                              priority
-                              className="h-full w-full rounded-full border-4 border-[var(--card)] bg-[var(--card)] object-contain"
-                            />
-                        ) : (
-                            <div className="w-full h-full rounded-full bg-[var(--card)] border-4 border-[var(--card)] flex items-center justify-center text-4xl font-bold text-[var(--foreground)]">
+                      <CompanyAvatar
+                        logoUrl={company.logoUrl}
+                        isGood={company.isGood}
+                        name={company.name}
+                        size={160}
+                        shape="circle"
+                        fluid
+                        priority
+                        className="h-28 w-28 shadow-lg shadow-[#8b3fd9]/20 sm:h-32 sm:w-32 md:h-40 md:w-40 rounded-full"
+                        fallback={
+                            <div className="flex h-full w-full items-center justify-center rounded-full bg-[var(--card)] text-4xl font-bold text-[var(--foreground)]">
                                 {company.name.charAt(0)}
                             </div>
-                        )}
-                        
+                        }
+                      >
                         {isEditable && (
                             <>
-                                <input 
-                                    type="file" 
-                                    accept="image/jpeg,image/png,image/webp" 
-                                    className="hidden" 
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    className="hidden"
                                     ref={avatarInputRef}
                                     onChange={handleUploadAvatar}
                                 />
-                                <div 
+                                <div
                                     className={`absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity rounded-full cursor-pointer z-10 ${
                                         uploadingAvatar ? 'opacity-100' : 'opacity-0 group-hover/avatar:opacity-100'
                                     }`}
@@ -661,12 +660,15 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                         <Camera className="w-8 h-8 text-white" />
                                     )}
                                 </div>
-                                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/avatar:opacity-100 transition-opacity pointer-events-none backdrop-blur-sm z-20">
-                                    Tỷ lệ đề xuất: 1:1 (vuông)
-                                </div>
                             </>
                         )}
-                      </div>
+                      </CompanyAvatar>
+
+                      {isEditable && (
+                          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/avatar:opacity-100 transition-opacity pointer-events-none backdrop-blur-sm z-20">
+                              Tỷ lệ đề xuất: 1:1 (vuông)
+                          </div>
+                      )}
                   </div>
                   
                   <div className="w-full flex-1 space-y-4 text-center md:text-left">

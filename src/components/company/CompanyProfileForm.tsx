@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import TiptapEditor from "@/components/ui/tiptap-editor";
 import { uploadCompanyLogo, uploadCompanyCover } from "@/lib/uploads";
 import Image from "next/image";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
@@ -419,20 +419,19 @@ export default function CompanyProfileForm({
         <FormField label="Logo" error={errors.logoUrl?.message}>
           <div className="space-y-3">
             {logoUrl ? (
-              <div className="relative inline-block">
-                <CompanyLogo
-                  src={logoUrl}
-                  alt="Logo"
-                  width={120}
-                  height={120}
-                  className="h-[120px] w-[120px] rounded-lg border border-[var(--border)] object-contain"
-                />
+              <CompanyAvatar
+                logoUrl={logoUrl}
+                name="Logo"
+                size={120}
+                shape="square"
+                className="inline-block"
+              >
                 {logoUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xs text-white">
+                  <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/40 text-xs text-white">
                     Đang tải...
                   </div>
                 )}
-              </div>
+              </CompanyAvatar>
             ) : (
               <div className="flex h-[120px] w-[120px] items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--muted)] text-sm text-[var(--muted-foreground)]">
                 Chưa có logo

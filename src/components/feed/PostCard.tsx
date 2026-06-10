@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { buildJobUrl } from "@/lib/job-url";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { format, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,7 +80,7 @@ function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => vo
   );
 }
 
-type Company = { id: string; name: string; slug: string; slogan?: string; logoUrl?: string };
+type Company = { id: string; name: string; slug: string; slogan?: string; logoUrl?: string; isGood?: boolean };
 export type PostCardData = {
   id: string;
   title: string;
@@ -723,19 +723,18 @@ const PostCard = memo(function PostCard({
     <article className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-0 overflow-hidden">
       <div className="p-4">
         <div className="mb-1 flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
-          {post.company.logoUrl ? (
-            <CompanyLogo
-              src={post.company.logoUrl}
-              alt={post.company.name}
-              width={28}
-              height={28}
-              className="h-7 w-7 rounded-full border border-[var(--border)] object-contain"
-            />
-          ) : (
-            <div className="h-7 w-7 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold text-[var(--muted-foreground)]">
-              {post.company.name.slice(0, 1)}
-            </div>
-          )}
+          <CompanyAvatar
+            logoUrl={post.company.logoUrl}
+            isGood={post.company.isGood}
+            name={post.company.name}
+            size={28}
+            shape="circle"
+            fallback={
+              <div className="flex h-full w-full items-center justify-center rounded-full bg-[var(--muted)] text-[10px] font-semibold text-[var(--muted-foreground)]">
+                {post.company.name.slice(0, 1)}
+              </div>
+            }
+          />
           <div className="flex flex-col flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <CompanyHoverCard

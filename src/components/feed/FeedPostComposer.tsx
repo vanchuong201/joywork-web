@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import PostPreviewModal from "@/components/feed/PostPreviewModal";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 
 const MAX_IMAGES = 8;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -455,12 +455,11 @@ export default function FeedPostComposer() {
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             {selectedCompany?.company.logoUrl ? (
-              <CompanyLogo
-                src={selectedCompany.company.logoUrl}
-                alt={selectedCompany.company.name}
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-full border border-[var(--border)] object-contain"
+              <CompanyAvatar
+                logoUrl={selectedCompany.company.logoUrl}
+                name={selectedCompany.company.name}
+                size={40}
+                shape="circle"
               />
             ) : user.avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -502,19 +501,18 @@ export default function FeedPostComposer() {
                     type="button"
                     className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-sm transition-colors hover:bg-[var(--muted)] sm:w-auto"
                   >
-                    {selectedCompany?.company.logoUrl ? (
-                      <CompanyLogo
-                        src={selectedCompany.company.logoUrl}
-                        alt={selectedCompany.company.name}
-                        width={20}
-                        height={20}
-                        className="h-5 w-5 rounded-full object-contain"
-                      />
-                    ) : (
-                      <div className="h-5 w-5 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold">
-                        {selectedCompany?.company.name[0]?.toUpperCase()}
-                      </div>
-                    )}
+                    <CompanyAvatar
+                      logoUrl={selectedCompany?.company.logoUrl}
+                      isGood={selectedCompany?.company.isGood}
+                      name={selectedCompany?.company.name ?? ""}
+                      size={20}
+                      shape="circle"
+                      fallback={
+                        <div className="flex h-full w-full items-center justify-center rounded-full bg-[var(--muted)] text-[10px] font-semibold">
+                          {selectedCompany?.company.name[0]?.toUpperCase()}
+                        </div>
+                      }
+                    />
                     <span className="max-w-[170px] truncate font-medium sm:max-w-[240px]">{selectedCompany?.company.name}</span>
                     <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--brand)]/10 text-[var(--brand)]">
                       {selectedCompany?.role}
@@ -538,19 +536,18 @@ export default function FeedPostComposer() {
                         )}
                         onSelect={() => setSelectedCompanyId(membership.company.id)}
                       >
-                        {membership.company.logoUrl ? (
-                          <CompanyLogo
-                            src={membership.company.logoUrl}
-                            alt={membership.company.name}
-                            width={24}
-                            height={24}
-                            className="h-6 w-6 rounded-full object-contain"
-                          />
-                        ) : (
-                          <div className="h-6 w-6 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold">
-                            {membership.company.name[0]?.toUpperCase()}
-                          </div>
-                        )}
+                        <CompanyAvatar
+                          logoUrl={membership.company.logoUrl}
+                          isGood={membership.company.isGood}
+                          name={membership.company.name}
+                          size={24}
+                          shape="circle"
+                          fallback={
+                            <div className="flex h-full w-full items-center justify-center rounded-full bg-[var(--muted)] text-[10px] font-semibold">
+                              {membership.company.name[0]?.toUpperCase()}
+                            </div>
+                          }
+                        />
                         <span className="flex-1 font-medium truncate">{membership.company.name}</span>
                         <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--muted)] text-[var(--muted-foreground)]">
                           {membership.role}
