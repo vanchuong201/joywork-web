@@ -892,19 +892,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             <IndustrySelect
                                 value={formData.industry || null}
                                 onChange={(v) => {
+                                    setIndustryTouched(true);
                                     setFormData({
                                         ...formData,
                                         industry: v ?? "",
                                     });
-                                    if (industryTouched && !v) {
-                                        setIndustryError("Vui lòng chọn lĩnh vực hoạt động");
-                                    } else {
-                                        setIndustryError(null);
-                                    }
-                                }}
-                                onBlur={() => {
-                                    setIndustryTouched(true);
-                                    if (!formData.industry) {
+                                    if (!v) {
                                         setIndustryError("Vui lòng chọn lĩnh vực hoạt động");
                                     } else {
                                         setIndustryError(null);
