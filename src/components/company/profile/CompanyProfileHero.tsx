@@ -8,6 +8,7 @@ import CompanyMessageButton from "@/components/company/CompanyMessageButton";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { uploadCompanyCover, uploadCompanyLogo } from "@/lib/uploads";
+import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -56,6 +57,10 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [uploadingVerification, setUploadingVerification] = useState(false);
     const [verificationFile, setVerificationFile] = useState<File | null>(null);
+    // Crop ảnh: lưu nguồn ảnh đang chờ cắt + loại đang cắt (logo | cover).
+    const [cropSrc, setCropSrc] = useState<string | null>(null);
+    const [cropTarget, setCropTarget] = useState<"logo" | "cover" | null>(null);
+    const [pendingFile, setPendingFile] = useState<{ name: string; type: string } | null>(null);
     const [verificationLegalName, setVerificationLegalName] = useState(company.legalName || "");
     const [isMounted, setIsMounted] = useState(false);
     
@@ -426,26 +431,68 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         }
     };
 
-    const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const MAX_IMAGE_SIZE = 8 * 1024 * 1024; // 8MB
+    const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+    // Validate + mở dialog crop cho ảnh bìa (chưa upload).
+    const handleSelectCover = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const MAX_COVER_SIZE = 8 * 1024 * 1024; // 8MB
-        const ALLOWED_COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-        // Client-side validation mirrors API rules for faster feedback
-        if (!ALLOWED_COVER_TYPES.has(file.type)) {
+        if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
             toast.error("Định dạng tệp không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WEBP");
             e.target.value = "";
             return;
         }
-
-        if (file.size > MAX_COVER_SIZE) {
+        if (file.size > MAX_IMAGE_SIZE) {
             toast.error("Kích thước tệp vượt quá giới hạn 8MB");
             e.target.value = "";
             return;
         }
 
+        setPendingFile({ name: file.name, type: file.type });
+        setCropTarget("cover");
+        setCropSrc(URL.createObjectURL(file));
+        e.target.value = "";
+    };
+
+    // Validate + mở dialog crop cho logo (chưa upload).
+    const handleSelectLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+            toast.error("Định dạng tệp không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WEBP");
+            e.target.value = "";
+            return;
+        }
+        if (file.size > MAX_IMAGE_SIZE) {
+            toast.error("Kích thước tệp vượt quá giới hạn 8MB");
+            e.target.value = "";
+            return;
+        }
+
+        setPendingFile({ name: file.name, type: file.type });
+        setCropTarget("logo");
+        setCropSrc(URL.createObjectURL(file));
+        e.target.value = "";
+    };
+
+    const closeCropDialog = () => {
+        if (cropSrc) URL.revokeObjectURL(cropSrc);
+        setCropSrc(null);
+        setCropTarget(null);
+        setPendingFile(null);
+    };
+
+    // Tránh leak blob URL nếu component unmount khi dialog crop còn mở.
+    useEffect(() => {
+        return () => {
+            if (cropSrc) URL.revokeObjectURL(cropSrc);
+        };
+    }, [cropSrc]);
+
+    const runCoverUpload = async (file: File) => {
         setUploadingCover(true);
         try {
             const reader = new FileReader();
@@ -477,23 +524,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         }
     };
 
-    const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const MAX_AVATAR_SIZE = 8 * 1024 * 1024;
-        const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-        if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
-            toast.error("Định dạng tệp không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WEBP");
-            e.target.value = "";
-            return;
-        }
-        if (file.size > MAX_AVATAR_SIZE) {
-            toast.error("Kích thước tệp vượt quá giới hạn 8MB");
-            e.target.value = "";
-            return;
-        }
-
+    const runLogoUpload = async (file: File) => {
         setUploadingAvatar(true);
         try {
             const reader = new FileReader();
@@ -521,6 +552,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             toast.error("Đã xảy ra lỗi khi xử lý ảnh");
             setUploadingAvatar(false);
         }
+    };
+
+    // Nhận ảnh đã crop → upload theo loại đang cắt.
+    const handleCropComplete = (file: File) => {
+        if (cropTarget === "cover") runCoverUpload(file);
+        else if (cropTarget === "logo") runLogoUpload(file);
     };
 
     // Check if legal name changed for verified company (show warning)
@@ -578,7 +615,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             accept="image/jpeg,image/png,image/webp" 
                             className="hidden" 
                             ref={coverInputRef}
-                            onChange={handleUploadCover}
+                            onChange={handleSelectCover}
                         />
                         <Button 
                             variant="secondary" 
@@ -656,7 +693,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                     accept="image/jpeg,image/png,image/webp"
                                     className="hidden"
                                     ref={avatarInputRef}
-                                    onChange={handleUploadAvatar}
+                                    onChange={handleSelectLogo}
                                 />
                                 <div
                                     className={`absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity rounded-full cursor-pointer z-10 ${
@@ -1188,6 +1225,21 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     </DialogFooter>
                 </DialogContent>
              </Dialog>
+
+            {cropSrc && pendingFile && cropTarget && (
+                <ImageCropDialog
+                    open={!!cropSrc}
+                    onClose={closeCropDialog}
+                    imageSrc={cropSrc}
+                    aspect={cropTarget === "cover" ? 1920 / 512 : 1}
+                    cropShape="rect"
+                    outputWidth={cropTarget === "cover" ? 1920 : 512}
+                    title={cropTarget === "cover" ? "Cắt ảnh bìa" : "Cắt logo"}
+                    fileName={pendingFile.name}
+                    mimeType={pendingFile.type}
+                    onCropComplete={handleCropComplete}
+                />
+            )}
         </section>
     );
 }
