@@ -13,13 +13,17 @@ export default function AuthPrompt() {
 
   if (!isOpen) return null;
 
-  const actionText = {
-    like: "thích bài viết",
-    save: "lưu bài viết",
-    "save-job": "lưu việc làm",
-    apply: "ứng tuyển",
-    follow: "theo dõi công ty",
-  }[action || "like"] || "thực hiện hành động này";
+  const actionText =
+    {
+      like: "thích bài viết",
+      save: "lưu bài viết",
+      "save-job": "lưu việc làm",
+      apply: "ứng tuyển",
+      follow: "theo dõi công ty",
+      "follow-company": "theo dõi công ty",
+      "message-company": "nhắn tin với doanh nghiệp",
+      login: "tiếp tục",
+    }[action || ""] || (action ? `truy cập ${action}` : "thực hiện hành động này");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

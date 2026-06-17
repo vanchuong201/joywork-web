@@ -21,6 +21,7 @@ import {
   leftPersonalNav,
   type NavItem,
 } from "./navigation-config";
+import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 
 function StaticPageLinks() {
   return (
@@ -54,11 +55,13 @@ function NavSection({
   items,
   pathname,
   truncateLabel = false,
+  onProtectedClick,
 }: {
   title: string;
   items: NavItem[];
   pathname: string;
   truncateLabel?: boolean;
+  onProtectedClick?: (item: NavItem) => void;
 }) {
   return (
     <div>
@@ -86,7 +89,11 @@ function NavSection({
           );
           return (
             <li key={`${item.href}-${item.label}`}>
-              {item.external ? (
+              {onProtectedClick && !item.external ? (
+                <button type="button" onClick={() => onProtectedClick(item)} className={cn(className, "w-full text-left")}>
+                  {label}
+                </button>
+              ) : item.external ? (
                 <a
                   href={item.href}
                   target="_blank"
@@ -115,6 +122,7 @@ export default function LeftNav() {
   const memberships = useAuthStore((s) => s.memberships);
   const initialized = useAuthStore((s) => s.initialized);
   const loading = useAuthStore((s) => s.loading);
+  const { openPrompt } = useAuthPrompt();
   const [avatarError, setAvatarError] = useState(false);
   const [supportModalOpen, setSupportModalOpen] = useState(false);
   
@@ -172,45 +180,25 @@ export default function LeftNav() {
     );
   }
 
-  if (!user) {
-    return (
-      <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:sticky md:top-24 md:block md:h-[calc(100vh-6rem)]">
-        <div className="flex h-full flex-col p-4">
-          <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--muted-foreground)]">
-            <p className="font-medium text-[var(--foreground)]">Đăng nhập để cá nhân hóa trải nghiệm</p>
-            <p className="mt-1 text-xs">
-              Theo dõi công ty, lưu việc làm và nhận thông báo ứng tuyển nhanh chóng.
-            </p>
-            <div className="mt-3 flex flex-col gap-2 text-sm">
-              <Link
-                href="/login"
-                className="w-full rounded-md border border-[var(--brand)] px-3 py-1 text-center text-[var(--brand)] hover:bg-[var(--brand)]/10"
-              >
-                Đăng nhập
-              </Link>
-              <Link
-                href="/register"
-                className="w-full rounded-md bg-[var(--brand)] px-3 py-1 text-center text-white hover:opacity-90"
-              >
-                Đăng ký
-              </Link>
-            </div>
-          </div>
-          <StaticPageLinks />
-        </div>
-      </aside>
-    );
-  }
-
   const personalNav = leftPersonalNav;
   const businessSpaceNav = buildBusinessSpaceNav();
-  const companyManageNav = buildCompanyManageNav(memberships);
+  const companyManageNav = user ? buildCompanyManageNav(memberships) : [];
   const adminNav = buildLeftAdminNav(user);
+  const onProtectedClick = user ? undefined : (item: NavItem) => openPrompt(item.label);
+
+  const handleSupportClick = () => {
+    if (!user) {
+      openPrompt("Hỗ trợ");
+      return;
+    }
+    setSupportModalOpen(true);
+  };
 
   return (
     <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:sticky md:top-24 md:block md:h-[calc(100vh-6rem)]">
       <nav className="flex h-full flex-col p-4">
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
+        {user ? (
         <div className="rounded-md border border-[var(--border)] bg-[var(--background)] p-3">
           <div className="flex items-center gap-3">
             {user.avatar && !avatarError ? (
@@ -235,28 +223,68 @@ export default function LeftNav() {
             </div>
           </div>
         </div>
+        ) : (
+          <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--background)] p-3 text-sm text-[var(--muted-foreground)]">
+            <p className="font-medium text-[var(--foreground)]">Đăng nhập để cá nhân hóa trải nghiệm</p>
+            <p className="mt-1 text-xs">
+              Theo dõi công ty, lưu việc làm và nhận thông báo ứng tuyển nhanh chóng.
+            </p>
+            <div className="mt-3 flex flex-col gap-2 text-sm">
+              <Link
+                href="/login"
+                className="w-full rounded-md border border-[var(--brand)] px-3 py-1 text-center text-[var(--brand)] hover:bg-[var(--brand)]/10"
+              >
+                Đăng nhập
+              </Link>
+              <Link
+                href="/register"
+                className="w-full rounded-md bg-[var(--brand)] px-3 py-1 text-center text-white hover:opacity-90"
+              >
+                Đăng ký
+              </Link>
+            </div>
+          </div>
+        )}
 
-        <NavSection title="Không gian của ứng viên" items={personalNav} pathname={pathname} />
+        <NavSection
+          title="Không gian của ứng viên"
+          items={personalNav}
+          pathname={pathname}
+          onProtectedClick={onProtectedClick}
+        />
 
-        <NavSection title="Không gian của doanh nghiệp" items={businessSpaceNav} pathname={pathname} />
+        <NavSection
+          title="Không gian của doanh nghiệp"
+          items={businessSpaceNav}
+          pathname={pathname}
+          onProtectedClick={onProtectedClick}
+        />
 
         {companyManageNav.length > 0 ? (
-          <NavSection title="Công ty của tôi" items={companyManageNav} pathname={pathname} truncateLabel />
+          <NavSection
+            title="Công ty của tôi"
+            items={companyManageNav}
+            pathname={pathname}
+            truncateLabel
+            onProtectedClick={onProtectedClick}
+          />
         ) : null}
 
-        {adminNav.length > 0 ? <NavSection title="Hệ thống" items={adminNav} pathname={pathname} /> : null}
+        {adminNav.length > 0 ? (
+          <NavSection title="Hệ thống" items={adminNav} pathname={pathname} onProtectedClick={onProtectedClick} />
+        ) : null}
         </div>
 
         <div className="mt-3 shrink-0 space-y-3 border-t border-[var(--border)] pt-3">
-        {user && joyworkCompanyId ? (
+        {joyworkCompanyId ? (
             <button
               type="button"
-              onClick={() => setSupportModalOpen(true)}
-              disabled={!joyworkCompany}
+              onClick={handleSupportClick}
+              disabled={Boolean(user) && !joyworkCompany}
               className={cn(
                 "flex w-full items-start gap-3 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-left transition-colors",
                 "hover:border-[var(--brand)]/35 hover:bg-[var(--muted)]/50",
-                !joyworkCompany && "cursor-not-allowed opacity-50"
+                user && !joyworkCompany && "cursor-not-allowed opacity-50"
               )}
             >
               <LifeBuoy size={18} className="mt-0.5 shrink-0 text-[var(--brand)]" aria-hidden />
@@ -272,7 +300,7 @@ export default function LeftNav() {
         </div>
 
         {/* Support Modal */}
-        {joyworkCompanyId && joyworkCompany && (
+        {user && joyworkCompanyId && joyworkCompany && (
           <CreateTicketModal
             open={supportModalOpen}
             onOpenChange={setSupportModalOpen}

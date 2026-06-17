@@ -60,9 +60,9 @@ export const accountDropdownItems: AccountDropdownItem[] = [
 
 const headerPrimaryNav: NavItem[] = exploreNavBase.slice(0, 3);
 
-/** Header: Bảng tin, Việc làm, Doanh nghiệp (khách ẩn Việc làm). */
-export function buildHeaderExploreNav(user: AuthUser | null): NavItem[] {
-  return user ? headerPrimaryNav : headerPrimaryNav.filter((item) => item.href !== "/jobs");
+/** Header: Bảng tin, Việc làm, Doanh nghiệp. */
+export function buildHeaderExploreNav(_user: AuthUser | null): NavItem[] {
+  return headerPrimaryNav;
 }
 
 /** Sidebar “Không gian của doanh nghiệp” — khảo sát ở cuối danh sách. */
