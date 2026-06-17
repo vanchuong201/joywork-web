@@ -156,16 +156,16 @@ export default function Header() {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-2 md:ml-2 md:flex">
+        <nav className="hidden self-stretch items-stretch gap-1 md:ml-2 md:flex">
           {isReady
             ? navItems.map((item) => {
                 const active = isNavItemActive(pathname, item);
                 const Icon = item.icon;
                 const className = cn(
-                  "flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors",
+                  "flex items-center gap-1 border-b-2 px-3 text-sm transition-colors",
                   active
-                    ? "bg-[var(--muted)] text-[var(--foreground)]"
-                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    ? "border-[var(--brand)] font-semibold text-[var(--foreground)]"
+                    : "border-transparent font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                 );
                 if (item.external) {
                   return (
