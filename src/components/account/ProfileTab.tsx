@@ -25,6 +25,9 @@ type TalentPoolMyStatus = {
   latestRequest: { id: string; status: string; message: string | null; reason: string | null; createdAt: string; reviewedAt: string | null } | null;
 };
 
+/** Tạm ẩn banner Talent Pool — đổi thành `true` để bật lại */
+const SHOW_TALENT_POOL_BANNER = false;
+
 export default function ProfileTab() {
   const queryClient = useQueryClient();
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
@@ -41,6 +44,7 @@ export default function ProfileTab() {
       const res = await api.get("/api/talent-pool/me");
       return res.data.data;
     },
+    enabled: SHOW_TALENT_POOL_BANNER,
   });
   const { data: cvFlipRequests, isLoading: isCvFlipRequestsLoading } = useQuery({
     queryKey: ["cv-flip-my-requests"],
@@ -160,7 +164,8 @@ export default function ProfileTab() {
         </div>
       </div>
 
-      {isTalentPoolLoading ? (
+      {SHOW_TALENT_POOL_BANNER &&
+        (isTalentPoolLoading ? (
         <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-6">
           <Skeleton className="h-5 w-36" />
           <Skeleton className="mt-3 h-8 w-72" />
@@ -222,13 +227,15 @@ export default function ProfileTab() {
             )}
           </div>
         </div>
-      )}
+      ))}
 
+      {SHOW_TALENT_POOL_BANNER && (
       <TalentPoolStatus
         open={isJoinDialogOpen}
         onOpenChange={setIsJoinDialogOpen}
         latestRequest={talentPoolStatus?.latestRequest ?? null}
       />
+      )}
 
       <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
         <h2 className="text-base font-semibold">Yêu cầu mở CV từ doanh nghiệp</h2>
