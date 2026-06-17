@@ -1,19 +1,21 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface CompanyAvatarProps {
     logoUrl?: string | null;
     /** Tên company — dùng cho alt và fallback chữ cái đầu. */
     name: string;
-    /** Kích thước cơ sở (px): quyết định độ dày ring, hiển thị badge, width/height ảnh. */
+    /** Kích thước cơ sở (px): quyết định độ dày ring, width/height ảnh. */
     size: number;
     shape?: "circle" | "square";
     /** Cờ "Good Company" do admin đánh dấu — quyết định có ring gradient + badge hay không. */
     isGood?: boolean;
-    /** Mặc định: chỉ hiện badge khi size >= 40 (badge quá nhỏ sẽ không đọc được). */
+    /** Ghi đè hiển thị badge (mặc định: hiện khi isGood=true). */
     badge?: boolean;
     /** Tắt toàn bộ ring gradient + badge (escape hatch). */
     border?: boolean;
@@ -64,7 +66,8 @@ export function CompanyAvatar({
     const isSmall = size <= 32;
     // Ring gradient + badge chỉ dành cho company được admin đánh dấu Good.
     const showRing = border && isGood;
-    const showBadge = showRing && (badge ?? size >= 40);
+    // Badge luôn hiện với mọi kích thước khi isGood; prop badge là override tắt/bật thủ công.
+    const showBadge = showRing && (badge ?? true);
     const ringPx = isSmall ? 2 : 3;
     // Avatar nhỏ bỏ khoảng trắng giữa ring và ảnh để không bóp ảnh quá mức.
     const gapPx = isSmall ? 0 : size >= 80 ? 3 : 2;
@@ -73,6 +76,12 @@ export function CompanyAvatar({
         shape === "circle"
             ? { outer: "rounded-full", inner: "rounded-full" }
             : squareRadii(size);
+
+    // Badge lớn hơn để dễ nhìn; có thể che nhẹ góc avatar — cố ý theo yêu cầu.
+    const badgeStyle =
+        shape === "square"
+            ? { width: "65%", height: "65%", top: "-28%", left: "-30%" }
+            : { width: "80%", height: "80%", top: "-30%", left: "-30%" };
 
     return (
         <div
@@ -122,18 +131,36 @@ export function CompanyAvatar({
             </div>
 
             {showBadge && (
-                <Image
-                    src="/badge/badge.png"
-                    alt=""
-                    width={56}
-                    height={56}
-                    className="pointer-events-none absolute z-20 drop-shadow-md"
-                    style={
-                        shape === "square"
-                            ? { width: "50%", height: "50%", top: "-20%", left: "-22%" }
-                            : { width: "35%", height: "35%", top: "-6%", left: "-6%" }
-                    }
-                />
+                <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div
+                                className="absolute z-20 cursor-help"
+                                style={badgeStyle}
+                            >
+                                <Image
+                                    src="/badge/badge.png"
+                                    alt="Huy hiệu doanh nghiệp tốt"
+                                    width={56}
+                                    height={56}
+                                    className="h-full w-full drop-shadow-md"
+                                />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[220px] text-center leading-relaxed">
+                            Đây là Huy hiệu chứng nhận Doanh Nghiệp có môi trường làm việc tốt.{" "}
+                            <Link
+                                href="https://doanhnghieptot.joywork.vn"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline underline-offset-2 hover:text-[var(--brand)]"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                Xem chi tiết tại đây.
+                            </Link>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             )}
         </div>
     );
