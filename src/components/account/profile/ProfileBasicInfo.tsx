@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { uploadProfileAvatar, uploadProfileCV } from "@/lib/uploads";
+import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import Image from "next/image";
 import { Loader2, Upload, FileText, X, Sparkles } from "lucide-react";
 import ProvinceSelect from "@/components/ui/province-select";
@@ -89,6 +90,8 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const defaultAvatar = profile.profile?.avatar || profile.avatar || null;
   const [avatar, setAvatar] = useState<string | null>(defaultAvatar);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<{ name: string; type: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // CV file upload
@@ -281,12 +284,43 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     },
   });
 
-  const handleAvatarUpload = async (file: File) => {
-    if (file.size > 4 * 1024 * 1024) {
-      toast.error("Ảnh vượt quá giới hạn 4MB");
+  // Chọn file → validate → mở dialog crop (chưa upload).
+  const handleSelectAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn file ảnh");
+      e.target.value = "";
       return;
     }
 
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error("Ảnh vượt quá giới hạn 4MB");
+      e.target.value = "";
+      return;
+    }
+
+    setPendingFile({ name: file.name, type: file.type });
+    setCropSrc(URL.createObjectURL(file));
+    e.target.value = "";
+  };
+
+  const closeCropDialog = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    setPendingFile(null);
+  };
+
+  // Tránh leak blob URL nếu component unmount khi dialog crop còn mở.
+  useEffect(() => {
+    return () => {
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+    };
+  }, [cropSrc]);
+
+  // Nhận ảnh đã crop → upload lên S3 như cũ.
+  const handleAvatarUpload = async (file: File) => {
     setUploadingAvatar(true);
     try {
       const reader = new FileReader();
@@ -496,10 +530,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleAvatarUpload(file);
-                }}
+                onChange={handleSelectAvatar}
               />
               <Button
                 type="button"
@@ -847,6 +878,21 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           </div>
         </form>
       </CardContent>
+
+      {cropSrc && pendingFile && (
+        <ImageCropDialog
+          open={!!cropSrc}
+          onClose={closeCropDialog}
+          imageSrc={cropSrc}
+          aspect={1}
+          cropShape="round"
+          outputWidth={512}
+          title="Cắt ảnh đại diện"
+          fileName={pendingFile.name}
+          mimeType={pendingFile.type}
+          onCropComplete={handleAvatarUpload}
+        />
+      )}
     </Card>
   );
 }

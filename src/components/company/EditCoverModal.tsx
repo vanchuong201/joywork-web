@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { uploadCompanyCover } from "@/lib/uploads";
 import api from "@/lib/api";
 import Image from "next/image";
+import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import { X } from "lucide-react";
 
 type Props = {
@@ -46,16 +47,22 @@ export default function EditCoverModal({
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentCoverUrl ?? null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [coverKey, setCoverKey] = useState<string | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<{ name: string; type: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setPreviewUrl(currentCoverUrl ?? null);
+      setPreviewUrl((prev) => {
+        if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return currentCoverUrl ?? null;
+      });
       setSelectedFile(null);
       setCoverKey(null);
     }
   }, [isOpen, currentCoverUrl]);
 
+  // Chọn file → validate → mở dialog crop (chưa đặt preview/upload).
   const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -72,10 +79,39 @@ export default function EditCoverModal({
       return;
     }
 
-    setSelectedFile(file);
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
+    setPendingFile({ name: file.name, type: file.type });
+    setCropSrc(URL.createObjectURL(file));
     event.target.value = "";
+  };
+
+  // Ảnh đã crop trở thành file/preview sẽ upload khi nhấn "Lưu thay đổi".
+  const handleCropComplete = (croppedFile: File) => {
+    setSelectedFile(croppedFile);
+    setPreviewUrl((prev) => {
+      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(croppedFile);
+    });
+  };
+
+  const closeCropDialog = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    setPendingFile(null);
+  };
+
+  // Tránh leak blob URL của ảnh crop khi unmount hoặc dialog crop còn mở.
+  useEffect(() => {
+    return () => {
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+    };
+  }, [cropSrc]);
+
+  // Thu hồi blob previewUrl (ảnh đã crop) trước khi gán giá trị mới.
+  const replacePreviewUrl = (next: string | null) => {
+    setPreviewUrl((prev) => {
+      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return next;
+    });
   };
 
   const handleUpload = async () => {
@@ -122,14 +158,14 @@ export default function EditCoverModal({
   };
 
   const handleRemove = () => {
-    setPreviewUrl(null);
+    replacePreviewUrl(null);
     setSelectedFile(null);
     setCoverKey(null);
   };
 
   const handleClose = () => {
     if (!uploading) {
-      setPreviewUrl(currentCoverUrl ?? null);
+      replacePreviewUrl(currentCoverUrl ?? null);
       setSelectedFile(null);
       onClose();
     }
@@ -236,6 +272,21 @@ export default function EditCoverModal({
           </div>
         </Dialog.Panel>
       </div>
+
+      {cropSrc && pendingFile && (
+        <ImageCropDialog
+          open={!!cropSrc}
+          onClose={closeCropDialog}
+          imageSrc={cropSrc}
+          aspect={1920 / 512}
+          cropShape="rect"
+          outputWidth={1920}
+          title="Cắt ảnh cover"
+          fileName={pendingFile.name}
+          mimeType={pendingFile.type}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </Dialog>
   );
 }

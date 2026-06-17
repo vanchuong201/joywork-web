@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { uploadProfileAvatar } from "@/lib/uploads";
+import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import Image from "next/image";
 import { Loader2, Upload, Camera } from "lucide-react";
 import SocialAccounts from "@/components/profile/SocialAccounts";
@@ -41,6 +42,8 @@ export default function AccountTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<{ name: string; type: string } | null>(null);
   const [origin, setOrigin] = useState<string>("");
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
@@ -125,32 +128,40 @@ export default function AccountTab() {
     },
   });
 
-  const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Chọn file → validate → mở dialog crop (chưa upload).
+  const handleSelectAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       toast.error("Vui lòng chọn file ảnh");
+      e.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Kích thước ảnh không được vượt quá 5MB");
+      e.target.value = "";
       return;
     }
 
+    setPendingFile({ name: file.name, type: file.type });
+    setCropSrc(URL.createObjectURL(file));
+    e.target.value = "";
+  };
+
+  // Nhận ảnh đã crop → upload lên S3 như cũ.
+  const handleAvatarCropped = async (croppedFile: File) => {
     setUploadingAvatar(true);
     const reader = new FileReader();
     reader.onload = async () => {
       try {
         const base64 = reader.result as string;
         const base64Data = base64.split(",")[1];
-        const fileType = file.type;
-        const fileName = file.name;
 
         const result = await uploadProfileAvatar({
-          fileName,
-          fileType,
+          fileName: croppedFile.name,
+          fileType: croppedFile.type,
           fileData: base64Data,
           previousKey: avatar ? extractS3Key(avatar) : undefined,
           target: 'account', // Upload to User.avatar
@@ -167,8 +178,21 @@ export default function AccountTab() {
         setUploadingAvatar(false);
       }
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(croppedFile);
   };
+
+  const closeCropDialog = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    setPendingFile(null);
+  };
+
+  // Tránh leak blob URL nếu component unmount khi dialog crop còn mở.
+  useEffect(() => {
+    return () => {
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+    };
+  }, [cropSrc]);
 
   const extractS3Key = (url: string): string | undefined => {
     try {
@@ -269,7 +293,7 @@ export default function AccountTab() {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleUploadAvatar}
+                onChange={handleSelectAvatar}
                 className="hidden"
               />
             </div>
@@ -395,6 +419,21 @@ export default function AccountTab() {
           <SocialAccounts />
         </CardContent>
       </Card>
+
+      {cropSrc && pendingFile && (
+        <ImageCropDialog
+          open={!!cropSrc}
+          onClose={closeCropDialog}
+          imageSrc={cropSrc}
+          aspect={1}
+          cropShape="round"
+          outputWidth={512}
+          title="Cắt ảnh đại diện"
+          fileName={pendingFile.name}
+          mimeType={pendingFile.type}
+          onCropComplete={handleAvatarCropped}
+        />
+      )}
     </div>
   );
 }
