@@ -2,6 +2,7 @@
 
 import Header from "@/components/common/Header";
 import LeftNav from "@/components/common/LeftNav";
+import MobileBottomNav from "@/components/common/MobileBottomNav";
 import AuthPrompt from "@/components/auth/AuthPrompt";
 import AuthBar from "@/components/auth/AuthBar";
 import { useAuthStore } from "@/store/useAuth";
@@ -36,6 +37,7 @@ export default function AppLayout({
         </>
       )}
       <ChatWidget />
+      <MobileBottomNav />
     </div>
   );
 }
