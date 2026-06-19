@@ -31,6 +31,34 @@ export interface CompanyAvatarProps {
     children?: React.ReactNode;
 }
 
+/**
+ * Tính vị trí & kích thước badge sau khi ảnh đã được cắt bỏ viền trong suốt.
+ * Badge nhỏ hơn so với avatar để không lấn át logo, nhưng đủ lớn để nhìn thấy.
+ * Tier theo size giúp badge vừa mắt ở mọi cỡ avatar (hero 160px → tiny 24px).
+ */
+function getBadgeStyle(size: number, shape: "circle" | "square"): React.CSSProperties {
+    // Phần trăm kích thước badge so với avatar: to hơn ở avatar nhỏ để vẫn nhìn thấy.
+    const pct = size <= 32 ? 44 : size <= 64 ? 36 : 30;
+
+    if (shape === "square") {
+        // Square: badge nhô ra góc trên-trái nhiều hơn để tạo hiệu ứng "nhãn"
+        const w = pct + 6;
+        return {
+            width: `${w}%`,
+            height: `${w}%`,
+            top: `-${Math.round(w * 0.38)}%`,
+            left: `-${Math.round(w * 0.42)}%`,
+        };
+    }
+    // Circle: badge bám sát góc trên-trái, hơi nhô ra ngoài cạnh
+    return {
+        width: `${pct}%`,
+        height: `${pct}%`,
+        top: size >= 80 ? "0%" : `-${Math.round(pct * 0.15)}%`,
+        left: `-${Math.round(pct * 0.35)}%`,
+    };
+}
+
 /** Bo góc cho biến thể vuông theo tier kích thước; ring ngoài bo lớn hơn 1 nấc để ôm khít. */
 function squareRadii(size: number): { outer: string; inner: string } {
     if (size <= 32) return { outer: "rounded-lg", inner: "rounded-md" };
@@ -77,11 +105,7 @@ export function CompanyAvatar({
             ? { outer: "rounded-full", inner: "rounded-full" }
             : squareRadii(size);
 
-    // Badge lớn hơn để dễ nhìn; có thể che nhẹ góc avatar — cố ý theo yêu cầu.
-    const badgeStyle =
-        shape === "square"
-            ? { width: "65%", height: "65%", top: "-28%", left: "-30%" }
-            : { width: "80%", height: "80%", top: "-30%", left: "-30%" };
+    const badgeStyle = getBadgeStyle(size, shape);
 
     return (
         <div
