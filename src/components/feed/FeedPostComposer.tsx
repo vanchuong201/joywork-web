@@ -420,33 +420,33 @@ export default function FeedPostComposer() {
     return null; // Don't show composer for guests
   }
 
-  if (memberships.length === 0) {
-    return (
-      <Card className="overflow-hidden border border-[var(--border)] bg-[var(--card)] shadow-sm">
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-[var(--muted)] flex items-center justify-center">
-              <Building2 className="w-8 h-8 text-[var(--muted-foreground)]" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-[var(--foreground)] mb-1">
-                Bạn chưa phải thành viên của công ty nào
-              </h3>
-              <p className="text-sm text-[var(--muted-foreground)] mb-4">
-                Tạo công ty mới để bắt đầu đăng bài và chia sẻ hoạt động của doanh nghiệp.
-              </p>
-            </div>
-            <Button asChild>
-              <Link href="/companies/new">
-                <Plus className="w-4 h-4 mr-2" />
-                Tạo công ty mới
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // if (memberships.length === 0) {
+  //   return (
+  //     <Card className="overflow-hidden border border-[var(--border)] bg-[var(--card)] shadow-sm">
+  //       <CardContent className="p-6">
+  //         <div className="flex flex-col items-center justify-center text-center space-y-4">
+  //           <div className="w-16 h-16 rounded-full bg-[var(--muted)] flex items-center justify-center">
+  //             <Building2 className="w-8 h-8 text-[var(--muted-foreground)]" />
+  //           </div>
+  //           <div>
+  //             <h3 className="text-base font-semibold text-[var(--foreground)] mb-1">
+  //               Bạn chưa phải thành viên của công ty nào
+  //             </h3>
+  //             <p className="text-sm text-[var(--muted-foreground)] mb-4">
+  //               Tạo công ty mới để bắt đầu đăng bài và chia sẻ hoạt động của doanh nghiệp.
+  //             </p>
+  //           </div>
+  //           <Button asChild>
+  //             <Link href="/companies/new">
+  //               <Plus className="w-4 h-4 mr-2" />
+  //               Tạo công ty mới
+  //             </Link>
+  //           </Button>
+  //         </div>
+  //       </CardContent>
+  //     </Card>
+  //   );
+  // }
 
   // Collapsed state
   if (!isExpanded) {
