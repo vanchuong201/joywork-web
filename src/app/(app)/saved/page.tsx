@@ -70,7 +70,7 @@ function SavedPageContent() {
   const sp = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [tab, setTab] = useState<"posts" | "jobs">((sp.get("tab") as any) || "posts");
+  const [tab, setTab] = useState<"posts" | "jobs">((sp.get("tab") as any) || "jobs");
   const [jobView, setJobView] = useState<"list" | "grid">("list");
   const [postView, setPostView] = useState<"list" | "grid">("list");
   const qc = useQueryClient();
@@ -152,8 +152,8 @@ function SavedPageContent() {
       <h1 className="text-xl font-semibold text-[var(--foreground)]">Đã lưu</h1>
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
         <TabsList>
-          <TabsTrigger value="posts">Bài viết</TabsTrigger>
           <TabsTrigger value="jobs">Việc làm</TabsTrigger>
+          <TabsTrigger value="posts">Bài viết</TabsTrigger>
         </TabsList>
 
         {/* === POSTS TAB === */}
