@@ -122,6 +122,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         setLegalNameTouched(false);
         setIndustryError(null);
         setIndustryTouched(false);
+        setSizeError(null);
+        setSizeTouched(false);
         setEditDialogOpen(true);
     };
     const [emailError, setEmailError] = useState<string | null>(null);
@@ -138,6 +140,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const [legalNameTouched, setLegalNameTouched] = useState(false);
     const [industryError, setIndustryError] = useState<string | null>(null);
     const [industryTouched, setIndustryTouched] = useState(false);
+    const [sizeError, setSizeError] = useState<string | null>(null);
+    const [sizeTouched, setSizeTouched] = useState(false);
     const [wardByCode, setWardByCode] = useState<Map<string, WardOption>>(new Map());
 
     const companyProvinceCodes = useMemo(() => {
@@ -281,6 +285,14 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         }
         setIndustryError(null);
 
+        const size = formData.size?.trim() || "";
+        if (!size) {
+            setSizeTouched(true);
+            setSizeError("Vui lòng chọn quy mô nhân sự");
+            return;
+        }
+        setSizeError(null);
+
         // Validate email format if provided
         const email = formData.email?.trim();
         if (!email) {
@@ -345,7 +357,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             wardCodes: [wardCode],
             specificAddress,
             industry: formData.industry?.trim() ? formData.industry.trim() : null,
-            size: formData.size || null,
+            size,
             website: normalizeWebsite(formData.website),
             email,
             phone,
@@ -862,6 +874,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         setLegalNameTouched(false);
                         setIndustryError(null);
                         setIndustryTouched(false);
+                        setSizeError(null);
+                        setSizeTouched(false);
                     }
                 }}
              >
@@ -948,24 +962,47 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             ) : null}
                         </div>
                         <div className="space-y-2">
-                            <Label>Quy mô doanh nghiệp</Label>
+                            <Label>Quy mô doanh nghiệp <span className="text-red-500">*</span></Label>
                             <select
                                 value={formData.size}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                    const nextSize = e.target.value;
+                                    setSizeTouched(true);
                                     setFormData({
                                         ...formData,
-                                        size: e.target.value,
-                                    })
+                                        size: nextSize,
+                                    });
+                                    if (!nextSize) {
+                                        setSizeError("Vui lòng chọn quy mô nhân sự");
+                                    } else {
+                                        setSizeError(null);
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    setSizeTouched(true);
+                                    const value = e.currentTarget.value.trim();
+                                    if (!value) {
+                                        setSizeError("Vui lòng chọn quy mô nhân sự");
+                                    } else {
+                                        setSizeError(null);
+                                    }
+                                }}
+                                className={
+                                    sizeError && sizeTouched
+                                        ? "h-10 w-full rounded-md border border-red-500 bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-red-500"
+                                        : "h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                                 }
-                                className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                             >
-                                <option value="">Chọn quy mô</option>
+                                <option value="">Chọn quy mô nhân sự</option>
                                 {COMPANY_SIZE_OPTIONS.map((band) => (
                                     <option key={band} value={band}>
                                         {band} nhân viên
                                     </option>
                                 ))}
                             </select>
+                            {sizeError && sizeTouched ? (
+                                <p className="text-xs text-red-500">{sizeError}</p>
+                            ) : null}
                         </div>
                         <div className="space-y-2">
                             <Label>Địa chỉ trụ sở - Tỉnh/Thành <span className="text-red-500">*</span></Label>
