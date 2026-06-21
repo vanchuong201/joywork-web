@@ -14,11 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { uploadProfileAvatar, uploadProfileCV } from "@/lib/uploads";
+import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import Image from "next/image";
-import { Loader2, Upload, FileText, X } from "lucide-react";
+import { Loader2, Upload, FileText, X, Sparkles } from "lucide-react";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import DateOfBirthPicker from "@/components/ui/date-of-birth-picker";
+import CvImportPreviewDialog from "@/components/account/profile/CvImportPreviewDialog";
 
 const maxBirthYear = new Date().getFullYear() - 16;
 
@@ -88,12 +90,21 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   const defaultAvatar = profile.profile?.avatar || profile.avatar || null;
   const [avatar, setAvatar] = useState<string | null>(defaultAvatar);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<{ name: string; type: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // CV file upload
   const [cvUrl, setCvUrl] = useState<string | null>(profile.profile?.cvUrl || null);
   const [uploadingCV, setUploadingCV] = useState(false);
   const cvFileInputRef = useRef<HTMLInputElement>(null);
+  const [cvImportOpen, setCvImportOpen] = useState(false);
+
+  const isCvDocxOrPdf = (() => {
+    if (!cvUrl) return false;
+    const lower = cvUrl.toLowerCase();
+    return lower.endsWith(".pdf") || lower.endsWith(".docx");
+  })();
 
   const {
     register,
@@ -273,12 +284,43 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
     },
   });
 
-  const handleAvatarUpload = async (file: File) => {
-    if (file.size > 4 * 1024 * 1024) {
-      toast.error("Ảnh vượt quá giới hạn 4MB");
+  // Chọn file → validate → mở dialog crop (chưa upload).
+  const handleSelectAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn file ảnh");
+      e.target.value = "";
       return;
     }
 
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error("Ảnh vượt quá giới hạn 4MB");
+      e.target.value = "";
+      return;
+    }
+
+    setPendingFile({ name: file.name, type: file.type });
+    setCropSrc(URL.createObjectURL(file));
+    e.target.value = "";
+  };
+
+  const closeCropDialog = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    setPendingFile(null);
+  };
+
+  // Tránh leak blob URL nếu component unmount khi dialog crop còn mở.
+  useEffect(() => {
+    return () => {
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+    };
+  }, [cropSrc]);
+
+  // Nhận ảnh đã crop → upload lên S3 như cũ.
+  const handleAvatarUpload = async (file: File) => {
     setUploadingAvatar(true);
     try {
       const reader = new FileReader();
@@ -488,10 +530,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleAvatarUpload(file);
-                }}
+                onChange={handleSelectAvatar}
               />
               <Button
                 type="button"
@@ -787,7 +826,39 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
             <p className="mt-1 text-xs text-slate-500">
               Bạn có thể tải file CV trực tiếp (PDF, DOC, DOCX - tối đa 10MB) hoặc dán link từ Google Drive, Dropbox, v.v.
             </p>
+
+            {cvUrl && isCvDocxOrPdf && (
+              <div className="mt-3 flex flex-col gap-2 rounded-md border border-[var(--brand)]/30 bg-[var(--brand-light,_#eef4ff)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-2 text-sm">
+                  <Sparkles className="mt-0.5 h-4 w-4 text-[var(--brand)]" />
+                  <div>
+                    <p className="font-medium text-slate-900">Tự động điền hồ sơ từ CV này?</p>
+                    <p className="text-xs text-slate-600">
+                      JOYWORK đọc file CV PDF/DOCX của bạn và đề xuất cập nhật các phần còn thiếu trong hồ sơ. Bạn sẽ xem trước trước khi áp dụng.
+                    </p>
+                  </div>
+                </div>
+                <Button type="button" size="sm" onClick={() => setCvImportOpen(true)}>
+                  Tạo hồ sơ từ CV
+                </Button>
+              </div>
+            )}
+
+            {cvUrl && !isCvDocxOrPdf && (
+              <p className="mt-2 text-xs text-slate-500">
+                Tính năng đề xuất hồ sơ từ CV hiện chỉ hỗ trợ file PDF hoặc DOCX bạn upload trực tiếp.
+              </p>
+            )}
           </div>
+
+          {cvUrl && isCvDocxOrPdf && (
+            <CvImportPreviewDialog
+              open={cvImportOpen}
+              onOpenChange={setCvImportOpen}
+              cvUrl={cvUrl}
+              profile={profile}
+            />
+          )}
 
           {/* Tìm việc, hiển thị danh sách, mở CV — dùng chung ProfileDiscoverySettings (có thể mở nhanh từ nút Cài đặt ở tab Hồ sơ) */}
           {/* <ProfileDiscoverySettings profile={profile} /> */}
@@ -807,6 +878,21 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
           </div>
         </form>
       </CardContent>
+
+      {cropSrc && pendingFile && (
+        <ImageCropDialog
+          open={!!cropSrc}
+          onClose={closeCropDialog}
+          imageSrc={cropSrc}
+          aspect={1}
+          cropShape="round"
+          outputWidth={512}
+          title="Cắt ảnh đại diện"
+          fileName={pendingFile.name}
+          mimeType={pendingFile.type}
+          onCropComplete={handleAvatarUpload}
+        />
+      )}
     </Card>
   );
 }

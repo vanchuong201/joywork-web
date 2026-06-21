@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { buildJobUrl, parseJobUrlParam } from "@/lib/job-url";
+import { buildJobUrl, resolveJobIdFromSlugParam } from "@/lib/job-url";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,12 +21,13 @@ import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { toast } from "sonner";
 import JobSaveButton from "@/components/jobs/JobSaveButton";
+import JobShareMenu from "@/components/jobs/JobShareMenu";
 import RelatedJobCard, { type RelatedJobItem } from "@/components/jobs/RelatedJobCard";
 import { useAuthStore } from "@/store/useAuth";
 import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import {
   Briefcase,
   MapPin,
@@ -48,6 +49,7 @@ import DOMPurify from "dompurify";
 import { cn, formatDateUTC } from "@/lib/utils";
 import { getProvinceNameByCode } from "@/lib/provinces";
 import { fetchWardsByProvinceCodes } from "@/lib/location-wards";
+import { formatWorkingTimeRange, parseWorkingTimeRanges } from "@/lib/working-time";
 
 type JobDetail = any;
 
@@ -128,9 +130,7 @@ export default function JobDetailPage() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
 
-  // Parse URL param: extract job ID and validate format
-  const parsed = useMemo(() => parseJobUrlParam(paramValue), [paramValue]);
-  const jobId = parsed?.id ?? paramValue; // fallback to raw param for old-style URLs
+  const jobId = useMemo(() => resolveJobIdFromSlugParam(paramValue) ?? paramValue, [paramValue]);
 
   // Backward compat: redirect old /jobs/:id and slug-mismatch to canonical URL
   useEffect(() => {
@@ -282,18 +282,21 @@ export default function JobDetailPage() {
               Mô tả công việc
               <span className="mt-1 block text-[var(--brand)]">{job.title}</span>
             </h1>
-            {job.isActive !== undefined ? (
-              <Badge
-                className={cn(
-                  "w-fit rounded-full border px-3 py-1 text-xs font-medium",
-                  job.isActive
-                    ? "border-green-200 bg-green-50 text-green-700"
-                    : "border-slate-200 bg-slate-100 text-slate-600"
-                )}
-              >
-                {job.isActive ? "Đang tuyển" : "Đã đóng"}
-              </Badge>
-            ) : null}
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {job.isActive !== undefined ? (
+                <Badge
+                  className={cn(
+                    "w-fit rounded-full border px-3 py-1 text-xs font-medium",
+                    job.isActive
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-slate-200 bg-slate-100 text-slate-600"
+                  )}
+                >
+                  {job.isActive ? "Đang tuyển" : "Đã đóng"}
+                </Badge>
+              ) : null}
+              <JobShareMenu />
+            </div>
           </div>
 
           <div className="space-y-3 border-t border-[var(--border)] pt-4">
@@ -354,19 +357,20 @@ export default function JobDetailPage() {
         >
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
             {/* Logo công ty */}
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition-transform group-hover:scale-105">
-              {job.company.logoUrl ? (
-                <CompanyLogo
-                  src={job.company.logoUrl}
-                  alt={job.company.name}
-                  className="h-full w-full object-cover"
-                  width={56}
-                  height={56}
-                />
-              ) : (
-                <Briefcase className="h-6 w-6 text-[var(--muted-foreground)]" />
-              )}
-            </div>
+            <CompanyAvatar
+              logoUrl={job.company.logoUrl}
+              isGood={job.company.isGood}
+              name={job.company.name}
+              size={56}
+              shape="square"
+              imgClassName="object-cover"
+              className="shadow-sm transition-transform group-hover:scale-105"
+              fallback={
+                <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--card)]">
+                  <Briefcase className="h-6 w-6 text-[var(--muted-foreground)]" />
+                </div>
+              }
+            />
             {/* Text + CTA */}
             <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <p className="text-sm text-[var(--muted-foreground)] sm:text-base">
@@ -458,6 +462,36 @@ export default function JobDetailPage() {
             ) : null}
           </SectionCard>
         ) : null}
+
+        {/* Thời gian làm việc */}
+        {(() => {
+          const workingTimeRanges = parseWorkingTimeRanges(job.workingTimeRanges);
+          const workingTimeNote =
+            typeof job.workingTimeNote === "string" ? job.workingTimeNote.trim() : "";
+          if (workingTimeRanges.length === 0 && !workingTimeNote) return null;
+          return (
+            <SectionCard title="Thời gian làm việc">
+              {workingTimeRanges.length > 0 ? (
+                <ul className="space-y-2">
+                  {workingTimeRanges.map((range, idx) => (
+                    <li
+                      key={`${range.dayFrom}-${range.dayTo}-${range.timeStart}-${range.timeEnd}-${idx}`}
+                      className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--background)]/60 px-3 py-2 text-sm text-[var(--foreground)]"
+                    >
+                      <Clock className="h-4 w-4 shrink-0 text-[var(--brand)]" />
+                      <span>{formatWorkingTimeRange(range)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {workingTimeNote ? (
+                <p className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--muted)]/40 px-3 py-2 text-sm text-[var(--muted-foreground)]">
+                  {workingTimeNote}
+                </p>
+              ) : null}
+            </SectionCard>
+          );
+        })()}
 
         {/* Thông tin bổ sung */}
         {job.generalInfo ? (

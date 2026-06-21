@@ -1,8 +1,10 @@
 export type CvFlipCompanyAccess = {
   id: string;
   name: string;
+  legalName?: string | null;
   slug: string;
   logoUrl: string | null;
+  isGood?: boolean;
   role: string;
   isPremium: boolean;
   cvFlipEnabled: boolean;
@@ -87,6 +89,7 @@ export type CvFlipRequestItem = {
     name: string;
     slug: string;
     logoUrl: string | null;
+    isGood?: boolean;
     website: string | null;
   };
 };

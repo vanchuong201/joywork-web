@@ -7,7 +7,7 @@ import "react-photo-view/dist/react-photo-view.css";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Play, Maximize2, X } from "lucide-react";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { createPortal } from "react-dom";
 import { AutoLinkText } from "@/components/shared/AutoLinkText";
 
@@ -76,7 +76,7 @@ type PreviewData = {
   hashtags: string[];
   selectedJobIds: string[];
   jobs: Array<{ id: string; title: string; location?: string | null; employmentType: string; isActive: boolean }>;
-  company: { id: string; name: string; slug: string; logoUrl?: string | null };
+  company: { id: string; name: string; slug: string; logoUrl?: string | null; isGood?: boolean };
 };
 
 type Props = {
@@ -277,19 +277,18 @@ export default function PostPreviewModal({ open, onOpenChange, previewData }: Pr
             <div className="p-4">
               {/* Company Header */}
               <div className="mb-1 flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
-                {previewPost.company.logoUrl ? (
-                  <CompanyLogo
-                    src={previewPost.company.logoUrl}
-                    alt={previewPost.company.name}
-                    width={28}
-                    height={28}
-                    className="h-7 w-7 rounded-full border border-[var(--border)] object-contain"
-                  />
-                ) : (
-                  <div className="h-7 w-7 rounded-full bg-[var(--muted)] flex items-center justify-center text-[10px] font-semibold text-[var(--muted-foreground)]">
-                    {previewPost.company.name.slice(0, 1)}
-                  </div>
-                )}
+                <CompanyAvatar
+                  logoUrl={previewPost.company.logoUrl}
+                  isGood={previewPost.company.isGood}
+                  name={previewPost.company.name}
+                  size={28}
+                  shape="circle"
+                  fallback={
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[var(--muted)] text-[10px] font-semibold text-[var(--muted-foreground)]">
+                      {previewPost.company.name.slice(0, 1)}
+                    </div>
+                  }
+                />
                 <div className="flex flex-col flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link

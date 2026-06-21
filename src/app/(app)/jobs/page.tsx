@@ -23,7 +23,7 @@ import JobSaveButton from "@/components/jobs/JobSaveButton";
 import { List, Grid, ChevronLeft, ChevronRight, Building2, X } from "lucide-react";
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
@@ -51,6 +51,7 @@ type Job = {
     legalName?: string | null;
     slug: string; 
     logoUrl?: string | null;
+    isGood?: boolean;
   };
   // JD chuẩn fields
   generalInfo?: string;
@@ -81,7 +82,7 @@ type HomepageShowcaseCompany = {
   name: string;
   slug: string;
   logoUrl?: string | null;
-  tagline?: string | null;
+  isGood?: boolean;
   coverUrl?: string | null;
   order: number;
 };
@@ -180,6 +181,11 @@ function JobsPageContent() {
   const jobLevel = sp.get("jobLevel") || undefined;
   const educationLevel = sp.get("educationLevel") || undefined;
   const gender = sp.get("gender") || undefined;
+  const worksOnSaturdayRaw = sp.get("worksOnSaturday") || undefined;
+  const worksOnSaturday =
+    worksOnSaturdayRaw === "WORK" || worksOnSaturdayRaw === "REST" || worksOnSaturdayRaw === "UNSPECIFIED"
+      ? worksOnSaturdayRaw
+      : undefined;
   const salaryCurrency = parseSalaryCurrency(sp.get("salaryCurrency"));
   const salaryMinParam = sp.get("salaryMin") || "";
   const salaryMaxParam = sp.get("salaryMax") || "";
@@ -197,14 +203,22 @@ function JobsPageContent() {
       jobLevel ||
       educationLevel ||
       gender ||
+      worksOnSaturday ||
       salaryMinParam ||
       salaryMaxParam,
   );
   const hasAdvancedFilters = Boolean(
-    employmentType || experienceLevel || jobLevel || educationLevel || gender || salaryMinParam || salaryMaxParam,
+    employmentType ||
+      experienceLevel ||
+      jobLevel ||
+      educationLevel ||
+      gender ||
+      worksOnSaturday ||
+      salaryMinParam ||
+      salaryMaxParam,
   );
   const advancedFilterCount =
-    [employmentType, experienceLevel, jobLevel, educationLevel, gender].filter(Boolean).length +
+    [employmentType, experienceLevel, jobLevel, educationLevel, gender, worksOnSaturday].filter(Boolean).length +
     (salaryMinParam || salaryMaxParam ? 1 : 0);
   const viewModeParam = sp.get("view") as ViewMode | null;
   const [viewMode, setViewMode] = useState<ViewMode>(viewModeParam || "grid");
@@ -230,7 +244,7 @@ function JobsPageContent() {
   }, [viewMode, sp]);
 
   const { data, isLoading, isFetching } = useQuery<{ jobs: Job[]; pagination: any }>({
-    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, educationLevel, gender, salaryCurrency, salaryMin: salaryMinParam, salaryMax: salaryMaxParam, companyId, page }],
+    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, educationLevel, gender, worksOnSaturday, salaryCurrency, salaryMin: salaryMinParam, salaryMax: salaryMaxParam, companyId, page }],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
         params: {
@@ -246,6 +260,7 @@ function JobsPageContent() {
           jobLevel,
           educationLevel,
           gender,
+          worksOnSaturday,
           salaryCurrency: (salaryMinParam || salaryMaxParam) ? salaryCurrency : undefined,
           salaryMin: salaryMinParam ? Number(salaryMinParam) : undefined,
           salaryMax: salaryMaxParam ? Number(salaryMaxParam) : undefined,
@@ -340,7 +355,7 @@ function JobsPageContent() {
 
   const clearAllFilters = () => {
     const next = new URLSearchParams(sp.toString());
-    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "jobLevel", "salaryMin", "salaryMax", "salaryCurrency", "page"].forEach((key) =>
+    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "jobLevel", "educationLevel", "gender", "worksOnSaturday", "salaryMin", "salaryMax", "salaryCurrency", "page"].forEach((key) =>
       next.delete(key),
     );
     applyParams(next);
@@ -753,6 +768,31 @@ function JobsPageContent() {
                 </select>
               </div>
             </div>
+            <div className="space-y-1.5 text-sm md:col-span-2 xl:col-span-3">
+              <div className="font-medium">Lịch làm việc thứ 7</div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+                {[
+                  { value: "", label: "Không lọc" },
+                  { value: "WORK", label: "Làm thứ 7" },
+                  { value: "REST", label: "Nghỉ thứ 7" },
+                  { value: "UNSPECIFIED", label: "Tin đăng không đề cập" },
+                ].map((opt) => (
+                  <label key={opt.value || "all"} className="flex cursor-pointer items-center gap-2 text-sm text-[var(--foreground)]">
+                    <input
+                      type="radio"
+                      name="worksOnSaturday"
+                      value={opt.value}
+                      checked={(worksOnSaturday ?? "") === opt.value}
+                      onChange={() =>
+                        toggleParam("worksOnSaturday", opt.value || undefined, { resetPage: true })
+                      }
+                      className="h-4 w-4 accent-[var(--brand)]"
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
             </div>
           ) : null}
           {hasActiveFilters ? (
@@ -805,6 +845,18 @@ function JobsPageContent() {
                   onRemove={() => toggleParam("gender", undefined, { resetPage: true })}
                 />
               ) : null}
+              {worksOnSaturday ? (
+                <JobsFilterChip
+                  label={`Nghỉ thứ 7: ${
+                    worksOnSaturday === "WORK"
+                      ? "Làm thứ 7"
+                      : worksOnSaturday === "REST"
+                        ? "Nghỉ thứ 7"
+                        : "Tin đăng không đề cập"
+                  }`}
+                  onRemove={() => toggleParam("worksOnSaturday", undefined, { resetPage: true })}
+                />
+              ) : null}
               {salaryFilterLabel ? (
                 <JobsFilterChip
                   label={salaryFilterLabel}
@@ -838,21 +890,19 @@ function JobsPageContent() {
                     <CardContent className="p-4">
                       <div className="flex gap-3">
                         {/* Company Avatar */}
-                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
-                          {j.company.logoUrl ? (
-                            <CompanyLogo
-                              src={j.company.logoUrl}
-                              alt={j.company.name}
-                              className="h-full w-full object-cover"
-                              width={64}
-                              height={64}
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
+                        <CompanyAvatar
+                          logoUrl={j.company.logoUrl}
+                          isGood={j.company.isGood}
+                          name={j.company.name}
+                          size={64}
+                          shape="square"
+                          imgClassName="object-cover"
+                          fallback={
+                            <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)] text-[var(--muted-foreground)]">
                               <Building2 className="h-8 w-8" />
                             </div>
-                          )}
-                        </div>
+                          }
+                        />
                         {/* Job Info */}
                         <div className="flex-1 min-w-0 space-y-1">
                           {/* Job Title with Tooltip */}
@@ -903,21 +953,19 @@ function JobsPageContent() {
                     <CardContent className="p-4">
                       <div className="flex gap-3">
                         {/* Company Avatar */}
-                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
-                          {j.company.logoUrl ? (
-                            <CompanyLogo
-                              src={j.company.logoUrl}
-                              alt={j.company.name}
-                              className="h-full w-full object-cover"
-                              width={64}
-                              height={64}
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
+                        <CompanyAvatar
+                          logoUrl={j.company.logoUrl}
+                          isGood={j.company.isGood}
+                          name={j.company.name}
+                          size={64}
+                          shape="square"
+                          imgClassName="object-cover"
+                          fallback={
+                            <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)] text-[var(--muted-foreground)]">
                               <Building2 className="h-8 w-8" />
                             </div>
-                          )}
-                        </div>
+                          }
+                        />
                         {/* Job Info */}
                         <div className="flex-1 min-w-0 space-y-1">
                           {/* Job Title with Tooltip */}
@@ -1009,21 +1057,18 @@ function JobsPageContent() {
                       </div>
                       <CardContent className="flex items-start justify-between gap-4 p-4">
                         <div className="flex min-w-0 flex-1 items-start gap-3">
-                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--muted)]">
-                            {company.logoUrl ? (
-                              <CompanyLogo
-                                src={company.logoUrl}
-                                alt=""
-                                className="h-full w-full object-contain"
-                                width={48}
-                                height={48}
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center text-lg font-bold text-[var(--foreground)]">
+                          <CompanyAvatar
+                            logoUrl={company.logoUrl}
+                            isGood={company.isGood}
+                            name={company.name || "?"}
+                            size={48}
+                            shape="square"
+                            fallback={
+                              <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)] text-lg font-bold text-[var(--foreground)]">
                                 {(company.name || "?").charAt(0)}
                               </div>
-                            )}
-                          </div>
+                            }
+                          />
                           <div className="min-w-0 flex-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1036,8 +1081,7 @@ function JobsPageContent() {
                               </TooltipContent>
                             </Tooltip>
                             <p className="mt-0.5 line-clamp-1 text-left text-xs text-[var(--muted-foreground)]">
-                              {company.tagline ||
-                                "Khám phá cơ hội nghề nghiệp mới cùng doanh nghiệp hàng đầu."}
+                              Khám phá cơ hội nghề nghiệp mới cùng doanh nghiệp hàng đầu.
                             </p>
                           </div>
                         </div>
@@ -1070,21 +1114,18 @@ function JobsPageContent() {
                   >
                     <Card className="flex h-full min-h-[11.5rem] flex-col border border-[var(--border)] transition hover:border-[var(--brand)]/35 hover:shadow-md">
                       <CardContent className="flex flex-1 flex-col items-center gap-3 p-4 text-center">
-                        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-[var(--muted)]">
-                          {company.logoUrl ? (
-                            <CompanyLogo
-                              src={company.logoUrl}
-                              alt=""
-                              className="h-full w-full object-contain"
-                              width={80}
-                              height={80}
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-[var(--foreground)]">
+                        <CompanyAvatar
+                          logoUrl={company.logoUrl}
+                          isGood={company.isGood}
+                          name={company.name || "?"}
+                          size={80}
+                          shape="square"
+                          fallback={
+                            <div className="flex h-full w-full items-center justify-center rounded-2xl bg-[var(--muted)] text-2xl font-bold text-[var(--foreground)]">
                               {(company.name || "?").charAt(0)}
                             </div>
-                          )}
-                        </div>
+                          }
+                        />
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <p className="line-clamp-2 min-h-[2.5rem] w-full max-w-full flex-1 px-0.5 text-sm font-semibold leading-5 text-[var(--foreground)]">
@@ -1135,21 +1176,19 @@ function JobsPageContent() {
                     <CardContent className="p-4">
                       <div className="flex gap-3">
                         {/* Company Avatar */}
-                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--muted)] border border-[var(--border)]">
-                          {j.company.logoUrl ? (
-                            <CompanyLogo
-                              src={j.company.logoUrl}
-                              alt={j.company.name}
-                              className="h-full w-full object-cover"
-                              width={64}
-                              height={64}
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-[var(--muted-foreground)]">
+                        <CompanyAvatar
+                          logoUrl={j.company.logoUrl}
+                          isGood={j.company.isGood}
+                          name={j.company.name}
+                          size={64}
+                          shape="square"
+                          imgClassName="object-cover"
+                          fallback={
+                            <div className="flex h-full w-full items-center justify-center rounded-lg bg-[var(--muted)] text-[var(--muted-foreground)]">
                               <Building2 className="h-8 w-8" />
                             </div>
-                          )}
-                        </div>
+                          }
+                        />
                         {/* Job Info */}
                         <div className="flex-1 min-w-0 space-y-1">
                           {/* Job Title with Tooltip */}

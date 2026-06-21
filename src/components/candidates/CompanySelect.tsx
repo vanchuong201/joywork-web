@@ -11,7 +11,7 @@ type Props = {
 export default function CompanySelect({ value, onChange, companies }: Props) {
   return (
     <select
-      className="w-[450px] min-w-0 shrink rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm"
+      className="w-full min-w-0 max-w-lg shrink rounded-md border border-[var(--border)] bg-background px-3 py-2 text-sm"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >

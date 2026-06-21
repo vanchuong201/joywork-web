@@ -11,13 +11,6 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, ChevronRight, Circle, Clock, ExternalLink, Sparkles } from "lucide-react";
 import ProfileBasicInfo from "@/components/account/profile/ProfileBasicInfo";
 import ProfileDiscoverySettings from "@/components/account/profile/ProfileDiscoverySettings";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import ProfileKSA from "@/components/account/profile/ProfileKSA";
 import ProfileExpectations from "@/components/account/profile/ProfileExpectations";
 import ProfileExperiences from "@/components/account/profile/ProfileExperiences";
@@ -32,10 +25,12 @@ type TalentPoolMyStatus = {
   latestRequest: { id: string; status: string; message: string | null; reason: string | null; createdAt: string; reviewedAt: string | null } | null;
 };
 
+/** Tạm ẩn banner Talent Pool — đổi thành `true` để bật lại */
+const SHOW_TALENT_POOL_BANNER = false;
+
 export default function ProfileTab() {
   const queryClient = useQueryClient();
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
-  const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["own-profile"],
     queryFn: async () => {
@@ -49,6 +44,7 @@ export default function ProfileTab() {
       const res = await api.get("/api/talent-pool/me");
       return res.data.data;
     },
+    enabled: SHOW_TALENT_POOL_BANNER,
   });
   const { data: cvFlipRequests, isLoading: isCvFlipRequestsLoading } = useQuery({
     queryKey: ["cv-flip-my-requests"],
@@ -106,16 +102,7 @@ export default function ProfileTab() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">CV của tôi</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <p className="text-sm text-[var(--muted-foreground)]">Quản lý thông tin hồ sơ và CV của bạn</p>
-            <button
-              type="button"
-              onClick={() => setProfileSettingsOpen(true)}
-              className="text-sm font-medium text-[var(--brand)] hover:underline"
-            >
-              Cài đặt
-            </button>
-          </div>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">Quản lý thông tin hồ sơ và CV của bạn</p>
         </div>
         <Button variant="outline" asChild className="w-full sm:w-auto">
           <Link href={`/profile/${profileSlug}`} target="_blank" rel="noopener noreferrer">
@@ -167,7 +154,18 @@ export default function ProfileTab() {
         </div>
       </div>
 
-      {isTalentPoolLoading ? (
+      <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
+        <h2 className="text-base font-semibold">Cài đặt</h2>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+          Trạng thái tìm việc, hiển thị trong danh sách ứng viên và quyền mở CV.
+        </p>
+        <div className="mt-4">
+          <ProfileDiscoverySettings profile={data} />
+        </div>
+      </div>
+
+      {SHOW_TALENT_POOL_BANNER &&
+        (isTalentPoolLoading ? (
         <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-6">
           <Skeleton className="h-5 w-36" />
           <Skeleton className="mt-3 h-8 w-72" />
@@ -229,25 +227,15 @@ export default function ProfileTab() {
             )}
           </div>
         </div>
-      )}
+      ))}
 
+      {SHOW_TALENT_POOL_BANNER && (
       <TalentPoolStatus
         open={isJoinDialogOpen}
         onOpenChange={setIsJoinDialogOpen}
         latestRequest={talentPoolStatus?.latestRequest ?? null}
       />
-
-      <Dialog open={profileSettingsOpen} onOpenChange={setProfileSettingsOpen}>
-        <DialogContent className="max-w-lg sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Cài đặt</DialogTitle>
-            <DialogDescription>
-              Trạng thái tìm việc, hiển thị trong danh sách ứng viên và quyền mở CV.
-            </DialogDescription>
-          </DialogHeader>
-          <ProfileDiscoverySettings profile={data} />
-        </DialogContent>
-      </Dialog>
+      )}
 
       <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
         <h2 className="text-base font-semibold">Yêu cầu mở CV từ doanh nghiệp</h2>

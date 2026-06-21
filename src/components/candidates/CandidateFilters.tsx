@@ -289,7 +289,22 @@ export function useCandidateFilters() {
   const setValues = useCallback(
     (next: CandidateFilterValues | ((prev: CandidateFilterValues) => CandidateFilterValues)) => {
       const nextVals = typeof next === "function" ? next(valuesRef.current) : next;
-      const params = new URLSearchParams();
+      const params = new URLSearchParams(sp.toString());
+      const filterParamKeys = [
+        "keyword",
+        "location",
+        "ward",
+        "salaryCurrency",
+        "salaryMin",
+        "salaryMax",
+        "gender",
+        "yearOfBirthMin",
+        "yearOfBirthMax",
+        "educationLevels",
+        "page",
+      ] as const;
+      filterParamKeys.forEach((key) => params.delete(key));
+
       if (nextVals.keyword) params.set("keyword", nextVals.keyword);
       nextVals.locations.forEach((l) => params.append("location", l));
       nextVals.wardCodes.forEach((w) => params.append("ward", w));
@@ -305,7 +320,7 @@ export function useCandidateFilters() {
       const qs = params.toString();
       router.replace(qs ? `?${qs}` : window.location.pathname, { scroll: false });
     },
-    [router],
+    [router, sp],
   );
 
   const clearFilters = useCallback(() => {

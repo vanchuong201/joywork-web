@@ -85,10 +85,13 @@ export interface Company {
   tagline?: string;
   description?: string;
   logoUrl?: string;
+  isGood?: boolean;
   coverUrl?: string;
   website?: string;
   location?: string;
+  locationName?: string | null;
   wardCodes?: string[];
+  specificAddress?: string | null;
   email?: string;
   phone?: string;
   industry?: string;
@@ -142,6 +145,7 @@ export interface CompanySummary {
   name: string;
   slug: string;
   logoUrl?: string;
+  isGood?: boolean;
   tagline?: string;
   location?: string;
   followersCount: number;

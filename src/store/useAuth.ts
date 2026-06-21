@@ -20,6 +20,7 @@ export type CompanyMembership = {
     name: string;
     slug: string;
     logoUrl?: string | null;
+    isGood?: boolean;
     coverUrl?: string | null;
     tagline?: string | null;
   };
@@ -118,6 +119,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                 name: item.company.name,
                 slug: item.company.slug,
                 logoUrl: item.company.logoUrl,
+                isGood: item.company.isGood,
                 coverUrl: item.company.coverUrl,
                 tagline: item.company.tagline,
               },

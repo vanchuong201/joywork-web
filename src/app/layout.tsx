@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     description: "JOYWORK là nền tảng giúp các doanh nghiệp có môi trường làm việc tốt lên tiếng để kể câu chuyện thật về văn hóa doanh nghiệp, từ đó thu hút những nhân sự phù hợp về cả văn hóa và kỹ năng.",
     images: [
       {
-        url: "/thumbnail.jpg",
+        url: "/og-share.jpg",
         width: 1200,
         height: 630,
         alt: "JOYWORK - Nơi doanh nghiệp tốt lên tiếng",
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "JOYWORK - Nơi doanh nghiệp tốt lên tiếng",
     description: "JOYWORK là nền tảng giúp các doanh nghiệp có môi trường làm việc tốt lên tiếng để kể câu chuyện thật về văn hóa doanh nghiệp, từ đó thu hút những nhân sự phù hợp về cả văn hóa và kỹ năng.",
-    images: ["/thumbnail.jpg"],
+    images: ["/og-share.jpg"],
   },
 };
 

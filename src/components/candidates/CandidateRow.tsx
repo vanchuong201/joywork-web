@@ -41,12 +41,19 @@ export type CandidateRowData = {
 
 interface CandidateRowProps {
   candidate: CandidateRowData;
+  /** Khi true, chặn mở tab mới tới hồ sơ đầy đủ và gọi callback để yêu cầu chọn DN trước. */
+  blockFullProfileUntilCompany?: boolean;
+  onRequireCompanyForProfile?: () => void;
 }
 
 const MAX_PREVIEW_EXPERIENCES = 3;
 const MAX_PREVIEW_EDUCATIONS = 3;
 
-export default function CandidateRow({ candidate }: CandidateRowProps) {
+export default function CandidateRow({
+  candidate,
+  blockFullProfileUntilCompany,
+  onRequireCompanyForProfile,
+}: CandidateRowProps) {
   const {
     slug,
     name,
@@ -214,6 +221,12 @@ export default function CandidateRow({ candidate }: CandidateRowProps) {
               href={detailHref}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => {
+                if (blockFullProfileUntilCompany && onRequireCompanyForProfile) {
+                  e.preventDefault();
+                  onRequireCompanyForProfile();
+                }
+              }}
               className="shrink-0 rounded-md border border-[var(--brand)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--brand)] shadow-sm transition-colors hover:border-[var(--brand-hover)] hover:text-[var(--brand-hover)]"
             >
               Xem hồ sơ đầy đủ

@@ -90,7 +90,7 @@ export default function ProfileDiscoverySettings({ profile }: ProfileDiscoverySe
             disabled={saveMutation.isPending}
           />
           <Label htmlFor="profile-settings-status" className="cursor-pointer">
-            {watch("status") === "OPEN_TO_WORK" ? "Đang bật tìm việc" : "Đang tắt tìm việc"}
+            Bật tìm việc
           </Label>
         </div>
         <p className="mt-2 text-xs text-slate-500">
@@ -122,7 +122,7 @@ export default function ProfileDiscoverySettings({ profile }: ProfileDiscoverySe
             disabled={saveMutation.isPending}
           />
           <Label htmlFor="profile-settings-isSearchingJob" className="cursor-pointer">
-            {watch("isSearchingJob") ? "Bật hiển thị trong danh sách ứng viên" : "Tắt hiển thị trong danh sách ứng viên"}
+            Hiển thị trong danh sách ứng viên
           </Label>
         </div>
         <p className="mt-2 text-xs text-slate-500">
@@ -148,9 +148,7 @@ export default function ProfileDiscoverySettings({ profile }: ProfileDiscoverySe
             disabled={saveMutation.isPending}
           />
           <Label htmlFor="profile-settings-allowCvFlip" className="cursor-pointer">
-            {watch("allowCvFlip")
-              ? "Cho phép doanh nghiệp mở thông tin liên hệ ngay"
-              : "Yêu cầu doanh nghiệp phải xin phép trước khi mở"}
+            Cho phép doanh nghiệp mở thông tin liên hệ ngay
           </Label>
         </div>
         <p className="mt-2 text-xs text-slate-500">

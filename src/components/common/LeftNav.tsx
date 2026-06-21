@@ -14,19 +14,18 @@ import CreateTicketModal from "@/components/tickets/CreateTicketModal";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import {
+  buildBusinessSpaceNav,
   buildCompanyManageNav,
   buildLeftAdminNav,
-  buildLeftExploreNav,
   isNavItemActive,
   leftPersonalNav,
   type NavItem,
 } from "./navigation-config";
-
-const MAX_COMPANY_NAV_ITEMS = 6;
+import { useAuthPrompt } from "@/contexts/AuthPromptContext";
 
 function StaticPageLinks() {
   return (
-    <div className="mt-auto border-t border-[var(--border)] pt-3 text-xs text-[var(--muted-foreground)]">
+    <div className="text-xs text-[var(--muted-foreground)]">
       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
         <Link
           href="/gioi-thieu"
@@ -56,11 +55,13 @@ function NavSection({
   items,
   pathname,
   truncateLabel = false,
+  onProtectedClick,
 }: {
   title: string;
   items: NavItem[];
   pathname: string;
   truncateLabel?: boolean;
+  onProtectedClick?: (item: NavItem) => void;
 }) {
   return (
     <div>
@@ -69,25 +70,43 @@ function NavSection({
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = isNavItemActive(pathname, item);
+          const className = cn(
+            "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
+            isActive
+              ? "bg-[var(--muted)] text-[var(--foreground)]"
+              : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+          );
+          const label = (
+            <>
+              <Icon size={16} />
+              <span className={cn("flex-1 font-medium", truncateLabel && "truncate")}>{item.label}</span>
+              {item.badge ? (
+                <span className="rounded-full bg-[var(--brand)]/10 px-2 py-0.5 text-[11px] text-[var(--brand)]">
+                  {item.badge}
+                </span>
+              ) : null}
+            </>
+          );
           return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
-                  isActive
-                    ? "bg-[var(--muted)] text-[var(--foreground)]"
-                    : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-                )}
-              >
-                <Icon size={16} />
-                <span className={cn("flex-1 font-medium", truncateLabel && "truncate")}>{item.label}</span>
-                {item.badge ? (
-                  <span className="rounded-full bg-[var(--brand)]/10 px-2 py-0.5 text-[11px] text-[var(--brand)]">
-                    {item.badge}
-                  </span>
-                ) : null}
-              </Link>
+            <li key={`${item.href}-${item.label}`}>
+              {onProtectedClick && !item.external ? (
+                <button type="button" onClick={() => onProtectedClick(item)} className={cn(className, "w-full text-left")}>
+                  {label}
+                </button>
+              ) : item.external ? (
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                >
+                  {label}
+                </a>
+              ) : (
+                <Link href={item.href} className={className}>
+                  {label}
+                </Link>
+              )}
             </li>
           );
         })}
@@ -103,6 +122,7 @@ export default function LeftNav() {
   const memberships = useAuthStore((s) => s.memberships);
   const initialized = useAuthStore((s) => s.initialized);
   const loading = useAuthStore((s) => s.loading);
+  const { openPrompt } = useAuthPrompt();
   const [avatarError, setAvatarError] = useState(false);
   const [supportModalOpen, setSupportModalOpen] = useState(false);
   
@@ -160,47 +180,25 @@ export default function LeftNav() {
     );
   }
 
-  if (!user) {
-    return (
-      <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:sticky md:top-24 md:block md:h-[calc(100vh-6rem)]">
-        <div className="flex h-full flex-col p-4">
-          <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--muted-foreground)]">
-            <p className="font-medium text-[var(--foreground)]">Đăng nhập để cá nhân hóa trải nghiệm</p>
-            <p className="mt-1 text-xs">
-              Theo dõi công ty, lưu việc làm và nhận thông báo ứng tuyển nhanh chóng.
-            </p>
-            <div className="mt-3 flex flex-col gap-2 text-sm">
-              <Link
-                href="/login"
-                className="w-full rounded-md border border-[var(--brand)] px-3 py-1 text-center text-[var(--brand)] hover:bg-[var(--brand)]/10"
-              >
-                Đăng nhập
-              </Link>
-              <Link
-                href="/register"
-                className="w-full rounded-md bg-[var(--brand)] px-3 py-1 text-center text-white hover:opacity-90"
-              >
-                Đăng ký
-              </Link>
-            </div>
-          </div>
-          <StaticPageLinks />
-        </div>
-      </aside>
-    );
-  }
-
-  const primaryNav = buildLeftExploreNav();
   const personalNav = leftPersonalNav;
-  const companyItems = buildCompanyManageNav(memberships);
-  const visibleCompanyItems = companyItems.slice(0, MAX_COMPANY_NAV_ITEMS);
-  const hasMoreCompanyItems = companyItems.length > MAX_COMPANY_NAV_ITEMS;
+  const businessSpaceNav = buildBusinessSpaceNav();
+  const companyManageNav = user ? buildCompanyManageNav(memberships) : [];
   const adminNav = buildLeftAdminNav(user);
+  const onProtectedClick = user ? undefined : (item: NavItem) => openPrompt(item.label);
+
+  const handleSupportClick = () => {
+    if (!user) {
+      openPrompt("Hỗ trợ");
+      return;
+    }
+    setSupportModalOpen(true);
+  };
 
   return (
     <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:sticky md:top-24 md:block md:h-[calc(100vh-6rem)]">
       <nav className="flex h-full flex-col p-4">
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
+        {user ? (
         <div className="rounded-md border border-[var(--border)] bg-[var(--background)] p-3">
           <div className="flex items-center gap-3">
             {user.avatar && !avatarError ? (
@@ -225,61 +223,84 @@ export default function LeftNav() {
             </div>
           </div>
         </div>
-
-        <NavSection title="Khám phá" items={primaryNav} pathname={pathname} />
-        
-        {/* Support Section - Highlighted */}
-        {user && joyworkCompanyId && (
-          <div>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Hỗ trợ</div>
-            <ul className="space-y-1">
-              <li>
-                <button
-                  onClick={() => {
-                    if (joyworkCompany) {
-                      setSupportModalOpen(true);
-                    } else {
-                      // Show loading or error toast if company not loaded
-                      // Modal will handle the case when company is not available
-                      setSupportModalOpen(true);
-                    }
-                  }}
-                  disabled={!joyworkCompany}
-                  className={cn(
-                    "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
-                    "bg-[var(--brand)]/10 text-[var(--brand)] hover:bg-[var(--brand)]/20 font-semibold",
-                    !joyworkCompany && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <LifeBuoy size={16} />
-                  <span className="flex-1 font-medium">Hỗ trợ</span>
-                </button>
-              </li>
-            </ul>
+        ) : (
+          <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--background)] p-3 text-sm text-[var(--muted-foreground)]">
+            <p className="font-medium text-[var(--foreground)]">Đăng nhập để cá nhân hóa trải nghiệm</p>
+            <p className="mt-1 text-xs">
+              Theo dõi công ty, lưu việc làm và nhận thông báo ứng tuyển nhanh chóng.
+            </p>
+            <div className="mt-3 flex flex-col gap-2 text-sm">
+              <Link
+                href="/login"
+                className="w-full rounded-md border border-[var(--brand)] px-3 py-1 text-center text-[var(--brand)] hover:bg-[var(--brand)]/10"
+              >
+                Đăng nhập
+              </Link>
+              <Link
+                href="/register"
+                className="w-full rounded-md bg-[var(--brand)] px-3 py-1 text-center text-white hover:opacity-90"
+              >
+                Đăng ký
+              </Link>
+            </div>
           </div>
         )}
 
-        <NavSection title="Không gian của tôi" items={personalNav} pathname={pathname} />
+        <NavSection
+          title="Không gian của ứng viên"
+          items={personalNav}
+          pathname={pathname}
+          onProtectedClick={onProtectedClick}
+        />
 
-        {companyItems.length > 0 ? (
-          <div>
-            <NavSection title="Công ty của tôi" items={visibleCompanyItems} pathname={pathname} truncateLabel />
-            {hasMoreCompanyItems ? (
-              <Link
-                href="/companies"
-                className="mt-1 inline-block px-2 text-xs font-medium text-[var(--brand)] hover:underline"
-              >
-                Xem thêm ({companyItems.length - MAX_COMPANY_NAV_ITEMS})
-              </Link>
-            ) : null}
-          </div>
+        <NavSection
+          title="Không gian của doanh nghiệp"
+          items={businessSpaceNav}
+          pathname={pathname}
+          onProtectedClick={onProtectedClick}
+        />
+
+        {companyManageNav.length > 0 ? (
+          <NavSection
+            title="Công ty của tôi"
+            items={companyManageNav}
+            pathname={pathname}
+            truncateLabel
+            onProtectedClick={onProtectedClick}
+          />
         ) : null}
 
-        {adminNav.length > 0 ? <NavSection title="Hệ thống" items={adminNav} pathname={pathname} /> : null}
+        {adminNav.length > 0 ? (
+          <NavSection title="Hệ thống" items={adminNav} pathname={pathname} onProtectedClick={onProtectedClick} />
+        ) : null}
+        </div>
+
+        <div className="mt-3 shrink-0 space-y-3 border-t border-[var(--border)] pt-3">
+        {joyworkCompanyId ? (
+            <button
+              type="button"
+              onClick={handleSupportClick}
+              disabled={Boolean(user) && !joyworkCompany}
+              className={cn(
+                "flex w-full items-start gap-3 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-left transition-colors",
+                "hover:border-[var(--brand)]/35 hover:bg-[var(--muted)]/50",
+                user && !joyworkCompany && "cursor-not-allowed opacity-50"
+              )}
+            >
+              <LifeBuoy size={18} className="mt-0.5 shrink-0 text-[var(--brand)]" aria-hidden />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-[var(--foreground)]">Hỗ trợ</span>
+                <span className="mt-0.5 block text-xs leading-snug text-[var(--muted-foreground)]">
+                  Mở ticket với đội JOYWORK khi bạn cần trợ giúp.
+                </span>
+              </span>
+            </button>
+          ) : null}
+          <StaticPageLinks />
         </div>
 
         {/* Support Modal */}
-        {joyworkCompanyId && joyworkCompany && (
+        {user && joyworkCompanyId && joyworkCompany && (
           <CreateTicketModal
             open={supportModalOpen}
             onOpenChange={setSupportModalOpen}
@@ -303,7 +324,6 @@ export default function LeftNav() {
             }}
           />
         )}
-        <StaticPageLinks />
       </nav>
     </aside>
   );

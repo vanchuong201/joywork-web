@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Briefcase, MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { buildJobUrl } from "@/lib/job-url";
 
 export type RelatedJobItem = {
@@ -22,6 +22,7 @@ export type RelatedJobItem = {
     name: string;
     slug: string;
     logoUrl?: string | null;
+    isGood?: boolean;
   };
 };
 
@@ -80,24 +81,18 @@ export default function RelatedJobCard({ job, size = "featured", className }: Re
         )}
       >
         <div className={cn("flex items-start gap-2.5", compact ? "mb-2.5" : "mb-3")}>
-          <div
-            className={cn(
-              "flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--border)] bg-[var(--muted)]/40",
-              compact ? "h-8 w-8" : "h-9 w-9"
-            )}
-          >
-            {job.company.logoUrl ? (
-              <CompanyLogo
-                src={job.company.logoUrl}
-                alt={job.company.name}
-                className="h-full w-full object-contain"
-                width={48}
-                height={48}
-              />
-            ) : (
-              <Briefcase className={cn("text-[var(--muted-foreground)]", compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
-            )}
-          </div>
+          <CompanyAvatar
+            logoUrl={job.company.logoUrl}
+            isGood={job.company.isGood}
+            name={job.company.name}
+            size={compact ? 32 : 36}
+            shape="square"
+            fallback={
+              <div className="flex h-full w-full items-center justify-center rounded-md bg-[var(--muted)]/40">
+                <Briefcase className={cn("text-[var(--muted-foreground)]", compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
+              </div>
+            }
+          />
 
           <div className="min-w-0 flex-1">
             <p className={cn("truncate font-medium text-[var(--muted-foreground)]", compact ? "text-[11px]" : "text-xs")}>{job.company.name}</p>

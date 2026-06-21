@@ -20,7 +20,7 @@ function AccountPageContent() {
   const activeTab = validTabs.includes(tab) ? tab : "account";
 
   return (
-    <AccountLayout activeTab={activeTab}>
+    <AccountLayout>
       {activeTab === "account" && <AccountTab />}
       {activeTab === "profile" && <ProfileTab />}
       {activeTab === "security" && <SecurityTab />}
@@ -34,14 +34,9 @@ export default function AccountPage() {
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
         <Suspense
           fallback={
-            <div className="flex flex-col gap-4 md:flex-row md:gap-8">
-              <div className="w-full md:w-64 md:shrink-0">
-                <Skeleton className="h-96 w-full" />
-              </div>
-              <div className="flex-1">
-                <Skeleton className="mb-4 h-10 w-48 sm:mb-6" />
-                <Skeleton className="h-96 w-full" />
-              </div>
+            <div>
+              <Skeleton className="mb-4 h-10 w-48 sm:mb-6" />
+              <Skeleton className="h-96 w-full" />
             </div>
           }
         >

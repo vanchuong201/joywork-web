@@ -49,3 +49,13 @@ export function parseJobUrlParam(
   if (!CUID_REGEX.test(id) || !slug) return null;
   return { slug, id };
 }
+
+/**
+ * Lấy job ID từ segment URL `/jobs/[slug--id]` (hoặc URL cũ chỉ có cuid).
+ */
+export function resolveJobIdFromSlugParam(param: string): string | null {
+  const parsed = parseJobUrlParam(param);
+  if (parsed) return parsed.id;
+  if (CUID_REGEX.test(param)) return param;
+  return null;
+}

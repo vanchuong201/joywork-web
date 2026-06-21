@@ -68,10 +68,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${company.name} | JOYWORK`,
-    description: company.tagline || company.description,
+    description: `Khám phá hồ sơ doanh nghiệp ${company.name} trên JOYWORK.`,
     openGraph: {
       title: company.name,
-      description: company.tagline || company.description,
+      description: `Khám phá hồ sơ doanh nghiệp ${company.name} trên JOYWORK.`,
       images: company.coverUrl ? [company.coverUrl] : company.logoUrl ? [company.logoUrl] : [],
     },
   };
@@ -214,6 +214,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
             jobs={jobs}
             companyName={company.name}
             companyLogoUrl={company.logoUrl}
+            companyIsGood={company.isGood}
           />
         )}
       </div>

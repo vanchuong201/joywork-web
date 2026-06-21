@@ -1,14 +1,14 @@
 "use client";
 
 import { Company } from "@/types/company";
-import { CompanyLogo } from "@/components/company/CompanyLogo";
+import { CompanyAvatar } from "@/components/company/CompanyAvatar";
 import { Button } from "@/components/ui/button";
-import { Globe, MapPin, Users, CheckCircle, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle, Briefcase } from "lucide-react";
+import { Globe, MapPin, MessageCircle, ShieldCheck, Mail, Phone, Pencil, Camera, FileCheck, AlertTriangle, Briefcase } from "lucide-react";
 import CompanyMessageButton from "@/components/company/CompanyMessageButton";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
-import { Badge } from "@/components/ui/badge";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { uploadCompanyCover, uploadCompanyLogo } from "@/lib/uploads";
+import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,35 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import IndustrySelect from "@/components/ui/industry-select";
+import ProvinceSelect from "@/components/ui/province-select";
+import WardSelect from "@/components/ui/ward-select";
+import { resolveProvinceCode } from "@/lib/provinces";
+import { buildHeadquartersAddressLabel, fetchWardsByProvinceCodes, hasHeadquartersAddressData, type WardOption } from "@/lib/location-wards";
+import { COMPANY_SIZE_OPTIONS, normalizeCompanySize } from "@/lib/company-size";
+
+type CompanyUpdatePayload = {
+    name?: string;
+    legalName?: string;
+    location?: string;
+    wardCodes?: string[];
+    specificAddress?: string;
+    industry?: string | null;
+    size?: string | null;
+    website?: string | null;
+    email?: string;
+    phone?: string;
+    requestReVerification?: boolean;
+};
+
+type ApiErrorResponse = {
+    response?: {
+        data?: {
+            error?: {
+                message?: string;
+            };
+        };
+    };
+};
 
 export default function CompanyProfileHero({ company, isEditable = false }: { company: Company, isEditable?: boolean }) {
     const router = useRouter();
@@ -28,6 +57,10 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [uploadingVerification, setUploadingVerification] = useState(false);
     const [verificationFile, setVerificationFile] = useState<File | null>(null);
+    // Crop ảnh: lưu nguồn ảnh đang chờ cắt + loại đang cắt (logo | cover).
+    const [cropSrc, setCropSrc] = useState<string | null>(null);
+    const [cropTarget, setCropTarget] = useState<"logo" | "cover" | null>(null);
+    const [pendingFile, setPendingFile] = useState<{ name: string; type: string } | null>(null);
     const [verificationLegalName, setVerificationLegalName] = useState(company.legalName || "");
     const [isMounted, setIsMounted] = useState(false);
     
@@ -52,7 +85,10 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         name: company.name,
         legalName: company.legalName || "",
         location: company.location || "",
+        wardCode: company.wardCodes?.[0] || "",
+        specificAddress: company.specificAddress || "",
         industry: company.industry || "",
+        size: normalizeCompanySize(company.size) ?? "",
         // Let user type domain only; we'll normalize on blur/submit.
         website: (company.website || "").replace(/^https?:\/\//i, ""),
         email: company.email || "",
@@ -64,15 +100,121 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             name: company.name,
             legalName: company.legalName || "",
             location: company.location || "",
+            wardCode: company.wardCodes?.[0] || "",
+            specificAddress: company.specificAddress || "",
             industry: company.industry || "",
+            size: normalizeCompanySize(company.size) ?? "",
             website: (company.website || "").replace(/^https?:\/\//i, ""),
             email: company.email || "",
             phone: company.phone || "",
         });
         setEmailError(null);
+        setEmailTouched(false);
+        setPhoneError(null);
+        setPhoneTouched(false);
+        setLocationError(null);
+        setLocationTouched(false);
+        setWardCodeError(null);
+        setWardCodeTouched(false);
+        setSpecificAddressError(null);
+        setSpecificAddressTouched(false);
+        setLegalNameError(null);
+        setLegalNameTouched(false);
+        setIndustryError(null);
+        setIndustryTouched(false);
+        setSizeError(null);
+        setSizeTouched(false);
         setEditDialogOpen(true);
     };
     const [emailError, setEmailError] = useState<string | null>(null);
+    const [emailTouched, setEmailTouched] = useState(false);
+    const [phoneError, setPhoneError] = useState<string | null>(null);
+    const [phoneTouched, setPhoneTouched] = useState(false);
+    const [locationError, setLocationError] = useState<string | null>(null);
+    const [locationTouched, setLocationTouched] = useState(false);
+    const [wardCodeError, setWardCodeError] = useState<string | null>(null);
+    const [wardCodeTouched, setWardCodeTouched] = useState(false);
+    const [specificAddressError, setSpecificAddressError] = useState<string | null>(null);
+    const [specificAddressTouched, setSpecificAddressTouched] = useState(false);
+    const [legalNameError, setLegalNameError] = useState<string | null>(null);
+    const [legalNameTouched, setLegalNameTouched] = useState(false);
+    const [industryError, setIndustryError] = useState<string | null>(null);
+    const [industryTouched, setIndustryTouched] = useState(false);
+    const [sizeError, setSizeError] = useState<string | null>(null);
+    const [sizeTouched, setSizeTouched] = useState(false);
+    const [wardByCode, setWardByCode] = useState<Map<string, WardOption>>(new Map());
+
+    const companyProvinceCodes = useMemo(() => {
+        const codes = new Set<string>();
+        const normalizedLocationCode = resolveProvinceCode(company.location ?? "");
+        if (normalizedLocationCode) {
+            codes.add(normalizedLocationCode);
+        }
+        (company.wardCodes ?? []).forEach((code) => {
+            const provinceCode = code.split("/")[0];
+            if (provinceCode) {
+                codes.add(provinceCode);
+            }
+        });
+        return Array.from(codes);
+    }, [company.location, company.wardCodes]);
+
+    const companyProvinceCodesKey = useMemo(
+        () => [...companyProvinceCodes].sort().join(","),
+        [companyProvinceCodes],
+    );
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            if (!companyProvinceCodes.length) {
+                setWardByCode(new Map());
+                return;
+            }
+            try {
+                const wards = await fetchWardsByProvinceCodes(companyProvinceCodes);
+                if (cancelled) return;
+                setWardByCode(new Map(wards.map((ward) => [ward.code, ward])));
+            } catch {
+                if (!cancelled) {
+                    setWardByCode(new Map());
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [companyProvinceCodes, companyProvinceCodesKey]);
+
+    const hasHeadquartersAddress = useMemo(
+        () =>
+            hasHeadquartersAddressData({
+                specificAddress: company.specificAddress,
+                wardCodes: company.wardCodes,
+                location: company.location,
+                locationName: company.locationName,
+            }),
+        [company.specificAddress, company.wardCodes, company.location, company.locationName],
+    );
+
+    const headquartersAddressLabel = useMemo(
+        () =>
+            buildHeadquartersAddressLabel(
+                {
+                    specificAddress: company.specificAddress,
+                    wardCodes: company.wardCodes,
+                    location: company.location,
+                    locationName: company.locationName,
+                },
+                wardByCode,
+            ),
+        [company.specificAddress, company.wardCodes, company.location, company.locationName, wardByCode],
+    );
+
+    const editProvinceCode = useMemo(
+        () => resolveProvinceCode(formData.location?.trim() ?? ""),
+        [formData.location],
+    );
 
     // Get owner email for verification notification
     const ownerMember = useMemo(() => {
@@ -103,7 +245,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((value ?? "").trim());
 
     const mutation = useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: CompanyUpdatePayload) => {
             await api.patch(`/api/companies/${company.id}`, data);
         },
         onSuccess: () => {
@@ -119,31 +261,106 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
     const handleSave = () => {
         // Validate required field
         if (!formData.name || formData.name.trim() === "") {
-            toast.error("Vui lòng nhập tên công ty (Thương hiệu)");
+            toast.error("Vui lòng nhập Tên doanh nghiệp (Hiển thị trên trang)");
             return;
         }
+        const legalName = formData.legalName?.trim() || "";
+        if (!legalName) {
+            setLegalNameTouched(true);
+            setLegalNameError("Vui lòng nhập tên pháp lý đầy đủ");
+            return;
+        }
+        if (legalName.length < 2) {
+            setLegalNameTouched(true);
+            setLegalNameError("Tên pháp lý đầy đủ cần ít nhất 2 ký tự");
+            return;
+        }
+        setLegalNameError(null);
+
+        const industry = formData.industry?.trim() || "";
+        if (!industry) {
+            setIndustryTouched(true);
+            setIndustryError("Vui lòng chọn lĩnh vực hoạt động");
+            return;
+        }
+        setIndustryError(null);
+
+        const size = formData.size?.trim() || "";
+        if (!size) {
+            setSizeTouched(true);
+            setSizeError("Vui lòng chọn quy mô nhân sự");
+            return;
+        }
+        setSizeError(null);
 
         // Validate email format if provided
         const email = formData.email?.trim();
-        if (email && !isValidEmail(email)) {
+        if (!email) {
+            setEmailTouched(true);
+            setEmailError("Vui lòng nhập email công ty");
+            return;
+        }
+        if (!isValidEmail(email)) {
+            setEmailTouched(true);
             setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
             return;
         }
         setEmailError(null);
+
+        const phone = formData.phone?.trim() || "";
+        if (!phone) {
+            setPhoneTouched(true);
+            setPhoneError("Vui lòng nhập số điện thoại");
+            return;
+        }
+        if (phone.length < 8) {
+            setPhoneTouched(true);
+            setPhoneError("Số điện thoại cần ít nhất 8 ký tự");
+            return;
+        }
+        setPhoneError(null);
+
+        const locationCode = (resolveProvinceCode(formData.location?.trim() || "") ?? formData.location?.trim()) || "";
+   
+        if (!locationCode) {
+            setLocationTouched(true);
+            setLocationError("Vui lòng chọn tỉnh/thành phố");
+            return;
+        }
+        setLocationError(null);
+
+        const wardCode = formData.wardCode?.trim() || "";
+        if (!wardCode) {
+            setWardCodeTouched(true);
+            setWardCodeError("Vui lòng chọn phường/xã");
+            return;
+        }
+        setWardCodeError(null);
+
+        const specificAddress = formData.specificAddress?.trim() || "";
+        if (!specificAddress) {
+            setSpecificAddressTouched(true);
+            setSpecificAddressError("Vui lòng nhập địa chỉ chi tiết");
+            return;
+        }
+        setSpecificAddressError(null);
         
         // Check if legal name changed for verified company
         const legalNameChanged = verificationStatus === "VERIFIED" && 
             formData.legalName.trim() !== originalLegalName.trim() &&
             formData.legalName.trim() !== "";
         
-        const payload: any = {
+        const payload: CompanyUpdatePayload = {
             name: formData.name.trim(),
-            legalName: formData.legalName?.trim() || null,
-            location: formData.location?.trim() || null,
+            legalName,
+            location: locationCode,
+            wardCodes: [wardCode],
+            specificAddress,
             industry: formData.industry?.trim() ? formData.industry.trim() : null,
+            size,
             website: normalizeWebsite(formData.website),
-            email: formData.email?.trim() || null,
-            phone: formData.phone?.trim() || null,
+            email,
+            phone,
         };
 
         // If legal name changed on verified company, trigger re-verification
@@ -180,7 +397,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
         try {
             const currentLegalName = (company.legalName || "").trim();
             if (legalName !== currentLegalName) {
-                const payload: any = { legalName };
+                const payload: CompanyUpdatePayload = { legalName };
                 const legalNameChangedVerified =
                     verificationStatus === "VERIFIED" && legalName !== originalLegalName.trim();
                 if (legalNameChangedVerified) {
@@ -205,8 +422,8 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             }
             setVerificationDialogOpen(false);
             router.refresh();
-        } catch (error: any) {
-            const message = error?.response?.data?.error?.message ?? "Tải file xác thực thất bại";
+        } catch (error: unknown) {
+            const message = (error as ApiErrorResponse)?.response?.data?.error?.message ?? "Tải file xác thực thất bại";
             toast.error(message);
         } finally {
             setUploadingVerification(false);
@@ -220,32 +437,74 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             });
             const url = res.data.data.url as string;
             window.open(url, "_blank", "noopener,noreferrer");
-        } catch (error: any) {
-            const message = error?.response?.data?.error?.message ?? "Không thể tải hồ sơ xác thực";
+        } catch (error: unknown) {
+            const message = (error as ApiErrorResponse)?.response?.data?.error?.message ?? "Không thể tải hồ sơ xác thực";
             toast.error(message);
         }
     };
 
-    const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const MAX_IMAGE_SIZE = 8 * 1024 * 1024; // 8MB
+    const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+    // Validate + mở dialog crop cho ảnh bìa (chưa upload).
+    const handleSelectCover = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const MAX_COVER_SIZE = 8 * 1024 * 1024; // 8MB
-        const ALLOWED_COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-        // Client-side validation mirrors API rules for faster feedback
-        if (!ALLOWED_COVER_TYPES.has(file.type)) {
+        if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
             toast.error("Định dạng tệp không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WEBP");
             e.target.value = "";
             return;
         }
-
-        if (file.size > MAX_COVER_SIZE) {
+        if (file.size > MAX_IMAGE_SIZE) {
             toast.error("Kích thước tệp vượt quá giới hạn 8MB");
             e.target.value = "";
             return;
         }
 
+        setPendingFile({ name: file.name, type: file.type });
+        setCropTarget("cover");
+        setCropSrc(URL.createObjectURL(file));
+        e.target.value = "";
+    };
+
+    // Validate + mở dialog crop cho logo (chưa upload).
+    const handleSelectLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+            toast.error("Định dạng tệp không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WEBP");
+            e.target.value = "";
+            return;
+        }
+        if (file.size > MAX_IMAGE_SIZE) {
+            toast.error("Kích thước tệp vượt quá giới hạn 8MB");
+            e.target.value = "";
+            return;
+        }
+
+        setPendingFile({ name: file.name, type: file.type });
+        setCropTarget("logo");
+        setCropSrc(URL.createObjectURL(file));
+        e.target.value = "";
+    };
+
+    const closeCropDialog = () => {
+        if (cropSrc) URL.revokeObjectURL(cropSrc);
+        setCropSrc(null);
+        setCropTarget(null);
+        setPendingFile(null);
+    };
+
+    // Tránh leak blob URL nếu component unmount khi dialog crop còn mở.
+    useEffect(() => {
+        return () => {
+            if (cropSrc) URL.revokeObjectURL(cropSrc);
+        };
+    }, [cropSrc]);
+
+    const runCoverUpload = async (file: File) => {
         setUploadingCover(true);
         try {
             const reader = new FileReader();
@@ -261,39 +520,23 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     });
                     toast.success("Cập nhật ảnh bìa thành công");
                     router.refresh();
-                } catch (error: any) {
+                } catch (error: unknown) {
                     console.error(error);
-                    const message = error?.response?.data?.error?.message ?? "Tải ảnh bìa thất bại";
+                    const message = (error as ApiErrorResponse)?.response?.data?.error?.message ?? "Tải ảnh bìa thất bại";
                     toast.error(message);
                 } finally {
                     setUploadingCover(false);
                 }
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            const message = error?.response?.data?.error?.message ?? "Đã xảy ra lỗi khi xử lý ảnh";
+            const message = (error as ApiErrorResponse)?.response?.data?.error?.message ?? "Đã xảy ra lỗi khi xử lý ảnh";
             toast.error(message);
             setUploadingCover(false);
         }
     };
 
-    const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const MAX_AVATAR_SIZE = 8 * 1024 * 1024;
-        const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-        if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
-            toast.error("Định dạng tệp không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WEBP");
-            e.target.value = "";
-            return;
-        }
-        if (file.size > MAX_AVATAR_SIZE) {
-            toast.error("Kích thước tệp vượt quá giới hạn 8MB");
-            e.target.value = "";
-            return;
-        }
-
+    const runLogoUpload = async (file: File) => {
         setUploadingAvatar(true);
         try {
             const reader = new FileReader();
@@ -321,6 +564,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
             toast.error("Đã xảy ra lỗi khi xử lý ảnh");
             setUploadingAvatar(false);
         }
+    };
+
+    // Nhận ảnh đã crop → upload theo loại đang cắt.
+    const handleCropComplete = (file: File) => {
+        if (cropTarget === "cover") runCoverUpload(file);
+        else if (cropTarget === "logo") runLogoUpload(file);
     };
 
     // Check if legal name changed for verified company (show warning)
@@ -378,7 +627,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             accept="image/jpeg,image/png,image/webp" 
                             className="hidden" 
                             ref={coverInputRef}
-                            onChange={handleUploadCover}
+                            onChange={handleSelectCover}
                         />
                         <Button 
                             variant="secondary" 
@@ -434,32 +683,31 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                   )}
 
                   <div className="relative mx-auto shrink-0 md:mx-0 group/avatar">
-                      <div className="relative h-28 w-28 overflow-hidden rounded-full bg-[var(--muted)] p-1 sm:h-32 sm:w-32 md:h-40 md:w-40">
-                        {company.logoUrl ? (
-                            <CompanyLogo
-                              src={company.logoUrl}
-                              alt={company.name}
-                              width={160}
-                              height={160}
-                              priority
-                              className="h-full w-full rounded-full border-4 border-[var(--card)] bg-[var(--card)] object-contain"
-                            />
-                        ) : (
-                            <div className="w-full h-full rounded-full bg-[var(--card)] border-4 border-[var(--card)] flex items-center justify-center text-4xl font-bold text-[var(--foreground)]">
+                      <CompanyAvatar
+                        logoUrl={company.logoUrl}
+                        isGood={company.isGood}
+                        name={company.name}
+                        size={160}
+                        shape="circle"
+                        fluid
+                        priority
+                        className="h-28 w-28 shadow-lg shadow-[#8b3fd9]/20 sm:h-32 sm:w-32 md:h-40 md:w-40 rounded-full"
+                        fallback={
+                            <div className="flex h-full w-full items-center justify-center rounded-full bg-[var(--card)] text-4xl font-bold text-[var(--foreground)]">
                                 {company.name.charAt(0)}
                             </div>
-                        )}
-                        
+                        }
+                      >
                         {isEditable && (
                             <>
-                                <input 
-                                    type="file" 
-                                    accept="image/jpeg,image/png,image/webp" 
-                                    className="hidden" 
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    className="hidden"
                                     ref={avatarInputRef}
-                                    onChange={handleUploadAvatar}
+                                    onChange={handleSelectLogo}
                                 />
-                                <div 
+                                <div
                                     className={`absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity rounded-full cursor-pointer z-10 ${
                                         uploadingAvatar ? 'opacity-100' : 'opacity-0 group-hover/avatar:opacity-100'
                                     }`}
@@ -473,12 +721,15 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                         <Camera className="w-8 h-8 text-white" />
                                     )}
                                 </div>
-                                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/avatar:opacity-100 transition-opacity pointer-events-none backdrop-blur-sm z-20">
-                                    Tỷ lệ đề xuất: 1:1 (vuông)
-                                </div>
                             </>
                         )}
-                      </div>
+                      </CompanyAvatar>
+
+                      {isEditable && (
+                          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/avatar:opacity-100 transition-opacity pointer-events-none backdrop-blur-sm z-20">
+                              Tỷ lệ đề xuất: 1:1 (vuông)
+                          </div>
+                      )}
                   </div>
                   
                   <div className="w-full flex-1 space-y-4 text-center md:text-left">
@@ -531,10 +782,12 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                               <span className="text-left leading-snug text-[var(--foreground)]">{company.industry}</span>
                             </div>
                         )}
-                        {company.location && (
-                            <div className="relative flex items-center gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
-                              <MapPin className="text-[var(--muted-foreground)] shrink-0" size={20} />
-                              <span className="truncate">{company.location}</span>
+                        {hasHeadquartersAddress && (
+                            <div className="relative flex items-start gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
+                              <MapPin className="mt-0.5 text-[var(--muted-foreground)] shrink-0" size={20} />
+                              <span className="text-left leading-snug text-[var(--foreground)]">
+                                {headquartersAddressLabel ?? company.locationName ?? company.location}
+                              </span>
                             </div>
                         )}
                         {company.website && (
@@ -544,7 +797,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                 href={company.website}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="truncate hover:text-[var(--brand)] hover:underline"
+                                className="truncate text-[var(--foreground)] hover:text-[var(--brand)] hover:underline"
                               >
                                 {company.website.replace(/^https?:\/\//, '')}
                               </a>
@@ -555,7 +808,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                               <Mail className="text-[var(--muted-foreground)] shrink-0" size={20} />
                               <a
                                 href={`mailto:${company.email}`}
-                                className="truncate hover:text-[var(--brand)] hover:underline"
+                                className="truncate text-[var(--foreground)] hover:text-[var(--brand)] hover:underline"
                               >
                                 {company.email}
                               </a>
@@ -564,7 +817,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         {company.phone && (
                             <div className="relative flex items-center gap-3 rounded-xl bg-[var(--muted)] p-2.5 sm:p-3 group/item">
                               <Phone className="text-[var(--muted-foreground)] shrink-0" size={20} />
-                              <span className="truncate">{company.phone}</span>
+                              <span className="truncate text-[var(--foreground)]">{company.phone}</span>
                             </div>
                         )}
                       </div>
@@ -602,7 +855,30 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
              </div>
 
              {/* Dialog: Chỉnh sửa thông tin cơ bản */}
-             <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) setEmailError(null); }}>
+             <Dialog
+                open={editDialogOpen}
+                onOpenChange={(open) => {
+                    setEditDialogOpen(open);
+                    if (!open) {
+                        setEmailError(null);
+                        setEmailTouched(false);
+                        setPhoneError(null);
+                        setPhoneTouched(false);
+                        setLocationError(null);
+                        setLocationTouched(false);
+                        setWardCodeError(null);
+                        setWardCodeTouched(false);
+                        setSpecificAddressError(null);
+                        setSpecificAddressTouched(false);
+                        setLegalNameError(null);
+                        setLegalNameTouched(false);
+                        setIndustryError(null);
+                        setIndustryTouched(false);
+                        setSizeError(null);
+                        setSizeTouched(false);
+                    }
+                }}
+             >
                 <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Chỉnh sửa thông tin cơ bản</DialogTitle>
@@ -610,7 +886,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Tên công ty (Thương hiệu) <span className="text-red-500">*</span></Label>
+                            <Label>Tên doanh nghiệp (Hiển thị trên trang) <span className="text-red-500">*</span></Label>
                             <Input 
                                 value={formData.name} 
                                 onChange={(e) => setFormData({...formData, name: e.target.value})} 
@@ -618,12 +894,39 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Tên pháp lý đầy đủ</Label>
+                            <Label>Tên pháp lý đầy đủ (Theo ĐKKD) <span className="text-red-500">*</span></Label>
                             <Input 
                                 value={formData.legalName} 
-                                onChange={(e) => setFormData({...formData, legalName: e.target.value})} 
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setFormData({ ...formData, legalName: value });
+                                    if (!legalNameTouched) return;
+                                    const trimmed = value.trim();
+                                    if (!trimmed) {
+                                        setLegalNameError("Vui lòng nhập tên pháp lý đầy đủ");
+                                    } else if (trimmed.length < 2) {
+                                        setLegalNameError("Tên pháp lý đầy đủ cần ít nhất 2 ký tự");
+                                    } else {
+                                        setLegalNameError(null);
+                                    }
+                                }} 
+                                onBlur={() => {
+                                    setLegalNameTouched(true);
+                                    const trimmed = formData.legalName.trim();
+                                    if (!trimmed) {
+                                        setLegalNameError("Vui lòng nhập tên pháp lý đầy đủ");
+                                    } else if (trimmed.length < 2) {
+                                        setLegalNameError("Tên pháp lý đầy đủ cần ít nhất 2 ký tự");
+                                    } else {
+                                        setLegalNameError(null);
+                                    }
+                                }}
                                 placeholder="VD: Công ty Cổ phần Công nghệ..."
+                                className={legalNameError && legalNameTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
+                            {legalNameError && legalNameTouched ? (
+                                <p className="text-xs text-red-500">{legalNameError}</p>
+                            ) : null}
                             {/* Warning when changing legal name on verified company */}
                             {showReVerificationWarning && (
                                 <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs">
@@ -636,27 +939,122 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             )}
                         </div>
                         <div className="space-y-2">
-                            <Label>Lĩnh vực hoạt động</Label>
+                            <Label>Lĩnh vực hoạt động <span className="text-red-500">*</span></Label>
                             <IndustrySelect
                                 value={formData.industry || null}
-                                onChange={(v) =>
+                                onChange={(v) => {
+                                    setIndustryTouched(true);
                                     setFormData({
                                         ...formData,
                                         industry: v ?? "",
-                                    })
-                                }
+                                    });
+                                    if (!v) {
+                                        setIndustryError("Vui lòng chọn lĩnh vực hoạt động");
+                                    } else {
+                                        setIndustryError(null);
+                                    }
+                                }}
                                 placeholder="Chọn lĩnh vực theo danh sách chuẩn"
+                                className={industryError && industryTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
-                            <p className="text-xs text-[var(--muted-foreground)]">
-                                Có thể để trống. Giá trị cũ không nằm trong danh sách vẫn hiển thị cho đến khi bạn đổi.
-                            </p>
+                            {industryError && industryTouched ? (
+                                <p className="text-xs text-red-500">{industryError}</p>
+                            ) : null}
                         </div>
                         <div className="space-y-2">
-                            <Label>Địa chỉ trụ sở</Label>
-                            <Input 
-                                value={formData.location} 
-                                onChange={(e) => setFormData({...formData, location: e.target.value})} 
+                            <Label>Quy mô doanh nghiệp <span className="text-red-500">*</span></Label>
+                            <select
+                                value={formData.size}
+                                onChange={(e) => {
+                                    const nextSize = e.target.value;
+                                    setSizeTouched(true);
+                                    setFormData({
+                                        ...formData,
+                                        size: nextSize,
+                                    });
+                                    if (!nextSize) {
+                                        setSizeError("Vui lòng chọn quy mô nhân sự");
+                                    } else {
+                                        setSizeError(null);
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    setSizeTouched(true);
+                                    const value = e.currentTarget.value.trim();
+                                    if (!value) {
+                                        setSizeError("Vui lòng chọn quy mô nhân sự");
+                                    } else {
+                                        setSizeError(null);
+                                    }
+                                }}
+                                className={
+                                    sizeError && sizeTouched
+                                        ? "h-10 w-full rounded-md border border-red-500 bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-red-500"
+                                        : "h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+                                }
+                            >
+                                <option value="">Chọn quy mô nhân sự</option>
+                                {COMPANY_SIZE_OPTIONS.map((band) => (
+                                    <option key={band} value={band}>
+                                        {band} nhân viên
+                                    </option>
+                                ))}
+                            </select>
+                            {sizeError && sizeTouched ? (
+                                <p className="text-xs text-red-500">{sizeError}</p>
+                            ) : null}
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Địa chỉ trụ sở - Tỉnh/Thành <span className="text-red-500">*</span></Label>
+                            <ProvinceSelect
+                                value={formData.location || null}
+                                onChange={(value) => {
+                                    setFormData({ ...formData, location: value ?? "", wardCode: "" });
+                                    setLocationTouched(true);
+                                    if (!value) setLocationError("Vui lòng chọn tỉnh/thành phố");
+                                    else setLocationError(null);
+                                    setWardCodeTouched(true);
+                                    setWardCodeError("Vui lòng chọn phường/xã");
+                                }}
+                                placeholder="Chọn tỉnh / thành phố"
                             />
+                            {locationError && locationTouched ? <p className="text-xs text-red-500">{locationError}</p> : null}
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Địa chỉ trụ sở - Phường/Xã <span className="text-red-500">*</span></Label>
+                            <WardSelect
+                                provinceCodes={editProvinceCode ? [editProvinceCode] : []}
+                                value={formData.wardCode || null}
+                                onChange={(value) => {
+                                    setWardCodeTouched(true);
+                                    const next = value ?? "";
+                                    setFormData({ ...formData, wardCode: next });
+                                    if (!next) setWardCodeError("Vui lòng chọn phường/xã");
+                                    else setWardCodeError(null);
+                                }}
+                            />
+                            {wardCodeError && wardCodeTouched ? <p className="text-xs text-red-500">{wardCodeError}</p> : null}
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Địa chỉ chi tiết <span className="text-red-500">*</span></Label>
+                            <Input
+                                value={formData.specificAddress}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setFormData({ ...formData, specificAddress: value });
+                                    if (!specificAddressTouched) return;
+                                    if (!value.trim()) setSpecificAddressError("Vui lòng nhập địa chỉ chi tiết");
+                                    else setSpecificAddressError(null);
+                                }}
+                                onBlur={() => {
+                                    setSpecificAddressTouched(true);
+                                    if (!formData.specificAddress.trim()) setSpecificAddressError("Vui lòng nhập địa chỉ chi tiết");
+                                    else setSpecificAddressError(null);
+                                }}
+                                placeholder="Ví dụ: Tầng 5, toà nhà ABC, số 12 đường XYZ"
+                                className={specificAddressError && specificAddressTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
+                            />
+                            {specificAddressError && specificAddressTouched ? <p className="text-xs text-red-500">{specificAddressError}</p> : null}
                         </div>
                         <div className="space-y-2">
                             <Label>Website</Label>
@@ -680,30 +1078,71 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <Label>Email công ty</Label>
+                            <Label>Email công ty <span className="text-red-500">*</span></Label>
                             <Input 
                                 type="email"
                                 value={formData.email} 
                                 onChange={(e) => {
-                                    setFormData({...formData, email: e.target.value});
-                                    if (emailError) setEmailError(null);
+                                    const value = e.target.value;
+                                    setFormData({ ...formData, email: value });
+                                    if (!emailTouched) return;
+                                    const trimmed = value.trim();
+                                    if (!trimmed) {
+                                        setEmailError("Vui lòng nhập email công ty");
+                                    } else if (!isValidEmail(trimmed)) {
+                                        setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
+                                    } else {
+                                        setEmailError(null);
+                                    }
                                 }}
                                 onBlur={() => {
+                                    setEmailTouched(true);
                                     const v = formData.email?.trim();
-                                    if (v && !isValidEmail(v)) setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
-                                    else setEmailError(null);
+                                    if (!v) {
+                                        setEmailError("Vui lòng nhập email công ty");
+                                    } else if (!isValidEmail(v)) {
+                                        setEmailError("Email không đúng định dạng (VD: contact@company.vn)");
+                                    } else {
+                                        setEmailError(null);
+                                    }
                                 }}
                                 placeholder="contact@company.vn"
-                                className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
+                                className={emailError && emailTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
-                            {emailError && <p className="text-xs text-red-500">{emailError}</p>}
+                            {emailError && emailTouched ? <p className="text-xs text-red-500">{emailError}</p> : null}
                         </div>
                         <div className="space-y-2">
-                            <Label>Số điện thoại</Label>
+                            <Label>Số điện thoại <span className="text-red-500">*</span></Label>
                             <Input 
                                 value={formData.phone} 
-                                onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setFormData({ ...formData, phone: value });
+                                    if (!phoneTouched) return;
+                                    const trimmed = value.trim();
+                                    if (!trimmed) {
+                                        setPhoneError("Vui lòng nhập số điện thoại");
+                                    } else if (trimmed.length < 8) {
+                                        setPhoneError("Số điện thoại cần ít nhất 8 ký tự");
+                                    } else {
+                                        setPhoneError(null);
+                                    }
+                                }}
+                                onBlur={() => {
+                                    setPhoneTouched(true);
+                                    const value = formData.phone.trim();
+                                    if (!value) {
+                                        setPhoneError("Vui lòng nhập số điện thoại");
+                                    } else if (value.length < 8) {
+                                        setPhoneError("Số điện thoại cần ít nhất 8 ký tự");
+                                    } else {
+                                        setPhoneError(null);
+                                    }
+                                }}
+                                placeholder="Ví dụ: 0909 123 456"
+                                className={phoneError && phoneTouched ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
+                            {phoneError && phoneTouched ? <p className="text-xs text-red-500">{phoneError}</p> : null}
                         </div>
                     </div>
                     <DialogFooter>
@@ -751,7 +1190,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
 
                         {/* Legal name input */}
                         <div className="space-y-2">
-                            <Label>Tên pháp lý đầy đủ</Label>
+                            <Label>Tên pháp lý đầy đủ (Theo ĐKKD)</Label>
                             <Input
                                 value={verificationLegalName}
                                 onChange={(e) => setVerificationLegalName(e.target.value)}
@@ -823,6 +1262,21 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     </DialogFooter>
                 </DialogContent>
              </Dialog>
+
+            {cropSrc && pendingFile && cropTarget && (
+                <ImageCropDialog
+                    open={!!cropSrc}
+                    onClose={closeCropDialog}
+                    imageSrc={cropSrc}
+                    aspect={cropTarget === "cover" ? 1920 / 512 : 1}
+                    cropShape="rect"
+                    outputWidth={cropTarget === "cover" ? 1920 : 512}
+                    title={cropTarget === "cover" ? "Cắt ảnh bìa" : "Cắt logo"}
+                    fileName={pendingFile.name}
+                    mimeType={pendingFile.type}
+                    onCropComplete={handleCropComplete}
+                />
+            )}
         </section>
     );
 }

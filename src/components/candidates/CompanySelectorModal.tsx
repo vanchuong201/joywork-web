@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,25 +15,32 @@ import CompanySelect from "./CompanySelect";
 
 type Props = {
   open: boolean;
+  onOpenChange: (open: boolean) => void;
   companies: CvFlipCompanyAccess[];
-  selectedCompanyId: string;
-  onSelectedCompanyIdChange: (value: string) => void;
+  draftCompanyId: string;
+  onDraftCompanyIdChange: (value: string) => void;
   onConfirm: () => void;
   onCreateCompany?: () => void;
 };
 
 export default function CompanySelectorModal({
   open,
+  onOpenChange,
   companies,
-  selectedCompanyId,
-  onSelectedCompanyIdChange,
+  draftCompanyId,
+  onDraftCompanyIdChange,
   onConfirm,
   onCreateCompany,
 }: Props) {
+  const router = useRouter();
   const hasCompanies = companies.length > 0;
 
+  function handleGoBack() {
+    router.back();
+  }
+
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{hasCompanies ? "Chọn doanh nghiệp để mở CV" : "Bạn chưa có doanh nghiệp"}</DialogTitle>
@@ -45,15 +53,18 @@ export default function CompanySelectorModal({
 
         {hasCompanies ? (
           <CompanySelect
-            value={selectedCompanyId}
-            onChange={onSelectedCompanyIdChange}
+            value={draftCompanyId}
+            onChange={onDraftCompanyIdChange}
             companies={companies}
           />
         ) : null}
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button type="button" variant="outline" onClick={handleGoBack}>
+            Quay lại
+          </Button>
           {hasCompanies ? (
-            <Button onClick={onConfirm} disabled={!selectedCompanyId}>
+            <Button onClick={onConfirm} disabled={!draftCompanyId}>
               Xác nhận
             </Button>
           ) : (
