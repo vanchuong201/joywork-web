@@ -7,6 +7,7 @@ import AuthPrompt from "@/components/auth/AuthPrompt";
 import AuthBar from "@/components/auth/AuthBar";
 import { useAuthStore } from "@/store/useAuth";
 import { ChatWidget } from "@/components/chat/ChatWidget";
+import ZaloFloatingButton from "@/components/contact/ZaloFloatingButton";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,7 @@ export default function AppLayout({
         </>
       )}
       <ChatWidget />
+      <ZaloFloatingButton />
       <MobileBottomNav />
     </div>
   );
