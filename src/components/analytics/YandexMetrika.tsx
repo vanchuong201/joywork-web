@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import Script from "next/script";
 
 declare global {
@@ -16,12 +16,6 @@ export function YandexMetrika() {
   const rawCounterId = process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID?.trim();
   const counterId = rawCounterId && COUNTER_ID_PATTERN.test(rawCounterId) ? rawCounterId : null;
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentUrl = useMemo(() => {
-    const query = searchParams.toString();
-
-    return query.length > 0 ? `${pathname}?${query}` : pathname;
-  }, [pathname, searchParams]);
   const previousUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -39,7 +33,7 @@ export function YandexMetrika() {
     }
 
     previousUrlRef.current = currentHref;
-  }, [counterId, currentUrl]);
+  }, [counterId, pathname]);
 
   if (!counterId) {
     return null;
