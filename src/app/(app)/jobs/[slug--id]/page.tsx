@@ -50,6 +50,8 @@ import { cn, formatDateUTC } from "@/lib/utils";
 import { getProvinceNameByCode } from "@/lib/provinces";
 import { fetchWardsByProvinceCodes } from "@/lib/location-wards";
 import { formatWorkingTimeRange, parseWorkingTimeRanges } from "@/lib/working-time";
+import { buildCvApplyReadiness } from "@/hooks/useProfileCompletion";
+import type { OwnUserProfile } from "@/types/user";
 
 type JobDetail = any;
 
@@ -128,6 +130,7 @@ export default function JobDetailPage() {
   const user = useAuthStore((state) => state.user);
   const { openPrompt } = useAuthPrompt();
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [cvMissingDialogOpen, setCvMissingDialogOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
 
   const jobId = useMemo(() => resolveJobIdFromSlugParam(paramValue) ?? paramValue, [paramValue]);
@@ -187,6 +190,22 @@ export default function JobDetailPage() {
     enabled: Boolean(jobId),
   });
 
+  const {
+    data: ownProfile,
+    isLoading: isOwnProfileLoading,
+    isError: isOwnProfileError,
+  } = useQuery<OwnUserProfile>({
+    queryKey: ["own-profile"],
+    queryFn: async () => {
+      const res = await api.get("/api/users/me/profile");
+      return res.data.data.profile as OwnUserProfile;
+    },
+    enabled: Boolean(user),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const cvApplyReadiness = useMemo(() => buildCvApplyReadiness(ownProfile ?? null), [ownProfile]);
+
   const applyMutation = useMutation({
     mutationFn: async () => {
       const trimmedCoverLetter = coverLetter.trim();
@@ -209,6 +228,21 @@ export default function JobDetailPage() {
       openPrompt("apply");
       return;
     }
+
+    if (isOwnProfileLoading) {
+      return;
+    }
+
+    if (isOwnProfileError) {
+      toast.error("Không thể kiểm tra hồ sơ CV. Vui lòng thử lại.");
+      return;
+    }
+
+    if (!cvApplyReadiness.isReady) {
+      setCvMissingDialogOpen(true);
+      return;
+    }
+
     setConfirmDialogOpen(true);
   };
 
@@ -543,14 +577,57 @@ export default function JobDetailPage() {
                 Đã hết hạn ứng tuyển
               </Button>
             ) : (
-              <Button onClick={handleApply} disabled={applyMutation.isPending} className="h-10 px-5 text-sm sm:text-base">
-                {applyMutation.isPending ? "Đang gửi..." : "Ứng tuyển ngay"}
+              <Button
+                onClick={handleApply}
+                disabled={applyMutation.isPending || (Boolean(user) && isOwnProfileLoading)}
+                className="h-10 px-5 text-sm sm:text-base"
+              >
+                {applyMutation.isPending ? "Đang gửi..." : Boolean(user) && isOwnProfileLoading ? "Đang kiểm tra CV..." : "Ứng tuyển ngay"}
                 <Send className="ml-2 h-4 w-4" />
               </Button>
             )}
           </div>
         </div>
       </div>
+
+      <Dialog open={cvMissingDialogOpen} onOpenChange={setCvMissingDialogOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Cập nhật CV trước khi ứng tuyển</DialogTitle>
+            <DialogDescription>
+              Bạn cần hoàn thiện đầy đủ hai mục bắt buộc trong CV trước khi gửi hồ sơ ứng tuyển.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
+              <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                <AlertTriangle className="h-4 w-4" />
+                Mục còn thiếu
+              </p>
+              <ul className="list-disc space-y-1 pl-5 leading-6">
+                {cvApplyReadiness.missingItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <p className="mt-2 leading-6">
+                Vui lòng cập nhật đủ <strong>Năng lực (KSA)</strong> và <strong>Kinh nghiệm làm việc</strong> để tiếp tục.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setCvMissingDialogOpen(false)}>
+              Để sau
+            </Button>
+            <Button asChild>
+              <Link href="/account?tab=profile#cv-ksa" onClick={() => setCvMissingDialogOpen(false)}>
+                Cập nhật CV ngay
+              </Link>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={confirmDialogOpen}

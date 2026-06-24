@@ -22,6 +22,36 @@ export type ProfileCompletionResult = {
   isComplete: boolean;
 };
 
+export type CvApplyReadinessResult = {
+  isReady: boolean;
+  hasKsa: boolean;
+  hasExperiences: boolean;
+  missingItems: string[];
+};
+
+export function buildCvApplyReadiness(profile?: OwnUserProfile | null): CvApplyReadinessResult {
+  const cvProfile = profile?.profile;
+  const experiences = profile?.experiences ?? [];
+
+  const hasKsa =
+    hasNonEmptyArrayItem(cvProfile?.knowledge) ||
+    hasNonEmptyArrayItem(cvProfile?.skills) ||
+    hasNonEmptyArrayItem(cvProfile?.attitude);
+
+  const hasExperiences = experiences.length > 0;
+
+  const missingItems: string[] = [];
+  if (!hasKsa) missingItems.push("Năng lực (KSA)");
+  if (!hasExperiences) missingItems.push("Kinh nghiệm làm việc");
+
+  return {
+    isReady: hasKsa && hasExperiences,
+    hasKsa,
+    hasExperiences,
+    missingItems,
+  };
+}
+
 export function buildProfileCompletion(profile?: OwnUserProfile | null): ProfileCompletionResult {
   if (!profile) {
     return {

@@ -65,7 +65,7 @@ export default function ProfileKSA({ profile }: ProfileKSAProps) {
     JSON.stringify(attitude) !== JSON.stringify(profile.profile?.attitude || []);
 
   return (
-    <Card>
+    <Card id="cv-ksa">
       <CardHeader>
         <CardTitle>Năng lực (KSA)</CardTitle>
         <CardDescription>Kiến thức, Kỹ năng và Thái độ</CardDescription>

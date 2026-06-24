@@ -135,7 +135,7 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
   const editingExperience = editingId ? experiences.find((exp) => exp.id === editingId) : null;
 
   return (
-    <Card>
+    <Card id="cv-experiences">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
