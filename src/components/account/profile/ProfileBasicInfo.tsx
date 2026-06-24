@@ -489,7 +489,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   };
 
   return (
-    <Card>
+    <Card id="cv-basic-info">
       <CardHeader>
         <CardTitle>Thông tin cơ bản</CardTitle>
         <CardDescription>Cập nhật thông tin cá nhân và liên hệ</CardDescription>

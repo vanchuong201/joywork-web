@@ -24,15 +24,40 @@ export type ProfileCompletionResult = {
 
 export type CvApplyReadinessResult = {
   isReady: boolean;
+  hasBasicInfo: boolean;
   hasKsa: boolean;
   hasExperiences: boolean;
   missingItems: string[];
 };
 
+function isBasicInfoComplete(profile?: OwnUserProfile | null): boolean {
+  if (!profile) return false;
+
+  const hasAvatar = Boolean(profile.profile?.avatar || profile.avatar);
+  const hasFullName = isFilledText(profile.profile?.fullName || profile.name);
+  const hasTitle = isFilledText(profile.profile?.title);
+  const hasBio = isFilledText(profile.profile?.bio);
+  const hasContactEmail = isFilledText(profile.profile?.contactEmail || profile.email);
+  const hasContactPhone = isFilledText(profile.profile?.contactPhone || profile.phone);
+  const hasLocation =
+    hasNonEmptyArrayItem(profile.profile?.locations) || isFilledText(profile.profile?.location);
+
+  return (
+    hasAvatar &&
+    hasFullName &&
+    hasTitle &&
+    hasBio &&
+    hasContactEmail &&
+    hasContactPhone &&
+    hasLocation
+  );
+}
+
 export function buildCvApplyReadiness(profile?: OwnUserProfile | null): CvApplyReadinessResult {
   const cvProfile = profile?.profile;
   const experiences = profile?.experiences ?? [];
 
+  const hasBasicInfo = isBasicInfoComplete(profile);
   const hasKsa =
     hasNonEmptyArrayItem(cvProfile?.knowledge) ||
     hasNonEmptyArrayItem(cvProfile?.skills) ||
@@ -41,11 +66,13 @@ export function buildCvApplyReadiness(profile?: OwnUserProfile | null): CvApplyR
   const hasExperiences = experiences.length > 0;
 
   const missingItems: string[] = [];
+  if (!hasBasicInfo) missingItems.push("Thông tin cơ bản");
   if (!hasKsa) missingItems.push("Năng lực (KSA)");
   if (!hasExperiences) missingItems.push("Kinh nghiệm làm việc");
 
   return {
-    isReady: hasKsa && hasExperiences,
+    isReady: hasBasicInfo && hasKsa && hasExperiences,
+    hasBasicInfo,
     hasKsa,
     hasExperiences,
     missingItems,
@@ -67,34 +94,11 @@ export function buildProfileCompletion(profile?: OwnUserProfile | null): Profile
     };
   }
 
-  const missingBasicInfoFields: string[] = [];
-
-  const hasAvatar = Boolean(profile.profile?.avatar || profile.avatar);
-  if (!hasAvatar) missingBasicInfoFields.push("avatar");
-
-  const hasFullName = isFilledText(profile.profile?.fullName || profile.name);
-  if (!hasFullName) missingBasicInfoFields.push("fullName");
-
-  const hasTitle = isFilledText(profile.profile?.title);
-  if (!hasTitle) missingBasicInfoFields.push("title");
-
-  const hasBio = isFilledText(profile.profile?.bio);
-  if (!hasBio) missingBasicInfoFields.push("bio");
-
-  const hasContactEmail = isFilledText(profile.profile?.contactEmail || profile.email);
-  if (!hasContactEmail) missingBasicInfoFields.push("contactEmail");
-
-  const hasContactPhone = isFilledText(profile.profile?.contactPhone || profile.phone);
-  if (!hasContactPhone) missingBasicInfoFields.push("contactPhone");
-
-  const hasLocation = hasNonEmptyArrayItem(profile.profile?.locations) || isFilledText(profile.profile?.location);
-  if (!hasLocation) missingBasicInfoFields.push("location");
-
   const completionItems: ProfileCompletionItem[] = [
     {
       key: "basicInfo",
       label: "Thông tin cơ bản",
-      completed: missingBasicInfoFields.length === 0,
+      completed: isBasicInfoComplete(profile),
     },
     {
       key: "ksa",

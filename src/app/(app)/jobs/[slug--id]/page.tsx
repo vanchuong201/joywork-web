@@ -595,7 +595,7 @@ export default function JobDetailPage() {
           <DialogHeader>
             <DialogTitle>Cập nhật CV trước khi ứng tuyển</DialogTitle>
             <DialogDescription>
-              Bạn cần hoàn thiện đầy đủ hai mục bắt buộc trong CV trước khi gửi hồ sơ ứng tuyển.
+            Bạn cần hoàn thiện những mục tối thiểu của CV bao gồm: <strong>Thông tin cơ bản</strong>, <strong>Năng lực (KSA)</strong>, <strong>Kinh nghiệm làm việc</strong>.
             </DialogDescription>
           </DialogHeader>
 
@@ -611,7 +611,8 @@ export default function JobDetailPage() {
                 ))}
               </ul>
               <p className="mt-2 leading-6">
-                Vui lòng cập nhật đủ <strong>Năng lực (KSA)</strong> và <strong>Kinh nghiệm làm việc</strong> để tiếp tục.
+                Vui lòng cập nhật đủ <strong>Thông tin cơ bản</strong>, <strong>Năng lực (KSA)</strong> và{" "}
+                <strong>Kinh nghiệm làm việc</strong> để tiếp tục.
               </p>
             </div>
           </div>
@@ -621,7 +622,7 @@ export default function JobDetailPage() {
               Để sau
             </Button>
             <Button asChild>
-              <Link href="/account?tab=profile#cv-ksa" onClick={() => setCvMissingDialogOpen(false)}>
+              <Link href="/account?tab=profile" onClick={() => setCvMissingDialogOpen(false)}>
                 Cập nhật CV ngay
               </Link>
             </Button>
