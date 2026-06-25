@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "./providers";
 import GoogleOneTap from "@/components/auth/GoogleOneTap";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { YandexMetrika } from "@/components/analytics/YandexMetrika";
 
 // Inter: Font hiện đại, hỗ trợ tốt tiếng Việt, phù hợp với ứng dụng doanh nghiệp
@@ -86,6 +87,7 @@ export default function RootLayout({
           {children}
           <GoogleOneTap />
           <GoogleAnalytics />
+          <MetaPixel />
           <YandexMetrika />
         </Providers>
       </body>
