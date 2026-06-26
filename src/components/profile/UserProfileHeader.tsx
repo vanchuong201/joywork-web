@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText, Sparkles, Download, Cake } from 'lucide-react';
+import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText, Sparkles, Cake } from 'lucide-react';
 import { PublicUserProfile } from '@/types/user';
 import { useAuthStore } from '@/store/useAuth';
 import { Button } from '@/components/ui/button';
@@ -275,29 +275,12 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     <span>{showCvMask ? "••••••" : "GitHub"}</span>
                   </a>
                 )}
-                {/* CV Download */}
-                {(showCvMask || profile.profile?.cvUrl) && (
-                  <a
-                    href={showCvMask ? "#" : (profile.profile?.cvUrl || "#")}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                      "flex items-center gap-1 text-[var(--brand)] hover:underline",
-                      showCvMask && "pointer-events-none select-none blur-[5px]"
-                    )}
-                  >
-                    {showCvMask ? (
-                      <>
-                        <FileText size={16} className="shrink-0" />
-                        <span>file-cv••••••</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download size={16} className="shrink-0" />
-                        <span>Tải CV</span>
-                      </>
-                    )}
-                  </a>
+                {/* CV placeholder khi cvFlip chưa mở */}
+                {showCvMask && (
+                  <span className="flex items-center gap-1 pointer-events-none select-none blur-[5px] text-[var(--brand)]">
+                    <FileText size={16} className="shrink-0" />
+                    <span>file-cv••••••</span>
+                  </span>
                 )}
               </div>
             </div>
