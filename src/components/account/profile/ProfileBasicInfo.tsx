@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { uploadProfileAvatar } from "@/lib/uploads";
 import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import Image from "next/image";
-import { Loader2, Upload, FileText, X, AlertTriangle } from "lucide-react";
+import { Loader2, Upload, AlertTriangle } from "lucide-react";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import DateOfBirthPicker from "@/components/ui/date-of-birth-picker";
@@ -441,19 +441,46 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   };
 
   return (
-    <Card id="cv-basic-info">
-      <CardHeader>
-        <CardTitle>Thông tin cơ bản</CardTitle>
-        <CardDescription>Cập nhật thông tin cá nhân và liên hệ</CardDescription>
-        {missingRequiredFields.length > 0 && (
-          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            <p className="font-medium">Bạn còn thiếu thông tin bắt buộc để hoàn thiện mục này:</p>
-            <p className="mt-1">{missingRequiredFields.join(", ")}</p>
+    <>
+      <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-2 text-sm text-amber-900">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>
+              Bạn có thể tạo hồ sơ bằng cách điền tay vào các mục bên dưới, hoặc tải CV có sẵn lên để hệ thống tự động
+              điền dữ liệu và bạn có thể chỉnh sửa lại nếu cần.
+            </p>
           </div>
-        )}
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onFormSubmit} className="space-y-6">
+          <Button type="button" size="sm" className="shrink-0" onClick={() => setCvGenerateOpen(true)}>
+            Tải lên file CV
+          </Button>
+        </div>
+      </div>
+
+      <CvGenerateDialog
+        open={cvGenerateOpen}
+        onOpenChange={setCvGenerateOpen}
+        profile={profile}
+        currentCvUrl={cvUrl}
+        onCvUrlChange={(nextUrl) => {
+          setCvUrl(nextUrl);
+          setValue("cvUrl", nextUrl ?? "", { shouldDirty: false });
+        }}
+      />
+
+      <Card id="cv-basic-info">
+        <CardHeader>
+          <CardTitle>Thông tin cơ bản</CardTitle>
+          <CardDescription>Cập nhật thông tin cá nhân và liên hệ</CardDescription>
+          {missingRequiredFields.length > 0 && (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              <p className="font-medium">Bạn còn thiếu thông tin bắt buộc để hoàn thiện mục này:</p>
+              <p className="mt-1">{missingRequiredFields.join(", ")}</p>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onFormSubmit} className="space-y-6">
           {/* Avatar */}
           <div className="flex items-center gap-6">
             <div className="relative">
@@ -706,62 +733,6 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
             )}
           </div>
 
-          {/* CV File */}
-          <div>
-            <Label>File CV</Label>
-            <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-2 text-sm text-amber-900">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <p>
-                  Bạn có thể tạo hồ sơ bằng cách điền tay vào các mục bên dưới, hoặc tạo tự động bằng cách tải CV có sẵn lên, hệ thống sẽ tự động lấy dữ liệu có sẵn và bạn có thể chỉnh sửa thêm nếu cần
-                  </p>
-                </div>
-                <Button type="button" size="sm" className="shrink-0" onClick={() => setCvGenerateOpen(true)}>
-                  Tạo hồ sơ từ file CV
-                </Button>
-              </div>
-            </div>
-            <div className="mt-3 space-y-2">
-              {cvUrl && (
-                <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                  <FileText className="h-4 w-4 text-green-600" />
-                  <a 
-                    href={cvUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-green-700 hover:underline flex-1 truncate"
-                  >
-                    CV đã tải lên
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCvUrl(null);
-                      setValue("cvUrl", "", { shouldDirty: true });
-                    }}
-                    className="text-red-600 hover:text-red-700"
-                    title="Xóa CV"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-            {errors.cvUrl && <p className="mt-1 text-sm text-red-500">{errors.cvUrl.message}</p>}
-          </div>
-
-          <CvGenerateDialog
-            open={cvGenerateOpen}
-            onOpenChange={setCvGenerateOpen}
-            profile={profile}
-            currentCvUrl={cvUrl}
-            onCvUrlChange={(nextUrl) => {
-              setCvUrl(nextUrl);
-              setValue("cvUrl", nextUrl ?? "", { shouldDirty: false });
-            }}
-          />
-
           {/* Tìm việc, hiển thị danh sách, mở CV — dùng chung ProfileDiscoverySettings (có thể mở nhanh từ nút Cài đặt ở tab Hồ sơ) */}
           {/* <ProfileDiscoverySettings profile={profile} /> */}
 
@@ -778,24 +749,25 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               {updateProfile.isPending ? "Đang lưu..." : "Lưu thay đổi"}
             </Button>
           </div>
-        </form>
-      </CardContent>
+          </form>
+        </CardContent>
 
-      {cropSrc && pendingFile && (
-        <ImageCropDialog
-          open={!!cropSrc}
-          onClose={closeCropDialog}
-          imageSrc={cropSrc}
-          aspect={1}
-          cropShape="round"
-          outputWidth={512}
-          title="Cắt ảnh đại diện"
-          fileName={pendingFile.name}
-          mimeType={pendingFile.type}
-          onCropComplete={handleAvatarUpload}
-        />
-      )}
-    </Card>
+        {cropSrc && pendingFile && (
+          <ImageCropDialog
+            open={!!cropSrc}
+            onClose={closeCropDialog}
+            imageSrc={cropSrc}
+            aspect={1}
+            cropShape="round"
+            outputWidth={512}
+            title="Cắt ảnh đại diện"
+            fileName={pendingFile.name}
+            mimeType={pendingFile.type}
+            onCropComplete={handleAvatarUpload}
+          />
+        )}
+      </Card>
+    </>
   );
 }
 
