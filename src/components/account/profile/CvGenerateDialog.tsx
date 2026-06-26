@@ -14,17 +14,13 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 type Stage = "idle" | "uploading" | "parsing" | "applying" | "done" | "error";
-type ActiveTab = "upload" | "link";
 
 interface CvGenerateDialogProps {
   open: boolean;
@@ -53,14 +49,11 @@ const ACCEPTED_MIME_TYPES = [
 export default function CvGenerateDialog({
   open,
   onOpenChange,
-  profile,
   currentCvUrl,
   onCvUrlChange,
 }: CvGenerateDialogProps) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<ActiveTab>("upload");
   const [stage, setStage] = useState<Stage>("idle");
-  const [linkValue, setLinkValue] = useState(currentCvUrl ?? "");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [jobWarnings, setJobWarnings] = useState<string[]>([]);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -82,7 +75,6 @@ export default function CvGenerateDialog({
     setStage("idle");
     setErrorMessage(null);
     setJobWarnings([]);
-    setLinkValue(currentCvUrl ?? "");
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -176,36 +168,6 @@ export default function CvGenerateDialog({
     }
   };
 
-  const handleSaveLink = async () => {
-    const trimmed = linkValue.trim();
-    if (!trimmed) {
-      toast.error("Vui lòng nhập link CV.");
-      return;
-    }
-    try {
-      const parsed = new URL(trimmed);
-      if (!["http:", "https:"].includes(parsed.protocol)) {
-        toast.error("Link CV phải bắt đầu bằng http:// hoặc https://");
-        return;
-      }
-    } catch {
-      toast.error("Link CV không hợp lệ.");
-      return;
-    }
-
-    try {
-      setStage("uploading");
-      await persistCvUrl(trimmed);
-      toast.success("Đã lưu link CV. Để tạo hồ sơ tự động, vui lòng tải file PDF/DOC/DOCX.");
-      closeDialog();
-    } catch (error: unknown) {
-      const message = getApiErrorMessage(error, "Không thể lưu link CV.");
-      toast.error(message);
-      setStage("error");
-      setErrorMessage(message);
-    }
-  };
-
   const stageText =
     stage === "uploading"
       ? "Đang tải CV lên hệ thống..."
@@ -224,166 +186,105 @@ export default function CvGenerateDialog({
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>Tạo hồ sơ từ CV</DialogTitle>
-          <DialogDescription>
-            JOYWORK sẽ tự điền phần còn thiếu trong hồ sơ của {profile.name || "bạn"} bằng dữ liệu trích xuất từ CV.
-          </DialogDescription>
+          <DialogTitle>Tải lên file CV để tự động điền hồ sơ của bạn</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2 rounded-lg border border-[var(--border)] bg-[var(--muted)]/40 p-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab("upload")}
-              disabled={isProcessing}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                activeTab === "upload"
-                  ? "bg-white text-[var(--foreground)] shadow-sm"
-                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-              )}
-            >
-              Tải file CV
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("link")}
-              disabled={isProcessing}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                activeTab === "link"
-                  ? "bg-white text-[var(--foreground)] shadow-sm"
-                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-              )}
-            >
-              Dán link CV
-            </button>
-          </div>
+          <div className="space-y-3">
+            <p className="text-sm text-[var(--muted-foreground)]">
+              Chấp nhận PDF, DOC, DOCX (tối đa 10MB). Sau khi tải lên, hệ thống sẽ tự động tạo hồ sơ từ CV.
+            </p>
 
-          {activeTab === "upload" ? (
-            <div className="space-y-3">
-              <p className="text-sm text-[var(--muted-foreground)]">
-                Chấp nhận PDF, DOC, DOCX (tối đa 10MB). Sau khi tải lên, hệ thống sẽ tự động tạo hồ sơ từ CV.
-              </p>
+            <input
+              ref={fileInputRef}
+              id="cv-generate-file-input"
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleFileUploadAndGenerate(file);
+                e.target.value = "";
+              }}
+            />
 
-              <input
-                ref={fileInputRef}
-                id="cv-generate-file-input"
-                type="file"
-                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void handleFileUploadAndGenerate(file);
-                  e.target.value = "";
-                }}
-              />
-
-              <div
-                role="button"
-                tabIndex={isProcessing ? -1 : 0}
-                onClick={() => {
-                  if (isProcessing) return;
+            <div
+              role="button"
+              tabIndex={isProcessing ? -1 : 0}
+              onClick={() => {
+                if (isProcessing) return;
+                fileInputRef.current?.click();
+              }}
+              onKeyDown={(e) => {
+                if (isProcessing) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
                   fileInputRef.current?.click();
-                }}
-                onKeyDown={(e) => {
-                  if (isProcessing) return;
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    fileInputRef.current?.click();
-                  }
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  if (isProcessing) return;
-                  setIsDraggingFile(true);
-                }}
-                onDragLeave={(e) => {
-                  e.preventDefault();
-                  if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-                    setIsDraggingFile(false);
-                  }
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (isProcessing) return;
-                  const file = e.dataTransfer.files?.[0];
-                  if (file) void handleFileUploadAndGenerate(file);
-                }}
-                className={cn(
-                  "rounded-xl border border-dashed p-6 transition-all outline-none",
-                  isProcessing
-                    ? "cursor-not-allowed border-[var(--border)] bg-[var(--muted)]/20 opacity-80"
-                    : isDraggingFile
-                      ? "border-[var(--brand)] bg-[var(--brand-light,_#eef4ff)] shadow-sm"
-                      : "cursor-pointer border-[var(--border)] bg-white hover:border-[var(--brand)]/50 hover:bg-[var(--muted)]/20"
-                )}
-              >
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <div
-                    className={cn(
-                      "flex h-14 w-14 items-center justify-center rounded-full",
-                      isDraggingFile
-                        ? "bg-[var(--brand)] text-white"
-                        : "bg-[var(--muted)] text-[var(--brand)]"
-                    )}
-                  >
-                    {isProcessing ? (
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    ) : (
-                      <FileUp className="h-6 w-6" />
-                    )}
-                  </div>
+                }
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (isProcessing) return;
+                setIsDraggingFile(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                  setIsDraggingFile(false);
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (isProcessing) return;
+                const file = e.dataTransfer.files?.[0];
+                if (file) void handleFileUploadAndGenerate(file);
+              }}
+              className={cn(
+                "rounded-xl border border-dashed p-6 transition-all outline-none",
+                isProcessing
+                  ? "cursor-not-allowed border-[var(--border)] bg-[var(--muted)]/20 opacity-80"
+                  : isDraggingFile
+                    ? "border-[var(--brand)] bg-[var(--brand-light,_#eef4ff)] shadow-sm"
+                    : "cursor-pointer border-[var(--border)] bg-white hover:border-[var(--brand)]/50 hover:bg-[var(--muted)]/20"
+              )}
+            >
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div
+                  className={cn(
+                    "flex h-14 w-14 items-center justify-center rounded-full",
+                    isDraggingFile ? "bg-[var(--brand)] text-white" : "bg-[var(--muted)] text-[var(--brand)]"
+                  )}
+                >
+                  {isProcessing ? <Loader2 className="h-6 w-6 animate-spin" /> : <FileUp className="h-6 w-6" />}
+                </div>
 
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-[var(--foreground)]">
-                      {isProcessing ? "Đang xử lý CV của bạn..." : "Kéo & thả file CV vào đây"}
-                    </p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      {isProcessing
-                        ? stageText || "Vui lòng chờ trong giây lát."
-                        : "Hoặc bấm để chọn file từ máy tính"}
-                    </p>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isProcessing}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                  >
-                    Chọn file từ máy
-                  </Button>
-
-                  <p className="text-xs text-[var(--muted-foreground)]">
-                    Hỗ trợ PDF, DOC, DOCX. Dung lượng tối đa 10MB.
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[var(--foreground)]">
+                    {isProcessing ? "Đang xử lý CV của bạn..." : "Kéo & thả file CV vào đây"}
+                  </p>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    {isProcessing ? stageText || "Vui lòng chờ trong giây lát." : "Hoặc bấm để chọn file từ máy tính"}
                   </p>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="cv-link-input">Link CV</Label>
-                <Input
-                  id="cv-link-input"
-                  value={linkValue}
+
+                <Button
+                  type="button"
+                  variant="outline"
                   disabled={isProcessing}
-                  onChange={(e) => setLinkValue(e.target.value)}
-                  placeholder="https://drive.google.com/... hoặc https://dropbox.com/..."
-                />
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  Chọn file từ máy
+                </Button>
+
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Hỗ trợ PDF, DOC, DOCX. Dung lượng tối đa 10MB.
+                </p>
               </div>
-              <p className="text-xs text-amber-700">
-                Lưu link ngoài chỉ để hiển thị CV. Để JOYWORK tự tạo hồ sơ, bạn cần tải file trực tiếp ở tab Tải file CV.
-              </p>
-              <Button type="button" onClick={handleSaveLink} disabled={isProcessing} className="w-full">
-                Lưu link CV
-              </Button>
             </div>
-          )}
+          </div>
 
           {(isProcessing || stage === "done") && (
             <div className="space-y-2 rounded-lg border border-[var(--border)] bg-[var(--muted)]/30 p-3">
