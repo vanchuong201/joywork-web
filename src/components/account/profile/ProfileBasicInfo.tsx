@@ -13,14 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { uploadProfileAvatar, uploadProfileCV } from "@/lib/uploads";
+import { uploadProfileAvatar } from "@/lib/uploads";
 import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import Image from "next/image";
-import { Loader2, Upload, FileText, X, Sparkles } from "lucide-react";
+import { Loader2, Upload, FileText, X, AlertTriangle } from "lucide-react";
 import ProvinceSelect from "@/components/ui/province-select";
 import WardSelect from "@/components/ui/ward-select";
 import DateOfBirthPicker from "@/components/ui/date-of-birth-picker";
-import CvImportPreviewDialog from "@/components/account/profile/CvImportPreviewDialog";
+import CvGenerateDialog from "@/components/account/profile/CvGenerateDialog";
 
 const maxBirthYear = new Date().getFullYear() - 16;
 
@@ -96,15 +96,7 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
   
   // CV file upload
   const [cvUrl, setCvUrl] = useState<string | null>(profile.profile?.cvUrl || null);
-  const [uploadingCV, setUploadingCV] = useState(false);
-  const cvFileInputRef = useRef<HTMLInputElement>(null);
-  const [cvImportOpen, setCvImportOpen] = useState(false);
-
-  const isCvDocxOrPdf = (() => {
-    if (!cvUrl) return false;
-    const lower = cvUrl.toLowerCase();
-    return lower.endsWith(".pdf") || lower.endsWith(".docx");
-  })();
+  const [cvGenerateOpen, setCvGenerateOpen] = useState(false);
 
   const {
     register,
@@ -361,46 +353,6 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       // Invalid URL
     }
     return undefined;
-  };
-
-  const handleCVUpload = async (file: File) => {
-    // Check file type - allow PDF, DOC, DOCX
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Chỉ chấp nhận file PDF, DOC hoặc DOCX");
-      return;
-    }
-
-    // Check file size - max 10MB
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File CV vượt quá giới hạn 10MB");
-      return;
-    }
-
-    setUploadingCV(true);
-    try {
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const response = await uploadProfileCV({
-        fileName: file.name,
-        fileType: file.type,
-        fileData: base64.split(",")[1],
-        previousKey: cvUrl ? extractS3Key(cvUrl) : undefined,
-      });
-
-      setCvUrl(response.assetUrl);
-      setValue("cvUrl", response.assetUrl, { shouldDirty: true });
-      toast.success("Tải CV thành công");
-    } catch (error: any) {
-      toast.error(error?.message || "Upload CV thất bại");
-    } finally {
-      setUploadingCV(false);
-    }
   };
 
   const onSubmit = (values: FormValues) => {
@@ -756,47 +708,21 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
 
           {/* CV File */}
           <div>
-            <Label htmlFor="cvUrl">File CV</Label>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input 
-                  id="cvUrl" 
-                  {...register("cvUrl")} 
-                  placeholder="https://drive.google.com/... hoặc https://your-cv.com/cv.pdf" 
-                  className="flex-1"
-                />
-                <input
-                  ref={cvFileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleCVUpload(file);
-                    e.target.value = "";
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => cvFileInputRef.current?.click()}
-                  disabled={uploadingCV}
-                  className="shrink-0"
-                >
-                  {uploadingCV ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang tải...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Tải file CV
-                    </>
-                  )}
+            <Label>File CV</Label>
+            <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-2 text-sm text-amber-900">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>
+                  Bạn có thể tạo hồ sơ bằng cách điền tay vào các mục bên dưới, hoặc tạo tự động bằng cách tải CV có sẵn lên, hệ thống sẽ tự động lấy dữ liệu có sẵn và bạn có thể chỉnh sửa thêm nếu cần
+                  </p>
+                </div>
+                <Button type="button" size="sm" className="shrink-0" onClick={() => setCvGenerateOpen(true)}>
+                  Tạo hồ sơ từ file CV
                 </Button>
               </div>
+            </div>
+            <div className="mt-3 space-y-2">
               {cvUrl && (
                 <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
                   <FileText className="h-4 w-4 text-green-600" />
@@ -823,42 +749,18 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               )}
             </div>
             {errors.cvUrl && <p className="mt-1 text-sm text-red-500">{errors.cvUrl.message}</p>}
-            <p className="mt-1 text-xs text-slate-500">
-              Bạn có thể tải file CV trực tiếp (PDF, DOC, DOCX - tối đa 10MB) hoặc dán link từ Google Drive, Dropbox, v.v.
-            </p>
-
-            {cvUrl && isCvDocxOrPdf && (
-              <div className="mt-3 flex flex-col gap-2 rounded-md border border-[var(--brand)]/30 bg-[var(--brand-light,_#eef4ff)] p-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-2 text-sm">
-                  <Sparkles className="mt-0.5 h-4 w-4 text-[var(--brand)]" />
-                  <div>
-                    <p className="font-medium text-slate-900">Tự động điền hồ sơ từ CV này?</p>
-                    <p className="text-xs text-slate-600">
-                      JOYWORK đọc file CV PDF/DOCX của bạn và đề xuất cập nhật các phần còn thiếu trong hồ sơ. Bạn sẽ xem trước trước khi áp dụng.
-                    </p>
-                  </div>
-                </div>
-                <Button type="button" size="sm" onClick={() => setCvImportOpen(true)}>
-                  Tạo hồ sơ từ CV
-                </Button>
-              </div>
-            )}
-
-            {cvUrl && !isCvDocxOrPdf && (
-              <p className="mt-2 text-xs text-slate-500">
-                Tính năng đề xuất hồ sơ từ CV hiện chỉ hỗ trợ file PDF hoặc DOCX bạn upload trực tiếp.
-              </p>
-            )}
           </div>
 
-          {cvUrl && isCvDocxOrPdf && (
-            <CvImportPreviewDialog
-              open={cvImportOpen}
-              onOpenChange={setCvImportOpen}
-              cvUrl={cvUrl}
-              profile={profile}
-            />
-          )}
+          <CvGenerateDialog
+            open={cvGenerateOpen}
+            onOpenChange={setCvGenerateOpen}
+            profile={profile}
+            currentCvUrl={cvUrl}
+            onCvUrlChange={(nextUrl) => {
+              setCvUrl(nextUrl);
+              setValue("cvUrl", nextUrl ?? "", { shouldDirty: false });
+            }}
+          />
 
           {/* Tìm việc, hiển thị danh sách, mở CV — dùng chung ProfileDiscoverySettings (có thể mở nhanh từ nút Cài đặt ở tab Hồ sơ) */}
           {/* <ProfileDiscoverySettings profile={profile} /> */}

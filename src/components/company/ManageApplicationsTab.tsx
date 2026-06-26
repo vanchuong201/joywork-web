@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Users, User, FileText, ExternalLink, ChevronLeft, ChevronRight, X, MoreVertical, Edit, List, Grid } from "lucide-react";
+import { Users, User, FileText, ChevronLeft, ChevronRight, X, MoreVertical, Edit, List, Grid } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -386,27 +386,14 @@ export default function ManageApplicationsTab({ company }: Props) {
                                     Cập nhật trạng thái
                                   </DropdownMenu.Item>
                                   <DropdownMenu.Item asChild>
-                                    <Link 
-                                      href={`/profile/${user?.slug || user?.id}`} 
+                                    <Link
+                                      href={`/profile/${user?.slug || user?.id}`}
                                       className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                     >
-                                      <ExternalLink className="w-4 h-4" />
-                                      Xem hồ sơ
+                                      <FileText className="w-4 h-4" />
+                                      Xem CV
                                     </Link>
                                   </DropdownMenu.Item>
-                                  {profile?.cvUrl && (
-                                    <DropdownMenu.Item asChild>
-                                      <a 
-                                        href={profile.cvUrl} 
-                                        target="_blank" 
-                                        rel="noreferrer"
-                                        className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
-                                      >
-                                        <FileText className="w-4 h-4" />
-                                        Xem CV
-                                      </a>
-                                    </DropdownMenu.Item>
-                                  )}
                                 </DropdownMenu.Content>
                               </DropdownMenu.Portal>
                             </DropdownMenu.Root>
@@ -501,27 +488,14 @@ export default function ManageApplicationsTab({ company }: Props) {
                                 Cập nhật trạng thái
                               </DropdownMenu.Item>
                               <DropdownMenu.Item asChild>
-                                <Link 
-                                  href={`/profile/${user?.slug || user?.id}`} 
+                                <Link
+                                  href={`/profile/${user?.slug || user?.id}`}
                                   className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                 >
-                                  <ExternalLink className="w-4 h-4" />
-                                  Xem hồ sơ
+                                  <FileText className="w-4 h-4" />
+                                  Xem CV
                                 </Link>
                               </DropdownMenu.Item>
-                              {profile?.cvUrl && (
-                                <DropdownMenu.Item asChild>
-                                  <a 
-                                    href={profile.cvUrl} 
-                                    target="_blank" 
-                                    rel="noreferrer"
-                                    className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
-                                  >
-                                    <FileText className="w-4 h-4" />
-                                    Xem CV
-                                  </a>
-                                </DropdownMenu.Item>
-                              )}
                             </DropdownMenu.Content>
                           </DropdownMenu.Portal>
                         </DropdownMenu.Root>
