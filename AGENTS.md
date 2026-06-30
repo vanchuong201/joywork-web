@@ -12,3 +12,11 @@ Follow `.cursor/rules/*.mdc` first. Use this file as the short default guide:
 - Treat uploads, rich text, and any HTML rendering as untrusted input; sanitize before send or render and preserve file restrictions.
 - Do not hardcode public runtime config like OAuth client IDs; use `NEXT_PUBLIC_*` env variables instead.
 - Before finishing meaningful frontend work, run the most relevant validation available, usually `npm run lint`, because build does not enforce ESLint here.
+
+## Git & release
+
+Tuân thủ `deploy/GIT_WORKFLOW.md` (repo deploy) và `.cursor/rules/git-workflow.mdc`:
+
+- Làm việc trên `develop`; push → auto deploy staging.
+- Release prod: promote `main` bằng **`git merge --ff-only develop`** hoặc **`gh pr merge --rebase`** (không `--merge` thường xuyên).
+- Deploy prod từ repo `deploy` (`Deploy Production` workflow).
