@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "cdn.joywork.vn",
+      },
+      {
+        protocol: "https",
         hostname: "ui-avatars.com",
       },
     ],
