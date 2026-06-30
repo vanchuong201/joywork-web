@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth";
+import { hasStoredAccessToken } from "@/lib/auth-token";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -15,9 +16,11 @@ type Props = {
 
 export default function CompanyManageGuard({ children }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const params = useParams();
   const slug = params?.slug as string;
-  
+
   const user = useAuthStore((state) => state.user);
   const memberships = useAuthStore((state) => state.memberships);
   const initialized = useAuthStore((state) => state.initialized);
@@ -26,20 +29,20 @@ export default function CompanyManageGuard({ children }: Props) {
 
   const [checking, setChecking] = useState(true);
   const [hasPermission, setHasPermission] = useState(false);
+  const membershipRefetchAttempted = useRef(false);
 
   useEffect(() => {
-    // Wait for auth to initialize
     if (!initialized || loading) {
       return;
     }
 
-    // If not authenticated, redirect
     if (!user) {
-      router.push("/");
+      const query = searchParams.toString();
+      const returnPath = query ? `${pathname}?${query}` : pathname;
+      router.replace(`/login?redirect=${encodeURIComponent(returnPath)}`);
       return;
     }
 
-    // Check if user has permission (OWNER or ADMIN role for this company)
     const membership = memberships.find(
       (m) => m.company.slug === slug && (m.role === "OWNER" || m.role === "ADMIN")
     );
@@ -47,31 +50,31 @@ export default function CompanyManageGuard({ children }: Props) {
     if (membership) {
       setHasPermission(true);
       setChecking(false);
-    } else {
-      // If memberships are empty, try to fetch them
-      if (memberships.length === 0) {
-        fetchMe()
-          .then(() => {
-            const updatedMemberships = useAuthStore.getState().memberships;
-            const updatedMembership = updatedMemberships.find(
-              (m) => m.company.slug === slug && (m.role === "OWNER" || m.role === "ADMIN")
-            );
-            if (updatedMembership) {
-              setHasPermission(true);
-            }
-            setChecking(false);
-          })
-          .catch(() => {
-            setChecking(false);
-          });
-      } else {
-        // No permission
-        setChecking(false);
-      }
+      return;
     }
-  }, [user, memberships, slug, initialized, loading, router, fetchMe]);
 
-  // Show loading while checking
+    if (memberships.length === 0 && !membershipRefetchAttempted.current && hasStoredAccessToken()) {
+      membershipRefetchAttempted.current = true;
+      fetchMe()
+        .then(() => {
+          const updatedMemberships = useAuthStore.getState().memberships;
+          const updatedMembership = updatedMemberships.find(
+            (m) => m.company.slug === slug && (m.role === "OWNER" || m.role === "ADMIN")
+          );
+          if (updatedMembership) {
+            setHasPermission(true);
+          }
+          setChecking(false);
+        })
+        .catch(() => {
+          setChecking(false);
+        });
+      return;
+    }
+
+    setChecking(false);
+  }, [user, memberships, slug, initialized, loading, router, fetchMe, pathname, searchParams]);
+
   if (!initialized || loading || checking) {
     return (
       <div className="min-h-screen bg-[var(--background)] font-sans pb-20">
@@ -85,7 +88,6 @@ export default function CompanyManageGuard({ children }: Props) {
     );
   }
 
-  // Show error if no permission
   if (!hasPermission) {
     return (
       <div className="min-h-screen bg-[var(--background)] font-sans pb-20">

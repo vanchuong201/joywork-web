@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { PropsWithChildren } from "react";
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/useAuth";
+import { hasStoredAccessToken } from "@/lib/auth-token";
 import { AuthPromptProvider } from "@/contexts/AuthPromptContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -14,8 +15,7 @@ export default function Providers({ children }: PropsWithChildren) {
   const markInitialized = useAuthStore((s) => s.markInitialized);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const token = localStorage.getItem("accessToken");
-    if (token) {
+    if (hasStoredAccessToken()) {
       fetchMe();
     } else {
       markInitialized();

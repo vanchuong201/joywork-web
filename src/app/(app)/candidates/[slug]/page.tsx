@@ -226,7 +226,9 @@ export default function CandidateDetailPage({ params }: Props) {
         </div>
         {showFlipChrome && access?.isFlipped ? (
           <p className="mx-auto mt-2 max-w-5xl text-xs text-emerald-700">
-            Đã mở thông tin liên hệ cho doanh nghiệp này trong tháng.
+            {access.hasAppliedToCompany && !access.connectionId
+              ? "Ứng viên đã ứng tuyển vào công ty — xem đầy đủ thông tin liên hệ."
+              : "Đã mở thông tin liên hệ cho doanh nghiệp này trong tháng."}
           </p>
         ) : null}
       </div>

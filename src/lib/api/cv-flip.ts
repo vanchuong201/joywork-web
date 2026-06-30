@@ -82,6 +82,7 @@ export async function getCvFlipCandidateDetail(slug: string, companyId?: string)
       flippedAt: string | null;
       isOwnerView?: boolean;
       companyContext?: boolean;
+      hasAppliedToCompany?: boolean;
     };
   };
 }

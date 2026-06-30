@@ -2,6 +2,9 @@
 
 import { create } from "zustand";
 import api from "@/lib/api";
+import { clearStoredAccessToken, hasStoredAccessToken } from "@/lib/auth-token";
+
+let fetchMeInFlight: Promise<void> | null = null;
 
 export type AuthUser = {
   id: string;
@@ -86,6 +89,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     })),
   markInitialized: () => set({ initialized: true, loading: false }),
   fetchMe: async () => {
+    if (fetchMeInFlight) {
+      return fetchMeInFlight;
+    }
+
+    if (!hasStoredAccessToken()) {
+      set({ user: null, memberships: [], followedCompanies: [], savedJobIds: [], loading: false, initialized: true });
+      return;
+    }
+
+    fetchMeInFlight = (async () => {
     set({ loading: true });
     try {
       // First, fetch user data - this is critical
@@ -141,20 +154,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       set({ user: authUser, memberships, followedCompanies, savedJobIds });
     } catch (e: any) {
-      // Only clear user if /api/auth/me fails (401/403) - this means token is invalid
       const status = e?.response?.status;
       if (status === 401 || status === 403) {
-        // token invalid; clear
-        if (typeof window !== "undefined") localStorage.removeItem("accessToken");
+        clearStoredAccessToken();
         set({ user: null, memberships: [], followedCompanies: [], savedJobIds: [] });
-      } else {
-        // For other errors, keep existing user data but mark as initialized
-        // This prevents clearing user on network errors or temporary API issues
+      } else if (status !== 429) {
         console.error("Failed to fetch some user data:", e);
       }
     } finally {
       set({ loading: false, initialized: true });
+      fetchMeInFlight = null;
     }
+    })();
+
+    return fetchMeInFlight;
   },
   signOut: async () => {
     try {
@@ -163,7 +176,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // ignore
     }
     if (typeof window !== "undefined") {
-      localStorage.removeItem("accessToken");
+      clearStoredAccessToken();
       // Clear all user data and redirect to home
       set({ user: null, memberships: [], followedCompanies: [], savedJobIds: [], initialized: true, loading: false });
       // Redirect to home page after logout

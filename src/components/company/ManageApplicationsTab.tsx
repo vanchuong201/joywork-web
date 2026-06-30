@@ -7,6 +7,8 @@ import Link from "next/link";
 import Image from "next/image";
 import api from "@/lib/api";
 import { buildJobUrl } from "@/lib/job-url";
+import { buildCompanyCandidateUrl } from "@/lib/candidate-url";
+import ApplicationCoverLetter from "@/components/company/ApplicationCoverLetter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -317,6 +319,10 @@ export default function ManageApplicationsTab({ company }: Props) {
                 const avatar = profile?.avatar || user?.avatar;
                 const userName = user?.name || user?.email || "Ứng viên";
                 const headline = profile?.headline;
+                const candidateSlug = user?.slug || user?.id;
+                const candidateHref = candidateSlug
+                  ? buildCompanyCandidateUrl(candidateSlug, company.id)
+                  : "#";
 
                 return (
                   <Card key={application.id} className="border-[var(--border)] bg-[var(--card)] transition-all hover:shadow-md">
@@ -345,7 +351,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-3 mb-1">
                                 <Link
-                                  href={`/profile/${user?.slug || user?.id}`}
+                                  href={candidateHref}
                                   className="text-base font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--brand)]"
                                 >
                                   {userName}
@@ -387,7 +393,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                                   </DropdownMenu.Item>
                                   <DropdownMenu.Item asChild>
                                     <Link
-                                      href={`/profile/${user?.slug || user?.id}`}
+                                      href={candidateHref}
                                       className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                     >
                                       <FileText className="w-4 h-4" />
@@ -416,10 +422,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                               <span>{formatDate(application.appliedAt)}</span>
                             </div>
                             {application.coverLetter && (
-                              <div className="border-t border-[var(--border)] pt-2">
-                                <p className="mb-1 text-xs font-medium text-[var(--muted-foreground)]">Thư giới thiệu:</p>
-                                <p className="line-clamp-2 text-sm leading-relaxed text-[var(--muted-foreground)]">{application.coverLetter}</p>
-                              </div>
+                              <ApplicationCoverLetter text={application.coverLetter} />
                             )}
                             {application.notes && (
                               <div className="border-t border-[var(--border)] pt-2">
@@ -443,6 +446,10 @@ export default function ManageApplicationsTab({ company }: Props) {
                 const avatar = profile?.avatar || user?.avatar;
                 const userName = user?.name || user?.email || "Ứng viên";
                 const headline = profile?.headline;
+                const candidateSlug = user?.slug || user?.id;
+                const candidateHref = candidateSlug
+                  ? buildCompanyCandidateUrl(candidateSlug, company.id)
+                  : "#";
 
                 return (
                   <Card key={application.id} className="flex flex-col border-[var(--border)] bg-[var(--card)] transition-all hover:shadow-lg">
@@ -489,7 +496,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                               </DropdownMenu.Item>
                               <DropdownMenu.Item asChild>
                                 <Link
-                                  href={`/profile/${user?.slug || user?.id}`}
+                                  href={candidateHref}
                                   className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                 >
                                   <FileText className="w-4 h-4" />
@@ -504,7 +511,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                       {/* Name and Status */}
                       <div className="mb-3">
                         <Link
-                          href={`/profile/${user?.slug || user?.id}`}
+                          href={candidateHref}
                           className="mb-2 block text-base font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--brand)]"
                         >
                           {userName}
@@ -536,10 +543,11 @@ export default function ManageApplicationsTab({ company }: Props) {
                           <span className="text-sm">{formatDate(application.appliedAt)}</span>
                         </div>
                         {application.coverLetter && (
-                          <div className="border-t border-[var(--border)] pt-2">
-                            <p className="mb-1 text-xs font-medium text-[var(--muted-foreground)]">Thư giới thiệu:</p>
-                            <p className="line-clamp-3 text-xs leading-relaxed text-[var(--muted-foreground)]">{application.coverLetter}</p>
-                          </div>
+                          <ApplicationCoverLetter
+                            text={application.coverLetter}
+                            textClassName="text-xs"
+                            clampClass="line-clamp-3"
+                          />
                         )}
                       </div>
                     </div>
