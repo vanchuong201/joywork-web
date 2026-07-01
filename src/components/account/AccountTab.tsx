@@ -15,6 +15,7 @@ import { uploadProfileAvatar } from "@/lib/uploads";
 import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import Image from "next/image";
 import { Loader2, Upload, Camera } from "lucide-react";
+import SocialAccounts from "@/components/profile/SocialAccounts";
 import { buildCandidateProfileUrl } from "@/lib/candidate-url";
 
 const schema = z.object({
