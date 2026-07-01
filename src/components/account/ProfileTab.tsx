@@ -18,6 +18,7 @@ import ProfileEducations from "@/components/account/profile/ProfileEducations";
 import TalentPoolStatus from "@/components/talent-pool/TalentPoolStatus";
 import { buildProfileCompletion } from "@/hooks/useProfileCompletion";
 import { listMyCvFlipRequests, respondMyCvFlipRequest } from "@/lib/api/cv-flip";
+import { buildCandidateProfileUrl } from "@/lib/candidate-url";
 import { toast } from "sonner";
 
 type TalentPoolMyStatus = {
@@ -89,6 +90,7 @@ export default function ProfileTab() {
   }
 
   const profileSlug = data.slug || data.id;
+  const candidateProfileHref = buildCandidateProfileUrl(profileSlug);
   const { completionItems, completionPercent } = buildProfileCompletion(data);
   const memberStatus = talentPoolStatus?.member?.status ?? null;
   const requestStatus = talentPoolStatus?.latestRequest?.status ?? null;
@@ -105,9 +107,9 @@ export default function ProfileTab() {
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">Quản lý thông tin hồ sơ và CV của bạn</p>
         </div>
         <Button variant="outline" asChild className="w-full sm:w-auto">
-          <Link href={`/profile/${profileSlug}`} target="_blank" rel="noopener noreferrer">
+          <Link href={candidateProfileHref} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="w-4 h-4 mr-2" />
-            Xem trang hồ sơ công khai
+            Xem hồ sơ trên danh sách ứng viên
           </Link>
         </Button>
       </div>
@@ -206,7 +208,7 @@ export default function ProfileTab() {
             </div>
             {isActive ? (
               <Button variant="secondary" asChild className="w-full md:w-auto">
-                <Link href={`/profile/${profileSlug}`} target="_blank" rel="noopener noreferrer">
+                <Link href={candidateProfileHref} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Xem hồ sơ
                 </Link>

@@ -45,7 +45,7 @@ const leftAdminNavItem: NavItem = {
 };
 
 export const leftPersonalNav: NavItem[] = [
-  { icon: UserRound, label: "CV của tôi", href: "/account?tab=profile" },
+  { icon: UserRound, label: "CV của tôi", href: "/account/profile" },
   { icon: ClipboardList, label: "Ứng tuyển của tôi", href: "/applications" },
   { icon: Bookmark, label: "Đã lưu", href: "/saved" },
   { icon: Heart, label: "Công ty theo dõi", href: "/following" },
@@ -56,6 +56,7 @@ export const mobilePersonalNav: NavItem[] = leftPersonalNav.filter((item) => ite
 
 export const accountDropdownItems: AccountDropdownItem[] = [
   { label: "Quản lý tài khoản", href: "/account" },
+  { label: "CV của tôi", href: "/account/profile" },
 ];
 
 const headerPrimaryNav: NavItem[] = exploreNavBase.slice(0, 3);
@@ -103,10 +104,11 @@ export function buildCompanyManageNav(memberships: CompanyMembership[]): NavItem
 
 export function isNavItemActive(pathname: string, item: Pick<NavItem, "href" | "exact" | "external">): boolean {
   if (item.external) return false;
-  const normalizedHref = item.href.split("?")[0];
-  if (item.exact) return pathname === normalizedHref;
-  if (normalizedHref === "/") return pathname === "/";
-  return pathname.startsWith(normalizedHref);
+  const pathOnly = item.href.split("?")[0];
+  if (item.exact) return pathname === pathOnly;
+  if (pathOnly === "/") return pathname === "/";
+  if (pathname === pathOnly) return true;
+  return pathname.startsWith(`${pathOnly}/`);
 }
 
 function isValidCompanySlug(slug: string | null | undefined): slug is string {

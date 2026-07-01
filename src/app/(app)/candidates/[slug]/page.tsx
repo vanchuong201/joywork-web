@@ -212,14 +212,6 @@ export default function CandidateDetailPage({ params }: Props) {
     <div className="relative">
       <div className="border-b border-[var(--border)] bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* <Link href="/candidates" className="text-sm text-[var(--brand)] hover:underline">
-              ← Danh sách ứng viên
-            </Link> */}
-            {/* <Link href={`/profile/${displayProfile.slug || displayProfile.id}`} className="text-sm text-slate-600 hover:underline">
-              Mở dạng profile công khai
-            </Link> */}
-          </div>
           {showFlipChrome && usageQuery.data ? (
             <CvFlipUsageBadge usage={usageQuery.data} />
           ) : null}

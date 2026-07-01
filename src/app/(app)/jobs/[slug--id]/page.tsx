@@ -622,7 +622,7 @@ export default function JobDetailPage() {
               Để sau
             </Button>
             <Button asChild>
-              <Link href="/account?tab=profile" onClick={() => setCvMissingDialogOpen(false)}>
+              <Link href="/account/profile" onClick={() => setCvMissingDialogOpen(false)}>
                 Cập nhật CV ngay
               </Link>
             </Button>

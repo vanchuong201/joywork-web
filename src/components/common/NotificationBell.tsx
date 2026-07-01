@@ -52,7 +52,7 @@ export default function NotificationBell() {
     }
 
     if (notification.type === "CV_FLIP_REQUEST") {
-      return "/account?tab=profile";
+      return "/account/profile";
     }
 
     if (notification.relatedEntityType === "TICKET" && notification.relatedEntityId) {

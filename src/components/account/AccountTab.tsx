@@ -15,7 +15,7 @@ import { uploadProfileAvatar } from "@/lib/uploads";
 import { ImageCropDialog } from "@/components/ui/image-crop-dialog";
 import Image from "next/image";
 import { Loader2, Upload, Camera } from "lucide-react";
-import SocialAccounts from "@/components/profile/SocialAccounts";
+import { buildCandidateProfileUrl } from "@/lib/candidate-url";
 
 const schema = z.object({
   name: z.string().min(2, "Tên cần ít nhất 2 ký tự"),
@@ -240,7 +240,7 @@ export default function AccountTab() {
     : "";
 
   const avatarUrl = avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || data.email || 'User')}&background=random&size=200`;
-  const profilePath = `/profile/${data.slug || "your-slug"}`;
+  const profilePath = buildCandidateProfileUrl(data.slug || "your-slug");
   const profileUrl = `${origin || ""}${profilePath}`;
 
   return (
@@ -318,7 +318,7 @@ export default function AccountTab() {
 
           {/* Slug */}
           <div>
-            <Label htmlFor="slug">Slug (URL profile)</Label>
+            <Label htmlFor="slug">Slug (URL hồ sơ ứng viên)</Label>
             <Input
               id="slug"
               {...register("slug")}
@@ -329,7 +329,7 @@ export default function AccountTab() {
               <p className="mt-1 text-xs text-red-600">{errors.slug.message}</p>
             )}
             <p className="mt-1 break-all text-xs text-[var(--muted-foreground)] sm:break-normal">
-              URL profile của bạn:{" "}
+              URL hồ sơ trên danh sách ứng viên:{" "}
               <a
                 href={profilePath}
                 target="_blank"
