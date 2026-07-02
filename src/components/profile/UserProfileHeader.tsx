@@ -173,17 +173,17 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
               {profile.profile?.headline && (
                 <p className="text-base text-slate-500 mb-3">{profile.profile.headline}</p>
               )}
-              <div className="flex flex-wrap gap-4 text-sm text-slate-500">
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
                 {/* Address */}
                 {hasAddress && (
                   <span
                     className={cn(
-                      "flex items-center gap-1",
+                      "flex min-w-0 max-w-full items-start gap-1",
                       showCvMask && "select-none blur-[5px]"
                     )}
                   >
-                    <MapPin size={16} className="shrink-0" />
-                    <span>
+                    <MapPin size={16} className="mt-0.5 shrink-0" />
+                    <span className={cn(!showCvMask && "break-words select-text")}>
                       {showCvMask ? maskedAddress : fullAddress}
                     </span>
                   </span>
@@ -197,36 +197,44 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     )}
                   >
                     <Cake size={16} className="shrink-0" />
-                    <span>{showCvMask ? "••/••/••••" : fullDateOfBirth}</span>
+                    <span className={cn(!showCvMask && "select-text")}>
+                      {showCvMask ? "••/••/••••" : fullDateOfBirth}
+                    </span>
                   </span>
                 )}
                 {/* Email */}
                 {(showCvMask || profile.profile?.contactEmail) && (
-                  <span
-                    className={cn(
-                      "flex items-center gap-1",
-                      showCvMask && "select-none blur-[5px]"
-                    )}
-                  >
-                    <Mail size={16} className="shrink-0" />
-                    <span className="truncate max-w-[200px]">
-                      {showCvMask ? "email@••••••" : profile.profile?.contactEmail}
+                  showCvMask ? (
+                    <span className="flex items-center gap-1 select-none blur-[5px]">
+                      <Mail size={16} className="shrink-0" />
+                      <span>email@••••••</span>
                     </span>
-                  </span>
+                  ) : (
+                    <a
+                      href={`mailto:${profile.profile?.contactEmail}`}
+                      className="flex min-w-0 max-w-full items-start gap-1 break-all select-text hover:text-[var(--brand)]"
+                    >
+                      <Mail size={16} className="mt-0.5 shrink-0" />
+                      <span>{profile.profile?.contactEmail}</span>
+                    </a>
+                  )
                 )}
                 {/* Phone */}
                 {(showCvMask || profile.profile?.contactPhone) && (
-                  <span
-                    className={cn(
-                      "flex items-center gap-1",
-                      showCvMask && "select-none blur-[5px]"
-                    )}
-                  >
-                    <Phone size={16} className="shrink-0" />
-                    <span>
-                      {showCvMask ? "••• ••• •••" : profile.profile?.contactPhone}
+                  showCvMask ? (
+                    <span className="flex items-center gap-1 select-none blur-[5px]">
+                      <Phone size={16} className="shrink-0" />
+                      <span>••• ••• •••</span>
                     </span>
-                  </span>
+                  ) : (
+                    <a
+                      href={`tel:${profile.profile?.contactPhone}`}
+                      className="flex min-w-0 max-w-full items-start gap-1 break-all select-text hover:text-[var(--brand)]"
+                    >
+                      <Phone size={16} className="mt-0.5 shrink-0" />
+                      <span>{profile.profile?.contactPhone}</span>
+                    </a>
+                  )
                 )}
                 {/* Website */}
                 {(showCvMask || profile.profile?.website) && (
@@ -235,12 +243,13 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
-                      "flex items-center gap-1 hover:text-[var(--brand)]",
+                      "flex min-w-0 max-w-full items-start gap-1",
+                      !showCvMask && "break-all select-text hover:text-[var(--brand)]",
                       showCvMask && "pointer-events-none select-none blur-[5px]"
                     )}
                   >
-                    <Globe size={16} className="shrink-0" />
-                    <span>{showCvMask ? "https://••••••" : "Website"}</span>
+                    <Globe size={16} className="mt-0.5 shrink-0" />
+                    <span>{showCvMask ? "https://••••••" : profile.profile?.website}</span>
                   </a>
                 )}
                 {/* LinkedIn */}
@@ -281,6 +290,17 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     <FileText size={16} className="shrink-0" />
                     <span>file-cv••••••</span>
                   </span>
+                )}
+                {!showCvMask && profile.profile?.cvUrl && (
+                  <a
+                    href={profile.profile.cvUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-w-0 max-w-full items-start gap-1 break-all select-text text-[var(--brand)] hover:underline"
+                  >
+                    <FileText size={16} className="mt-0.5 shrink-0" />
+                    <span>Xem file CV</span>
+                  </a>
                 )}
               </div>
             </div>

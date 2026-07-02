@@ -38,17 +38,62 @@ function mergeContactsFromCvFlip(
   base: PublicUserProfile,
   cv: Awaited<ReturnType<typeof getCvFlipCandidateDetail>>
 ): PublicUserProfile {
-  if (!base.profile) return base;
+  const cvProfile = cv.candidate.profile;
+  if (!base.profile) {
+    return {
+      ...base,
+      name: base.name || cv.candidate.name || base.name,
+      profile: {
+        id: base.id,
+        avatar: cvProfile.avatar,
+        fullName: cvProfile.fullName ?? cv.candidate.name,
+        title: cvProfile.title,
+        headline: cvProfile.headline,
+        bio: cvProfile.bio,
+        skills: cvProfile.skills,
+        locations: cvProfile.locations,
+        contactEmail: cvProfile.contactEmail,
+        contactPhone: cvProfile.contactPhone,
+        cvUrl: cvProfile.cvUrl,
+        website: cvProfile.website,
+        linkedin: cvProfile.linkedin,
+        github: cvProfile.github,
+        isSearchingJob: cvProfile.isSearchingJob,
+        allowCvFlip: cvProfile.allowCvFlip,
+      },
+    };
+  }
   return {
     ...base,
     profile: {
       ...base.profile,
-      contactEmail: cv.candidate.profile.contactEmail,
-      contactPhone: cv.candidate.profile.contactPhone,
-      cvUrl: cv.candidate.profile.cvUrl,
+      contactEmail: cvProfile.contactEmail,
+      contactPhone: cvProfile.contactPhone,
+      cvUrl: cvProfile.cvUrl,
     },
   };
 }
+
+function profileHasRevealedContacts(profile: PublicUserProfile): boolean {
+  const p = profile.profile;
+  if (!p) return false;
+  return Boolean(p.contactEmail || p.contactPhone || p.cvUrl);
+}
+
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  const maybeAxiosError = error as {
+    response?: { data?: { error?: { message?: string } } };
+  };
+  return maybeAxiosError.response?.data?.error?.message || fallback;
+}
+
+type CvFlipAccessState = {
+  isFlipped: boolean;
+  hasPendingRequest: boolean;
+  connectionId: string | null;
+  flippedAt: string | null;
+  hasAppliedToCompany?: boolean;
+};
 
 export default function CandidateDetailPage({ params }: Props) {
   const { slug: rawSlug } = use(params);
@@ -69,6 +114,10 @@ export default function CandidateDetailPage({ params }: Props) {
       router.replace("/login");
     }
   }, [initialized, loading, user, router]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [safeSlug, companyId]);
 
   const profileQuery = useQuery({
     queryKey: ["public-profile-by-slug", safeSlug, companyId || ""],
@@ -118,9 +167,29 @@ export default function CandidateDetailPage({ params }: Props) {
     const base = profileQuery.data;
     if (!base) return null;
     if (!needsCvFlipLayer) return base;
-    if (!cvDetailQuery.data) return null;
-    return mergeContactsFromCvFlip(base, cvDetailQuery.data);
+    if (cvDetailQuery.data) return mergeContactsFromCvFlip(base, cvDetailQuery.data);
+    return base;
   }, [profileQuery.data, cvDetailQuery.data, needsCvFlipLayer]);
+
+  const fallbackAccess = useMemo((): CvFlipAccessState | null => {
+    if (!needsCvFlipLayer || cvDetailQuery.data || !profileQuery.data) return null;
+    const revealed = profileHasRevealedContacts(profileQuery.data);
+    return {
+      isFlipped: revealed,
+      hasPendingRequest: false,
+      connectionId: null,
+      flippedAt: null,
+      hasAppliedToCompany: revealed,
+    };
+  }, [needsCvFlipLayer, cvDetailQuery.data, profileQuery.data]);
+
+  const cvFlipErrorMessage = useMemo(() => {
+    if (!cvDetailQuery.error) return null;
+    return getApiErrorMessage(
+      cvDetailQuery.error,
+      "Không tải được trạng thái mở CV (doanh nghiệp)."
+    );
+  }, [cvDetailQuery.error]);
 
   const flipMutation = useMutation({
     mutationFn: async () => {
@@ -155,7 +224,7 @@ export default function CandidateDetailPage({ params }: Props) {
 
   if (!user) return null;
 
-  if (profileQuery.isLoading || (needsCvFlipLayer && (cvDetailQuery.isLoading || cvDetailQuery.isFetching))) {
+  if (profileQuery.isLoading) {
     return <div className="mx-auto max-w-4xl p-4 text-sm text-slate-500">Đang tải hồ sơ ứng viên...</div>;
   }
 
@@ -170,23 +239,14 @@ export default function CandidateDetailPage({ params }: Props) {
     );
   }
 
-  if (needsCvFlipLayer && cvDetailQuery.error) {
-    return (
-      <div className="mx-auto max-w-4xl space-y-4 p-4">
-        <p className="text-sm text-red-600">Không tải được trạng thái mở CV (doanh nghiệp).</p>
-        <Link href="/candidates" className="text-sm text-[var(--brand)] hover:underline">
-          Quay lại danh sách ứng viên
-        </Link>
-      </div>
-    );
-  }
-
   if (!displayProfile) {
     return null;
   }
 
-  const access = cvDetailQuery.data?.access;
-  const showFlipChrome = Boolean(needsCvFlipLayer && access);
+  const access: CvFlipAccessState | undefined =
+    cvDetailQuery.data?.access ?? fallbackAccess ?? undefined;
+  const cvFlipLoadFailed = Boolean(needsCvFlipLayer && cvDetailQuery.isError);
+  const showFlipChrome = Boolean(needsCvFlipLayer && cvDetailQuery.data?.access);
   const allowCvFlip = profileQuery.data?.profile?.allowCvFlip !== false;
   const showStickyFooter = showFlipChrome && access && !access.isFlipped;
 
@@ -210,6 +270,14 @@ export default function CandidateDetailPage({ params }: Props) {
 
   return (
     <div className="relative">
+      {cvFlipLoadFailed ? (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          Không tải được trạng thái mở CV — vẫn hiển thị hồ sơ theo quyền hiện tại.
+          {cvFlipErrorMessage ? (
+            <span className="mt-1 block text-xs text-amber-800">{cvFlipErrorMessage}</span>
+          ) : null}
+        </div>
+      ) : null}
       <div className="border-b border-[var(--border)] bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {showFlipChrome && usageQuery.data ? (
