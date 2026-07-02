@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, FileText, Sparkles, Cake } from 'lucide-react';
+import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, Sparkles, Cake } from 'lucide-react';
 import { PublicUserProfile } from '@/types/user';
 import { useAuthStore } from '@/store/useAuth';
 import { Button } from '@/components/ui/button';
@@ -284,24 +284,6 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     <span>{showCvMask ? "••••••" : "GitHub"}</span>
                   </a>
                 )}
-                {/* CV placeholder khi cvFlip chưa mở */}
-                {showCvMask && (
-                  <span className="flex items-center gap-1 pointer-events-none select-none blur-[5px] text-[var(--brand)]">
-                    <FileText size={16} className="shrink-0" />
-                    <span>file-cv••••••</span>
-                  </span>
-                )}
-                {!showCvMask && profile.profile?.cvUrl && (
-                  <a
-                    href={profile.profile.cvUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-w-0 max-w-full items-start gap-1 break-all select-text text-[var(--brand)] hover:underline"
-                  >
-                    <FileText size={16} className="mt-0.5 shrink-0" />
-                    <span>Xem file CV</span>
-                  </a>
-                )}
               </div>
             </div>
             <div className="flex flex-col gap-2 shrink-0">
@@ -317,7 +299,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                   </Button>
                 </Link>
               )}
-            </div>
+            </div>H
           </div>
         </div>
       </div>
