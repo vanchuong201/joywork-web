@@ -43,6 +43,8 @@ function mergeContactsFromCvFlip(
     return {
       ...base,
       name: base.name || cv.candidate.name || base.name,
+      experiences: base.experiences ?? cv.candidate.experiences,
+      educations: base.educations ?? cv.candidate.educations,
       profile: {
         id: base.id,
         avatar: cvProfile.avatar,

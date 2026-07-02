@@ -1,5 +1,6 @@
 import api from "@/lib/api";
 import type {
+  CvFlipCandidateDetailResponse,
   CvFlipCandidatesResponse,
   CvFlipCompanyAccess,
   CvFlipRequestItem,
@@ -60,31 +61,14 @@ export async function listCvFlipCandidates(params: {
   return res.data.data;
 }
 
-export async function getCvFlipCandidateDetail(slug: string, companyId?: string) {
+export async function getCvFlipCandidateDetail(
+  slug: string,
+  companyId?: string
+): Promise<CvFlipCandidateDetailResponse> {
   const res = await api.get(`/api/cv-flip/candidates/${encodeURIComponent(slug)}`, {
     params: companyId ? { companyId } : {},
   });
-  return res.data.data as {
-    candidate: {
-      userId: string;
-      slug: string | null;
-      name: string | null;
-      profile: {
-        contactEmail: string | null;
-        contactPhone: string | null;
-        cvUrl: string | null;
-      };
-    };
-    access: {
-      isFlipped: boolean;
-      hasPendingRequest: boolean;
-      connectionId: string | null;
-      flippedAt: string | null;
-      isOwnerView?: boolean;
-      companyContext?: boolean;
-      hasAppliedToCompany?: boolean;
-    };
-  };
+  return res.data.data as CvFlipCandidateDetailResponse;
 }
 
 export async function flipCandidate(companyId: string, candidateUserId: string) {

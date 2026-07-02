@@ -78,6 +78,49 @@ export type CvFlipCandidatesResponse = {
   };
 };
 
+export type CvFlipCandidateDetailProfile = {
+  avatar: string | null;
+  fullName: string | null;
+  title: string | null;
+  headline: string | null;
+  bio: string | null;
+  skills: string[];
+  locations: string[];
+  wardCodes?: string[];
+  specificAddress?: string | null;
+  location?: string | null;
+  website: string | null;
+  linkedin: string | null;
+  github: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  cvUrl: string | null;
+  isSearchingJob: boolean;
+  allowCvFlip: boolean;
+};
+
+export type CvFlipCandidateDetailAccess = {
+  isFlipped: boolean;
+  hasPendingRequest: boolean;
+  connectionId: string | null;
+  flippedAt: string | null;
+  isOwnerView?: boolean;
+  companyContext?: boolean;
+  hasAppliedToCompany?: boolean;
+};
+
+export type CvFlipCandidateDetailResponse = {
+  candidate: {
+    userId: string;
+    slug: string | null;
+    name: string | null;
+    profile: CvFlipCandidateDetailProfile;
+    experiences: CvFlipCandidateExperience[];
+    educations: CvFlipCandidateEducation[];
+  };
+  access: CvFlipCandidateDetailAccess;
+};
+
 export type CvFlipRequestItem = {
   id: string;
   status: "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
