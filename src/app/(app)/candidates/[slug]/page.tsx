@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import CvFlipUsageBadge from "@/components/candidates/CvFlipUsageBadge";
+import CompanySelectorModal from "@/components/candidates/CompanySelectorModal";
 import PublicProfilePageContent from "@/components/profile/PublicProfilePageContent";
 import type { PublicUserProfile } from "@/types/user";
 
@@ -42,7 +43,9 @@ function mergeContactsFromCvFlip(
   if (!base.profile) {
     return {
       ...base,
-      name: base.name || cv.candidate.name || base.name,
+      name: cv.candidate.name ?? base.name,
+      maskedInitials: cv.candidate.maskedInitials ?? base.maskedInitials,
+      identityMasked: cv.candidate.identityMasked ?? base.identityMasked,
       experiences: base.experiences ?? cv.candidate.experiences,
       educations: base.educations ?? cv.candidate.educations,
       profile: {
@@ -67,11 +70,24 @@ function mergeContactsFromCvFlip(
   }
   return {
     ...base,
+    name: cv.candidate.name ?? base.name,
+    maskedInitials: cv.candidate.maskedInitials ?? base.maskedInitials,
+    identityMasked: cv.candidate.identityMasked ?? base.identityMasked,
     profile: {
       ...base.profile,
+      avatar: cvProfile.avatar ?? base.profile.avatar,
+      fullName: cvProfile.fullName ?? base.profile.fullName,
+      wardCodes: cvProfile.wardCodes ?? base.profile.wardCodes,
+      specificAddress: cvProfile.specificAddress ?? base.profile.specificAddress,
+      dayOfBirth: cvProfile.dayOfBirth ?? base.profile.dayOfBirth,
+      monthOfBirth: cvProfile.monthOfBirth ?? base.profile.monthOfBirth,
+      yearOfBirth: cvProfile.yearOfBirth ?? base.profile.yearOfBirth,
       contactEmail: cvProfile.contactEmail,
       contactPhone: cvProfile.contactPhone,
       cvUrl: cvProfile.cvUrl,
+      website: cvProfile.website,
+      linkedin: cvProfile.linkedin,
+      github: cvProfile.github,
     },
   };
 }
@@ -104,12 +120,28 @@ export default function CandidateDetailPage({ params }: Props) {
   const queryClient = useQueryClient();
   const { user, initialized, loading } = useAuthStore();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [companySelectorOpen, setCompanySelectorOpen] = useState(false);
+  const [draftCompanyId, setDraftCompanyId] = useState("");
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
 
   const safeSlug = useMemo(() => decodeURIComponent(rawSlug), [rawSlug]);
+  const queryCompanyId = searchParams.get("companyId") ?? "";
 
-  const companyId =
-    searchParams.get("companyId") ||
-    (typeof window !== "undefined" ? localStorage.getItem(SELECTED_COMPANY_KEY) ?? "" : "");
+  useEffect(() => {
+    if (queryCompanyId) {
+      setSelectedCompanyId(queryCompanyId);
+      return;
+    }
+    if (typeof window === "undefined") return;
+    setSelectedCompanyId(localStorage.getItem(SELECTED_COMPANY_KEY) ?? "");
+  }, [queryCompanyId]);
+
+  useEffect(() => {
+    if (!selectedCompanyId || typeof window === "undefined") return;
+    localStorage.setItem(SELECTED_COMPANY_KEY, selectedCompanyId);
+  }, [selectedCompanyId]);
+
+  const companyId = selectedCompanyId;
 
   useEffect(() => {
     if (initialized && !loading && !user) {
@@ -138,12 +170,12 @@ export default function CandidateDetailPage({ params }: Props) {
 
   const isOwnProfile = Boolean(user?.id && profileQuery.data?.id && user.id === profileQuery.data.id);
 
-  const needsCvFlipLayer = Boolean(companyId && profileQuery.data && !isOwnProfile);
+  const needsCvFlipLayer = Boolean(profileQuery.data && !isOwnProfile && profileQuery.data.identityMasked);
 
   const cvDetailQuery = useQuery({
     queryKey: ["cv-flip-candidate-detail", safeSlug, companyId],
     queryFn: () => getCvFlipCandidateDetail(safeSlug, companyId || undefined),
-    enabled: initialized && !loading && !!user && needsCvFlipLayer,
+    enabled: initialized && !loading && !!user && needsCvFlipLayer && !!companyId,
     retry: false,
   });
 
@@ -156,14 +188,30 @@ export default function CandidateDetailPage({ params }: Props) {
   const accessCompaniesQuery = useQuery({
     queryKey: ["cv-flip-access"],
     queryFn: getCvFlipAccessCompanies,
-    enabled: initialized && !loading && !!user && needsCvFlipLayer && !!companyId,
+    enabled: initialized && !loading && !!user && needsCvFlipLayer,
   });
 
+  const companies = useMemo(() => accessCompaniesQuery.data ?? [], [accessCompaniesQuery.data]);
   const companyAccess = useMemo(
     () => accessCompaniesQuery.data?.find((c) => c.id === companyId),
     [accessCompaniesQuery.data, companyId]
   );
   const isPremiumCompany = companyAccess?.isPremium === true;
+  const shouldSelectCompany = needsCvFlipLayer && !companyId;
+
+  useEffect(() => {
+    if (!shouldSelectCompany || !companies.length) return;
+    if (companies.length === 1) {
+      setSelectedCompanyId(companies[0].id);
+      return;
+    }
+    setCompanySelectorOpen(true);
+  }, [shouldSelectCompany, companies]);
+
+  useEffect(() => {
+    if (!companySelectorOpen) return;
+    setDraftCompanyId(companyId || "");
+  }, [companySelectorOpen, companyId]);
 
   const displayProfile = useMemo((): PublicUserProfile | null => {
     const base = profileQuery.data;
@@ -254,7 +302,17 @@ export default function CandidateDetailPage({ params }: Props) {
 
   const openConfirm = () => {
     if (!access || access.isFlipped || access.hasPendingRequest) return;
+    if (!companyId) {
+      setCompanySelectorOpen(true);
+      return;
+    }
     setConfirmOpen(true);
+  };
+
+  const handleConfirmCompanySelection = () => {
+    if (!draftCompanyId) return;
+    setSelectedCompanyId(draftCompanyId);
+    setCompanySelectorOpen(false);
   };
 
   const usageReady =
@@ -272,6 +330,15 @@ export default function CandidateDetailPage({ params }: Props) {
 
   return (
     <div className="relative">
+      <CompanySelectorModal
+        open={companySelectorOpen}
+        onOpenChange={setCompanySelectorOpen}
+        companies={companies}
+        draftCompanyId={draftCompanyId}
+        onDraftCompanyIdChange={setDraftCompanyId}
+        onConfirm={handleConfirmCompanySelection}
+        onCreateCompany={() => router.push("/companies/new")}
+      />
       {cvFlipLoadFailed ? (
         <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
           Không tải được trạng thái mở CV — vẫn hiển thị hồ sơ theo quyền hiện tại.
@@ -282,6 +349,19 @@ export default function CandidateDetailPage({ params }: Props) {
       ) : null}
       <div className="border-b border-[var(--border)] bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {shouldSelectCompany ? (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Vui lòng chọn doanh nghiệp để mở CV và xem đầy đủ thông tin liên hệ.
+              <Button
+                type="button"
+                variant="link"
+                className="ml-1 h-auto p-0 text-sm text-amber-900 underline"
+                onClick={() => setCompanySelectorOpen(true)}
+              >
+                Chọn doanh nghiệp
+              </Button>
+            </div>
+          ) : null}
           {showFlipChrome && usageQuery.data ? (
             <CvFlipUsageBadge usage={usageQuery.data} />
           ) : null}

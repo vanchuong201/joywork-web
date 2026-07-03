@@ -77,6 +77,8 @@ export interface UserProfile {
 export interface PublicUserProfile {
   id: string;
   name?: string | null;
+  maskedInitials?: string | null;
+  identityMasked?: boolean;
   slug?: string | null;
   isTalentPoolMember?: boolean;
   createdAt: string;

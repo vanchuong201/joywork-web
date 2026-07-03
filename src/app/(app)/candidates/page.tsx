@@ -300,6 +300,8 @@ function CandidatesPageContent() {
                   userId: candidate.userId,
                   slug: candidate.slug,
                   name: candidate.name,
+                  maskedInitials: candidate.maskedInitials,
+                  identityMasked: candidate.identityMasked,
                   avatar: candidate.avatar,
                   headline: candidate.headline,
                   title: candidate.title,

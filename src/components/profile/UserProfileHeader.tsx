@@ -45,7 +45,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
 
   const showCvMask = Boolean(cvFlip?.enabled && !cvFlip.revealed);
 
-  const maskedInitials = nameToMaskedInitials(profile.name);
+  const maskedInitials = profile.maskedInitials || nameToMaskedInitials(profile.name);
   const [avatarError, setAvatarError] = useState(false);
   const avatarUrl =
     !avatarError && profile.profile?.avatar
@@ -175,7 +175,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
               )}
               <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
                 {/* Address */}
-                {hasAddress && (
+                {(showCvMask || hasAddress) && (
                   <span
                     className={cn(
                       "flex min-w-0 max-w-full items-start gap-1",
@@ -299,7 +299,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                   </Button>
                 </Link>
               )}
-            </div>H
+            </div>
           </div>
         </div>
       </div>

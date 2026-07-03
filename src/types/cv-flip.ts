@@ -31,6 +31,8 @@ export type CvFlipCandidateCard = {
   userId: string;
   slug: string | null;
   name: string | null;
+  maskedInitials?: string | null;
+  identityMasked?: boolean;
   avatar: string | null;
   headline: string | null;
   title: string | null;
@@ -95,6 +97,9 @@ export type CvFlipCandidateDetailProfile = {
   contactEmail: string | null;
   contactPhone: string | null;
   cvUrl: string | null;
+  dayOfBirth?: number | null;
+  monthOfBirth?: number | null;
+  yearOfBirth?: number | null;
   isSearchingJob: boolean;
   allowCvFlip: boolean;
 };
@@ -114,6 +119,8 @@ export type CvFlipCandidateDetailResponse = {
     userId: string;
     slug: string | null;
     name: string | null;
+    maskedInitials?: string | null;
+    identityMasked?: boolean;
     profile: CvFlipCandidateDetailProfile;
     experiences: CvFlipCandidateExperience[];
     educations: CvFlipCandidateEducation[];

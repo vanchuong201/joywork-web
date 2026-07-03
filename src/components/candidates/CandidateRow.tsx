@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User } from "lucide-react";
+import { Lock, User } from "lucide-react";
 import { BriefcaseIcon, AcademicCapIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { Badge } from "@/components/ui/badge";
 import { formatSalaryRange, getProvinceDisplayLabel, getWardDisplayLabel } from "@/lib/provinces";
@@ -12,6 +12,8 @@ export type CandidateRowData = {
   userId: string;
   slug: string | null;
   name: string | null;
+  maskedInitials?: string | null;
+  identityMasked?: boolean;
   avatar: string | null;
   headline: string | null;
   title: string | null;
@@ -57,6 +59,8 @@ export default function CandidateRow({
   const {
     slug,
     name,
+    maskedInitials,
+    identityMasked,
     avatar,
     title,
     skills,
@@ -65,7 +69,6 @@ export default function CandidateRow({
     expectedSalaryMin,
     expectedSalaryMax,
     salaryCurrency,
-    workMode,
     experiences,
     educations,
   } = candidate;
@@ -75,7 +78,7 @@ export default function CandidateRow({
   const visibleEducations = educations.slice(0, MAX_PREVIEW_EDUCATIONS);
 
   const detailHref = slug ? `/candidates/${encodeURIComponent(slug)}` : "#";
-  const displayName = name || "Ứng viên";
+  const displayName = maskedInitials || name || "Ứng viên";
   const displayTitle = title || "Không xác định";
   const currency = (salaryCurrency as "VND" | "USD") || "VND";
   const isNegotiableSalary =
@@ -104,7 +107,7 @@ export default function CandidateRow({
             <img
               src={avatar}
               alt=""
-              className="h-12 w-12 rounded-full object-cover"
+              className={`h-12 w-12 rounded-full object-cover ${identityMasked ? "blur-[2px]" : ""}`}
             />
           ) : (
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)]/20 to-[var(--brand)]/5">
@@ -120,6 +123,12 @@ export default function CandidateRow({
               <p className="truncate text-base font-semibold text-[var(--foreground)]">
                 {displayName}
               </p>
+              {identityMasked ? (
+                <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-amber-700">
+                  <Lock className="h-3 w-3" />
+                  Thông tin đang được ẩn
+                </p>
+              ) : null}
               <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">
                 {displayTitle}
               </p>

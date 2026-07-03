@@ -57,6 +57,14 @@ function LoginPageContent() {
     const handleLoginSuccess = () => {
       (async () => {
         try {
+          const { data } = await api.post("/api/auth/refresh");
+          const accessToken = data?.data?.accessToken;
+          if (!accessToken) {
+            throw new Error("Không lấy được access token sau social login");
+          }
+          if (typeof window !== "undefined") {
+            localStorage.setItem("accessToken", accessToken);
+          }
           await fetchMe();
           toast.success("Đăng nhập thành công");
           const redirectUrl = searchParams.get("redirect");
