@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, Sparkles, Cake } from 'lucide-react';
+import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, Sparkles, Cake, Lock } from 'lucide-react';
 import { PublicUserProfile } from '@/types/user';
 import { useAuthStore } from '@/store/useAuth';
 import { Button } from '@/components/ui/button';
@@ -143,18 +143,30 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
             showCvMask && "ring-2 ring-slate-200"
           )}
         >
-          <Image
-            src={avatarUrl}
-            alt={profile.name || 'Avatar'}
-            width={128}
-            height={128}
-            className={cn(
-              "w-full h-full rounded-full object-cover",
-              showCvMask && "scale-110 blur-md"
-            )}
-            onError={() => setAvatarError(true)}
-          />
-          <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full" title="Online"></div>
+          {showCvMask ? (
+            <div
+              className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-slate-200 to-slate-300 text-2xl font-black tracking-wide text-slate-500 select-none"
+              title="Thông tin đang được ẩn"
+            >
+              <span className="blur-[2px]">{maskedInitials}</span>
+              <span className="absolute inset-0 flex items-center justify-center">
+                <Lock size={28} className="text-slate-500/80" />
+              </span>
+            </div>
+          ) : (
+            <>
+              <Image
+                src={avatarUrl}
+                alt={profile.name || 'Avatar'}
+                width={128}
+                height={128}
+                className="w-full h-full rounded-full object-cover"
+                unoptimized={avatarUrl.includes('ui-avatars.com')}
+                onError={() => setAvatarError(true)}
+              />
+              <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full" title="Online"></div>
+            </>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -167,6 +179,11 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                   </span>
                 )}
               </div>
+              {showCvMask && (
+                <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                  <Lock size={12} /> Thông tin đang được ẩn — mở CV để xem đầy đủ
+                </p>
+              )}
               {profile.profile?.title && (
                 <p className="text-lg text-slate-600 font-medium mb-2">{profile.profile.title}</p>
               )}

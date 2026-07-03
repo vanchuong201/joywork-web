@@ -268,6 +268,7 @@ export default function AccountTab() {
                     width={96}
                     height={96}
                     className="w-full h-full object-cover"
+                    unoptimized={avatarUrl.includes("ui-avatars.com")}
                   />
                   {uploadingAvatar && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
