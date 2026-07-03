@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
@@ -85,6 +85,7 @@
     "vitest": "^4.1.4"
   },
   "overrides": {
-    "@opentelemetry/instrumentation": "^0.212.0"
+    "@opentelemetry/instrumentation": "^0.212.0",
+    "import-in-the-middle": "3.0.2"
   }
 }
