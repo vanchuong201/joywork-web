@@ -1,12 +1,12 @@
 import Script from "next/script";
 
-const DEFAULT_MEASUREMENT_ID = "G-6Z7E7Z0HER";
 const GA_MEASUREMENT_ID_PATTERN = /^G-[A-Z0-9]+$/i;
 
 export function GoogleAnalytics() {
-  const raw = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
-  const id = raw && raw.length > 0 ? raw : DEFAULT_MEASUREMENT_ID;
-  if (!GA_MEASUREMENT_ID_PATTERN.test(id)) {
+  // Chỉ bật GA khi có measurement ID được set qua env (chỉ prod set biến này),
+  // nên dev/staging sẽ không load gtag và không gửi event nào.
+  const id = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
+  if (!id || !GA_MEASUREMENT_ID_PATTERN.test(id)) {
     return null;
   }
 

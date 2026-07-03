@@ -7,6 +7,7 @@ import type { ComponentType, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { buildJobUrl, resolveJobIdFromSlugParam } from "@/lib/job-url";
+import { trackEvent } from "@/lib/gtag";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -219,6 +220,15 @@ export default function JobDetailPage() {
       setConfirmDialogOpen(false);
       setCoverLetter("");
       qc.invalidateQueries({ queryKey: ["job", jobId] });
+
+      const appliedJob = data?.job;
+      if (appliedJob) {
+        trackEvent("apply_job_success", {
+          platform: "web_joywork",
+          job_title: appliedJob.title,
+          job_url: `${window.location.origin}${buildJobUrl(appliedJob)}`,
+        });
+      }
     },
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Ứng tuyển thất bại"),
   });
