@@ -52,8 +52,6 @@ export const leftPersonalNav: NavItem[] = [
   { icon: MessageSquareText, label: "Trao đổi với DN", href: "/tickets" },
 ];
 
-export const mobilePersonalNav: NavItem[] = leftPersonalNav.filter((item) => item.href !== "/account");
-
 export const accountDropdownItems: AccountDropdownItem[] = [
   { label: "Quản lý tài khoản", href: "/account" },
   { label: "CV của tôi", href: "/account/profile" },

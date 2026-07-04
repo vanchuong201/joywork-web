@@ -20,18 +20,13 @@ import Image from "next/image";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import {
   accountDropdownItems,
-  buildBusinessSpaceNav,
-  buildCompanyManageNav,
   buildHeaderExploreNav,
-  buildLeftAdminNav,
   isNavItemActive,
-  mobilePersonalNav,
-  type NavItem,
 } from "./navigation-config";
+import MobileMenuPanel from "./mobile-menu-panel";
 
 export default function Header() {
   const user = useAuthStore((s) => s.user);
-  const memberships = useAuthStore((s) => s.memberships);
   const signOut = useAuthStore((s) => s.signOut);
   const initialized = useAuthStore((s) => s.initialized);
   const loading = useAuthStore((s) => s.loading);
@@ -48,9 +43,6 @@ export default function Header() {
   const showProfileWarningDot = Boolean(user) && !isProfileCompletionLoading && hasProfile && !isComplete;
 
   const navItems = useMemo(() => buildHeaderExploreNav(user), [user]);
-  const mobileBusinessSpaceItems = useMemo(() => buildBusinessSpaceNav(), []);
-  const mobileCompanyManageItems = useMemo(() => buildCompanyManageNav(memberships), [memberships]);
-  const mobileAdminItems = useMemo(() => buildLeftAdminNav(user), [user]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -77,44 +69,6 @@ export default function Header() {
     await signOut();
     // signOut already redirects to home, no need for router.refresh()
   };
-
-  const renderMobileMenuItems = (items: NavItem[]) =>
-    items.map((item) => {
-      const active = isNavItemActive(pathname, item);
-      const Icon = item.icon;
-      const className = cn(
-        "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
-        active
-          ? "bg-[var(--muted)] text-[var(--foreground)]"
-          : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-      );
-      if (item.external) {
-        return (
-          <a
-            key={item.href}
-            href={item.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={className}
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <Icon size={16} />
-            <span>{item.label}</span>
-          </a>
-        );
-      }
-      return (
-        <Link
-          key={item.href}
-          href={item.href}
-          onClick={() => setIsMobileMenuOpen(false)}
-          className={className}
-        >
-          <Icon size={16} />
-          <span>{item.label}</span>
-        </Link>
-      );
-    });
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--card)]">
@@ -281,70 +235,7 @@ export default function Header() {
         </div>
       </div>
       {isMobileMenuOpen && (
-        <div id={mobileMenuId} className="border-t border-[var(--border)] px-4 py-2 md:hidden">
-          <nav className="flex flex-col gap-4">
-            <div>
-              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Khám phá</div>
-              <div className="space-y-1">
-                {isReady
-                  ? renderMobileMenuItems(navItems)
-                  : Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
-              </div>
-            </div>
-
-            {isReady && user && (
-              <div>
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                  Không gian của ứng viên
-                </div>
-                <div className="space-y-1">{renderMobileMenuItems(mobilePersonalNav)}</div>
-              </div>
-            )}
-
-            {isReady && user && (
-              <div>
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                  Không gian của doanh nghiệp
-                </div>
-                <div className="space-y-1">{renderMobileMenuItems(mobileBusinessSpaceItems)}</div>
-              </div>
-            )}
-
-            {isReady && user && mobileCompanyManageItems.length > 0 && (
-              <div>
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                  Công ty của tôi
-                </div>
-                <div className="space-y-1">{renderMobileMenuItems(mobileCompanyManageItems)}</div>
-              </div>
-            )}
-
-            {isReady && user && mobileAdminItems.length > 0 && (
-              <div>
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                  Hệ thống
-                </div>
-                <div className="space-y-1">{renderMobileMenuItems(mobileAdminItems)}</div>
-              </div>
-            )}
-          </nav>
-          {isReady && !user && (
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--border)] pt-3">
-              <Link
-                href="/login"
-                className="rounded-md border border-[var(--brand)] px-3 py-2 text-center text-sm font-medium text-[var(--brand)] hover:bg-[var(--brand)]/10"
-              >
-                Đăng nhập
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-md bg-[var(--brand)] px-3 py-2 text-center text-sm font-medium text-white hover:opacity-90"
-              >
-                Đăng ký
-              </Link>
-            </div>
-          )}
-        </div>
+        <MobileMenuPanel id={mobileMenuId} onNavigate={() => setIsMobileMenuOpen(false)} />
       )}
       <ChangePasswordDialog open={showChangePassword} onClose={() => setShowChangePassword(false)} />
     </header>
