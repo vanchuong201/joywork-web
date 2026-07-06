@@ -79,10 +79,6 @@ export function buildBusinessSpaceNav(): NavItem[] {
   ];
 }
 
-export function buildLeftExploreNav(): NavItem[] {
-  return [...exploreNavBase];
-}
-
 export function buildLeftAdminNav(user: AuthUser | null): NavItem[] {
   if (user?.role === "ADMIN") {
     return [leftAdminNavItem];

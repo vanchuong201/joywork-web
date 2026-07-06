@@ -11,7 +11,6 @@ import {
   buildBusinessSpaceNav,
   buildCompanyManageNav,
   buildLeftAdminNav,
-  buildLeftExploreNav,
   leftPersonalNav,
   type NavItem,
 } from "./navigation-config";
@@ -46,7 +45,6 @@ export default function MobileMenuPanel({ id, onNavigate }: { id: string; onNavi
     );
   }
 
-  const exploreNav = buildLeftExploreNav();
   const businessSpaceNav = buildBusinessSpaceNav();
   const companyManageNav = user ? buildCompanyManageNav(memberships) : [];
   const adminNav = buildLeftAdminNav(user);
@@ -62,8 +60,6 @@ export default function MobileMenuPanel({ id, onNavigate }: { id: string; onNavi
     <div id={id} className={panelClassName}>
       <nav className="flex flex-col gap-4">
         <NavUserCard onNavigate={onNavigate} />
-
-        <NavSection title="Khám phá" items={exploreNav} pathname={pathname} onNavigate={onNavigate} />
 
         <NavSection
           title="Không gian của ứng viên"
