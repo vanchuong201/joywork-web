@@ -3,13 +3,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, CheckCircle, Edit3, Mail, Phone, Globe, Linkedin, Github, Sparkles, Cake, Lock } from 'lucide-react';
+import { MapPin, Edit3, Mail, Phone, Globe, Linkedin, Github, Sparkles, Cake, Lock } from 'lucide-react';
 import { PublicUserProfile } from '@/types/user';
 import { useAuthStore } from '@/store/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import api from '@/lib/api';
 import type { WardOption } from '@/lib/location-wards';
+import JobSeekingStatusBadge from '@/components/candidates/JobSeekingStatusBadge';
 
 /** Khi chưa mở CV: chỉ hiển thị chữ cái đầu mỗi từ, ví dụ "Nguyễn Văn Chương" → "NVC". */
 function nameToMaskedInitials(name: string | null | undefined): string {
@@ -31,32 +32,31 @@ interface UserProfileHeaderProps {
     enabled: boolean;
     revealed: boolean;
   };
+  /** Trang /candidates/:slug — hiển thị đầy đủ trạng thái tìm việc cho nhà tuyển dụng */
+  employerCandidateView?: boolean;
 }
 
-const statusLabels: Record<string, string> = {
-  OPEN_TO_WORK: 'Đang tìm việc',
-  NOT_AVAILABLE: 'Không tìm việc',
-  LOOKING: 'Xem xét cơ hội',
-};
-
-export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeaderProps) {
+export default function UserProfileHeader({ profile, cvFlip, employerCandidateView = false }: UserProfileHeaderProps) {
   const user = useAuthStore((state) => state.user);
   const isOwnProfile = user?.id === profile.id;
 
   const showCvMask = Boolean(cvFlip?.enabled && !cvFlip.revealed);
 
   const maskedInitials = profile.maskedInitials || nameToMaskedInitials(profile.name);
+  const maskedFields = profile.maskedFields;
+  const hasMaskedField = (field: keyof NonNullable<PublicUserProfile['maskedFields']>) =>
+    maskedFields ? maskedFields[field] : true;
   const [avatarError, setAvatarError] = useState(false);
+  const avatarFallbackName = showCvMask ? maskedInitials : profile.name || "Ứng viên";
   const avatarUrl =
     !avatarError && profile.profile?.avatar
       ? profile.profile.avatar
       : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          showCvMask ? maskedInitials : profile.name || "User"
+          avatarFallbackName
         )}&background=random&size=200`;
-  const status = profile.profile?.status;
-  const statusLabel = status ? statusLabels[status] || status : null;
+  const jobSeekingStatus = profile.profile?.status;
 
-  const displayTitle = showCvMask ? maskedInitials : profile.name || "User";
+  const displayTitle = showCvMask ? maskedInitials : profile.name || "Ứng viên";
 
   // Fetch ward details for display
   const [wards, setWards] = useState<WardOption[]>([]);
@@ -148,7 +148,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
               className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-slate-200 to-slate-300 text-2xl font-black tracking-wide text-slate-500 select-none"
               title="Thông tin đang được ẩn"
             >
-              <span className="blur-[2px]">{maskedInitials}</span>
+              <span className="blur-[1.5px]">{maskedInitials}</span>
               <span className="absolute inset-0 flex items-center justify-center">
                 <Lock size={28} className="text-slate-500/80" />
               </span>
@@ -180,8 +180,8 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                 )}
               </div>
               {showCvMask && (
-                <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                  <Lock size={12} /> Thông tin đang được ẩn — mở CV để xem đầy đủ
+                <p className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+                  <Lock size={12} /> Thông tin CV đang được ẩn - Để xem thông tin vui long bấm vào "Xem thông tin" ở cuối trang
                 </p>
               )}
               {profile.profile?.title && (
@@ -192,39 +192,39 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
               )}
               <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
                 {/* Address */}
-                {(showCvMask || hasAddress) && (
+                {((showCvMask && hasMaskedField('address')) || (!showCvMask && hasAddress)) && (
                   <span
                     className={cn(
                       "flex min-w-0 max-w-full items-start gap-1",
-                      showCvMask && "select-none blur-[5px]"
+                      showCvMask && "select-none"
                     )}
                   >
                     <MapPin size={16} className="mt-0.5 shrink-0" />
-                    <span className={cn(!showCvMask && "break-words select-text")}>
+                    <span className={cn(!showCvMask && "break-words select-text", showCvMask && "blur-[5px]")}>
                       {showCvMask ? maskedAddress : fullAddress}
                     </span>
                   </span>
                 )}
                 {/* Date of Birth */}
-                {(showCvMask || hasDateOfBirth) && (
+                {((showCvMask && hasMaskedField('dateOfBirth')) || (!showCvMask && hasDateOfBirth)) && (
                   <span
                     className={cn(
                       "flex items-center gap-1",
-                      showCvMask && "select-none blur-[5px]"
+                      showCvMask && "select-none"
                     )}
                   >
                     <Cake size={16} className="shrink-0" />
-                    <span className={cn(!showCvMask && "select-text")}>
+                    <span className={cn(!showCvMask && "select-text", showCvMask && "blur-[5px]")}>
                       {showCvMask ? "••/••/••••" : fullDateOfBirth}
                     </span>
                   </span>
                 )}
                 {/* Email */}
-                {(showCvMask || profile.profile?.contactEmail) && (
+                {((showCvMask && hasMaskedField('contactEmail')) || (!showCvMask && profile.profile?.contactEmail)) && (
                   showCvMask ? (
-                    <span className="flex items-center gap-1 select-none blur-[5px]">
+                    <span className="flex items-center gap-1 select-none">
                       <Mail size={16} className="shrink-0" />
-                      <span>email@••••••</span>
+                      <span className="blur-[5px]">email@••••••</span>
                     </span>
                   ) : (
                     <a
@@ -237,11 +237,11 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                   )
                 )}
                 {/* Phone */}
-                {(showCvMask || profile.profile?.contactPhone) && (
+                {((showCvMask && hasMaskedField('contactPhone')) || (!showCvMask && profile.profile?.contactPhone)) && (
                   showCvMask ? (
-                    <span className="flex items-center gap-1 select-none blur-[5px]">
+                    <span className="flex items-center gap-1 select-none">
                       <Phone size={16} className="shrink-0" />
-                      <span>••• ••• •••</span>
+                      <span className="blur-[5px]">••• ••• •••</span>
                     </span>
                   ) : (
                     <a
@@ -254,7 +254,7 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                   )
                 )}
                 {/* Website */}
-                {(showCvMask || profile.profile?.website) && (
+                {((showCvMask && hasMaskedField('website')) || (!showCvMask && profile.profile?.website)) && (
                   <a
                     href={showCvMask ? "#" : (profile.profile?.website || "#")}
                     target="_blank"
@@ -262,53 +262,56 @@ export default function UserProfileHeader({ profile, cvFlip }: UserProfileHeader
                     className={cn(
                       "flex min-w-0 max-w-full items-start gap-1",
                       !showCvMask && "break-all select-text hover:text-[var(--brand)]",
-                      showCvMask && "pointer-events-none select-none blur-[5px]"
+                      showCvMask && "pointer-events-none select-none"
                     )}
                   >
                     <Globe size={16} className="mt-0.5 shrink-0" />
-                    <span>{showCvMask ? "https://••••••" : profile.profile?.website}</span>
+                    <span className={cn(showCvMask && "blur-[5px]")}>
+                      {showCvMask ? "https://••••••" : profile.profile?.website}
+                    </span>
                   </a>
                 )}
                 {/* LinkedIn */}
-                {(showCvMask || profile.profile?.linkedin) && (
+                {((showCvMask && hasMaskedField('linkedin')) || (!showCvMask && profile.profile?.linkedin)) && (
                   <a
                     href={showCvMask ? "#" : (profile.profile?.linkedin || "#")}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
                       "flex items-center gap-1 hover:text-[#0077b5]",
-                      showCvMask && "pointer-events-none select-none blur-[5px]"
+                      showCvMask && "pointer-events-none select-none"
                     )}
                     title="LinkedIn"
                   >
                     <Linkedin size={16} className="shrink-0" fill="currentColor" />
-                    <span>{showCvMask ? "••••••" : "LinkedIn"}</span>
+                    <span className={cn(showCvMask && "blur-[5px]")}>{showCvMask ? "••••••" : "LinkedIn"}</span>
                   </a>
                 )}
                 {/* GitHub */}
-                {(showCvMask || profile.profile?.github) && (
+                {((showCvMask && hasMaskedField('github')) || (!showCvMask && profile.profile?.github)) && (
                   <a
                     href={showCvMask ? "#" : (profile.profile?.github || "#")}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
                       "flex items-center gap-1 hover:text-[#333]",
-                      showCvMask && "pointer-events-none select-none blur-[5px]"
+                      showCvMask && "pointer-events-none select-none"
                     )}
                     title="GitHub"
                   >
                     <Github size={16} className="shrink-0" />
-                    <span>{showCvMask ? "••••••" : "GitHub"}</span>
+                    <span className={cn(showCvMask && "blur-[5px]")}>{showCvMask ? "••••••" : "GitHub"}</span>
                   </a>
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-2 shrink-0">
-              {statusLabel && (
-                <span className="px-4 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-sm font-bold text-center inline-flex items-center justify-center gap-1">
-                  <CheckCircle size={14} /> {statusLabel}
-                </span>
-              )}
+            <div className="flex flex-col gap-2 shrink-0 items-stretch sm:items-end">
+              {(employerCandidateView || jobSeekingStatus) ? (
+                <JobSeekingStatusBadge
+                  status={jobSeekingStatus}
+                  employerView={employerCandidateView}
+                />
+              ) : null}
               {isOwnProfile && (
                 <Link href="/account/profile">
                   <Button variant="outline" size="sm" className="flex items-center gap-2">

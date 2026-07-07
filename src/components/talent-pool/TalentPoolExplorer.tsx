@@ -11,6 +11,7 @@ import {
   CandidateFilterControls,
   type CandidateFilterValues,
 } from "@/components/candidates/CandidateFilters";
+import type { UserStatus } from "@/types/user";
 
 type CandidateExpApi = {
   id: string;
@@ -43,6 +44,7 @@ type CandidateProfile = {
   expectedCulture: string | null;
   title: string | null;
   fullName: string | null;
+  status?: UserStatus | null;
   gender: string | null;
   yearOfBirth: number | null;
   educationLevel: string | null;
@@ -154,6 +156,7 @@ export default function TalentPoolExplorer({ filters, setFilters, onClearFilters
                 avatar: c.profile?.avatar ?? null,
                 headline: c.profile?.headline ?? null,
                 title: c.profile?.title ?? null,
+                status: c.profile?.status ?? null,
                 skills: c.profile?.skills ?? [],
                 locations: c.profile?.locations ?? [],
                 wardCodes: c.profile?.wardCodes,

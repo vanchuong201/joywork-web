@@ -13,6 +13,7 @@ import CompanySelectorModal from "@/components/candidates/CompanySelectorModal";
 import SelectedCompanySummary from "@/components/candidates/SelectedCompanySummary";
 import CvFlipUsageBadge from "@/components/candidates/CvFlipUsageBadge";
 import CandidateRow from "@/components/candidates/CandidateRow";
+import JobSeekingStatusBadge from "@/components/candidates/JobSeekingStatusBadge";
 import TalentPoolExplorer from "@/components/talent-pool/TalentPoolExplorer";
 import TalentPoolLocked from "@/components/talent-pool/TalentPoolLocked";
 import { Button } from "@/components/ui/button";
@@ -281,6 +282,16 @@ function CandidatesPageContent() {
             onClear={clearFilters}
           />
 
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-xs text-[var(--muted-foreground)]">
+            <span className="font-medium text-[var(--foreground)]">Mức độ tìm việc:</span>
+            <JobSeekingStatusBadge status="OPEN_TO_WORK" size="sm" />
+            <JobSeekingStatusBadge status="LOOKING" size="sm" />
+            <JobSeekingStatusBadge status="NOT_AVAILABLE" size="sm" />
+            <span className="text-[var(--muted-foreground)]">
+              — chỉ hiển thị khi ứng viên đã khai báo; không ảnh hưởng việc hồ sơ có trong danh sách.
+            </span>
+          </div>
+
           {candidatesInfiniteQuery.error ? (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
               Không tải được danh sách ứng viên.
@@ -305,6 +316,7 @@ function CandidatesPageContent() {
                   avatar: candidate.avatar,
                   headline: candidate.headline,
                   title: candidate.title,
+                  status: candidate.status,
                   skills: candidate.skills,
                   locations: candidate.locations,
                   wardCodes: candidate.wardCodes,

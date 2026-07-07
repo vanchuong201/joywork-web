@@ -32,6 +32,18 @@ export interface UserProfileVisibility {
   expectations?: boolean;
 }
 
+export interface MaskedFieldPresence {
+  avatar: boolean;
+  contactEmail: boolean;
+  contactPhone: boolean;
+  cvUrl: boolean;
+  website: boolean;
+  linkedin: boolean;
+  github: boolean;
+  address: boolean;
+  dateOfBirth: boolean;
+}
+
 export interface UserProfile {
   id: string;
   userId: string;
@@ -79,6 +91,7 @@ export interface PublicUserProfile {
   name?: string | null;
   maskedInitials?: string | null;
   identityMasked?: boolean;
+  maskedFields?: MaskedFieldPresence;
   slug?: string | null;
   isTalentPoolMember?: boolean;
   createdAt: string;

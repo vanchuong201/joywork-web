@@ -13,10 +13,17 @@ type Props = {
     enabled: boolean;
     revealed: boolean;
   };
+  /** Trang /candidates/:slug cho nhà tuyển dụng */
+  employerCandidateView?: boolean;
   className?: string;
 };
 
-export default function PublicProfilePageContent({ profile, cvFlipHeader, className }: Props) {
+export default function PublicProfilePageContent({
+  profile,
+  cvFlipHeader,
+  employerCandidateView = false,
+  className,
+}: Props) {
   const visibility = profile.profile?.visibility || {
     bio: true,
     experience: true,
@@ -28,7 +35,11 @@ export default function PublicProfilePageContent({ profile, cvFlipHeader, classN
   return (
     <div className={className ?? "min-h-screen bg-slate-50 pb-20"}>
       <div className="mx-auto mt-8 max-w-5xl animate-fade-in-up px-4">
-        <UserProfileHeader profile={profile} cvFlip={cvFlipHeader} />
+        <UserProfileHeader
+          profile={profile}
+          cvFlip={cvFlipHeader}
+          employerCandidateView={employerCandidateView}
+        />
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-1">

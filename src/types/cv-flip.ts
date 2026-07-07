@@ -1,3 +1,5 @@
+import type { MaskedFieldPresence, UserStatus } from "@/types/user";
+
 export type CvFlipCompanyAccess = {
   id: string;
   name: string;
@@ -36,6 +38,7 @@ export type CvFlipCandidateCard = {
   avatar: string | null;
   headline: string | null;
   title: string | null;
+  status?: UserStatus | null;
   skills: string[];
   locations: string[];
   wardCodes?: string[];
@@ -102,6 +105,7 @@ export type CvFlipCandidateDetailProfile = {
   yearOfBirth?: number | null;
   isSearchingJob: boolean;
   allowCvFlip: boolean;
+  status?: UserStatus | null;
 };
 
 export type CvFlipCandidateDetailAccess = {
@@ -121,6 +125,7 @@ export type CvFlipCandidateDetailResponse = {
     name: string | null;
     maskedInitials?: string | null;
     identityMasked?: boolean;
+    maskedFields?: MaskedFieldPresence;
     profile: CvFlipCandidateDetailProfile;
     experiences: CvFlipCandidateExperience[];
     educations: CvFlipCandidateEducation[];

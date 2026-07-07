@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Lock, User } from "lucide-react";
+import { User } from "lucide-react";
 import { BriefcaseIcon, AcademicCapIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { Badge } from "@/components/ui/badge";
 import { formatSalaryRange, getProvinceDisplayLabel, getWardDisplayLabel } from "@/lib/provinces";
 import ExperienceEducationModal from "./ExperienceEducationModal";
+import JobSeekingStatusBadge from "@/components/candidates/JobSeekingStatusBadge";
+import type { UserStatus } from "@/types/user";
 
 export type CandidateRowData = {
   userId: string;
@@ -17,6 +19,7 @@ export type CandidateRowData = {
   avatar: string | null;
   headline: string | null;
   title: string | null;
+  status?: UserStatus | null;
   skills: string[];
   locations: string[];
   wardCodes?: string[];
@@ -63,6 +66,7 @@ export default function CandidateRow({
     identityMasked,
     avatar,
     title,
+    status,
     skills,
     locations,
     wardCodes,
@@ -111,7 +115,13 @@ export default function CandidateRow({
             />
           ) : (
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)]/20 to-[var(--brand)]/5">
-              <User className="h-6 w-6 text-[var(--brand)]" />
+              {identityMasked && maskedInitials ? (
+                <span className="text-sm font-bold tracking-wide text-[var(--brand)]">
+                  {maskedInitials}
+                </span>
+              ) : (
+                <User className="h-6 w-6 text-[var(--brand)]" />
+              )}
             </div>
           )}
         </div>
@@ -120,15 +130,12 @@ export default function CandidateRow({
           {/* Name + headline */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-base font-semibold text-[var(--foreground)]">
-                {displayName}
-              </p>
-              {identityMasked ? (
-                <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-amber-700">
-                  <Lock className="h-3 w-3" />
-                  Thông tin đang được ẩn
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="truncate text-base font-semibold text-[var(--foreground)]">
+                  {displayName}
                 </p>
-              ) : null}
+                <JobSeekingStatusBadge status={status} size="sm" />
+              </div>
               <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">
                 {displayTitle}
               </p>

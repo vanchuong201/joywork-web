@@ -46,6 +46,7 @@ function mergeContactsFromCvFlip(
       name: cv.candidate.name ?? base.name,
       maskedInitials: cv.candidate.maskedInitials ?? base.maskedInitials,
       identityMasked: cv.candidate.identityMasked ?? base.identityMasked,
+      maskedFields: cv.candidate.maskedFields ?? base.maskedFields,
       experiences: base.experiences ?? cv.candidate.experiences,
       educations: base.educations ?? cv.candidate.educations,
       profile: {
@@ -65,6 +66,7 @@ function mergeContactsFromCvFlip(
         github: cvProfile.github,
         isSearchingJob: cvProfile.isSearchingJob,
         allowCvFlip: cvProfile.allowCvFlip,
+        status: cvProfile.status ?? null,
       },
     };
   }
@@ -73,6 +75,7 @@ function mergeContactsFromCvFlip(
     name: cv.candidate.name ?? base.name,
     maskedInitials: cv.candidate.maskedInitials ?? base.maskedInitials,
     identityMasked: cv.candidate.identityMasked ?? base.identityMasked,
+    maskedFields: cv.candidate.maskedFields ?? base.maskedFields,
     profile: {
       ...base.profile,
       avatar: cvProfile.avatar ?? base.profile.avatar,
@@ -88,6 +91,7 @@ function mergeContactsFromCvFlip(
       website: cvProfile.website,
       linkedin: cvProfile.linkedin,
       github: cvProfile.github,
+      status: cvProfile.status ?? base.profile.status,
     },
   };
 }
@@ -382,6 +386,7 @@ export default function CandidateDetailPage({ params }: Props) {
             ? { enabled: true, revealed: Boolean(access?.isFlipped) }
             : undefined
         }
+        employerCandidateView={!isOwnProfile}
         className={cn(
           "min-h-screen bg-slate-50",
           showStickyFooter ? "pb-32" : "pb-20"
