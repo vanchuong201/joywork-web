@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 type JobSeekingStatusBadgeProps = {
   status: JobSeekingStatusValue;
-  /** Trang dành cho nhà tuyển dụng: hiện cả trạng thái chưa khai báo */
+  /** Giữ tương thích, hiện luôn badge ở ngữ cảnh nhà tuyển dụng */
   employerView?: boolean;
   size?: "sm" | "md";
   className?: string;

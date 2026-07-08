@@ -180,7 +180,7 @@ export default function UserProfileHeader({ profile, cvFlip, employerCandidateVi
                 )}
               </div>
               {showCvMask && (
-                <p className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+                <p className="mt-1 mb-2 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
                   <Lock size={12} /> Thông tin CV đang được ẩn - Để xem thông tin vui long bấm vào "Xem thông tin" ở cuối trang
                 </p>
               )}

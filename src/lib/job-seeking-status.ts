@@ -1,11 +1,11 @@
 import type { LucideIcon } from "lucide-react";
-import { CheckCircle, Eye, HelpCircle, MinusCircle } from "lucide-react";
+import { CheckCircle, Eye, MinusCircle } from "lucide-react";
 import type { UserStatus } from "@/types/user";
 
 export type JobSeekingStatusValue = UserStatus | null | undefined;
 
 export type JobSeekingStatusConfig = {
-  key: UserStatus | "UNSET";
+  key: UserStatus;
   label: string;
   shortLabel: string;
   employerHint: string;
@@ -34,30 +34,24 @@ const STATUS_CONFIG: Record<UserStatus, JobSeekingStatusConfig> = {
     key: "NOT_AVAILABLE",
     label: "Không tìm việc",
     shortLabel: "Không tìm việc",
-    employerHint:
-      "Ứng viên chưa khai báo đang chủ động tìm việc. Hồ sơ vẫn có thể hiển thị trong danh sách theo cài đặt của ứng viên.",
+    employerHint: "Ứng viên hiện không chủ động tìm việc.",
     className: "bg-slate-100 text-slate-600 border-slate-200",
     icon: MinusCircle,
   },
 };
 
-const UNSET_CONFIG: JobSeekingStatusConfig = {
-  key: "UNSET",
-  label: "Chưa khai báo",
-  shortLabel: "Chưa khai báo",
-  employerHint:
-    "Ứng viên chưa cập nhật mức độ tìm việc. Việc này không ảnh hưởng đến việc hồ sơ xuất hiện trong danh sách.",
-  className: "bg-slate-50 text-slate-500 border-slate-200 border-dashed",
-  icon: HelpCircle,
-};
+function normalizeJobSeekingStatus(status: JobSeekingStatusValue): UserStatus {
+  return status ?? "OPEN_TO_WORK";
+}
 
 export function resolveJobSeekingStatusConfig(
   status: JobSeekingStatusValue
 ): JobSeekingStatusConfig {
-  if (!status) return UNSET_CONFIG;
-  return STATUS_CONFIG[status] ?? UNSET_CONFIG;
+  const normalized = normalizeJobSeekingStatus(status);
+  return STATUS_CONFIG[normalized] ?? STATUS_CONFIG.OPEN_TO_WORK;
 }
 
 export function hasDeclaredJobSeekingStatus(status: JobSeekingStatusValue): boolean {
-  return status === "OPEN_TO_WORK" || status === "LOOKING" || status === "NOT_AVAILABLE";
+  const normalized = normalizeJobSeekingStatus(status);
+  return normalized === "OPEN_TO_WORK" || normalized === "LOOKING" || normalized === "NOT_AVAILABLE";
 }
