@@ -19,7 +19,7 @@ const STATUS_CONFIG: Record<UserStatus, JobSeekingStatusConfig> = {
     label: "Đang tìm việc",
     shortLabel: "Đang tìm việc",
     employerHint: "Ứng viên đang chủ động tìm việc và sẵn sàng ứng tuyển.",
-    className: "bg-green-50 text-green-700 border-green-200",
+    className: "border-[#BC2153]/30 bg-[#BC2153]/10 text-[#BC2153]",
     icon: CheckCircle,
   },
   LOOKING: {

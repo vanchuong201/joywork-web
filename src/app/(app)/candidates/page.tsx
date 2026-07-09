@@ -282,7 +282,7 @@ function CandidatesPageContent() {
             onClear={clearFilters}
           />
 
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-xs text-[var(--muted-foreground)]">
+          {/* <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-xs text-[var(--muted-foreground)]">
             <span className="font-medium text-[var(--foreground)]">Mức độ tìm việc:</span>
             <JobSeekingStatusBadge status="OPEN_TO_WORK" size="sm" />
             <JobSeekingStatusBadge status="LOOKING" size="sm" />
@@ -290,7 +290,7 @@ function CandidatesPageContent() {
             <span className="text-[var(--muted-foreground)]">
               — chỉ hiển thị khi ứng viên đã khai báo; không ảnh hưởng việc hồ sơ có trong danh sách.
             </span>
-          </div>
+          </div> */}
 
           {candidatesInfiniteQuery.error ? (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
