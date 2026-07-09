@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { buildJobUrl, resolveJobIdFromSlugParam } from "@/lib/job-url";
 import { trackEvent } from "@/lib/gtag";
+import { trackYmGoal } from "@/lib/yandex-metrika";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -225,6 +226,10 @@ export default function JobDetailPage() {
       if (appliedJob) {
         trackEvent("apply_job_success", {
           platform: "web_joywork",
+          job_title: appliedJob.title,
+          job_url: `${window.location.origin}${buildJobUrl(appliedJob)}`,
+        });
+        trackYmGoal("apply_job_success", {
           job_title: appliedJob.title,
           job_url: `${window.location.origin}${buildJobUrl(appliedJob)}`,
         });
