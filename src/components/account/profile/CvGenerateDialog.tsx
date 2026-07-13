@@ -363,7 +363,7 @@ export default function CvGenerateDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="max-w-2xl"
+        className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden"
         onEscapeKeyDown={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
@@ -372,7 +372,7 @@ export default function CvGenerateDialog({
           <DialogTitle>Tải lên file CV để tự động điền hồ sơ của bạn</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
           {showDropzone && (
             <div className="space-y-3">
               <p className="text-sm text-[var(--muted-foreground)]">
