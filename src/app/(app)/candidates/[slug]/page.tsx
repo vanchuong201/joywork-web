@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import CvFlipUsageBadge from "@/components/candidates/CvFlipUsageBadge";
 import CompanySelectorModal from "@/components/candidates/CompanySelectorModal";
 import PublicProfilePageContent from "@/components/profile/PublicProfilePageContent";
+import CvExportButton from "@/components/cv/CvExportButton";
 import type { PublicUserProfile } from "@/types/user";
 
 const SELECTED_COMPANY_KEY = "cvFlip.selectedCompanyId";
@@ -37,7 +38,7 @@ type Props = {
 
 function mergeContactsFromCvFlip(
   base: PublicUserProfile,
-  cv: Awaited<ReturnType<typeof getCvFlipCandidateDetail>>
+  cv: Awaited<ReturnType<typeof getCvFlipCandidateDetail>>,
 ): PublicUserProfile {
   const cvProfile = cv.candidate.profile;
   if (!base.profile) {
@@ -81,7 +82,8 @@ function mergeContactsFromCvFlip(
       avatar: cvProfile.avatar ?? base.profile.avatar,
       fullName: cvProfile.fullName ?? base.profile.fullName,
       wardCodes: cvProfile.wardCodes ?? base.profile.wardCodes,
-      specificAddress: cvProfile.specificAddress ?? base.profile.specificAddress,
+      specificAddress:
+        cvProfile.specificAddress ?? base.profile.specificAddress,
       dayOfBirth: cvProfile.dayOfBirth ?? base.profile.dayOfBirth,
       monthOfBirth: cvProfile.monthOfBirth ?? base.profile.monthOfBirth,
       yearOfBirth: cvProfile.yearOfBirth ?? base.profile.yearOfBirth,
@@ -160,11 +162,9 @@ export default function CandidateDetailPage({ params }: Props) {
   const profileQuery = useQuery({
     queryKey: ["public-profile-by-slug", safeSlug, companyId || ""],
     queryFn: async () => {
-      const qs = companyId
-        ? `?companyId=${encodeURIComponent(companyId)}`
-        : "";
+      const qs = companyId ? `?companyId=${encodeURIComponent(companyId)}` : "";
       const res = await api.get<{ data: { profile: PublicUserProfile } }>(
-        `/api/users/profile/${encodeURIComponent(safeSlug)}${qs}`
+        `/api/users/profile/${encodeURIComponent(safeSlug)}${qs}`,
       );
       return res.data.data.profile;
     },
@@ -172,21 +172,27 @@ export default function CandidateDetailPage({ params }: Props) {
     retry: false,
   });
 
-  const isOwnProfile = Boolean(user?.id && profileQuery.data?.id && user.id === profileQuery.data.id);
+  const isOwnProfile = Boolean(
+    user?.id && profileQuery.data?.id && user.id === profileQuery.data.id,
+  );
 
-  const needsCvFlipLayer = Boolean(profileQuery.data && !isOwnProfile && profileQuery.data.identityMasked);
+  const needsCvFlipLayer = Boolean(
+    profileQuery.data && !isOwnProfile && profileQuery.data.identityMasked,
+  );
 
   const cvDetailQuery = useQuery({
     queryKey: ["cv-flip-candidate-detail", safeSlug, companyId],
     queryFn: () => getCvFlipCandidateDetail(safeSlug, companyId || undefined),
-    enabled: initialized && !loading && !!user && needsCvFlipLayer && !!companyId,
+    enabled:
+      initialized && !loading && !!user && needsCvFlipLayer && !!companyId,
     retry: false,
   });
 
   const usageQuery = useQuery({
     queryKey: ["cv-flip-usage", companyId],
     queryFn: () => getCvFlipUsage(companyId),
-    enabled: initialized && !loading && !!user && needsCvFlipLayer && !!companyId,
+    enabled:
+      initialized && !loading && !!user && needsCvFlipLayer && !!companyId,
   });
 
   const accessCompaniesQuery = useQuery({
@@ -195,10 +201,13 @@ export default function CandidateDetailPage({ params }: Props) {
     enabled: initialized && !loading && !!user && needsCvFlipLayer,
   });
 
-  const companies = useMemo(() => accessCompaniesQuery.data ?? [], [accessCompaniesQuery.data]);
+  const companies = useMemo(
+    () => accessCompaniesQuery.data ?? [],
+    [accessCompaniesQuery.data],
+  );
   const companyAccess = useMemo(
     () => accessCompaniesQuery.data?.find((c) => c.id === companyId),
-    [accessCompaniesQuery.data, companyId]
+    [accessCompaniesQuery.data, companyId],
   );
   const isPremiumCompany = companyAccess?.isPremium === true;
   const shouldSelectCompany = needsCvFlipLayer && !companyId;
@@ -221,12 +230,14 @@ export default function CandidateDetailPage({ params }: Props) {
     const base = profileQuery.data;
     if (!base) return null;
     if (!needsCvFlipLayer) return base;
-    if (cvDetailQuery.data) return mergeContactsFromCvFlip(base, cvDetailQuery.data);
+    if (cvDetailQuery.data)
+      return mergeContactsFromCvFlip(base, cvDetailQuery.data);
     return base;
   }, [profileQuery.data, cvDetailQuery.data, needsCvFlipLayer]);
 
   const fallbackAccess = useMemo((): CvFlipAccessState | null => {
-    if (!needsCvFlipLayer || cvDetailQuery.data || !profileQuery.data) return null;
+    if (!needsCvFlipLayer || cvDetailQuery.data || !profileQuery.data)
+      return null;
     const revealed = profileHasRevealedContacts(profileQuery.data);
     return {
       isFlipped: revealed,
@@ -241,7 +252,7 @@ export default function CandidateDetailPage({ params }: Props) {
     if (!cvDetailQuery.error) return null;
     return getApiErrorMessage(
       cvDetailQuery.error,
-      "Không tải được trạng thái mở CV (doanh nghiệp)."
+      "Không tải được trạng thái mở CV (doanh nghiệp).",
     );
   }, [cvDetailQuery.error]);
 
@@ -259,7 +270,9 @@ export default function CandidateDetailPage({ params }: Props) {
       } else {
         toast.success("Mở CV thành công.");
       }
-      queryClient.invalidateQueries({ queryKey: ["cv-flip-candidate-detail", safeSlug, companyId] });
+      queryClient.invalidateQueries({
+        queryKey: ["cv-flip-candidate-detail", safeSlug, companyId],
+      });
       queryClient.invalidateQueries({ queryKey: ["cv-flip-usage", companyId] });
     },
     onError: (error: unknown) => {
@@ -267,26 +280,40 @@ export default function CandidateDetailPage({ params }: Props) {
         response?: { data?: { error?: { message?: string } } };
       };
       const message =
-        maybeAxiosError.response?.data?.error?.message || "Không thể mở CV lúc này.";
+        maybeAxiosError.response?.data?.error?.message ||
+        "Không thể mở CV lúc này.";
       toast.error(message);
     },
   });
 
   if (!initialized || loading) {
-    return <div className="mx-auto max-w-4xl p-4 text-sm text-slate-500">Đang tải...</div>;
+    return (
+      <div className="mx-auto max-w-4xl p-4 text-sm text-slate-500">
+        Đang tải...
+      </div>
+    );
   }
 
   if (!user) return null;
 
   if (profileQuery.isLoading) {
-    return <div className="mx-auto max-w-4xl p-4 text-sm text-slate-500">Đang tải hồ sơ ứng viên...</div>;
+    return (
+      <div className="mx-auto max-w-4xl p-4 text-sm text-slate-500">
+        Đang tải hồ sơ ứng viên...
+      </div>
+    );
   }
 
   if (profileQuery.error || !profileQuery.data) {
     return (
       <div className="mx-auto max-w-4xl space-y-4 p-4">
-        <p className="text-sm text-red-600">Không tìm thấy hồ sơ hoặc hồ sơ đang ở chế độ riêng tư.</p>
-        <Link href="/candidates" className="text-sm text-[var(--brand)] hover:underline">
+        <p className="text-sm text-red-600">
+          Không tìm thấy hồ sơ hoặc hồ sơ đang ở chế độ riêng tư.
+        </p>
+        <Link
+          href="/candidates"
+          className="text-sm text-[var(--brand)] hover:underline"
+        >
           Quay lại danh sách ứng viên
         </Link>
       </div>
@@ -300,9 +327,15 @@ export default function CandidateDetailPage({ params }: Props) {
   const access: CvFlipAccessState | undefined =
     cvDetailQuery.data?.access ?? fallbackAccess ?? undefined;
   const cvFlipLoadFailed = Boolean(needsCvFlipLayer && cvDetailQuery.isError);
-  const showFlipChrome = Boolean(needsCvFlipLayer && cvDetailQuery.data?.access);
+  const showFlipChrome = Boolean(
+    needsCvFlipLayer && cvDetailQuery.data?.access,
+  );
   const allowCvFlip = profileQuery.data?.profile?.allowCvFlip !== false;
   const showStickyFooter = showFlipChrome && access && !access.isFlipped;
+  const showExportButton = !isOwnProfile;
+  const exportMasked = Boolean(
+    showExportButton && needsCvFlipLayer && !access?.isFlipped,
+  );
 
   const openConfirm = () => {
     if (!access || access.isFlipped || access.hasPendingRequest) return;
@@ -345,9 +378,12 @@ export default function CandidateDetailPage({ params }: Props) {
       />
       {cvFlipLoadFailed ? (
         <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
-          Không tải được trạng thái mở CV — vẫn hiển thị hồ sơ theo quyền hiện tại.
+          Không tải được trạng thái mở CV — vẫn hiển thị hồ sơ theo quyền hiện
+          tại.
           {cvFlipErrorMessage ? (
-            <span className="mt-1 block text-xs text-amber-800">{cvFlipErrorMessage}</span>
+            <span className="mt-1 block text-xs text-amber-800">
+              {cvFlipErrorMessage}
+            </span>
           ) : null}
         </div>
       ) : null}
@@ -355,7 +391,8 @@ export default function CandidateDetailPage({ params }: Props) {
         <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {shouldSelectCompany ? (
             <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Vui lòng chọn doanh nghiệp để mở CV và xem đầy đủ thông tin liên hệ.
+              Vui lòng chọn doanh nghiệp để mở CV và xem đầy đủ thông tin liên
+              hệ.
               <Button
                 type="button"
                 variant="link"
@@ -366,9 +403,21 @@ export default function CandidateDetailPage({ params }: Props) {
               </Button>
             </div>
           ) : null}
-          {showFlipChrome && usageQuery.data ? (
-            <CvFlipUsageBadge usage={usageQuery.data} />
-          ) : null}
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            {showFlipChrome && usageQuery.data ? (
+              <CvFlipUsageBadge usage={usageQuery.data} />
+            ) : null}
+            {showExportButton ? (
+              <CvExportButton
+                mode="candidate"
+                slug={safeSlug}
+                companyId={companyId || undefined}
+                masked={exportMasked}
+                onRequireCompanySelect={() => setCompanySelectorOpen(true)}
+                className="w-full sm:w-auto"
+              />
+            ) : null}
+          </div>
         </div>
         {showFlipChrome && access?.isFlipped ? (
           <p className="mx-auto mt-2 max-w-5xl text-xs text-emerald-700">
@@ -389,7 +438,7 @@ export default function CandidateDetailPage({ params }: Props) {
         employerCandidateView={!isOwnProfile}
         className={cn(
           "min-h-screen bg-slate-50",
-          showStickyFooter ? "pb-32" : "pb-20"
+          showStickyFooter ? "pb-32" : "pb-20",
         )}
       />
 
@@ -442,43 +491,47 @@ export default function CandidateDetailPage({ params }: Props) {
                   </div>
                 ) : allowCvFlip ? (
                   <>
-                    <p>Bạn có đồng ý xem thông tin liên hệ của ứng viên này không?</p>
                     <p>
-                      Nếu đồng ý, hệ thống tính <strong>1 lượt mở CV</strong>. Số lần mở còn lại trong
-                      tháng:{" "}
+                      Bạn có đồng ý xem thông tin liên hệ của ứng viên này
+                      không?
+                    </p>
+                    <p>
+                      Nếu đồng ý, hệ thống tính <strong>1 lượt mở CV</strong>.
+                      Số lần mở còn lại trong tháng:{" "}
                       <strong>
-                        {usageQuery.data ? usageQuery.data.total.remaining : "—"}
+                        {usageQuery.data
+                          ? usageQuery.data.total.remaining
+                          : "—"}
                       </strong>
                       {usageQuery.data ? (
-                        <>
-                          {" "}
-                          / {usageQuery.data.total.limit}
-                        </>
+                        <> / {usageQuery.data.total.limit}</>
                       ) : null}
                       .
                     </p>
                     {!canSubmitDirect && usageQuery.data ? (
                       <p className="text-amber-800">
-                        Bạn đã hết lượt mở CV trong tháng. Vui lòng thử lại sau hoặc liên hệ vận hành.
+                        Bạn đã hết lượt mở CV trong tháng. Vui lòng thử lại sau
+                        hoặc liên hệ vận hành.
                       </p>
                     ) : null}
                   </>
                 ) : (
                   <>
                     <p>
-                      Ứng viên đã bật chế độ: doanh nghiệp cần <strong>gửi yêu cầu</strong> trước khi xem
-                      thông tin liên hệ. Ứng viên sẽ nhận thông báo và email để Đồng ý hoặc Từ chối.
+                      Ứng viên đã bật chế độ: doanh nghiệp cần{" "}
+                      <strong>gửi yêu cầu</strong> trước khi xem thông tin liên
+                      hệ. Ứng viên sẽ nhận thông báo và email để Đồng ý hoặc Từ
+                      chối.
                     </p>
                     <p>
                       Lượt gửi yêu cầu còn lại trong tháng:{" "}
                       <strong>
-                        {usageQuery.data ? usageQuery.data.request.remaining : "—"}
+                        {usageQuery.data
+                          ? usageQuery.data.request.remaining
+                          : "—"}
                       </strong>
                       {usageQuery.data ? (
-                        <>
-                          {" "}
-                          / {usageQuery.data.request.limit}
-                        </>
+                        <> / {usageQuery.data.request.limit}</>
                       ) : null}
                       .
                     </p>
@@ -499,7 +552,11 @@ export default function CandidateDetailPage({ params }: Props) {
               </Button>
             ) : (
               <>
-                <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setConfirmOpen(false)}
+                >
                   Hủy
                 </Button>
                 {allowCvFlip ? (
@@ -516,7 +573,9 @@ export default function CandidateDetailPage({ params }: Props) {
                     disabled={flipMutation.isPending || !canSubmitRequest}
                     onClick={() => flipMutation.mutate()}
                   >
-                    {flipMutation.isPending ? "Đang gửi..." : "Gửi yêu cầu đến ứng viên"}
+                    {flipMutation.isPending
+                      ? "Đang gửi..."
+                      : "Gửi yêu cầu đến ứng viên"}
                   </Button>
                 )}
               </>
