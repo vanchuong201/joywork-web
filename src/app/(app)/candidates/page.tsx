@@ -27,6 +27,8 @@ const SELECTED_COMPANY_KEY = "cvFlip.selectedCompanyId";
 const TAB_ALL = "all";
 const TAB_TALENT_POOL = "talent-pool";
 const CV_FLIP_PAGE_SIZE = 12;
+/** Tạm ẩn tab Talent Pool — đổi thành `true` để bật lại */
+const SHOW_TALENT_POOL_TAB = false;
 
 function CandidatesPageContent() {
   const router = useRouter();
@@ -52,7 +54,8 @@ function CandidatesPageContent() {
   const [modalDraftCompanyId, setModalDraftCompanyId] = useState("");
   const companyModalWasOpen = useRef(false);
 
-  const tab = searchParams.get("tab") === TAB_TALENT_POOL ? TAB_TALENT_POOL : TAB_ALL;
+  const tab =
+    SHOW_TALENT_POOL_TAB && searchParams.get("tab") === TAB_TALENT_POOL ? TAB_TALENT_POOL : TAB_ALL;
 
   useEffect(() => {
     if (initialized && !loading && !user) {
@@ -257,17 +260,19 @@ function CandidatesPageContent() {
           >
             Tất cả ứng viên
           </Button>
-          <Button
-            variant="ghost"
-            className={`rounded-none border-b-2 px-2 ${
-              tab === TAB_TALENT_POOL
-                ? "border-[var(--brand)] text-[var(--brand)]"
-                : "border-transparent text-[var(--muted-foreground)]"
-            }`}
-            onClick={() => switchTab(TAB_TALENT_POOL)}
-          >
-            Talent Pool
-          </Button>
+          {SHOW_TALENT_POOL_TAB && (
+            <Button
+              variant="ghost"
+              className={`rounded-none border-b-2 px-2 ${
+                tab === TAB_TALENT_POOL
+                  ? "border-[var(--brand)] text-[var(--brand)]"
+                  : "border-transparent text-[var(--muted-foreground)]"
+              }`}
+              onClick={() => switchTab(TAB_TALENT_POOL)}
+            >
+              Talent Pool
+            </Button>
+          )}
         </div>
         {selectedCompany ? <CvFlipUsageBadge usage={usageQuery.data} /> : null}
       </div>

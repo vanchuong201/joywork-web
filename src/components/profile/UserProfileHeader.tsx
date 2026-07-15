@@ -13,6 +13,9 @@ import type { WardOption } from '@/lib/location-wards';
 import JobSeekingStatusBadge from '@/components/candidates/JobSeekingStatusBadge';
 
 /** Khi chưa mở CV: chỉ hiển thị chữ cái đầu mỗi từ, ví dụ "Nguyễn Văn Chương" → "NVC". */
+/** Tạm ẩn badge Talent Pool trên CV — đổi thành `true` để bật lại */
+const SHOW_TALENT_POOL_BADGE = false;
+
 function nameToMaskedInitials(name: string | null | undefined): string {
   const raw = (name || "Ứng viên").trim();
   const parts = raw.split(/\s+/).filter((p) => p.length > 0);
@@ -173,7 +176,7 @@ export default function UserProfileHeader({ profile, cvFlip, employerCandidateVi
             <div className="min-w-0">
               <div className="flex items-center gap-3">
                 <h1 className="text-3xl font-black text-slate-900 truncate">{displayTitle}</h1>
-                {profile.isTalentPoolMember && (
+                {SHOW_TALENT_POOL_BADGE && profile.isTalentPoolMember && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-100 to-yellow-100 px-3 py-1 text-xs font-semibold text-amber-700 shadow-sm shrink-0">
                     <Sparkles size={14} /> Talent Pool
                   </span>
