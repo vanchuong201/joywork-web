@@ -119,7 +119,18 @@ export default function ManageApplicationsTab({ company }: Props) {
     setSelectedApplication(application);
     setNewStatus(application.status);
     setNotes(application.notes || "");
-    setStatusDialogOpen(true);
+    // Defer so DropdownMenu can release body pointer-events before Dialog locks them.
+    // Opening Dialog synchronously from DropdownMenu.Item leaves a stuck overlay.
+    window.setTimeout(() => setStatusDialogOpen(true), 0);
+  };
+
+  const handleStatusDialogOpenChange = (open: boolean) => {
+    setStatusDialogOpen(open);
+    if (!open) {
+      setSelectedApplication(null);
+      setNewStatus("");
+      setNotes("");
+    }
   };
 
   const handleUpdateStatus = () => {
@@ -385,7 +396,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                                   sideOffset={5}
                                 >
                                   <DropdownMenu.Item
-                                    onClick={() => handleStatusChange(application)}
+                                    onSelect={() => handleStatusChange(application)}
                                     className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                   >
                                     <Edit className="w-4 h-4" />
@@ -488,7 +499,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                               sideOffset={5}
                             >
                               <DropdownMenu.Item
-                                onClick={() => handleStatusChange(application)}
+                                onSelect={() => handleStatusChange(application)}
                                 className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                               >
                                 <Edit className="w-4 h-4" />
@@ -616,7 +627,7 @@ export default function ManageApplicationsTab({ company }: Props) {
       )}
 
       {/* Status Update Dialog */}
-      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+      <Dialog open={statusDialogOpen} onOpenChange={handleStatusDialogOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cập nhật trạng thái ứng tuyển</DialogTitle>
@@ -665,7 +676,7 @@ export default function ManageApplicationsTab({ company }: Props) {
             </div>
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
+            <Button variant="outline" onClick={() => handleStatusDialogOpenChange(false)}>
               Hủy
             </Button>
             <Button
