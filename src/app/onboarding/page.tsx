@@ -38,6 +38,18 @@ function extractApiErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function toSafeExternalUrl(value: string | null | undefined): string | null {
+  const raw = value?.trim();
+  if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 type OnboardingScreen = "loading" | "activate" | "expired" | "used" | "invalid" | "landing";
 
 function OnboardingPageContent() {
@@ -231,7 +243,12 @@ function OnboardingPageContent() {
       { label: "Link Portfolio", value: onboardingMe.importRecord.rawPortfolioLink },
       { label: "Link Social", value: onboardingMe.importRecord.rawSocialLink },
     ];
-    return links.filter((item): item is { label: string; value: string } => Boolean(item.value));
+    return links
+      .map((item) => ({
+        label: item.label,
+        url: toSafeExternalUrl(item.value),
+      }))
+      .filter((item): item is { label: string; url: string } => Boolean(item.url));
   }, [onboardingMe]);
 
   if (isCheckingToken || screen === "loading") {
@@ -324,19 +341,21 @@ function OnboardingPageContent() {
           <div className="rounded-xl border border-[var(--border)] bg-white p-6">
             <h2 className="text-base font-semibold text-[var(--foreground)]">Dữ liệu CV/Portfolio từ file import</h2>
             {importedLinks.length === 0 ? (
-              <p className="mt-2 text-sm text-[var(--muted-foreground)]">Không có link CV/Portfolio trong dữ liệu import.</p>
+              <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                Không có link CV/Portfolio hợp lệ trong dữ liệu import.
+              </p>
             ) : (
               <div className="mt-4 space-y-3">
                 {importedLinks.map((item) => (
                   <div key={item.label}>
                     <p className="text-xs font-medium uppercase text-[var(--muted-foreground)]">{item.label}</p>
                     <a
-                      href={item.value || "#"}
+                      href={item.url}
                       target="_blank"
                       rel="noreferrer"
                       className="break-all text-sm text-[var(--brand)] underline"
                     >
-                      {item.value}
+                      {item.url}
                     </a>
                   </div>
                 ))}
