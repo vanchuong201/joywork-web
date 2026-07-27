@@ -247,9 +247,31 @@ function OnboardingPageContent() {
       .map((item) => ({
         label: item.label,
         url: toSafeExternalUrl(item.value),
+        raw: item.value?.trim() || null,
       }))
-      .filter((item): item is { label: string; url: string } => Boolean(item.url));
+      .filter((item) => Boolean(item.url) || Boolean(item.raw));
   }, [onboardingMe]);
+
+  const cvImportStatus = onboardingMe?.cvImport?.status ?? null;
+  const cvImportJobId = onboardingMe?.cvImport?.jobId ?? null;
+  const linkAction = onboardingMe?.importRecord?.linkAction ?? null;
+  const isAutoLink = linkAction === "AUTO_FETCHABLE";
+
+  useEffect(() => {
+    if (screen !== "landing") return;
+    const shouldPoll =
+      cvImportStatus === "PROCESSING" ||
+      cvImportStatus === "PENDING" ||
+      cvImportStatus === "READY" ||
+      (!cvImportStatus && isAutoLink);
+    if (!shouldPoll) return;
+
+    const timer = window.setInterval(() => {
+      void loadLandingData();
+    }, 3000);
+
+    return () => window.clearInterval(timer);
+  }, [screen, cvImportStatus, isAutoLink, loadLandingData]);
 
   if (isCheckingToken || screen === "loading") {
     return (
@@ -313,7 +335,8 @@ function OnboardingPageContent() {
           <div className="rounded-xl border border-[var(--border)] bg-white p-6">
             <h1 className="text-xl font-semibold text-[var(--foreground)]">Kích hoạt thành công</h1>
             <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-              Bạn đã đăng nhập thành công. Vui lòng rà soát thông tin cơ bản và có thể bắt đầu import CV ngay.
+              Bạn đã đăng nhập thành công. Hồ sơ CV có thể đã được tạo sẵn từ lúc import — hãy rà soát thông tin cơ bản
+              bên dưới.
             </p>
           </div>
 
@@ -340,6 +363,43 @@ function OnboardingPageContent() {
 
           <div className="rounded-xl border border-[var(--border)] bg-white p-6">
             <h2 className="text-base font-semibold text-[var(--foreground)]">Dữ liệu CV/Portfolio từ file import</h2>
+
+            {cvImportStatus === "PROCESSING" || cvImportStatus === "PENDING" || (!cvImportStatus && isAutoLink) ? (
+              <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+                <p>
+                  Hệ thống đang tạo hồ sơ CV từ link của bạn (có thể đã chạy từ lúc import). Quá trình này có thể mất
+                  vài phút.
+                </p>
+              </div>
+            ) : null}
+
+            {cvImportStatus === "APPLIED" ? (
+              <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                CV đã được áp dụng vào hồ sơ. Doanh nghiệp có thể tìm thấy bạn. Bạn vẫn có thể chỉnh sửa hoặc tạo lại từ
+                file khác.
+              </div>
+            ) : null}
+
+            {cvImportStatus === "READY" ? (
+              <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                CV nháp đã sẵn sàng và đang được áp dụng vào hồ sơ. Trang sẽ tự cập nhật trong giây lát.
+              </div>
+            ) : null}
+
+            {cvImportStatus === "FAILED" ? (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                {onboardingMe?.cvImport?.errorMessage ||
+                  "Không tải được CV từ link (có thể link chưa mở công khai). Vui lòng tải file PDF/DOCX lên."}
+              </div>
+            ) : null}
+
+            {!isAutoLink && !cvImportStatus ? (
+              <div className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-sm text-[var(--muted-foreground)]">
+                Link CV không hỗ trợ tự động tải (Canva, folder, TopCV…). Vui lòng tải file PDF/DOCX lên để tạo hồ sơ.
+              </div>
+            ) : null}
+
             {importedLinks.length === 0 ? (
               <p className="mt-2 text-sm text-[var(--muted-foreground)]">
                 Không có link CV/Portfolio hợp lệ trong dữ liệu import.
@@ -349,14 +409,20 @@ function OnboardingPageContent() {
                 {importedLinks.map((item) => (
                   <div key={item.label}>
                     <p className="text-xs font-medium uppercase text-[var(--muted-foreground)]">{item.label}</p>
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="break-all text-sm text-[var(--brand)] underline"
-                    >
-                      {item.url}
-                    </a>
+                    {item.url ? (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="break-all text-sm text-[var(--brand)] underline"
+                      >
+                        {item.url}
+                      </a>
+                    ) : (
+                      <p className="break-all text-sm text-[var(--muted-foreground)]">
+                        {item.raw} <span className="text-xs">(không phải URL http/https)</span>
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -364,10 +430,14 @@ function OnboardingPageContent() {
 
             <div className="mt-4 flex flex-wrap gap-3">
               <Button onClick={() => setCvGenerateOpen(true)} disabled={!ownProfile}>
-                Tạo hồ sơ từ CV
+                {cvImportStatus === "APPLIED"
+                  ? "Tạo lại / chỉnh từ file CV"
+                  : cvImportStatus === "READY"
+                    ? "Xem CV nháp"
+                    : "Tạo hồ sơ từ CV"}
               </Button>
               <Button variant="outline" onClick={() => router.push("/account?tab=profile")}>
-                Chỉnh sửa hồ sơ chi tiết
+                {cvImportStatus === "APPLIED" ? "Xem & chỉnh sửa hồ sơ" : "Chỉnh sửa hồ sơ chi tiết"}
               </Button>
             </div>
           </div>
@@ -380,6 +450,7 @@ function OnboardingPageContent() {
             profile={ownProfile}
             currentCvUrl={currentCvUrl}
             onCvUrlChange={(url) => setCurrentCvUrl(url)}
+            initialJobId={cvImportStatus === "READY" ? cvImportJobId : null}
           />
         ) : null}
       </div>
@@ -410,17 +481,17 @@ function OnboardingPageContent() {
                 onClick={() => setShowPassword((value) => !value)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4"/>}
               </button>
             </div>
             {errors.password ? <p className="text-xs text-red-500">{errors.password.message}</p> : null}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Xác nhận mật khẩu</Label>
+            <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
             <div className="relative">
               <Input
-                id="confirm-password"
+                id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Nhập lại mật khẩu"
                 {...register("confirmPassword")}
@@ -434,8 +505,12 @@ function OnboardingPageContent() {
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {errors.confirmPassword ? <p className="text-xs text-red-500">{errors.confirmPassword.message}</p> : null}
+            {errors.confirmPassword ? (
+              <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>
+            ) : null}
           </div>
+
+          {errors.root ? <p className="text-xs text-red-500">{errors.root.message}</p> : null}
 
           <Button type="submit" className="w-full" disabled={isActivating}>
             {isActivating ? "Đang kích hoạt..." : "Kích hoạt tài khoản"}

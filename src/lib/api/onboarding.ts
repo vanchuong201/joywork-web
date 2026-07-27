@@ -51,7 +51,13 @@ export interface OnboardingMeResponse {
     rawCvLink: string | null;
     rawPortfolioLink: string | null;
     cvLinkType: string;
+    linkAction?: string;
     activatedAt: string | null;
+  } | null;
+  cvImport: {
+    jobId: string;
+    status: string;
+    errorMessage: string | null;
   } | null;
 }
 

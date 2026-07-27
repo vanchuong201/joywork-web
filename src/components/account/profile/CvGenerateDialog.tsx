@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import api from "@/lib/api";
 import { uploadProfileCV } from "@/lib/uploads";
-import { applyCvImport, createCvImport } from "@/lib/api/cv-imports";
+import { applyCvImport, createCvImport, getCvImport } from "@/lib/api/cv-imports";
 import { CV_IMPORT_SECTIONS } from "@/types/cv-import";
 import type { OwnUserProfile } from "@/types/user";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ interface CvGenerateDialogProps {
   profile: OwnUserProfile;
   currentCvUrl: string | null;
   onCvUrlChange: (url: string | null) => void;
+  /** Job CV đã parse sẵn (auto từ onboarding) — bỏ qua bước upload */
+  initialJobId?: string | null;
 }
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
@@ -51,6 +53,7 @@ export default function CvGenerateDialog({
   onOpenChange,
   currentCvUrl,
   onCvUrlChange,
+  initialJobId = null,
 }: CvGenerateDialogProps) {
   const queryClient = useQueryClient();
   const [stage, setStage] = useState<Stage>("idle");
@@ -108,6 +111,41 @@ export default function CvGenerateDialog({
     await api.patch("/api/users/me/profile", { cvUrl: nextUrl });
     onCvUrlChange(nextUrl);
     queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+  };
+
+  const applyExistingJob = async (jobId: string) => {
+    setStage("applying");
+    setErrorMessage(null);
+    try {
+      const job = await getCvImport(jobId);
+      if (job.status === "FAILED") {
+        throw new Error(job.errorMessage || "Không thể đọc CV từ link.");
+      }
+      if (job.status !== "READY" && job.status !== "APPLIED") {
+        throw new Error("CV nháp chưa sẵn sàng. Vui lòng thử lại sau giây lát.");
+      }
+
+      setJobWarnings(job.warnings || []);
+
+      if (job.status === "READY") {
+        const applied = await applyCvImport(jobId, {
+          mode: "overwrite",
+          sections: [...CV_IMPORT_SECTIONS],
+        });
+        if (applied.status === "FAILED") {
+          throw new Error(applied.errorMessage || "Không thể áp dụng dữ liệu từ CV.");
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      setStage("done");
+      toast.success("Đã áp dụng CV nháp vào hồ sơ của bạn.");
+    } catch (error: unknown) {
+      const message = getApiErrorMessage(error, "Không thể áp dụng CV nháp.");
+      setErrorMessage(message);
+      setStage("error");
+      toast.error(message);
+    }
   };
 
   const handleFileUploadAndGenerate = async (file: File) => {
@@ -193,10 +231,31 @@ export default function CvGenerateDialog({
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>Tải lên file CV để tự động điền hồ sơ của bạn</DialogTitle>
+          <DialogTitle>
+            {initialJobId
+              ? "Xem & hoàn thiện CV nháp từ link import"
+              : "Tải lên file CV để tự động điền hồ sơ của bạn"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
+          {initialJobId && (stage === "idle" || stage === "error") ? (
+            <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--background)] p-4">
+              <p className="text-sm text-[var(--muted-foreground)]">
+                Hệ thống đã tạo CV nháp từ link trong dữ liệu import. Bạn có thể áp dụng vào hồ sơ ngay,
+                hoặc tải lên file CV khác bên dưới.
+              </p>
+              <Button
+                onClick={() => void applyExistingJob(initialJobId)}
+                disabled={isProcessing}
+              >
+                <Wand2 className="h-4 w-4" />
+                Áp dụng CV nháp vào hồ sơ
+              </Button>
+              {errorMessage ? <p className="text-sm text-red-500">{errorMessage}</p> : null}
+            </div>
+          ) : null}
+
           {showDropzone && (
             <div className="space-y-3">
               <p className="text-sm text-[var(--muted-foreground)]">
