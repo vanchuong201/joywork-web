@@ -111,4 +111,21 @@ describe("buildCvApplyReadiness", () => {
     expect(result.hasExperiences).toBe(true);
     expect(result.missingItems).toEqual([]);
   });
+
+  it("vẫn sẵn sàng khi thiếu avatar nhưng đủ thông tin cơ bản còn lại", () => {
+    const profile = createProfile({
+      includeBasicInfo: true,
+      skills: ["React"],
+      experiencesCount: 1,
+    });
+    profile.avatar = undefined;
+    if (profile.profile) {
+      profile.profile.avatar = undefined;
+    }
+
+    const result = buildCvApplyReadiness(profile);
+
+    expect(result.hasBasicInfo).toBe(true);
+    expect(result.isReady).toBe(true);
+  });
 });

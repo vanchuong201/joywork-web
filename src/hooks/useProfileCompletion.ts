@@ -33,7 +33,7 @@ export type CvApplyReadinessResult = {
 function isBasicInfoComplete(profile?: OwnUserProfile | null): boolean {
   if (!profile) return false;
 
-  const hasAvatar = Boolean(profile.profile?.avatar || profile.avatar);
+  // Avatar không bắt buộc (khớp CV readiness API / list DN).
   const hasFullName = isFilledText(profile.profile?.fullName || profile.name);
   const hasTitle = isFilledText(profile.profile?.title);
   const hasBio = isFilledText(profile.profile?.bio);
@@ -43,7 +43,6 @@ function isBasicInfoComplete(profile?: OwnUserProfile | null): boolean {
     hasNonEmptyArrayItem(profile.profile?.locations) || isFilledText(profile.profile?.location);
 
   return (
-    hasAvatar &&
     hasFullName &&
     hasTitle &&
     hasBio &&
