@@ -1,4 +1,5 @@
 import api from "@/lib/api";
+import type { CvImportStatus } from "@/types/cv-import";
 
 export type OnboardingTokenStatus = "VALID" | "EXPIRED" | "USED" | "INVALID";
 
@@ -21,6 +22,15 @@ export interface OnboardingActivateResponse {
     role: string;
   };
 }
+
+export type CandidateCvStatus =
+  | "CV_EMPTY"
+  | "CV_MANUAL_PENDING"
+  | "CV_AUTO_QUEUED"
+  | "CV_AUTO_PROCESSING"
+  | "CV_AUTO_READY"
+  | "CV_AUTO_FAILED"
+  | "CV_APPLIED";
 
 export interface OnboardingMeResponse {
   user: {
@@ -56,9 +66,10 @@ export interface OnboardingMeResponse {
   } | null;
   cvImport: {
     jobId: string;
-    status: string;
+    status: CvImportStatus;
     errorMessage: string | null;
   } | null;
+  cvStatus: CandidateCvStatus | null;
 }
 
 export const onboardingApi = {

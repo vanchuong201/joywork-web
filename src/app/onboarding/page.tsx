@@ -10,7 +10,11 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import type { OwnUserProfile } from "@/types/user";
 import { useAuthStore } from "@/store/useAuth";
-import { onboardingApi, type OnboardingMeResponse } from "@/lib/api/onboarding";
+import {
+  onboardingApi,
+  type CandidateCvStatus,
+  type OnboardingMeResponse,
+} from "@/lib/api/onboarding";
 import CvGenerateDialog from "@/components/account/profile/CvGenerateDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +56,14 @@ function toSafeExternalUrl(value: string | null | undefined): string | null {
 
 type OnboardingScreen = "loading" | "activate" | "expired" | "used" | "invalid" | "landing";
 
+const RUNNING_CV_STATUSES: CandidateCvStatus[] = [
+  "CV_AUTO_QUEUED",
+  "CV_AUTO_PROCESSING",
+  "CV_AUTO_READY",
+];
+const CV_POLL_INTERVAL_MS = 3000;
+const CV_POLL_MAX_ATTEMPTS = 60;
+
 function OnboardingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,6 +82,7 @@ function OnboardingPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [cvGenerateOpen, setCvGenerateOpen] = useState(false);
+  const [cvPollAttempts, setCvPollAttempts] = useState(0);
   const [ownProfile, setOwnProfile] = useState<OwnUserProfile | null>(null);
   const [onboardingMe, setOnboardingMe] = useState<OnboardingMeResponse | null>(null);
   const [currentCvUrl, setCurrentCvUrl] = useState<string | null>(null);
@@ -252,26 +265,40 @@ function OnboardingPageContent() {
       .filter((item) => Boolean(item.url) || Boolean(item.raw));
   }, [onboardingMe]);
 
-  const cvImportStatus = onboardingMe?.cvImport?.status ?? null;
+  const cvStatus = onboardingMe?.cvStatus ?? null;
   const cvImportJobId = onboardingMe?.cvImport?.jobId ?? null;
-  const linkAction = onboardingMe?.importRecord?.linkAction ?? null;
-  const isAutoLink = linkAction === "AUTO_FETCHABLE";
+  const isCvJobRunning = cvStatus ? RUNNING_CV_STATUSES.includes(cvStatus) : false;
+  const isCvPollingTimedOut = isCvJobRunning && cvPollAttempts >= CV_POLL_MAX_ATTEMPTS;
+  const isBasicInfoLocked = isCvJobRunning || isSavingProfile || isLoadingLanding;
+  const canOpenDraftDialog = cvStatus === "CV_AUTO_READY";
+  const canOpenUploadDialog =
+    cvStatus === "CV_MANUAL_PENDING" || cvStatus === "CV_EMPTY" || cvStatus === "CV_AUTO_FAILED";
+  const profileDetailHref =
+    isCvJobRunning && cvImportJobId
+      ? `/account/profile?cvJob=${encodeURIComponent(cvImportJobId)}`
+      : "/account/profile";
+
+  useEffect(() => {
+    if (screen !== "landing") {
+      setCvPollAttempts(0);
+      return;
+    }
+    if (!isCvJobRunning) {
+      setCvPollAttempts(0);
+    }
+  }, [screen, isCvJobRunning]);
 
   useEffect(() => {
     if (screen !== "landing") return;
-    const shouldPoll =
-      cvImportStatus === "PROCESSING" ||
-      cvImportStatus === "PENDING" ||
-      cvImportStatus === "READY" ||
-      (!cvImportStatus && isAutoLink);
-    if (!shouldPoll) return;
+    if (!isCvJobRunning || cvPollAttempts >= CV_POLL_MAX_ATTEMPTS) return;
 
-    const timer = window.setInterval(() => {
+    const timer = window.setTimeout(() => {
+      setCvPollAttempts((prev) => prev + 1);
       void loadLandingData();
-    }, 3000);
+    }, CV_POLL_INTERVAL_MS);
 
-    return () => window.clearInterval(timer);
-  }, [screen, cvImportStatus, isAutoLink, loadLandingData]);
+    return () => window.clearTimeout(timer);
+  }, [screen, isCvJobRunning, cvPollAttempts, loadLandingData]);
 
   if (isCheckingToken || screen === "loading") {
     return (
@@ -342,21 +369,41 @@ function OnboardingPageContent() {
 
           <div className="rounded-xl border border-[var(--border)] bg-white p-6">
             <h2 className="text-base font-semibold text-[var(--foreground)]">Thông tin cơ bản</h2>
+            {isCvJobRunning ? (
+              <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                Đang tạo hồ sơ từ CV, bạn sẽ có thể chỉnh sửa sau khi quá trình áp dụng hoàn tất.
+              </p>
+            ) : null}
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="full-name">Họ tên</Label>
-                <Input id="full-name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
+                <Input
+                  id="full-name"
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  disabled={isBasicInfoLocked}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Số điện thoại</Label>
-                <Input id="phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  disabled={isBasicInfoLocked}
+                />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="title">Vị trí mong muốn</Label>
-                <Input id="title" value={title} onChange={(event) => setTitle(event.target.value)} />
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  disabled={isBasicInfoLocked}
+                />
               </div>
             </div>
-            <Button className="mt-4" onClick={handleSaveBasicInfo} disabled={isSavingProfile || isLoadingLanding}>
+            <Button className="mt-4" onClick={handleSaveBasicInfo} disabled={isBasicInfoLocked}>
               {isSavingProfile ? "Đang lưu..." : "Lưu thông tin"}
             </Button>
           </div>
@@ -364,7 +411,7 @@ function OnboardingPageContent() {
           <div className="rounded-xl border border-[var(--border)] bg-white p-6">
             <h2 className="text-base font-semibold text-[var(--foreground)]">Dữ liệu CV/Portfolio từ file import</h2>
 
-            {cvImportStatus === "PROCESSING" || cvImportStatus === "PENDING" || (!cvImportStatus && isAutoLink) ? (
+            {cvStatus === "CV_AUTO_QUEUED" || cvStatus === "CV_AUTO_PROCESSING" ? (
               <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
                 <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
                 <p>
@@ -374,29 +421,54 @@ function OnboardingPageContent() {
               </div>
             ) : null}
 
-            {cvImportStatus === "APPLIED" ? (
+            {cvStatus === "CV_APPLIED" ? (
               <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
                 CV đã được áp dụng vào hồ sơ. Doanh nghiệp có thể tìm thấy bạn. Bạn vẫn có thể chỉnh sửa hoặc tạo lại từ
                 file khác.
               </div>
             ) : null}
 
-            {cvImportStatus === "READY" ? (
+            {cvStatus === "CV_AUTO_READY" ? (
               <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
                 CV nháp đã sẵn sàng và đang được áp dụng vào hồ sơ. Trang sẽ tự cập nhật trong giây lát.
               </div>
             ) : null}
 
-            {cvImportStatus === "FAILED" ? (
+            {cvStatus === "CV_AUTO_FAILED" ? (
               <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                 {onboardingMe?.cvImport?.errorMessage ||
                   "Không tải được CV từ link (có thể link chưa mở công khai). Vui lòng tải file PDF/DOCX lên."}
               </div>
             ) : null}
 
-            {!isAutoLink && !cvImportStatus ? (
+            {cvStatus === "CV_MANUAL_PENDING" ? (
               <div className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-sm text-[var(--muted-foreground)]">
                 Link CV không hỗ trợ tự động tải (Canva, folder, TopCV…). Vui lòng tải file PDF/DOCX lên để tạo hồ sơ.
+              </div>
+            ) : null}
+
+            {cvStatus === "CV_EMPTY" ? (
+              <div className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 text-sm text-[var(--muted-foreground)]">
+                Chưa có link CV trong dữ liệu import. Vui lòng tải file PDF/DOCX lên để tạo hồ sơ.
+              </div>
+            ) : null}
+
+            {isCvPollingTimedOut ? (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                Quá trình tạo CV đang lâu hơn dự kiến. Bạn có thể tải lại trạng thái để kiểm tra tiến độ mới nhất.
+                <div className="mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setCvPollAttempts(0);
+                      void loadLandingData();
+                    }}
+                  >
+                    Tải lại trạng thái
+                  </Button>
+                </div>
               </div>
             ) : null}
 
@@ -429,16 +501,19 @@ function OnboardingPageContent() {
             )}
 
             <div className="mt-4 flex flex-wrap gap-3">
-              <Button onClick={() => setCvGenerateOpen(true)} disabled={!ownProfile}>
-                {cvImportStatus === "APPLIED"
-                  ? "Tạo lại / chỉnh từ file CV"
-                  : cvImportStatus === "READY"
-                    ? "Xem CV nháp"
-                    : "Tạo hồ sơ từ CV"}
+              <Button onClick={() => router.push(profileDetailHref)}>
+                Xem và chỉnh sửa CV chi tiết
               </Button>
-              <Button variant="outline" onClick={() => router.push("/account?tab=profile")}>
-                {cvImportStatus === "APPLIED" ? "Xem & chỉnh sửa hồ sơ" : "Chỉnh sửa hồ sơ chi tiết"}
-              </Button>
+              {canOpenDraftDialog ? (
+                <Button variant="outline" onClick={() => setCvGenerateOpen(true)} disabled={!ownProfile || !cvImportJobId}>
+                  Xem CV nháp
+                </Button>
+              ) : null}
+              {canOpenUploadDialog ? (
+                <Button variant="outline" onClick={() => setCvGenerateOpen(true)} disabled={!ownProfile}>
+                  Tải CV lên
+                </Button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -450,7 +525,7 @@ function OnboardingPageContent() {
             profile={ownProfile}
             currentCvUrl={currentCvUrl}
             onCvUrlChange={(url) => setCurrentCvUrl(url)}
-            initialJobId={cvImportStatus === "READY" ? cvImportJobId : null}
+            initialJobId={cvStatus === "CV_AUTO_READY" ? cvImportJobId : null}
           />
         ) : null}
       </div>

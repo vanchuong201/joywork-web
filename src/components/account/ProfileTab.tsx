@@ -1,19 +1,23 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { OwnUserProfile } from "@/types/user";
+import type { CvImportStatus } from "@/types/cv-import";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import {
+  AlertTriangle,
   CheckCircle2,
   ChevronRight,
   Circle,
   Clock,
   ExternalLink,
+  Loader2,
   Sparkles,
 } from "lucide-react";
 import ProfileBasicInfo from "@/components/account/profile/ProfileBasicInfo";
@@ -28,6 +32,7 @@ import {
   listMyCvFlipRequests,
   respondMyCvFlipRequest,
 } from "@/lib/api/cv-flip";
+import { getCvImport } from "@/lib/api/cv-imports";
 import { buildCandidateProfileUrl } from "@/lib/candidate-url";
 import { toast } from "sonner";
 import CvExportButton from "@/components/cv/CvExportButton";
@@ -52,11 +57,25 @@ type TalentPoolMyStatus = {
 
 /** Tạm ẩn banner Talent Pool — đổi thành `true` để bật lại */
 const SHOW_TALENT_POOL_BANNER = false;
+const CV_JOB_POLL_INTERVAL_MS = 3000;
+const CV_JOB_POLL_MAX_ATTEMPTS = 60;
 
 export default function ProfileTab() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
-  const { data, isLoading, isError } = useQuery({
+  const [cvJobStatus, setCvJobStatus] = useState<CvImportStatus | null>(null);
+  const [cvJobError, setCvJobError] = useState<string | null>(null);
+  const [cvJobPollAttempts, setCvJobPollAttempts] = useState(0);
+  const [isCheckingCvJob, setIsCheckingCvJob] = useState(false);
+  const cvJobId = searchParams.get("cvJob");
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch: refetchProfile,
+  } = useQuery({
     queryKey: ["own-profile"],
     queryFn: async () => {
       const res = await api.get("/api/users/me/profile");
@@ -106,6 +125,141 @@ export default function ProfileTab() {
       queryClient.invalidateQueries({ queryKey: ["cv-flip-my-requests"] });
     },
   });
+
+  const clearCvJobQueryParam = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("cvJob");
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `/account/profile?${nextQuery}` : "/account/profile");
+  }, [router, searchParams]);
+
+  const checkCvJob = useCallback(async (): Promise<CvImportStatus | null> => {
+    if (!cvJobId) return null;
+    setIsCheckingCvJob(true);
+    try {
+      const job = await getCvImport(cvJobId);
+      setCvJobStatus(job.status);
+      setCvJobError(job.errorMessage ?? null);
+      return job.status;
+    } catch {
+      setCvJobError("Không thể kiểm tra trạng thái xử lý CV. Vui lòng thử lại.");
+      return null;
+    } finally {
+      setIsCheckingCvJob(false);
+    }
+  }, [cvJobId]);
+
+  useEffect(() => {
+    if (!cvJobId) {
+      setCvJobStatus(null);
+      setCvJobError(null);
+      setCvJobPollAttempts(0);
+      return;
+    }
+    setCvJobPollAttempts(0);
+    void checkCvJob();
+  }, [cvJobId, checkCvJob]);
+
+  const isCvJobRunning =
+    !!cvJobId &&
+    (cvJobStatus === null ||
+      cvJobStatus === "PENDING" ||
+      cvJobStatus === "PROCESSING" ||
+      cvJobStatus === "READY");
+  const isCvJobTimedOut = isCvJobRunning && cvJobPollAttempts >= CV_JOB_POLL_MAX_ATTEMPTS;
+
+  useEffect(() => {
+    if (!cvJobId || !isCvJobRunning || isCvJobTimedOut) return;
+
+    const timer = window.setTimeout(() => {
+      setCvJobPollAttempts((prev) => prev + 1);
+      void checkCvJob();
+    }, CV_JOB_POLL_INTERVAL_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [cvJobId, isCvJobRunning, isCvJobTimedOut, cvJobPollAttempts, checkCvJob]);
+
+  useEffect(() => {
+    if (cvJobStatus !== "APPLIED" || !cvJobId) return;
+    setCvJobStatus(null);
+    void refetchProfile();
+    clearCvJobQueryParam();
+    toast.success("Hồ sơ đã được cập nhật từ CV.");
+  }, [cvJobStatus, cvJobId, refetchProfile, clearCvJobQueryParam]);
+
+  const cvJobBanner = useMemo(() => {
+    if (!cvJobId) return null;
+
+    if (cvJobStatus === "FAILED") {
+      return (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <p className="font-medium">Không thể tự động tạo hồ sơ từ CV.</p>
+              <p className="text-xs">
+                {cvJobError ||
+                  "Vui lòng kiểm tra lại link CV hoặc tải file PDF/DOCX để tạo hồ sơ thủ công."}
+              </p>
+              <div className="mt-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setCvJobPollAttempts(0);
+                    void checkCvJob();
+                  }}
+                >
+                  Tải lại trạng thái
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (isCvJobTimedOut) {
+      return (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          Quá trình tạo CV đang lâu hơn dự kiến. Bạn có thể tải lại trạng thái hoặc tiếp tục chỉnh sửa hồ sơ thủ công.
+          <div className="mt-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setCvJobPollAttempts(0);
+                void checkCvJob();
+              }}
+            >
+              Tải lại trạng thái
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (!isCvJobRunning) return null;
+
+    return (
+      <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+        <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+        <div>
+          <p className="font-medium">
+            {cvJobStatus === "READY"
+              ? "CV nháp đã sẵn sàng, hệ thống đang hoàn tất áp dụng vào hồ sơ."
+              : "Hệ thống đang tạo hồ sơ từ CV của bạn."}
+          </p>
+          <p className="text-xs">
+            Trang sẽ tự cập nhật khi hoàn tất. Bạn có thể tiếp tục rà soát thông tin bên dưới.
+          </p>
+          {isCheckingCvJob ? (
+            <p className="mt-1 text-xs text-blue-800">Đang kiểm tra trạng thái mới nhất...</p>
+          ) : null}
+        </div>
+      </div>
+    );
+  }, [cvJobId, cvJobStatus, cvJobError, isCvJobTimedOut, isCvJobRunning, isCheckingCvJob, checkCvJob]);
 
   if (isLoading) {
     return (
@@ -161,6 +315,8 @@ export default function ProfileTab() {
           </Button>
         </div>
       </div>
+
+      {cvJobBanner}
 
       <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
