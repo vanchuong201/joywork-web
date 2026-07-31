@@ -503,7 +503,7 @@ export default function FeedPostComposer() {
                   >
                     <CompanyAvatar
                       logoUrl={selectedCompany?.company.logoUrl}
-                      isGood={selectedCompany?.company.isGood}
+                      badges={selectedCompany?.company.badges}
                       name={selectedCompany?.company.name ?? ""}
                       size={20}
                       shape="circle"
@@ -538,7 +538,7 @@ export default function FeedPostComposer() {
                       >
                         <CompanyAvatar
                           logoUrl={membership.company.logoUrl}
-                          isGood={membership.company.isGood}
+                          badges={membership.company.badges}
                           name={membership.company.name}
                           size={24}
                           shape="circle"

@@ -22,7 +22,7 @@ export type RelatedJobItem = {
     name: string;
     slug: string;
     logoUrl?: string | null;
-    isGood?: boolean;
+    badges?: string[];
   };
 };
 
@@ -83,7 +83,7 @@ export default function RelatedJobCard({ job, size = "featured", className }: Re
         <div className={cn("flex items-start gap-2.5", compact ? "mb-2.5" : "mb-3")}>
           <CompanyAvatar
             logoUrl={job.company.logoUrl}
-            isGood={job.company.isGood}
+            badges={job.company.badges}
             name={job.company.name}
             size={compact ? 32 : 36}
             shape="square"

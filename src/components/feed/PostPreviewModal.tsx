@@ -76,7 +76,7 @@ type PreviewData = {
   hashtags: string[];
   selectedJobIds: string[];
   jobs: Array<{ id: string; title: string; location?: string | null; employmentType: string; isActive: boolean }>;
-  company: { id: string; name: string; slug: string; logoUrl?: string | null; isGood?: boolean };
+  company: { id: string; name: string; slug: string; logoUrl?: string | null; badges?: string[] };
 };
 
 type Props = {
@@ -279,7 +279,7 @@ export default function PostPreviewModal({ open, onOpenChange, previewData }: Pr
               <div className="mb-1 flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
                 <CompanyAvatar
                   logoUrl={previewPost.company.logoUrl}
-                  isGood={previewPost.company.isGood}
+                  badges={previewPost.company.badges}
                   name={previewPost.company.name}
                   size={28}
                   shape="circle"

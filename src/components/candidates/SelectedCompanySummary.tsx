@@ -16,7 +16,7 @@ export default function SelectedCompanySummary({ company }: Props) {
     <div className="flex min-w-0 max-w-md flex-1 items-center gap-3 rounded-lg border border-[var(--border)] bg-background px-3 py-2">
       <CompanyAvatar
         logoUrl={company.logoUrl}
-        isGood={company.isGood}
+        badges={company.badges}
         name={company.name}
         size={40}
         shape="square"

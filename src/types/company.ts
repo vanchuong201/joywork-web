@@ -1,3 +1,5 @@
+import type { CompanyBadgeType } from "@/lib/company-badges";
+
 export interface CompanyMetric {
   id?: string;
   label: string;
@@ -85,7 +87,7 @@ export interface Company {
   tagline?: string;
   description?: string;
   logoUrl?: string;
-  isGood?: boolean;
+  badges?: CompanyBadgeType[];
   coverUrl?: string;
   website?: string;
   location?: string;
@@ -145,7 +147,7 @@ export interface CompanySummary {
   name: string;
   slug: string;
   logoUrl?: string;
-  isGood?: boolean;
+  badges?: CompanyBadgeType[];
   tagline?: string;
   location?: string;
   followersCount: number;

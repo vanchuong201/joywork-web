@@ -163,7 +163,7 @@ export function JobSearchChat() {
                             >
                               <CompanyAvatar
                                 logoUrl={c.logoUrl}
-                                isGood={c.isGood}
+                                badges={c.badges}
                                 name={c.name}
                                 size={48}
                                 shape="square"

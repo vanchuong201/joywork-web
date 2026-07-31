@@ -34,7 +34,7 @@ type SavedJobsResponse = {
         slug?: string | null;
         title: string;
         isActive?: boolean;
-        company: { id: string; name: string; slug: string; logoUrl?: string | null; isGood?: boolean };
+        company: { id: string; name: string; slug: string; logoUrl?: string | null; badges?: string[] };
         location?: string | null;
         remote: boolean;
         employmentType: string;
@@ -215,7 +215,7 @@ function SavedPageContent() {
                         <Link href={`/companies/${j.company.slug}`} className="shrink-0">
                           <CompanyAvatar
                             logoUrl={j.company.logoUrl}
-                            isGood={j.company.isGood}
+                            badges={j.company.badges}
                             name={j.company.name}
                             size={48}
                             shape="square"
@@ -282,7 +282,7 @@ function SavedPageContent() {
                           <Link href={`/companies/${j.company.slug}`} className="shrink-0">
                             <CompanyAvatar
                               logoUrl={j.company.logoUrl}
-                              isGood={j.company.isGood}
+                              badges={j.company.badges}
                               name={j.company.name}
                               size={40}
                               shape="square"

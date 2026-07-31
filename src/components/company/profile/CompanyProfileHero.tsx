@@ -685,7 +685,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                   <div className="relative mx-auto shrink-0 md:mx-0 group/avatar">
                       <CompanyAvatar
                         logoUrl={company.logoUrl}
-                        isGood={company.isGood}
+                        badges={company.badges}
                         name={company.name}
                         size={160}
                         shape="circle"

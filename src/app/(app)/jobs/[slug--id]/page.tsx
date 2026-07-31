@@ -408,7 +408,7 @@ export default function JobDetailPage() {
             {/* Logo công ty */}
             <CompanyAvatar
               logoUrl={job.company.logoUrl}
-              isGood={job.company.isGood}
+              badges={job.company.badges}
               name={job.company.name}
               size={56}
               shape="square"

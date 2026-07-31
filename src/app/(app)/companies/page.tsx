@@ -32,7 +32,7 @@ type Membership = {
     slug: string;
     tagline?: string | null;
     logoUrl?: string | null;
-    isGood?: boolean;
+    badges?: string[];
   };
 };
 
@@ -42,7 +42,7 @@ type CompanyListItem = {
   slug: string;
   tagline?: string | null;
   logoUrl?: string | null;
-  isGood?: boolean;
+  badges?: string[];
   location?: string | null;
   industry?: string | null;
   size?: string | null;
@@ -177,7 +177,7 @@ export default function CompaniesPage() {
                   }}
                   className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3.5 transition-all hover:border-[var(--brand)]/30 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                 >
-                  <CompanyAvatar name={membership.company.name} logoUrl={membership.company.logoUrl} isGood={membership.company.isGood} />
+                  <CompanyAvatar name={membership.company.name} logoUrl={membership.company.logoUrl} badges={membership.company.badges} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-[var(--foreground)] group-hover:text-[var(--brand)] transition-colors">
                       {membership.company.name}
@@ -394,7 +394,7 @@ function CompanyCard({ company }: { company: CompanyListItem }) {
   return (
     <Card className="flex h-full flex-col border border-[var(--border)] bg-[var(--card)]">
       <CardHeader className="flex flex-row items-start gap-3 pb-3">
-        <CompanyAvatar name={company.name} logoUrl={company.logoUrl} isGood={company.isGood} />
+        <CompanyAvatar name={company.name} logoUrl={company.logoUrl} badges={company.badges} />
         <div className="space-y-1">
           <Link
             href={`/companies/${company.slug}`}
@@ -434,12 +434,12 @@ function CompanyCard({ company }: { company: CompanyListItem }) {
   );
 }
 
-function CompanyAvatar({ name, logoUrl, isGood }: { name: string; logoUrl?: string | null; isGood?: boolean }) {
+function CompanyAvatar({ name, logoUrl, badges }: { name: string; logoUrl?: string | null; badges?: string[] }) {
   return (
     <SharedCompanyAvatar
       logoUrl={logoUrl}
       name={name}
-      isGood={isGood}
+      badges={badges}
       size={48}
       shape="square"
       imgClassName="object-cover"

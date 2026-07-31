@@ -19,7 +19,7 @@ type FollowItem = {
     industry?: string | null;
     location?: string | null;
     logoUrl?: string | null;
-    isGood?: boolean;
+    badges?: string[];
     coverUrl?: string | null;
   };
 };
@@ -77,7 +77,7 @@ export default function FollowingCompaniesPage() {
           <CardHeader className="flex flex-row items-center gap-3">
             <CompanyAvatar
               logoUrl={item.company.logoUrl}
-              isGood={item.company.isGood}
+              badges={item.company.badges}
               name={item.company.name}
               size={40}
               shape="square"

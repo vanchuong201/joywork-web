@@ -23,7 +23,7 @@ export type CompanyMembership = {
     name: string;
     slug: string;
     logoUrl?: string | null;
-    isGood?: boolean;
+    badges?: string[];
     coverUrl?: string | null;
     tagline?: string | null;
   };
@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                 name: item.company.name,
                 slug: item.company.slug,
                 logoUrl: item.company.logoUrl,
-                isGood: item.company.isGood,
+                badges: item.company.badges,
                 coverUrl: item.company.coverUrl,
                 tagline: item.company.tagline,
               },

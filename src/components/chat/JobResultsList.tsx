@@ -86,7 +86,7 @@ export function JobResultsList({ jobs }: { jobs: any[] }) {
               {/* Company Avatar */}
               <CompanyAvatar
                 logoUrl={j.company.logoUrl}
-                isGood={j.company.isGood}
+                badges={j.company.badges}
                 name={j.company.name}
                 size={64}
                 shape="square"

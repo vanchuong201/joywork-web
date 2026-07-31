@@ -25,7 +25,7 @@ export type ChatJobCard = {
     name: string;
     slug: string;
     logoUrl?: string | null;
-    isGood?: boolean;
+    badges?: string[];
     legalName?: string | null;
   };
 };
@@ -46,7 +46,7 @@ type SemanticJobInput = {
   companySlug: string;
   companyLegalName?: string | null;
   logoUrl?: string | null;
-  isGood?: boolean;
+  badges?: string[];
 };
 
 type KeywordJobInput = {
@@ -65,7 +65,7 @@ type KeywordJobInput = {
     name: string;
     slug: string;
     logoUrl?: string | null;
-    isGood?: boolean;
+    badges?: string[];
     legalName?: string | null;
   };
 };
@@ -87,7 +87,7 @@ export function mapSemanticJobsToCards(jobs: SemanticJobInput[] = []): ChatJobCa
       name: j.companyName,
       slug: j.companySlug,
       logoUrl: j.logoUrl ?? null,
-      isGood: j.isGood,
+      badges: j.badges ?? [],
       legalName: j.companyLegalName ?? null,
     },
   }));
@@ -110,7 +110,7 @@ export function mapKeywordJobsToCards(jobs: KeywordJobInput[] = []): ChatJobCard
       name: j.company.name,
       slug: j.company.slug,
       logoUrl: j.company.logoUrl ?? null,
-      isGood: j.company.isGood,
+      badges: j.company.badges ?? [],
       legalName: j.company.legalName ?? null,
     },
   }));

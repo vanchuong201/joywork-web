@@ -51,7 +51,7 @@ type Job = {
     legalName?: string | null;
     slug: string; 
     logoUrl?: string | null;
-    isGood?: boolean;
+    badges?: string[];
   };
   // JD chuẩn fields
   generalInfo?: string;
@@ -82,7 +82,7 @@ type HomepageShowcaseCompany = {
   name: string;
   slug: string;
   logoUrl?: string | null;
-  isGood?: boolean;
+  badges?: string[];
   coverUrl?: string | null;
   order: number;
 };
@@ -892,7 +892,7 @@ function JobsPageContent() {
                         {/* Company Avatar */}
                         <CompanyAvatar
                           logoUrl={j.company.logoUrl}
-                          isGood={j.company.isGood}
+                          badges={j.company.badges}
                           name={j.company.name}
                           size={64}
                           shape="square"
@@ -955,7 +955,7 @@ function JobsPageContent() {
                         {/* Company Avatar */}
                         <CompanyAvatar
                           logoUrl={j.company.logoUrl}
-                          isGood={j.company.isGood}
+                          badges={j.company.badges}
                           name={j.company.name}
                           size={64}
                           shape="square"
@@ -1059,7 +1059,7 @@ function JobsPageContent() {
                         <div className="flex min-w-0 flex-1 items-start gap-3">
                           <CompanyAvatar
                             logoUrl={company.logoUrl}
-                            isGood={company.isGood}
+                            badges={company.badges}
                             name={company.name || "?"}
                             size={48}
                             shape="square"
@@ -1116,7 +1116,7 @@ function JobsPageContent() {
                       <CardContent className="flex flex-1 flex-col items-center gap-3 p-4 text-center">
                         <CompanyAvatar
                           logoUrl={company.logoUrl}
-                          isGood={company.isGood}
+                          badges={company.badges}
                           name={company.name || "?"}
                           size={80}
                           shape="square"
@@ -1178,7 +1178,7 @@ function JobsPageContent() {
                         {/* Company Avatar */}
                         <CompanyAvatar
                           logoUrl={j.company.logoUrl}
-                          isGood={j.company.isGood}
+                          badges={j.company.badges}
                           name={j.company.name}
                           size={64}
                           shape="square"

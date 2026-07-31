@@ -80,7 +80,7 @@ function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => vo
   );
 }
 
-type Company = { id: string; name: string; slug: string; slogan?: string; logoUrl?: string; isGood?: boolean };
+type Company = { id: string; name: string; slug: string; slogan?: string; logoUrl?: string; badges?: string[] };
 export type PostCardData = {
   id: string;
   title: string;
@@ -725,7 +725,7 @@ const PostCard = memo(function PostCard({
         <div className="mb-1 flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
           <CompanyAvatar
             logoUrl={post.company.logoUrl}
-            isGood={post.company.isGood}
+            badges={post.company.badges}
             name={post.company.name}
             size={28}
             shape="circle"

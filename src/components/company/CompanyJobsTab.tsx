@@ -32,7 +32,7 @@ type Props = {
   jobs: CompanyJob[];
   companyName: string;
   companyLogoUrl?: string | null;
-  companyIsGood?: boolean;
+  companyBadges?: string[];
 };
 
 type ViewMode = "list" | "grid";

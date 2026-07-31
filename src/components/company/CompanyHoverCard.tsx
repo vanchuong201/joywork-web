@@ -137,7 +137,7 @@ export default function CompanyHoverCard({ companyId, slug, companyName, childre
                 <div className="flex items-center gap-3">
                   <CompanyAvatar
                     logoUrl={data.logoUrl}
-                    isGood={data.isGood}
+                    badges={data.badges}
                     name={data.name}
                     size={48}
                     shape="square"
