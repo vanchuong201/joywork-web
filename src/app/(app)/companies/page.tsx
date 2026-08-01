@@ -22,6 +22,12 @@ import { COMPANY_SIZE_OPTIONS, getCompanySizeLabel } from "@/lib/company-size";
 import ProvinceSelect from "@/components/ui/province-select";
 import IndustrySelect from "@/components/ui/industry-select";
 import { getProvinceDisplayLabel } from "@/lib/provinces";
+import type { CompanyBadgeType } from "@/lib/company-badges";
+
+const BADGE_FILTER_OPTIONS: { value: CompanyBadgeType; label: string }[] = [
+  { value: "GOOD_COMPANY", label: "Doanh nghiệp tốt" },
+  { value: "BASIC_COMMITMENT", label: "Doanh nghiệp cam kết đạt chuẩn" },
+];
 
 type Membership = {
   membershipId: string;
@@ -72,12 +78,14 @@ export default function CompaniesPage() {
   /** Mã tỉnh/thành (theo registry), khớp query `location` của API */
   const [locationCode, setLocationCode] = useState<string | null>(null);
   const [size, setSize] = useState("");
+  const [badgeFilters, setBadgeFilters] = useState<CompanyBadgeType[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredSearch = useDeferredValue(search.trim());
   const deferredIndustry = useDeferredValue(industry.trim());
   const deferredLocationCode = useDeferredValue(locationCode);
   const sizeParam = size || undefined;
-  const advancedFiltersApplied = Boolean(industry.trim() || locationCode || size);
+  const badgesParam = badgeFilters.length ? badgeFilters.join(",") : undefined;
+  const advancedFiltersApplied = Boolean(industry.trim() || locationCode || size || badgeFilters.length > 0);
 
   const membershipsQuery = useQuery<{ memberships: Membership[] }>({
     queryKey: ["my-companies"],
@@ -90,7 +98,13 @@ export default function CompaniesPage() {
   const companiesQuery = useInfiniteQuery<CompaniesResponse>({
     queryKey: [
       "companies-discover",
-      { search: deferredSearch, industry: deferredIndustry, location: deferredLocationCode ?? undefined, size: sizeParam },
+      {
+        search: deferredSearch,
+        industry: deferredIndustry,
+        location: deferredLocationCode ?? undefined,
+        size: sizeParam,
+        badges: badgesParam,
+      },
     ],
     queryFn: async ({ pageParam = 1 }) => {
       const res = await api.get("/api/companies", {
@@ -99,6 +113,7 @@ export default function CompaniesPage() {
           industry: deferredIndustry || undefined,
           location: deferredLocationCode || undefined,
           size: sizeParam,
+          badges: badgesParam,
           page: pageParam,
           limit: PAGE_SIZE,
         },
@@ -132,6 +147,7 @@ export default function CompaniesPage() {
     setIndustry("");
     setLocationCode(null);
     setSize("");
+    setBadgeFilters([]);
   };
 
   const activeFilterLabels = useMemo(() => {
@@ -139,8 +155,12 @@ export default function CompaniesPage() {
     if (industry.trim()) items.push(industry.trim());
     if (locationCode) items.push(getProvinceDisplayLabel(locationCode));
     if (size) items.push(getCompanySizeLabel(size) ?? size);
+    for (const badge of badgeFilters) {
+      const opt = BADGE_FILTER_OPTIONS.find((o) => o.value === badge);
+      if (opt) items.push(opt.label);
+    }
     return items;
-  }, [industry, locationCode, size]);
+  }, [industry, locationCode, size, badgeFilters]);
 
   return (
     <div className="space-y-10">
@@ -297,6 +317,33 @@ export default function CompaniesPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                    Huy hiệu
+                  </label>
+                  <div className="space-y-1.5">
+                    {BADGE_FILTER_OPTIONS.map((opt) => (
+                      <label
+                        key={opt.value}
+                        className="flex cursor-pointer items-center gap-2 text-sm text-[var(--foreground)]"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={badgeFilters.includes(opt.value)}
+                          onChange={(e) =>
+                            setBadgeFilters((prev) =>
+                              e.target.checked
+                                ? [...prev, opt.value]
+                                : prev.filter((v) => v !== opt.value),
+                            )
+                          }
+                          className="h-4 w-4 accent-[var(--brand)]"
+                        />
+                        <span>{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] bg-[var(--muted)]/25 px-4 py-3">

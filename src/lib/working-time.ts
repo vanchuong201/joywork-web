@@ -69,3 +69,21 @@ export function formatWorkingDayRange(range: WorkingTimeRange): string {
 export function formatWorkingTimeRange(range: WorkingTimeRange): string {
   return `${formatWorkingDayRange(range)}: ${range.timeStart} - ${range.timeEnd}`;
 }
+
+export const SATURDAY_WORK_POLICIES = ["NO", "FLEXIBLE", "FIXED"] as const;
+export type SaturdayWorkPolicy = (typeof SATURDAY_WORK_POLICIES)[number];
+
+export const SATURDAY_POLICY_OPTIONS: { value: SaturdayWorkPolicy; label: string }[] = [
+  { value: "NO", label: "Không làm thứ 7" },
+  { value: "FLEXIBLE", label: "Linh hoạt hoặc xen kẽ (Ghi chú thêm bên dưới)" },
+  { value: "FIXED", label: "Làm cố định thứ 7" },
+];
+
+export function rangesIncludeSaturday(ranges: WorkingTimeRange[]): boolean {
+  return ranges.some((r) => {
+    const from = WORKING_DAY_INDEX[r.dayFrom];
+    const to = WORKING_DAY_INDEX[r.dayTo];
+    const sat = WORKING_DAY_INDEX.SAT;
+    return from <= to ? sat >= from && sat <= to : sat >= from || sat <= to;
+  });
+}

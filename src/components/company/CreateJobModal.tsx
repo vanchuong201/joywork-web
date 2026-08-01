@@ -18,6 +18,9 @@ import {
   WORKING_DAYS,
   WORKING_DAY_INDEX,
   TIME_PATTERN,
+  SATURDAY_POLICY_OPTIONS,
+  SATURDAY_WORK_POLICIES,
+  rangesIncludeSaturday,
   type WorkingTimeRange,
 } from "@/lib/working-time";
 import { WorkingTimeEditor } from "@/components/jobs/WorkingTimeEditor";
@@ -95,6 +98,9 @@ const schema = z
     // Working time
     workingTimeRanges: z.array(workingTimeRangeSchema).max(7, "Tối đa 7 dòng thời gian").optional(),
     workingTimeNote: z.string().max(1000, "Ghi chú thời gian làm việc tối đa 1000 ký tự").optional().or(z.literal("")),
+    worksOnSaturday: z.enum(SATURDAY_WORK_POLICIES, {
+      message: "Vui lòng xác nhận công ty có làm thứ 7 không",
+    }),
   })
   .superRefine((vals, ctx) => {
     // Validate text length limits (strip HTML)
@@ -214,8 +220,20 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       benefitsPerks: "",
       workingTimeRanges: [],
       workingTimeNote: "",
+      worksOnSaturday: undefined,
     },
   });
+
+  const worksOnSaturdayValue = watch("worksOnSaturday");
+  const workingTimeRangesValue = watch("workingTimeRanges") ?? [];
+  const saturdayRangeConflict =
+    worksOnSaturdayValue === "NO" && rangesIncludeSaturday(workingTimeRangesValue)
+      ? "Khung giờ bên dưới đang có Thứ 7, trong khi bạn chọn \"Không làm thứ 7\". Bộ lọc sẽ ưu tiên lựa chọn này."
+      : worksOnSaturdayValue === "FIXED" &&
+          workingTimeRangesValue.length > 0 &&
+          !rangesIncludeSaturday(workingTimeRangesValue)
+        ? "Bạn chọn \"Làm cố định thứ 7\" nhưng khung giờ bên dưới chưa có Thứ 7."
+        : null;
 
   // Calculate validation errors for summary box
   const validationErrorList = Object.keys(errors).map((field) => {
@@ -244,6 +262,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
       specificAddress: "Địa chỉ cụ thể",
       workingTimeRanges: "Thời gian làm việc",
       workingTimeNote: "Ghi chú thời gian làm việc",
+      worksOnSaturday: "Công ty có làm thứ 7 không",
     };
     return {
       field,
@@ -305,6 +324,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
           ? values.workingTimeRanges
           : undefined,
         workingTimeNote: values.workingTimeNote?.trim() || undefined,
+        worksOnSaturday: values.worksOnSaturday,
       };
 
       await api.post(`/api/jobs/companies/${companyId}/jobs`, payload);
@@ -423,7 +443,7 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
         relationships: "relationships",
         careerPath: "careerPath",
         benefitsIncome: "benefits", benefitsPerks: "benefits",
-        workingTimeRanges: "workingTime", workingTimeNote: "workingTime",
+        workingTimeRanges: "workingTime", workingTimeNote: "workingTime", worksOnSaturday: "workingTime",
         generalInfo: "general",
       };
       
@@ -956,6 +976,40 @@ Quan hệ bên ngoài:
                 <p className="text-xs text-blue-700">
                   <strong>💡 Gợi ý:</strong> Có thể thêm nhiều khung thời gian (ví dụ Thứ 2 - Thứ 6: 08:30 - 17:00, Thứ 7: 08:00 - 12:00). Ghi chú phía dưới dùng để mô tả thêm các trường hợp linh hoạt.
                 </p>
+              </div>
+              <div className="mb-4 space-y-2" data-field="worksOnSaturday">
+                <div className="text-sm font-medium">
+                  Công ty có làm thứ 7 không? <span className="text-red-500">*</span>
+                </div>
+                <Controller
+                  name="worksOnSaturday"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      {SATURDAY_POLICY_OPTIONS.map((opt) => (
+                        <label key={opt.value} className="flex cursor-pointer items-center gap-2 text-sm">
+                          <input
+                            type="radio"
+                            name={field.name}
+                            value={opt.value}
+                            checked={field.value === opt.value}
+                            onChange={() => field.onChange(opt.value)}
+                            className="h-4 w-4 accent-[var(--brand)]"
+                          />
+                          <span>{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                />
+                {errors.worksOnSaturday ? (
+                  <p className="text-xs text-red-500">{errors.worksOnSaturday.message}</p>
+                ) : null}
+                {saturdayRangeConflict ? (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <p className="text-xs text-amber-800">{saturdayRangeConflict}</p>
+                  </div>
+                ) : null}
               </div>
               <Controller
                 name="workingTimeRanges"

@@ -183,9 +183,13 @@ function JobsPageContent() {
   const gender = sp.get("gender") || undefined;
   const worksOnSaturdayRaw = sp.get("worksOnSaturday") || undefined;
   const worksOnSaturday =
-    worksOnSaturdayRaw === "WORK" || worksOnSaturdayRaw === "REST" || worksOnSaturdayRaw === "UNSPECIFIED"
+    worksOnSaturdayRaw === "NO" || worksOnSaturdayRaw === "FLEXIBLE" || worksOnSaturdayRaw === "FIXED"
       ? worksOnSaturdayRaw
       : undefined;
+  const companyBadgesRaw = sp.get("companyBadges") || "";
+  const companyBadges = companyBadgesRaw
+    ? companyBadgesRaw.split(",").map((v) => v.trim()).filter(Boolean)
+    : [];
   const salaryCurrency = parseSalaryCurrency(sp.get("salaryCurrency"));
   const salaryMinParam = sp.get("salaryMin") || "";
   const salaryMaxParam = sp.get("salaryMax") || "";
@@ -204,6 +208,7 @@ function JobsPageContent() {
       educationLevel ||
       gender ||
       worksOnSaturday ||
+      companyBadgesRaw ||
       salaryMinParam ||
       salaryMaxParam,
   );
@@ -244,7 +249,7 @@ function JobsPageContent() {
   }, [viewMode, sp]);
 
   const { data, isLoading, isFetching } = useQuery<{ jobs: Job[]; pagination: any }>({
-    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, educationLevel, gender, worksOnSaturday, salaryCurrency, salaryMin: salaryMinParam, salaryMax: salaryMaxParam, companyId, page }],
+    queryKey: ["jobs", { q, location, ward, remote, employmentType, experienceLevel, jobLevel, educationLevel, gender, worksOnSaturday, companyBadges: companyBadgesRaw || undefined, salaryCurrency, salaryMin: salaryMinParam, salaryMax: salaryMaxParam, companyId, page }],
     queryFn: async () => {
       const res = await api.get("/api/jobs", {
         params: {
@@ -261,6 +266,7 @@ function JobsPageContent() {
           educationLevel,
           gender,
           worksOnSaturday,
+          companyBadges: companyBadgesRaw || undefined,
           salaryCurrency: (salaryMinParam || salaryMaxParam) ? salaryCurrency : undefined,
           salaryMin: salaryMinParam ? Number(salaryMinParam) : undefined,
           salaryMax: salaryMaxParam ? Number(salaryMaxParam) : undefined,
@@ -345,6 +351,17 @@ function JobsPageContent() {
     applyParams(next);
   };
 
+  const toggleBadgeParam = (badge: string, checked: boolean) => {
+    const next = new URLSearchParams(sp.toString());
+    const current = new Set(companyBadges);
+    if (checked) current.add(badge);
+    else current.delete(badge);
+    if (current.size) next.set("companyBadges", Array.from(current).join(","));
+    else next.delete("companyBadges");
+    next.delete("page");
+    applyParams(next);
+  };
+
   const handleFeaturedPageChange = (newPage: number) => {
     toggleParam("featuredPage", String(newPage));
   };
@@ -355,7 +372,7 @@ function JobsPageContent() {
 
   const clearAllFilters = () => {
     const next = new URLSearchParams(sp.toString());
-    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "jobLevel", "educationLevel", "gender", "worksOnSaturday", "salaryMin", "salaryMax", "salaryCurrency", "page"].forEach((key) =>
+    ["q", "location", "ward", "companyId", "remote", "employmentType", "experienceLevel", "jobLevel", "educationLevel", "gender", "worksOnSaturday", "companyBadges", "salaryMin", "salaryMax", "salaryCurrency", "page"].forEach((key) =>
       next.delete(key),
     );
     applyParams(next);
@@ -625,6 +642,22 @@ function JobsPageContent() {
               />
             </div>
           </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
+            {[
+              { value: "GOOD_COMPANY", label: "Doanh nghiệp tốt" },
+              { value: "BASIC_COMMITMENT", label: "Doanh nghiệp cam kết đạt chuẩn" },
+            ].map((opt) => (
+              <label key={opt.value} className="flex cursor-pointer items-center gap-2 text-[var(--foreground)]">
+                <input
+                  type="checkbox"
+                  checked={companyBadges.includes(opt.value)}
+                  onChange={(e) => toggleBadgeParam(opt.value, e.target.checked)}
+                  className="h-4 w-4 accent-[var(--brand)]"
+                />
+                <span>{opt.label}</span>
+              </label>
+            ))}
+          </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button
               type="button"
@@ -773,9 +806,9 @@ function JobsPageContent() {
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
                 {[
                   { value: "", label: "Không lọc" },
-                  { value: "WORK", label: "Làm thứ 7" },
-                  { value: "REST", label: "Nghỉ thứ 7" },
-                  { value: "UNSPECIFIED", label: "Tin đăng không đề cập" },
+                  { value: "NO", label: "Không làm thứ 7" },
+                  { value: "FLEXIBLE", label: "Linh hoạt hoặc xen kẽ" },
+                  { value: "FIXED", label: "Làm cố định thứ 7" },
                 ].map((opt) => (
                   <label key={opt.value || "all"} className="flex cursor-pointer items-center gap-2 text-sm text-[var(--foreground)]">
                     <input
@@ -812,6 +845,18 @@ function JobsPageContent() {
               {companyId ? (
                 <JobsFilterChip label="Doanh nghiệp đã chọn" onRemove={() => toggleParam("companyId", undefined, { resetPage: true })} />
               ) : null}
+              {companyBadges.includes("GOOD_COMPANY") ? (
+                <JobsFilterChip
+                  label="Doanh nghiệp tốt"
+                  onRemove={() => toggleBadgeParam("GOOD_COMPANY", false)}
+                />
+              ) : null}
+              {companyBadges.includes("BASIC_COMMITMENT") ? (
+                <JobsFilterChip
+                  label="Doanh nghiệp cam kết đạt chuẩn"
+                  onRemove={() => toggleBadgeParam("BASIC_COMMITMENT", false)}
+                />
+              ) : null}
               {remote === true ? (
                 <JobsFilterChip label="Làm việc từ xa" onRemove={() => toggleParam("remote", undefined, { resetPage: true })} />
               ) : null}
@@ -847,12 +892,12 @@ function JobsPageContent() {
               ) : null}
               {worksOnSaturday ? (
                 <JobsFilterChip
-                  label={`Nghỉ thứ 7: ${
-                    worksOnSaturday === "WORK"
-                      ? "Làm thứ 7"
-                      : worksOnSaturday === "REST"
-                        ? "Nghỉ thứ 7"
-                        : "Tin đăng không đề cập"
+                  label={`Làm thứ 7: ${
+                    worksOnSaturday === "NO"
+                      ? "Không làm thứ 7"
+                      : worksOnSaturday === "FLEXIBLE"
+                        ? "Linh hoạt hoặc xen kẽ"
+                        : "Làm cố định thứ 7"
                   }`}
                   onRemove={() => toggleParam("worksOnSaturday", undefined, { resetPage: true })}
                 />
