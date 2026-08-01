@@ -24,4 +24,14 @@ describe("normalizeCompanyBadges", () => {
       ])
     ).toEqual(["GOOD_COMPANY", "BASIC_COMMITMENT"]);
   });
+
+  it("hỗ trợ payload badges dạng object từ API posts", () => {
+    expect(
+      normalizeCompanyBadges([
+        { type: "BASIC_COMMITMENT" },
+        { type: "GOOD_COMPANY" },
+        { type: "INVALID" },
+      ])
+    ).toEqual(["GOOD_COMPANY", "BASIC_COMMITMENT"]);
+  });
 });

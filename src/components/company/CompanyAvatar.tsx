@@ -5,7 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { CompanyLogo } from "@/components/company/CompanyLogo";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { COMPANY_BADGES, normalizeCompanyBadges, type CompanyBadgeType } from "@/lib/company-badges";
+import { COMPANY_BADGES, normalizeCompanyBadges, type CompanyBadgeInput } from "@/lib/company-badges";
 
 export interface CompanyAvatarProps {
     logoUrl?: string | null;
@@ -15,9 +15,11 @@ export interface CompanyAvatarProps {
     size: number;
     shape?: "circle" | "square";
     /** Danh sách huy hiệu công ty do backend trả về. */
-    badges?: Array<CompanyBadgeType | string>;
+    badges?: CompanyBadgeInput[];
     /** Ghi đè hiển thị badge (mặc định: hiện khi có badges). */
     badge?: boolean;
+    /** Thu nhỏ badge cho các avatar nhỏ (vd bảng tin). */
+    badgeSize?: "default" | "compact";
     /** Tắt toàn bộ ring gradient + badge (escape hatch). */
     border?: boolean;
     /** Box co giãn theo className thay vì cố định theo size (vd: hero responsive). */
@@ -37,13 +39,19 @@ export interface CompanyAvatarProps {
  * Badge nhỏ hơn so với avatar để không lấn át logo, nhưng đủ lớn để nhìn thấy.
  * Tier theo size giúp badge vừa mắt ở mọi cỡ avatar (hero 160px → tiny 24px).
  */
-function getBadgeStyle(size: number, shape: "circle" | "square", corner: "left" | "right"): React.CSSProperties {
+function getBadgeStyle(
+    size: number,
+    shape: "circle" | "square",
+    corner: "left" | "right",
+    badgeSize: "default" | "compact",
+): React.CSSProperties {
     // Phần trăm kích thước badge so với avatar: cỡ nhỏ cần to hơn nhưng vẫn đủ chỗ cho 2 badge.
-    const pct = size <= 32 ? 38 : size <= 64 ? 34 : 30;
+    const basePct = size <= 32 ? 38 : size <= 64 ? 34 : 30;
+    const pct = badgeSize === "compact" ? Math.max(basePct - 6, 24) : basePct;
 
     if (shape === "square") {
         // Square: badge nhô ra góc trên nhiều hơn để tạo hiệu ứng "nhãn"
-        const w = pct + 6;
+        const w = pct + (badgeSize === "compact" ? 3 : 6);
         const offset = `-${Math.round(w * 0.42)}%`;
         return {
             width: `${w}%`,
@@ -87,6 +95,7 @@ export function CompanyAvatar({
     shape = "circle",
     badges,
     badge,
+    badgeSize = "default",
     border = true,
     fluid = false,
     fallback,
@@ -164,7 +173,7 @@ export function CompanyAvatar({
                                 <TooltipTrigger asChild>
                                     <div
                                         className="absolute z-20 cursor-help"
-                                        style={getBadgeStyle(size, shape, badgeMeta.corner)}
+                                        style={getBadgeStyle(size, shape, badgeMeta.corner, badgeSize)}
                                     >
                                         <Image
                                             src={badgeMeta.icon}

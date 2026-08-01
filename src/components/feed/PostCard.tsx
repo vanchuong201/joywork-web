@@ -726,6 +726,7 @@ const PostCard = memo(function PostCard({
           <CompanyAvatar
             logoUrl={post.company.logoUrl}
             badges={post.company.badges}
+            badgeSize="compact"
             name={post.company.name}
             size={28}
             shape="circle"

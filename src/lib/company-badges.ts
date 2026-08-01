@@ -1,4 +1,5 @@
 export type CompanyBadgeType = "GOOD_COMPANY" | "BASIC_COMMITMENT";
+export type CompanyBadgeInput = CompanyBadgeType | string | { type?: CompanyBadgeType | string | null } | null | undefined;
 
 type CompanyBadgeMeta = {
   icon: string;
@@ -28,11 +29,22 @@ export const COMPANY_BADGES: Record<CompanyBadgeType, CompanyBadgeMeta> = {
 
 const COMPANY_BADGE_ORDER: CompanyBadgeType[] = ["GOOD_COMPANY", "BASIC_COMMITMENT"];
 
-export function normalizeCompanyBadges(input: Array<string | CompanyBadgeType> | null | undefined): CompanyBadgeType[] {
+function toBadgeType(value: CompanyBadgeInput): CompanyBadgeType | null {
+  const raw = typeof value === "string" ? value : value?.type;
+  if (!raw) return null;
+  return (COMPANY_BADGE_ORDER as string[]).includes(raw) ? (raw as CompanyBadgeType) : null;
+}
+
+export function normalizeCompanyBadges(input: CompanyBadgeInput[] | null | undefined): CompanyBadgeType[] {
   if (!Array.isArray(input) || input.length === 0) {
     return [];
   }
 
-  const badgeSet = new Set(input);
+  const badgeSet = new Set(
+    input
+      .map((item) => toBadgeType(item))
+      .filter((badge): badge is CompanyBadgeType => Boolean(badge))
+  );
+
   return COMPANY_BADGE_ORDER.filter((badge) => badgeSet.has(badge));
 }
