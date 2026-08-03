@@ -22,12 +22,7 @@ import { COMPANY_SIZE_OPTIONS, getCompanySizeLabel } from "@/lib/company-size";
 import ProvinceSelect from "@/components/ui/province-select";
 import IndustrySelect from "@/components/ui/industry-select";
 import { getProvinceDisplayLabel } from "@/lib/provinces";
-import type { CompanyBadgeType } from "@/lib/company-badges";
-
-const BADGE_FILTER_OPTIONS: { value: CompanyBadgeType; label: string }[] = [
-  { value: "GOOD_COMPANY", label: "Doanh nghiệp tốt" },
-  { value: "BASIC_COMMITMENT", label: "Doanh nghiệp cam kết đạt chuẩn" },
-];
+import { COMPANY_BADGE_FILTER_OPTIONS, type CompanyBadgeType } from "@/lib/company-badges";
 
 type Membership = {
   membershipId: string;
@@ -156,7 +151,7 @@ export default function CompaniesPage() {
     if (locationCode) items.push(getProvinceDisplayLabel(locationCode));
     if (size) items.push(getCompanySizeLabel(size) ?? size);
     for (const badge of badgeFilters) {
-      const opt = BADGE_FILTER_OPTIONS.find((o) => o.value === badge);
+      const opt = COMPANY_BADGE_FILTER_OPTIONS.find((o) => o.value === badge);
       if (opt) items.push(opt.label);
     }
     return items;
@@ -323,26 +318,44 @@ export default function CompaniesPage() {
                     Huy hiệu
                   </label>
                   <div className="space-y-1.5">
-                    {BADGE_FILTER_OPTIONS.map((opt) => (
-                      <label
-                        key={opt.value}
-                        className="flex cursor-pointer items-center gap-2 text-sm text-[var(--foreground)]"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={badgeFilters.includes(opt.value)}
-                          onChange={(e) =>
-                            setBadgeFilters((prev) =>
-                              e.target.checked
-                                ? [...prev, opt.value]
-                                : prev.filter((v) => v !== opt.value),
+                    {COMPANY_BADGE_FILTER_OPTIONS.map((opt) => {
+                      const inputId = `companies-badge-filter-${opt.value}`;
+                      return (
+                        <div
+                          key={opt.value}
+                          className="flex items-start gap-2 text-sm text-[var(--foreground)]"
+                        >
+                          <input
+                            id={inputId}
+                            type="checkbox"
+                            checked={badgeFilters.includes(opt.value)}
+                            onChange={(e) =>
+                              setBadgeFilters((prev) =>
+                                e.target.checked
+                                  ? [...prev, opt.value]
+                                  : prev.filter((v) => v !== opt.value),
+                              )
+                            }
+                            className="mt-0.5 h-4 w-4 accent-[var(--brand)]"
+                          />
+                          <span>
+                            <label htmlFor={inputId} className="cursor-pointer">
+                              {opt.label}{" "}
+                            </label>
+                            (
+                            <a
+                              href={opt.detailHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[var(--brand)] underline underline-offset-2 hover:opacity-90"
+                            >
+                              xem chi tiết
+                            </a>
                             )
-                          }
-                          className="h-4 w-4 accent-[var(--brand)]"
-                        />
-                        <span>{opt.label}</span>
-                      </label>
-                    ))}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

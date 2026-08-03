@@ -24,6 +24,7 @@ import { List, Grid, ChevronLeft, ChevronRight, Building2, X } from "lucide-reac
 import CompanyHoverCard from "@/components/company/CompanyHoverCard";
 import CompanyFollowButton from "@/components/company/CompanyFollowButton";
 import { CompanyAvatar } from "@/components/company/CompanyAvatar";
+import { COMPANY_BADGE_FILTER_OPTIONS } from "@/lib/company-badges";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
@@ -643,20 +644,35 @@ function JobsPageContent() {
             </div>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
-            {[
-              { value: "GOOD_COMPANY", label: "Doanh nghiệp tốt" },
-              { value: "BASIC_COMMITMENT", label: "Doanh nghiệp cam kết đạt chuẩn" },
-            ].map((opt) => (
-              <label key={opt.value} className="flex cursor-pointer items-center gap-2 text-[var(--foreground)]">
-                <input
-                  type="checkbox"
-                  checked={companyBadges.includes(opt.value)}
-                  onChange={(e) => toggleBadgeParam(opt.value, e.target.checked)}
-                  className="h-4 w-4 accent-[var(--brand)]"
-                />
-                <span>{opt.label}</span>
-              </label>
-            ))}
+            {COMPANY_BADGE_FILTER_OPTIONS.map((opt) => {
+              const inputId = `jobs-badge-filter-${opt.value}`;
+              return (
+                <div key={opt.value} className="flex items-center gap-2 text-[var(--foreground)]">
+                  <input
+                    id={inputId}
+                    type="checkbox"
+                    checked={companyBadges.includes(opt.value)}
+                    onChange={(e) => toggleBadgeParam(opt.value, e.target.checked)}
+                    className="h-4 w-4 accent-[var(--brand)]"
+                  />
+                  <span>
+                    <label htmlFor={inputId} className="cursor-pointer">
+                      {opt.label}{" "}
+                    </label>
+                    (
+                    <a
+                      href={opt.detailHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--brand)] underline underline-offset-2 hover:opacity-90"
+                    >
+                      xem chi tiết
+                    </a>
+                    )
+                  </span>
+                </div>
+              );
+            })}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button
@@ -845,18 +861,13 @@ function JobsPageContent() {
               {companyId ? (
                 <JobsFilterChip label="Doanh nghiệp đã chọn" onRemove={() => toggleParam("companyId", undefined, { resetPage: true })} />
               ) : null}
-              {companyBadges.includes("GOOD_COMPANY") ? (
+              {COMPANY_BADGE_FILTER_OPTIONS.filter((opt) => companyBadges.includes(opt.value)).map((opt) => (
                 <JobsFilterChip
-                  label="Doanh nghiệp tốt"
-                  onRemove={() => toggleBadgeParam("GOOD_COMPANY", false)}
+                  key={opt.value}
+                  label={opt.label}
+                  onRemove={() => toggleBadgeParam(opt.value, false)}
                 />
-              ) : null}
-              {companyBadges.includes("BASIC_COMMITMENT") ? (
-                <JobsFilterChip
-                  label="Doanh nghiệp cam kết đạt chuẩn"
-                  onRemove={() => toggleBadgeParam("BASIC_COMMITMENT", false)}
-                />
-              ) : null}
+              ))}
               {remote === true ? (
                 <JobsFilterChip label="Làm việc từ xa" onRemove={() => toggleParam("remote", undefined, { resetPage: true })} />
               ) : null}

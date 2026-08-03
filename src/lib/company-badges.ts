@@ -15,7 +15,7 @@ export const COMPANY_BADGES: Record<CompanyBadgeType, CompanyBadgeMeta> = {
     corner: "left",
     alt: "Huy hiệu doanh nghiệp tốt",
     tooltip: "Đây là Huy hiệu chứng nhận Doanh Nghiệp có môi trường làm việc tốt.",
-    href: "https://doanhnghieptot.joywork.vn",
+    href: "https://doanhnghieptot.joywork.vn/",
   },
   BASIC_COMMITMENT: {
     icon: "/badge/badge-commitment.png",
@@ -26,6 +26,24 @@ export const COMPANY_BADGES: Record<CompanyBadgeType, CompanyBadgeMeta> = {
     href: "https://camket.joywork.vn/",
   },
 };
+
+/** Labels for badge filter checkboxes / chips on /jobs and /companies. */
+export const COMPANY_BADGE_FILTER_OPTIONS: {
+  value: CompanyBadgeType;
+  label: string;
+  detailHref: string;
+}[] = [
+  {
+    value: "GOOD_COMPANY",
+    label: "DN đạt khảo sát môi trường làm việc tốt",
+    detailHref: COMPANY_BADGES.GOOD_COMPANY.href,
+  },
+  {
+    value: "BASIC_COMMITMENT",
+    label: "DN cam kết đạt chuẩn điều kiện làm việc",
+    detailHref: COMPANY_BADGES.BASIC_COMMITMENT.href,
+  },
+];
 
 const COMPANY_BADGE_ORDER: CompanyBadgeType[] = ["GOOD_COMPANY", "BASIC_COMMITMENT"];
 
