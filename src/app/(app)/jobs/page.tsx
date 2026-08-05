@@ -183,10 +183,16 @@ function JobsPageContent() {
   const educationLevel = sp.get("educationLevel") || undefined;
   const gender = sp.get("gender") || undefined;
   const worksOnSaturdayRaw = sp.get("worksOnSaturday") || undefined;
+  // Filter UI: NO | YES (YES = FIXED + FLEXIBLE). Map legacy FIXED/FLEXIBLE/WORK → YES.
   const worksOnSaturday =
-    worksOnSaturdayRaw === "NO" || worksOnSaturdayRaw === "FLEXIBLE" || worksOnSaturdayRaw === "FIXED"
-      ? worksOnSaturdayRaw
-      : undefined;
+    worksOnSaturdayRaw === "NO"
+      ? "NO"
+      : worksOnSaturdayRaw === "YES" ||
+          worksOnSaturdayRaw === "FIXED" ||
+          worksOnSaturdayRaw === "FLEXIBLE" ||
+          worksOnSaturdayRaw === "WORK"
+        ? "YES"
+        : undefined;
   const companyBadgesRaw = sp.get("companyBadges") || "";
   const companyBadges = companyBadgesRaw
     ? companyBadgesRaw.split(",").map((v) => v.trim()).filter(Boolean)
@@ -819,12 +825,11 @@ function JobsPageContent() {
             </div>
             <div className="space-y-1.5 text-sm md:col-span-2 xl:col-span-3">
               <div className="font-medium">Lịch làm việc thứ 7</div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+              <div className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-3">
                 {[
                   { value: "", label: "Không lọc" },
                   { value: "NO", label: "Không làm thứ 7" },
-                  { value: "FLEXIBLE", label: "Linh hoạt hoặc xen kẽ" },
-                  { value: "FIXED", label: "Làm cố định thứ 7" },
+                  { value: "YES", label: "Có làm thứ 7" },
                 ].map((opt) => (
                   <label key={opt.value || "all"} className="flex cursor-pointer items-center gap-2 text-sm text-[var(--foreground)]">
                     <input
@@ -903,13 +908,7 @@ function JobsPageContent() {
               ) : null}
               {worksOnSaturday ? (
                 <JobsFilterChip
-                  label={`Làm thứ 7: ${
-                    worksOnSaturday === "NO"
-                      ? "Không làm thứ 7"
-                      : worksOnSaturday === "FLEXIBLE"
-                        ? "Linh hoạt hoặc xen kẽ"
-                        : "Làm cố định thứ 7"
-                  }`}
+                  label={`Làm thứ 7: ${worksOnSaturday === "NO" ? "Không làm thứ 7" : "Có làm thứ 7"}`}
                   onRemove={() => toggleParam("worksOnSaturday", undefined, { resetPage: true })}
                 />
               ) : null}
