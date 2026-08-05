@@ -79,6 +79,16 @@ export const SATURDAY_POLICY_OPTIONS: { value: SaturdayWorkPolicy; label: string
   { value: "FIXED", label: "Làm cố định thứ 7" },
 ];
 
+export const SATURDAY_POLICY_DISPLAY_LABELS: Record<SaturdayWorkPolicy, string> = {
+  NO: "Không làm thứ 7",
+  FLEXIBLE: "Thứ 7 linh hoạt hoặc xen kẽ",
+  FIXED: "Làm cố định thứ 7",
+};
+
+export function isSaturdayWorkPolicy(value: unknown): value is SaturdayWorkPolicy {
+  return typeof value === "string" && (SATURDAY_WORK_POLICIES as readonly string[]).includes(value);
+}
+
 export function rangesIncludeSaturday(ranges: WorkingTimeRange[]): boolean {
   return ranges.some((r) => {
     const from = WORKING_DAY_INDEX[r.dayFrom];

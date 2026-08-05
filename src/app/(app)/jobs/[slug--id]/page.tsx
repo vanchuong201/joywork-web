@@ -51,7 +51,13 @@ import DOMPurify from "dompurify";
 import { cn, formatDateUTC } from "@/lib/utils";
 import { getProvinceNameByCode } from "@/lib/provinces";
 import { fetchWardsByProvinceCodes } from "@/lib/location-wards";
-import { formatWorkingTimeRange, parseWorkingTimeRanges } from "@/lib/working-time";
+import {
+  formatWorkingTimeRange,
+  isSaturdayWorkPolicy,
+  parseWorkingTimeRanges,
+  SATURDAY_POLICY_DISPLAY_LABELS,
+  type SaturdayWorkPolicy,
+} from "@/lib/working-time";
 import { buildCvApplyReadiness } from "@/hooks/useProfileCompletion";
 import type { OwnUserProfile } from "@/types/user";
 
@@ -517,9 +523,30 @@ export default function JobDetailPage() {
           const workingTimeRanges = parseWorkingTimeRanges(job.workingTimeRanges);
           const workingTimeNote =
             typeof job.workingTimeNote === "string" ? job.workingTimeNote.trim() : "";
-          if (workingTimeRanges.length === 0 && !workingTimeNote) return null;
+          const saturdayPolicy: SaturdayWorkPolicy | null = isSaturdayWorkPolicy(job.worksOnSaturday)
+            ? job.worksOnSaturday
+            : null;
+          if (workingTimeRanges.length === 0 && !workingTimeNote && !saturdayPolicy) return null;
           return (
             <SectionCard title="Thời gian làm việc">
+              {saturdayPolicy ? (
+                <div className={workingTimeRanges.length > 0 || workingTimeNote ? "mb-3" : undefined}>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+                      saturdayPolicy === "NO"
+                        ? "border-[var(--border)] bg-[var(--muted)]/70 text-[var(--muted-foreground)]"
+                        : saturdayPolicy === "FLEXIBLE"
+                          ? "border-[var(--brand)]/30 bg-[var(--card)] text-[var(--foreground)]"
+                          : "border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)]",
+                    )}
+                  >
+                    <Calendar className="h-3.5 w-3.5 shrink-0" />
+                    {SATURDAY_POLICY_DISPLAY_LABELS[saturdayPolicy]}
+                  </Badge>
+                </div>
+              ) : null}
               {workingTimeRanges.length > 0 ? (
                 <ul className="space-y-2">
                   {workingTimeRanges.map((range, idx) => (
