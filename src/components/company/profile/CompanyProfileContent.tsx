@@ -1994,16 +1994,16 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const awards = (profile?.awards as any[]) || [];
   const story = (profile?.story as any) || { founderStory: {}, milestones: [] };
 
-  // Flags & merged data to decide when to use sample template content (only in manage mode)
+  // Flags & merged data to decide when to use sample template content
   const usingSampleStats = isEditable && stats.length === 0;
   const statsToRender = !isEditable || stats.length > 0 ? stats : SAMPLE_STATS;
 
   const usingSampleProducts = isEditable && products.length === 0;
   const productsToRender = !isEditable || products.length > 0 ? products : SAMPLE_PRODUCTS;
 
-  const usingSampleRecruitmentPrinciples = isEditable && recruitmentPrinciples.length === 0;
+  const usingSampleRecruitmentPrinciples = recruitmentPrinciples.length === 0;
   const recruitmentPrinciplesToRender =
-    !isEditable || recruitmentPrinciples.length > 0
+    recruitmentPrinciples.length > 0
       ? recruitmentPrinciples
       : SAMPLE_RECRUITMENT_PRINCIPLES;
 
@@ -2020,13 +2020,13 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       ? benefits.nonFinancial || []
       : SAMPLE_BENEFITS.nonFinancial;
 
-  const usingSampleHrJourney = isEditable && hrJourney.length === 0;
+  const usingSampleHrJourney = hrJourney.length === 0;
   const hrJourneyToRender =
-    !isEditable || hrJourney.length > 0 ? hrJourney : SAMPLE_HR_JOURNEY;
+    hrJourney.length > 0 ? hrJourney : SAMPLE_HR_JOURNEY;
 
-  const usingSampleCareerPath = isEditable && careerPath.length === 0;
+  const usingSampleCareerPath = careerPath.length === 0;
   const careerPathToRender =
-    !isEditable || careerPath.length > 0 ? careerPath : SAMPLE_CAREER_PATH;
+    careerPath.length > 0 ? careerPath : SAMPLE_CAREER_PATH;
 
   const usingSampleSalaryAndBonus =
     isEditable &&
@@ -2077,9 +2077,9 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const leadersToRender = !isEditable || leaders.length > 0 ? leaders : SAMPLE_LEADERS;
 
   const usingSampleTypicalDay =
-    isEditable && (!culture.typicalDay || culture.typicalDay.length === 0);
+    !culture.typicalDay || culture.typicalDay.length === 0;
   const typicalDayToRender =
-    !isEditable || (culture.typicalDay && culture.typicalDay.length > 0)
+    culture.typicalDay && culture.typicalDay.length > 0
       ? culture.typicalDay || []
       : SAMPLE_TYPICAL_DAY;
 
@@ -2297,7 +2297,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 2: STATS */}
-      {shouldShowSection('stats') && (
+      {shouldShowSection('stats') && (statsToRender.length > 0 || isEditable) && (
         <section className="max-w-7xl mx-auto px-3 sm:px-6 animate-fade-in-up relative group/section">
           <div className="relative rounded-3xl border border-[var(--border)]/60 bg-[var(--card)]/5 px-3 sm:px-6 md:px-10 py-6 sm:py-8 md:py-12 overflow-hidden">
             <div className="pointer-events-none absolute inset-x-10 -top-20 h-40 bg-gradient-to-r from-[var(--brand)]/10 via-transparent to-[var(--brand-secondary)]/10 blur-3xl" />
@@ -2353,7 +2353,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 3: VISION - MISSION - VALUES */}
-      {shouldShowSection('visionMissionValues') && (
+      {shouldShowSection('visionMissionValues') && (profile?.vision || profile?.mission || profile?.coreValues || isEditable) && (
         <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/visionMission">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
             {/* Vision */}
@@ -2831,7 +2831,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 5: PRODUCTS (MANDATORY) */}
-      {shouldShowSection('products') && (
+      {shouldShowSection('products') && (productsToRender.length > 0 || isEditable) && (
         <section className="bg-slate-900 py-14 sm:py-20 overflow-hidden relative rounded-[2rem] sm:rounded-[3rem] mx-2 sm:mx-6 group/products">
           {isEditable && (
             <div className="absolute top-6 right-6 z-30 opacity-0 group-hover/products:opacity-100 transition-opacity flex items-center gap-2">
@@ -2873,7 +2873,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 6: RECRUITMENT PRINCIPLES */}
-      {shouldShowSection('recruitmentPrinciples') && (recruitmentPrinciples.length > 0 || isEditable) && (
+      {shouldShowSection('recruitmentPrinciples') && (recruitmentPrinciplesToRender.length > 0 || isEditable) && (
         <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/recruit">
           {isEditable && (
             <div className="absolute top-0 right-6 opacity-0 group-hover/recruit:opacity-100 transition-opacity z-20 flex items-center gap-2">
@@ -2917,7 +2917,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 7: BENEFITS */}
-      {shouldShowSection('benefits') && (
+      {shouldShowSection('benefits') && (benefitsFinancialToRender.length > 0 || benefitsNonFinancialToRender.length > 0 || isEditable) && (
         <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/benefits">
           {isEditable && (
             <div className="absolute top-0 right-6 opacity-0 group-hover/benefits:opacity-100 transition-opacity z-20 flex items-center gap-2">
@@ -3022,7 +3022,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 15: CAREER PATH */}
-      {shouldShowSection('careerPath') && (careerPath.length > 0 || isEditable) && (
+      {shouldShowSection('careerPath') && (careerPathToRender.length > 0 || isEditable) && (
         <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/career">
           {isEditable && (
             <div className="absolute top-6 right-6 opacity-0 group-hover/career:opacity-100 transition-opacity z-20 flex items-center gap-2">
@@ -3044,7 +3044,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                       </div>
                       <div className="mt-4 text-slate-400 text-sm font-medium">Level {i + 1}</div>
                     </div>
-                    {i < careerPath.length - 1 && (
+                    {i < careerPathToRender.length - 1 && (
                       <div className="h-8 w-1 md:w-16 md:h-1 bg-slate-700 mx-2"></div>
                     )}
                   </React.Fragment>
@@ -3065,7 +3065,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 16: SALARY MECHANISM */}
-      {shouldShowSection('salaryAndBonus') && (
+      {shouldShowSection('salaryAndBonus') && (salaryItemsToRender.length > 0 || bonusItemsToRender.length > 0 || isEditable) && (
         <section className="max-w-7xl mx-auto px-3 sm:px-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative group/salary">
           {isEditable && (
             <div className="absolute top-0 right-6 opacity-0 group-hover/salary:opacity-100 transition-opacity z-20 flex items-center gap-2">
@@ -3258,7 +3258,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 18: FOUNDER STORY */}
-      {shouldShowSection('founderStory') && (
+      {shouldShowSection('founderStory') && (founderStoryToRender || isEditable) && (
         <section className="relative group/founder space-y-20">
           {isEditable && (
             <div className="absolute top-6 right-6 opacity-0 group-hover/founder:opacity-100 transition-opacity z-20 flex items-center gap-2">
@@ -3306,7 +3306,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 19: MILESTONES */}
-      {shouldShowSection('milestones') && (
+      {shouldShowSection('milestones') && (milestonesToRender.length > 0 || isEditable) && (
         <section className="relative group/milestones">
           {isEditable && (
             <div className="absolute top-0 right-6 opacity-0 group-hover/milestones:opacity-100 transition-opacity z-20 flex items-center gap-2">
@@ -3359,7 +3359,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 20: TESTIMONIALS */}
-      {shouldShowSection('testimonials') && (
+      {shouldShowSection('testimonials') && (testimonialsToRender.length > 0 || isEditable) && (
         <section className="max-w-7xl mx-auto px-3 sm:px-6 pb-16 sm:pb-20 relative group/testimonials">
           {isEditable && (
             <div className="absolute top-0 right-6 opacity-0 group-hover/testimonials:opacity-100 transition-opacity z-20 flex items-center gap-2">
