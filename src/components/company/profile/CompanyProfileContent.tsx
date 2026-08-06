@@ -1348,6 +1348,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const router = useRouter();
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>({});
+  const [sectionVisible, setSectionVisible] = useState(true);
   const [viewMoreModal, setViewMoreModal] = useState<{ type: 'vision' | 'mission' | 'coreValues' | null, content: string }>({ type: null, content: '' });
   const [galleryVideoUrl, setGalleryVideoUrl] = useState<string | null>(null);
 
@@ -1383,10 +1384,32 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     onSuccess: () => {
       toast.success("Cập nhật thành công");
       setEditingSection(null);
+      setSectionVisible(true);
       router.refresh();
     },
-    onError: (err) => {
-      toast.error("Cập nhật thất bại");
+    onError: (err: unknown) => {
+      const errorPayload = (err as {
+        response?: {
+          data?: {
+            error?: {
+              message?: string;
+              details?: Array<{ message?: string }>;
+            };
+          };
+        };
+      })?.response?.data?.error;
+      const apiMessage = errorPayload?.message;
+      const details = errorPayload?.details;
+      const detailMessage = Array.isArray(details)
+        ? details
+          .map((detail) => detail?.message)
+          .filter(Boolean)
+          .join("; ")
+        : null;
+      const message = detailMessage
+        ? `${apiMessage ?? "Cập nhật thất bại"}: ${detailMessage}`
+        : apiMessage ?? "Cập nhật thất bại";
+      toast.error(message);
       console.error(err);
     }
   });
@@ -1781,7 +1804,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const handleEdit = (section: string, initialData: any) => {
     setEditingSection(section);
     const sectionKey = getSectionKey(section);
-    const sectionVisible = sectionKey ? isSectionVisible(sectionKey) : true;
+    const initialSectionVisible = sectionKey ? isSectionVisible(sectionKey) : true;
+    setSectionVisible(Boolean(initialSectionVisible));
 
     // Deep clone to avoid mutating original profile data when user edits form fields
     const clonedData = JSON.parse(JSON.stringify(initialData || {}));
@@ -1799,7 +1823,6 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
     setFormData({
       ...dataWithSamples,
-      sectionVisible: Boolean(sectionVisible),
     });
   };
 
@@ -1843,13 +1866,13 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
 
     // Update section visibility if changed
     const sectionKey = getSectionKey(editingSection);
-    if (sectionKey && formData.sectionVisible !== undefined) {
+    if (sectionKey) {
       // Ensure all values in sectionVisibility are booleans
       const normalizedVisibility: Record<string, boolean> = {};
       Object.entries(sectionVisibility).forEach(([key, value]) => {
         normalizedVisibility[key] = Boolean(value);
       });
-      normalizedVisibility[sectionKey] = Boolean(formData.sectionVisible);
+      normalizedVisibility[sectionKey] = Boolean(sectionVisible);
       payload.sectionVisibility = normalizedVisibility;
     }
 
@@ -2101,6 +2124,10 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       sectionVisibility[key] = Boolean(value);
     }
   });
+  // Legacy compatibility: old data used `training` for Introduction section visibility.
+  if (sectionVisibility.introduction === undefined && sectionVisibility.training !== undefined) {
+    sectionVisibility.introduction = sectionVisibility.training;
+  }
   const defaultVisibility = true; // Default to visible if not set
 
   // Map editingSection to sectionKey for visibility
@@ -3384,7 +3411,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* Edit Dialogs (Only basic text for now to keep file size manageable) */}
-      <Dialog open={!!editingSection} onOpenChange={(open) => { if (!open) { setEditingSection(null); setFormData({}); } }}>
+      <Dialog open={!!editingSection} onOpenChange={(open) => { if (!open) { setEditingSection(null); setFormData({}); setSectionVisible(true); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogDescription className="sr-only">
@@ -3422,8 +3449,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
                   <p className="text-xs text-slate-500">Bật/tắt để ẩn hoặc hiện section trên trang profile công khai</p>
                 </div>
                 <Switch
-                  checked={formData.sectionVisible ?? true}
-                  onCheckedChange={(checked) => setFormData({ ...formData, sectionVisible: checked })}
+                  checked={sectionVisible}
+                  onCheckedChange={setSectionVisible}
                 />
               </div>
             )}
