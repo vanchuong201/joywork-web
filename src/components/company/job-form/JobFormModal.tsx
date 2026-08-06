@@ -114,7 +114,13 @@ export function JobFormModal({
   }, [defaultValues, open, reset]);
 
   useEffect(() => {
-    if (locationSelected && wardCodeValue && !wardCodeValue.startsWith(`${locationSelected}/`)) {
+    if (!locationSelected) {
+      if (wardCodeValue) {
+        setValue("wardCode", "", { shouldDirty: true });
+      }
+      return;
+    }
+    if (wardCodeValue && !wardCodeValue.startsWith(`${locationSelected}/`)) {
       setValue("wardCode", "", { shouldDirty: true });
     }
   }, [locationSelected, setValue, wardCodeValue]);

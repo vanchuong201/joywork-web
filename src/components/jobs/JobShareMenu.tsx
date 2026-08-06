@@ -28,7 +28,7 @@ export default function JobShareMenu() {
 
   const handleNativeShare = async () => {
     const url = sharePageUrl();
-    if (!url || !navigator.share) return;
+    if (!url || typeof navigator.share !== "function") return;
     try {
       await navigator.share({ url, title: document.title });
     } catch (e) {
@@ -83,7 +83,10 @@ export default function JobShareMenu() {
             <DropdownMenu.Item
               className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--foreground)] outline-none hover:bg-[var(--muted)]"
               onSelect={() => {
-                void handleNativeShare();
+                // Wait for dropdown close animation so the native share sheet is not aborted immediately.
+                window.setTimeout(() => {
+                  void handleNativeShare();
+                }, 50);
               }}
             >
               <Send className="h-4 w-4 shrink-0" />

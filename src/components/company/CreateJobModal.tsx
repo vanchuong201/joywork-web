@@ -20,7 +20,8 @@ export default function CreateJobModal({ open, onOpenChange, companyId, onSucces
     const payload = {
       title: values.title.trim(),
       location: values.location || undefined,
-      wardCodes: values.wardCode ? [values.wardCode] : [],
+      // Không gửi ward nếu không còn tỉnh — backend sẽ merge lại tỉnh từ ward còn sót.
+      wardCodes: values.location && values.wardCode ? [values.wardCode] : [],
       specificAddress: values.specificAddress?.trim() || undefined,
       remote: values.remote ?? false,
       employmentType: values.employmentType,
