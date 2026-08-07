@@ -1994,12 +1994,16 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const awards = (profile?.awards as any[]) || [];
   const story = (profile?.story as any) || { founderStory: {}, milestones: [] };
 
-  // Flags & merged data to decide when to use sample template content
-  const usingSampleStats = isEditable && stats.length === 0;
-  const statsToRender = !isEditable || stats.length > 0 ? stats : SAMPLE_STATS;
+  // Flags & merged data to decide when to use sample template content.
+  // Sample content is shown on BOTH manage and public views when real data is
+  // missing; the SAMPLE_NOTE marker (rendered separately) is the only
+  // manage-only element, so a public visitor sees the same placeholder content
+  // an owner sees on the manage page, just without the "sample data" note.
+  const usingSampleStats = stats.length === 0;
+  const statsToRender = stats.length > 0 ? stats : SAMPLE_STATS;
 
-  const usingSampleProducts = isEditable && products.length === 0;
-  const productsToRender = !isEditable || products.length > 0 ? products : SAMPLE_PRODUCTS;
+  const usingSampleProducts = products.length === 0;
+  const productsToRender = products.length > 0 ? products : SAMPLE_PRODUCTS;
 
   const usingSampleRecruitmentPrinciples = recruitmentPrinciples.length === 0;
   const recruitmentPrinciplesToRender =
@@ -2008,16 +2012,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       : SAMPLE_RECRUITMENT_PRINCIPLES;
 
   const usingSampleBenefits =
-    isEditable &&
     (!benefits?.financial || benefits.financial.length === 0) &&
     (!benefits?.nonFinancial || benefits.nonFinancial.length === 0);
   const benefitsFinancialToRender =
-    !isEditable || (benefits.financial && benefits.financial.length > 0)
-      ? benefits.financial || []
+    benefits.financial && benefits.financial.length > 0
+      ? benefits.financial
       : SAMPLE_BENEFITS.financial;
   const benefitsNonFinancialToRender =
-    !isEditable || (benefits.nonFinancial && benefits.nonFinancial.length > 0)
-      ? benefits.nonFinancial || []
+    benefits.nonFinancial && benefits.nonFinancial.length > 0
+      ? benefits.nonFinancial
       : SAMPLE_BENEFITS.nonFinancial;
 
   const usingSampleHrJourney = hrJourney.length === 0;
@@ -2029,16 +2032,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     careerPath.length > 0 ? careerPath : SAMPLE_CAREER_PATH;
 
   const usingSampleSalaryAndBonus =
-    isEditable &&
     (!salaryAndBonus?.salary || salaryAndBonus.salary.length === 0) &&
     (!salaryAndBonus?.bonus || salaryAndBonus.bonus.length === 0);
   const salaryItemsToRender =
-    !isEditable || (salaryAndBonus.salary && salaryAndBonus.salary.length > 0)
-      ? salaryAndBonus.salary || []
+    salaryAndBonus.salary && salaryAndBonus.salary.length > 0
+      ? salaryAndBonus.salary
       : SAMPLE_SALARY_AND_BONUS.salary;
   const bonusItemsToRender =
-    !isEditable || (salaryAndBonus.bonus && salaryAndBonus.bonus.length > 0)
-      ? salaryAndBonus.bonus || []
+    salaryAndBonus.bonus && salaryAndBonus.bonus.length > 0
+      ? salaryAndBonus.bonus
       : SAMPLE_SALARY_AND_BONUS.bonus;
 
   // companies.size is the canonical workforce-size source. Fall back to the legacy
@@ -2055,7 +2057,6 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
     : null;
 
   const usingSampleTraining =
-    isEditable &&
     !(training.description || training.workforceSize || training.budget || (training.programs || []).length > 0) &&
     !(company.description || effectiveWorkforceSize);
   const trainingDescriptionToRender =
@@ -2068,13 +2069,13 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const trainingImageToRender =
     training.image || SAMPLE_TRAINING.image;
   const trainingProgramsToRender =
-    (training.programs?.length || 0) > 0 || !isEditable
+    (training.programs?.length || 0) > 0
       ? training.programs || []
       : SAMPLE_TRAINING.programs;
   const trainingWorkforceSizeValue = formData.training?.workforceSize ?? '';
 
-  const usingSampleLeaders = isEditable && leaders.length === 0;
-  const leadersToRender = !isEditable || leaders.length > 0 ? leaders : SAMPLE_LEADERS;
+  const usingSampleLeaders = leaders.length === 0;
+  const leadersToRender = leaders.length > 0 ? leaders : SAMPLE_LEADERS;
 
   const usingSampleTypicalDay =
     !culture.typicalDay || culture.typicalDay.length === 0;
@@ -2083,35 +2084,32 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       ? culture.typicalDay || []
       : SAMPLE_TYPICAL_DAY;
 
-  const usingSampleAwards = isEditable && awards.length === 0;
-  const awardsToRender = !isEditable || awards.length > 0 ? awards : SAMPLE_AWARDS;
+  const usingSampleAwards = awards.length === 0;
+  const awardsToRender = awards.length > 0 ? awards : SAMPLE_AWARDS;
 
-  const usingSampleFounderStory =
-    isEditable && !story.founderStory?.title;
+  const usingSampleFounderStory = !story.founderStory?.title;
   const founderStoryToRender =
     story.founderStory && story.founderStory.title
       ? story.founderStory
-      : usingSampleFounderStory
-        ? SAMPLE_FOUNDER_STORY
-        : null;
+      : SAMPLE_FOUNDER_STORY;
 
   const usingSampleMilestones =
-    isEditable && (!story.milestones || story.milestones.length === 0);
+    !story.milestones || story.milestones.length === 0;
   const milestonesToRender =
-    !isEditable || (story.milestones && story.milestones.length > 0)
-      ? story.milestones || []
+    story.milestones && story.milestones.length > 0
+      ? story.milestones
       : SAMPLE_MILESTONES;
 
   const usingSampleTestimonials =
-    isEditable && (!culture.testimonials || culture.testimonials.length === 0);
+    !culture.testimonials || culture.testimonials.length === 0;
   const testimonialsToRender =
-    !isEditable || (culture.testimonials && culture.testimonials.length > 0)
-      ? culture.testimonials || []
+    culture.testimonials && culture.testimonials.length > 0
+      ? culture.testimonials
       : SAMPLE_TESTIMONIALS;
 
-  const usingSampleVision = isEditable && !profile?.vision;
-  const usingSampleMission = isEditable && !profile?.mission;
-  const usingSampleCoreValues = isEditable && !profile?.coreValues;
+  const usingSampleVision = !profile?.vision;
+  const usingSampleMission = !profile?.mission;
+  const usingSampleCoreValues = !profile?.coreValues;
 
   // Section visibility state - normalize all values to boolean
   const sectionVisibilityRaw = profile?.sectionVisibility || {};
@@ -2353,7 +2351,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       )}
 
       {/* SECTION 3: VISION - MISSION - VALUES */}
-      {shouldShowSection('visionMissionValues') && (profile?.vision || profile?.mission || profile?.coreValues || isEditable) && (
+      {shouldShowSection('visionMissionValues') && (
         <section className="max-w-7xl mx-auto px-3 sm:px-6 relative group/visionMission">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
             {/* Vision */}
@@ -2361,9 +2359,9 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               <EditBtn section="vision" initialData={{ vision: profile?.vision || "" }} />
               <Target className="w-16 h-16 mb-6 text-blue-600" />
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 text-slate-900">Tầm Nhìn</h3>
-              {profile?.vision || (isEditable ? SAMPLE_VISION : null) ? (
+              {profile?.vision || SAMPLE_VISION ? (
                 <TruncatedText
-                  content={profile?.vision || (isEditable ? SAMPLE_VISION : "")}
+                  content={profile?.vision || SAMPLE_VISION}
                   maxLines={5}
                   type="vision"
                   onViewMore={(type, content) => setViewMoreModal({ type, content })}
@@ -2378,9 +2376,9 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               <EditBtn section="mission" initialData={{ mission: profile?.mission || "" }} />
               <Globe className="w-16 h-16 mb-6 text-blue-600" />
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 text-slate-900">Sứ Mệnh</h3>
-              {profile?.mission || (isEditable ? SAMPLE_MISSION : null) ? (
+              {profile?.mission || SAMPLE_MISSION ? (
                 <TruncatedText
-                  content={profile?.mission || (isEditable ? SAMPLE_MISSION : "")}
+                  content={profile?.mission || SAMPLE_MISSION}
                   maxLines={5}
                   type="mission"
                   onViewMore={(type, content) => setViewMoreModal({ type, content })}
@@ -2395,9 +2393,9 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
               <EditBtn section="coreValues" initialData={{ coreValues: profile?.coreValues || "" }} />
               <Gem className="w-16 h-16 mb-6 text-blue-600" />
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 text-slate-900">Giá Trị Cốt Lõi</h3>
-              {profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : null) ? (
+              {profile?.coreValues || SAMPLE_CORE_VALUES ? (
                 <TruncatedCoreValues
-                  content={profile?.coreValues || (isEditable ? SAMPLE_CORE_VALUES : "")}
+                  content={profile?.coreValues || SAMPLE_CORE_VALUES}
                   maxLines={5}
                   onViewMore={(content) => setViewMoreModal({ type: 'coreValues', content })}
                 />
