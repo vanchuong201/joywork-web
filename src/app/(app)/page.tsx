@@ -13,6 +13,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CompanySearch from "@/components/feed/CompanySearch";
 import PostCard, { type PostCardData } from "@/components/feed/PostCard";
 import FeedPostComposer from "@/components/feed/FeedPostComposer";
+import HomepageHero from "@/components/feed/HomepageHero";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useInView from "@/hooks/useInView";
 import { useAuthStore } from "@/store/useAuth";
@@ -237,20 +238,23 @@ function FeedPageContent() {
 
 export default function FeedPage() {
   return (
-    <FeedLayout>
-      <Suspense fallback={
-        <div className="space-y-4">
-          <Skeleton className="h-16 rounded-lg" />
-          <div className="space-y-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 rounded-lg" />
-            ))}
+    <>
+      <HomepageHero />
+      <FeedLayout>
+        <Suspense fallback={
+          <div className="space-y-4">
+            <Skeleton className="h-16 rounded-lg" />
+            <div className="space-y-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-40 rounded-lg" />
+              ))}
+            </div>
           </div>
-        </div>
-      }>
-        <FeedPageContent />
-      </Suspense>
-    </FeedLayout>
+        }>
+          <FeedPageContent />
+        </Suspense>
+      </FeedLayout>
+    </>
   );
 }
 
