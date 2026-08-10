@@ -15,6 +15,7 @@ import {
   employmentTypes,
   experienceLevels,
   jobLevels,
+  JD_RICH_TEXT_MAX_LENGTH,
   type JobFormValues,
 } from "./job-form-schema";
 import {
@@ -225,6 +226,7 @@ export function JobFormFields({ expandedSections, onToggle }: JobFormFieldsProps
                 <TiptapEditor
                   value={field.value}
                   onChange={field.onChange}
+                  maxLength={JD_RICH_TEXT_MAX_LENGTH}
                   placeholder={`Ví dụ:
 
 Đóng góp giá trị vào mục tiêu chung của công ty trong việc lan tỏa triết lý “Quản trị đúng” và “đi làm là phải vui” đến doanh nghiệp Việt Nam.
@@ -259,6 +261,7 @@ Lãnh đạo mảng cộng đồng, kết nối, chăm lo và phát triển cộ
                 <TiptapEditor
                   value={field.value}
                   onChange={field.onChange}
+                  maxLength={JD_RICH_TEXT_MAX_LENGTH}
                   placeholder={`Ví dụ:
 
 Nhóm nhiệm vụ phát triển cộng đồng:
@@ -290,6 +293,7 @@ Nhóm nhiệm vụ vận hành cộng đồng:
               <TiptapEditor
                 value={field.value || ""}
                 onChange={field.onChange}
+                maxLength={JD_RICH_TEXT_MAX_LENGTH}
                 placeholder={`Ví dụ:
 
 • Số lượng và chất lượng thành viên các cộng đồng
@@ -324,6 +328,7 @@ Nhóm nhiệm vụ vận hành cộng đồng:
                   <TiptapEditor
                     value={field.value}
                     onChange={field.onChange}
+                    maxLength={JD_RICH_TEXT_MAX_LENGTH}
                     placeholder={`Ví dụ:
 
 • Có kinh nghiệm tối thiểu trong việc phát triển, quản lý cộng đồng
@@ -346,6 +351,7 @@ Nhóm nhiệm vụ vận hành cộng đồng:
                     <TiptapEditor
                       value={field.value}
                       onChange={field.onChange}
+                      maxLength={JD_RICH_TEXT_MAX_LENGTH}
                       placeholder={`Ví dụ:
 
 • Khả năng lập và kiểm soát kế hoạch tốt
@@ -366,6 +372,7 @@ Nhóm nhiệm vụ vận hành cộng đồng:
                     <TiptapEditor
                       value={field.value}
                       onChange={field.onChange}
+                      maxLength={JD_RICH_TEXT_MAX_LENGTH}
                       placeholder={`Ví dụ:
 
 • Phù hợp với văn hóa và 5 giá trị cốt lõi công ty
@@ -395,6 +402,7 @@ Nhóm nhiệm vụ vận hành cộng đồng:
               <TiptapEditor
                 value={field.value || ""}
                 onChange={field.onChange}
+                maxLength={JD_RICH_TEXT_MAX_LENGTH}
                 placeholder={`Ví dụ:
 
 • Kế hoạch hoạt động hàng ngày của cộng đồng
@@ -420,6 +428,7 @@ Nhóm nhiệm vụ vận hành cộng đồng:
               <TiptapEditor
                 value={field.value || ""}
                 onChange={field.onChange}
+                maxLength={JD_RICH_TEXT_MAX_LENGTH}
                 placeholder={`Ví dụ:
 
 Quan hệ nội bộ:
@@ -453,6 +462,7 @@ Quan hệ bên ngoài:
               <TiptapEditor
                 value={field.value || ""}
                 onChange={field.onChange}
+                maxLength={JD_RICH_TEXT_MAX_LENGTH}
                 placeholder={`Ví dụ:
 
 • Xây dựng và quản lý team khi cộng đồng phát triển
@@ -481,6 +491,7 @@ Quan hệ bên ngoài:
               <TiptapEditor
                 value={field.value || ""}
                 onChange={field.onChange}
+                maxLength={JD_RICH_TEXT_MAX_LENGTH}
                 placeholder={`Ví dụ:
 
 • Làm việc linh hoạt ở bất cứ đâu (Công ty vận hành theo hướng quản trị bằng mục tiêu)
@@ -575,6 +586,7 @@ Quan hệ bên ngoài:
                 <TiptapEditor
                   value={field.value || ""}
                   onChange={field.onChange}
+                  maxLength={JD_RICH_TEXT_MAX_LENGTH}
                   placeholder={`Ví dụ:
 
 ● Tên vị trí: Phụ trách Phát triển Cộng đồng

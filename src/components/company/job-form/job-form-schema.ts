@@ -12,6 +12,9 @@ export const experienceLevels = ["NO_EXPERIENCE", "LT_1_YEAR", "Y1_2", "Y2_3", "
 export const jobLevels = ["INTERN_STUDENT", "FRESH_GRAD", "EMPLOYEE", "SPECIALIST_TEAM_LEAD", "MANAGER_HEAD", "DIRECTOR", "EXECUTIVE"] as const;
 export const genders = ["MALE", "FEMALE", "OTHER"] as const;
 
+/** Max plain-text length for JD rich-text fields (aligned with API Zod + Swagger). */
+export const JD_RICH_TEXT_MAX_LENGTH = 10000;
+
 export const workingTimeRangeSchema = z
   .object({
     dayFrom: z.enum(WORKING_DAYS),
@@ -80,17 +83,17 @@ export const jobFormSchema = z
   })
   .superRefine((vals, ctx) => {
     const fields = [
-      { key: "generalInfo", max: 5000, label: "Thông tin bổ sung" },
-      { key: "mission", max: 5000, label: "Sứ mệnh/Vai trò" },
-      { key: "tasks", max: 10000, label: "Nhiệm vụ chuyên môn" },
-      { key: "knowledge", max: 5000, label: "Kiến thức chuyên môn" },
-      { key: "skills", max: 5000, label: "Kỹ năng cần thiết" },
-      { key: "attitude", max: 5000, label: "Thái độ và phẩm chất" },
-      { key: "kpis", max: 5000, label: "Kết quả chuyên môn" },
-      { key: "authority", max: 5000, label: "Quyền hạn" },
-      { key: "relationships", max: 5000, label: "Quan hệ công việc" },
-      { key: "careerPath", max: 5000, label: "Lộ trình phát triển" },
-      { key: "benefitsPerks", max: 2000, label: "Phúc lợi" },
+      { key: "generalInfo", max: JD_RICH_TEXT_MAX_LENGTH, label: "Thông tin bổ sung" },
+      { key: "mission", max: JD_RICH_TEXT_MAX_LENGTH, label: "Sứ mệnh/Vai trò" },
+      { key: "tasks", max: JD_RICH_TEXT_MAX_LENGTH, label: "Nhiệm vụ chuyên môn" },
+      { key: "knowledge", max: JD_RICH_TEXT_MAX_LENGTH, label: "Kiến thức chuyên môn" },
+      { key: "skills", max: JD_RICH_TEXT_MAX_LENGTH, label: "Kỹ năng cần thiết" },
+      { key: "attitude", max: JD_RICH_TEXT_MAX_LENGTH, label: "Thái độ và phẩm chất" },
+      { key: "kpis", max: JD_RICH_TEXT_MAX_LENGTH, label: "Kết quả chuyên môn" },
+      { key: "authority", max: JD_RICH_TEXT_MAX_LENGTH, label: "Quyền hạn" },
+      { key: "relationships", max: JD_RICH_TEXT_MAX_LENGTH, label: "Quan hệ công việc" },
+      { key: "careerPath", max: JD_RICH_TEXT_MAX_LENGTH, label: "Lộ trình phát triển" },
+      { key: "benefitsPerks", max: JD_RICH_TEXT_MAX_LENGTH, label: "Phúc lợi" },
     ] as const;
 
     fields.forEach(({ key, max, label }) => {

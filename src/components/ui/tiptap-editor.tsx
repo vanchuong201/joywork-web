@@ -17,6 +17,8 @@ type TiptapEditorProps = {
   className?: string;
   disabled?: boolean;
   onBlur?: () => void;
+  /** When set, show a plain-text character counter under the editor. */
+  maxLength?: number;
 };
 
 export default function TiptapEditor({
@@ -26,8 +28,10 @@ export default function TiptapEditor({
   className,
   disabled = false,
   onBlur,
+  maxLength,
 }: TiptapEditorProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [charCount, setCharCount] = useState(0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -55,6 +59,7 @@ export default function TiptapEditor({
     immediatelyRender: false, // Fix SSR hydration mismatch
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
+      setCharCount(editor.getText().length);
       onChange(html);
     },
     onBlur,
@@ -69,8 +74,15 @@ export default function TiptapEditor({
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
       editor.commands.setContent(value, { emitUpdate: false });
+      setCharCount(editor.getText().length);
     }
   }, [value, editor]);
+
+  useEffect(() => {
+    if (editor) {
+      setCharCount(editor.getText().length);
+    }
+  }, [editor]);
 
   if (!isMounted || !editor) {
     return (
@@ -85,127 +97,141 @@ export default function TiptapEditor({
     );
   }
 
-  return (
-    <div
-      className={cn(
-        "rounded-md border border-[var(--border)] bg-[var(--input)] overflow-hidden",
-        className
-      )}
-    >
-      {/* Toolbar */}
-      {!disabled && (
-        <div className="flex items-center gap-1 p-2 border-b border-[var(--border)] bg-[var(--muted)]/50">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            disabled={!editor.can().chain().focus().toggleBold().run()}
-            className={cn(
-              "h-8 w-8 p-0",
-              editor.isActive("bold") && "bg-[var(--muted)]"
-            )}
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            disabled={!editor.can().chain().focus().toggleItalic().run()}
-            className={cn(
-              "h-8 w-8 p-0",
-              editor.isActive("italic") && "bg-[var(--muted)]"
-            )}
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          <div className="w-px h-6 bg-[var(--border)] mx-1" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={cn(
-              "h-8 w-8 p-0",
-              editor.isActive("bulletList") && "bg-[var(--muted)]"
-            )}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={cn(
-              "h-8 w-8 p-0",
-              editor.isActive("orderedList") && "bg-[var(--muted)]"
-            )}
-          >
-            <ListOrdered className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={cn(
-              "h-8 w-8 p-0",
-              editor.isActive("blockquote") && "bg-[var(--muted)]"
-            )}
-          >
-            <Quote className="h-4 w-4" />
-          </Button>
-          <div className="w-px h-6 bg-[var(--border)] mx-1" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const url = window.prompt("Nhập URL: Ví dụ: https://www.google.com");
-              // Nếu bấm Cancel thì url === null -> không làm gì cả (không hiện toast)
-              if (url === null) return;
-              if (url && url.startsWith("http")) {
-                editor.chain().focus().setLink({ href: url }).run();
-              } else {
-                toast.error("Vui lòng nhập URL hợp lệ");
-              }
-            }}
-            className={cn(
-              "h-8 w-8 p-0",
-              editor.isActive("link") && "bg-[var(--muted)]"
-            )}
-          >
-            <LinkIcon className="h-4 w-4" />
-          </Button>
-          <div className="flex-1" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().chain().focus().undo().run()}
-            className="h-8 w-8 p-0"
-          >
-            <Undo className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().chain().focus().redo().run()}
-            className="h-8 w-8 p-0"
-          >
-            <Redo className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+  const isOverLimit = typeof maxLength === "number" && charCount > maxLength;
 
-      {/* Editor Content */}
-      <EditorContent editor={editor} />
+  return (
+    <div className={cn("space-y-1", className)}>
+      <div
+        className={cn(
+          "rounded-md border border-[var(--border)] bg-[var(--input)] overflow-hidden",
+          isOverLimit && "border-red-400"
+        )}
+      >
+        {/* Toolbar */}
+        {!disabled && (
+          <div className="flex items-center gap-1 p-2 border-b border-[var(--border)] bg-[var(--muted)]/50">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              disabled={!editor.can().chain().focus().toggleBold().run()}
+              className={cn(
+                "h-8 w-8 p-0",
+                editor.isActive("bold") && "bg-[var(--muted)]"
+              )}
+            >
+              <Bold className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              disabled={!editor.can().chain().focus().toggleItalic().run()}
+              className={cn(
+                "h-8 w-8 p-0",
+                editor.isActive("italic") && "bg-[var(--muted)]"
+              )}
+            >
+              <Italic className="h-4 w-4" />
+            </Button>
+            <div className="w-px h-6 bg-[var(--border)] mx-1" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+              className={cn(
+                "h-8 w-8 p-0",
+                editor.isActive("bulletList") && "bg-[var(--muted)]"
+              )}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              className={cn(
+                "h-8 w-8 p-0",
+                editor.isActive("orderedList") && "bg-[var(--muted)]"
+              )}
+            >
+              <ListOrdered className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleBlockquote().run()}
+              className={cn(
+                "h-8 w-8 p-0",
+                editor.isActive("blockquote") && "bg-[var(--muted)]"
+              )}
+            >
+              <Quote className="h-4 w-4" />
+            </Button>
+            <div className="w-px h-6 bg-[var(--border)] mx-1" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const url = window.prompt("Nhập URL: Ví dụ: https://www.google.com");
+                // Nếu bấm Cancel thì url === null -> không làm gì cả (không hiện toast)
+                if (url === null) return;
+                if (url && url.startsWith("http")) {
+                  editor.chain().focus().setLink({ href: url }).run();
+                } else {
+                  toast.error("Vui lòng nhập URL hợp lệ");
+                }
+              }}
+              className={cn(
+                "h-8 w-8 p-0",
+                editor.isActive("link") && "bg-[var(--muted)]"
+              )}
+            >
+              <LinkIcon className="h-4 w-4" />
+            </Button>
+            <div className="flex-1" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().undo().run()}
+              disabled={!editor.can().chain().focus().undo().run()}
+              className="h-8 w-8 p-0"
+            >
+              <Undo className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().redo().run()}
+              disabled={!editor.can().chain().focus().redo().run()}
+              className="h-8 w-8 p-0"
+            >
+              <Redo className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Editor Content */}
+        <EditorContent editor={editor} />
+      </div>
+      {typeof maxLength === "number" ? (
+        <p
+          className={cn(
+            "text-right text-xs tabular-nums text-[var(--muted-foreground)]",
+            isOverLimit && "text-red-600"
+          )}
+        >
+          {charCount.toLocaleString("vi-VN")} / {maxLength.toLocaleString("vi-VN")} ký tự
+        </p>
+      ) : null}
     </div>
   );
 }
