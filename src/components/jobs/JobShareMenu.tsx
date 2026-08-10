@@ -2,7 +2,7 @@
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Share2, Link2, Facebook, Linkedin, Send } from "lucide-react";
+import { Share2, Link2, Facebook, Linkedin } from "lucide-react";
 import { toast } from "sonner";
 
 function getShareUrl(): string {
@@ -23,17 +23,6 @@ export default function JobShareMenu() {
       toast.success("Đã sao chép liên kết");
     } catch {
       toast.error("Không thể sao chép liên kết");
-    }
-  };
-
-  const handleNativeShare = async () => {
-    const url = sharePageUrl();
-    if (!url || typeof navigator.share !== "function") return;
-    try {
-      await navigator.share({ url, title: document.title });
-    } catch (e) {
-      if ((e as Error)?.name === "AbortError") return;
-      toast.error("Không thể mở chia sẻ");
     }
   };
 
@@ -79,20 +68,6 @@ export default function JobShareMenu() {
             <Link2 className="h-4 w-4 shrink-0" />
             Sao chép liên kết
           </DropdownMenu.Item>
-          {typeof navigator !== "undefined" && typeof navigator.share === "function" ? (
-            <DropdownMenu.Item
-              className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--foreground)] outline-none hover:bg-[var(--muted)]"
-              onSelect={() => {
-                // Wait for dropdown close animation so the native share sheet is not aborted immediately.
-                window.setTimeout(() => {
-                  void handleNativeShare();
-                }, 50);
-              }}
-            >
-              <Send className="h-4 w-4 shrink-0" />
-              Chia sẻ nhanh
-            </DropdownMenu.Item>
-          ) : null}
           <DropdownMenu.Item
             className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--foreground)] outline-none hover:bg-[var(--muted)]"
             onSelect={() => {
