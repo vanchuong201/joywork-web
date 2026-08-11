@@ -1,7 +1,7 @@
 ---
 title: "Homepage Hero Banner Carousel"
 description: "Convert the single hero banner into an Embla image carousel (loop + autoplay, dots) reusing existing deps, no CMS."
-status: pending
+status: completed
 priority: P2
 effort: 3h
 branch: develop
@@ -36,9 +36,9 @@ autoplay.
 
 ## Progress
 
-- [ ] Phase 01 — Slides config + assets
-- [ ] Phase 02 — Embla banner carousel component
-- [ ] Phase 03 — Validate + responsive + a11y
+- [x] Phase 01 — Slides config + assets
+- [x] Phase 02 — Embla banner carousel component
+- [x] Phase 03 — Validate + responsive + a11y
 
 ## Dependency graph
 
