@@ -1,18 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { ChevronDown, MapPin, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import HeroBannerCarousel from "@/components/feed/HeroBannerCarousel";
 import { PROVINCES } from "@/lib/provinces";
 import { useAuthStore } from "@/store/useAuth";
 import { cn } from "@/lib/utils";
 
 const MIN_KEYWORD_LENGTH = 3;
-const GOOD_COMPANIES_URL = "https://doanhnghieptot.joywork.vn/?tab=vinh-danh";
+const GOOD_COMPANIES_URL = "/jobs?companyBadges=GOOD_COMPANY%2CBASIC_COMMITMENT";
 
 export default function HomepageHero() {
   const router = useRouter();
@@ -163,29 +163,14 @@ export default function HomepageHero() {
                     "transition-colors hover:bg-[var(--brand-secondary-hover)]"
                   )}
                 >
-                  Xem hồ sơ các
+                  Tìm việc làm
                   <br />
-                  doanh nghiệp tốt
+                  tại các công ty tốt
                 </a>
               </div>
             </div>
 
-            <a
-              href="https://doanhnghieptot.joywork.vn/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block min-h-[180px] overflow-hidden rounded-[10px] border border-white/10 lg:min-h-[230px]"
-            >
-              <Image
-                src="/banner/banner_100dn.png"
-                alt="100 doanh nghiệp có môi trường làm việc tốt"
-                width={1942}
-                height={809}
-                priority
-                sizes="(max-width: 1024px) 100vw, 860px"
-                className="h-full w-full object-cover"
-              />
-            </a>
+            <HeroBannerCarousel />
           </div>
         </div>
       </div>
