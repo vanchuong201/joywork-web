@@ -170,8 +170,10 @@ export default function HomepageHero() {
               </div>
             </div>
 
-            <Link
-              href="/companies"
+            <a
+              href="https://doanhnghieptot.joywork.vn/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block min-h-[180px] overflow-hidden rounded-[10px] border border-white/10 lg:min-h-[230px]"
             >
               <Image
@@ -183,7 +185,7 @@ export default function HomepageHero() {
                 sizes="(max-width: 1024px) 100vw, 860px"
                 className="h-full w-full object-cover"
               />
-            </Link>
+            </a>
           </div>
         </div>
       </div>
