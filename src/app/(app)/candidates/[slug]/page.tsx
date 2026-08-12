@@ -330,7 +330,7 @@ export default function CandidateDetailPage({ params }: Props) {
   const showFlipChrome = Boolean(
     needsCvFlipLayer && cvDetailQuery.data?.access,
   );
-  const allowCvFlip = profileQuery.data?.profile?.allowCvFlip !== false;
+  const allowCvFlip = profileQuery.data?.profile?.allowCvFlip === true;
   const showStickyFooter = showFlipChrome && access && !access.isFlipped;
   const showExportButton = !isOwnProfile;
   const exportMasked = Boolean(

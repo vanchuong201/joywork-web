@@ -109,7 +109,12 @@ export default function WardSelect({
         onChangeValues?.(next);
       } else {
         // Single-select: replace value, close dropdown
-        onChange?.(ward.code);
+        if (onChange) {
+          onChange(ward.code);
+        } else {
+          // Fallback when callers pass values/onChangeValues without multiple
+          onChangeValues?.([ward.code]);
+        }
         setOpen(false);
         setQuery("");
       }
@@ -121,8 +126,10 @@ export default function WardSelect({
     e.stopPropagation();
     if (multiple) {
       onChangeValues?.([]);
+    } else if (onChange) {
+      onChange(null);
     } else {
-      onChange?.(null);
+      onChangeValues?.([]);
     }
     setQuery("");
   };

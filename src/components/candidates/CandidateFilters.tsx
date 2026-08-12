@@ -146,6 +146,7 @@ export function CandidateFilterControls({
           placeholder="Chọn tỉnh / thành phố"
         />
         <WardSelect
+          multiple
           provinceCodes={values.locations}
           values={values.wardCodes}
           onChangeValues={(vc) => set({ wardCodes: vc })}
