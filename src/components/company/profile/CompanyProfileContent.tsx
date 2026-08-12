@@ -1349,6 +1349,8 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>({});
   const [sectionVisible, setSectionVisible] = useState(true);
+  // Optimistic sectionVisibility from last successful PATCH until props refresh catches up.
+  const [visibilityOverride, setVisibilityOverride] = useState<Record<string, boolean> | null>(null);
   const [viewMoreModal, setViewMoreModal] = useState<{ type: 'vision' | 'mission' | 'coreValues' | null, content: string }>({ type: null, content: '' });
   const [galleryVideoUrl, setGalleryVideoUrl] = useState<string | null>(null);
 
@@ -1381,7 +1383,15 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       const res = await api.patch(`/api/companies/${company.id}/profile`, data);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data: { data?: { profile?: { sectionVisibility?: Record<string, boolean> | null } } }) => {
+      const nextVisibility = data?.data?.profile?.sectionVisibility;
+      if (nextVisibility && typeof nextVisibility === "object") {
+        const normalized: Record<string, boolean> = {};
+        Object.entries(nextVisibility).forEach(([key, value]) => {
+          normalized[key] = Boolean(value);
+        });
+        setVisibilityOverride(normalized);
+      }
       toast.success("Cập nhật thành công");
       setEditingSection(null);
       setSectionVisible(true);
@@ -1413,6 +1423,20 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
       console.error(err);
     }
   });
+
+  // Drop override once server props reflect the same sectionVisibility map.
+  useEffect(() => {
+    if (!visibilityOverride) return;
+    const fromProps = profile?.sectionVisibility;
+    if (!fromProps || typeof fromProps !== "object") return;
+    const propKeys = Object.keys(fromProps);
+    const overrideKeys = Object.keys(visibilityOverride);
+    if (propKeys.length !== overrideKeys.length) return;
+    const matched = overrideKeys.every(
+      (key) => Boolean((fromProps as Record<string, unknown>)[key]) === Boolean(visibilityOverride[key])
+    );
+    if (matched) setVisibilityOverride(null);
+  }, [profile?.sectionVisibility, visibilityOverride]);
 
   // Load statements stats cho "Triết lý quản trị"
   useEffect(() => {
@@ -2112,7 +2136,7 @@ export default function CompanyProfileContent({ company, isEditable = false }: P
   const usingSampleCoreValues = !profile?.coreValues;
 
   // Section visibility state - normalize all values to boolean
-  const sectionVisibilityRaw = profile?.sectionVisibility || {};
+  const sectionVisibilityRaw = visibilityOverride || profile?.sectionVisibility || {};
   const sectionVisibility: Record<string, boolean> = {};
   Object.entries(sectionVisibilityRaw).forEach(([key, value]) => {
     // Normalize: convert string "true"/"false" or boolean to boolean
