@@ -363,6 +363,8 @@ export default function ManageApplicationsTab({ company }: Props) {
                               <div className="flex items-center gap-3 mb-1">
                                 <Link
                                   href={candidateHref}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   className="text-base font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--brand)]"
                                 >
                                   {userName}
@@ -405,6 +407,8 @@ export default function ManageApplicationsTab({ company }: Props) {
                                   <DropdownMenu.Item asChild>
                                     <Link
                                       href={candidateHref}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
                                       className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                     >
                                       <FileText className="w-4 h-4" />
@@ -508,6 +512,8 @@ export default function ManageApplicationsTab({ company }: Props) {
                               <DropdownMenu.Item asChild>
                                 <Link
                                   href={candidateHref}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                 >
                                   <FileText className="w-4 h-4" />
@@ -523,6 +529,8 @@ export default function ManageApplicationsTab({ company }: Props) {
                       <div className="mb-3">
                         <Link
                           href={candidateHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="mb-2 block text-base font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--brand)]"
                         >
                           {userName}
