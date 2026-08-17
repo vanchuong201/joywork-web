@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getSitemapIndexUrl } from "@/lib/sitemap";
 
 /**
  * robots.txt cho preview link (Facebook, LinkedIn, Zalo, …).
@@ -22,5 +23,6 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Applebot", allow: ["/"] },
       { userAgent: "*", allow: ["/"] },
     ],
+    sitemap: getSitemapIndexUrl(),
   };
 }
