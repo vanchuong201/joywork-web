@@ -37,7 +37,12 @@ type PublicBannerItem = {
   openInNewTab: boolean;
 };
 
-export default function HeroBannerCarousel() {
+type HeroBannerCarouselProps = {
+  variant?: "default" | "mobile";
+};
+
+export default function HeroBannerCarousel({ variant = "default" }: HeroBannerCarouselProps) {
+  const isMobile = variant === "mobile";
   const [slides, setSlides] = useState<HeroBannerSlide[]>(HERO_BANNER_SLIDES_FALLBACK);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -130,16 +135,37 @@ export default function HeroBannerCarousel() {
   }, [emblaApi]);
 
   return (
-    <div className="relative min-h-[180px] overflow-hidden rounded-[10px] border border-white/10 lg:min-h-[230px]">
-      <div className="h-full min-h-[180px] overflow-hidden lg:min-h-[230px]" ref={emblaRef}>
-        <div className="flex h-full min-h-[180px] lg:min-h-[230px]">
+    <div
+      className={cn(
+        "relative overflow-hidden",
+        isMobile
+          ? "aspect-[16/9] rounded-[20px] bg-[#12103A]"
+          : "min-h-[180px] rounded-[10px] border border-white/10 lg:min-h-[230px]"
+      )}
+    >
+      <div
+        className={cn(
+          "h-full overflow-hidden",
+          isMobile ? "absolute inset-0" : "min-h-[180px] lg:min-h-[230px]"
+        )}
+        ref={emblaRef}
+      >
+        <div
+          className={cn(
+            "flex h-full",
+            isMobile ? "" : "min-h-[180px] lg:min-h-[230px]"
+          )}
+        >
           {slides.map((slide, index) => (
             <div key={slide.id} className="min-w-0 flex-[0_0_100%]">
               <a
                 href={slide.href}
                 target={slide.openInNewTab ? "_blank" : undefined}
                 rel={slide.openInNewTab ? "noopener noreferrer" : undefined}
-                className="block h-full min-h-[180px] lg:min-h-[230px]"
+                className={cn(
+                  "block h-full",
+                  isMobile ? "" : "min-h-[180px] lg:min-h-[230px]"
+                )}
               >
                 <Image
                   src={slide.src}
@@ -147,7 +173,7 @@ export default function HeroBannerCarousel() {
                   width={1942}
                   height={809}
                   priority={index === 0}
-                  sizes="(max-width: 1024px) 100vw, 860px"
+                  sizes={isMobile ? "100vw" : "(max-width: 1024px) 100vw, 860px"}
                   className="h-full w-full object-cover"
                 />
               </a>
@@ -156,36 +182,43 @@ export default function HeroBannerCarousel() {
         </div>
       </div>
 
-      <button
-        type="button"
-        aria-label="Banner trước"
-        onClick={() => emblaApi?.scrollPrev()}
-        className={cn(
-          "absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full",
-          "border border-white/30 bg-black/35 text-white shadow-sm backdrop-blur-sm",
-          "transition-colors hover:bg-black/50",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-        )}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </button>
+      {!isMobile && (
+        <>
+          <button
+            type="button"
+            aria-label="Banner trước"
+            onClick={() => emblaApi?.scrollPrev()}
+            className={cn(
+              "absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full",
+              "border border-white/30 bg-black/35 text-white shadow-sm backdrop-blur-sm",
+              "transition-colors hover:bg-black/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            )}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
 
-      <button
-        type="button"
-        aria-label="Banner sau"
-        onClick={() => emblaApi?.scrollNext()}
-        className={cn(
-          "absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full",
-          "border border-white/30 bg-black/35 text-white shadow-sm backdrop-blur-sm",
-          "transition-colors hover:bg-black/50",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-        )}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </button>
+          <button
+            type="button"
+            aria-label="Banner sau"
+            onClick={() => emblaApi?.scrollNext()}
+            className={cn(
+              "absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full",
+              "border border-white/30 bg-black/35 text-white shadow-sm backdrop-blur-sm",
+              "transition-colors hover:bg-black/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            )}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </>
+      )}
 
       <div
-        className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2"
+        className={cn(
+          "absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center",
+          isMobile ? "gap-1.5" : "gap-2"
+        )}
         role="tablist"
         aria-label="Điều hướng banner"
       >
@@ -200,8 +233,18 @@ export default function HeroBannerCarousel() {
               aria-label={`Chuyển tới banner ${index + 1}`}
               onClick={() => emblaApi?.scrollTo(index)}
               className={cn(
-                "h-2 w-2 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                isActive ? "bg-[var(--brand-secondary)]" : "bg-white/50 hover:bg-white/80"
+                "transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                isMobile
+                  ? cn(
+                      "h-1 rounded-full",
+                      isActive ? "w-[18px] bg-white" : "w-1 bg-white/45 hover:bg-white/70"
+                    )
+                  : cn(
+                      "h-2 w-2 rounded-full",
+                      isActive
+                        ? "bg-[var(--brand-secondary)]"
+                        : "bg-white/50 hover:bg-white/80"
+                    )
               )}
             />
           );
