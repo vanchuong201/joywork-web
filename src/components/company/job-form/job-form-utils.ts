@@ -19,6 +19,8 @@ export const INITIAL_EXPANDED_SECTIONS = ["basic", "general", "mission", "tasks"
 export const FIELD_LABELS: Record<string, string> = {
   title: "Tiêu đề vị trí",
   department: "Bộ phận",
+  employmentType: "Hình thức làm việc",
+  experienceLevel: "Kinh nghiệm yêu cầu",
   jobLevel: "Cấp bậc",
   educationLevel: "Học vấn",
   generalInfo: "Thông tin bổ sung",

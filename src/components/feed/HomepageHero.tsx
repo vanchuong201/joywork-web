@@ -77,7 +77,7 @@ export default function HomepageHero() {
             </p>
             <h1 className="text-[22px] font-extrabold leading-[1.28] tracking-tight text-white sm:text-2xl lg:text-[26px] lg:leading-relaxed">
               Của những doanh nghiệp có{" "}
-              <span className="text-[var(--brand-secondary)]">môi trường làm việc tốt</span>
+              <span className="">môi trường làm việc tốt</span>
             </h1>
           </header>
 
@@ -92,7 +92,7 @@ export default function HomepageHero() {
                   name="q"
                   value={keyword}
                   onChange={(event) => setKeyword(event.target.value)}
-                  placeholder="Vị trí, doanh nghiệp, kỹ năng..."
+                  placeholder="Bạn muốn tìm vị trí tuyển dụng nào ?"
                   className={cn(
                     "h-10 flex-1 rounded-none border-0 bg-transparent px-0 text-[14.5px] text-[var(--foreground)] shadow-none",
                     "placeholder:text-[var(--muted-foreground)]",
