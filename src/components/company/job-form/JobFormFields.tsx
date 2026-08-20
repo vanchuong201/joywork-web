@@ -119,8 +119,13 @@ export function JobFormFields({ expandedSections, onToggle }: JobFormFieldsProps
             </label>
           </FormField>
           */}
-          <FormField label="Hình thức làm việc">
+          <FormField
+            label="Hình thức làm việc"
+            required
+            error={errors.employmentType?.message as string | undefined}
+          >
             <select {...register("employmentType")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
+              <option value="">---Chọn hình thức làm việc---</option>
               {employmentTypes.map((type) => (
                 <option key={type} value={type}>
                   {translateEmploymentType(type)}
@@ -159,8 +164,13 @@ export function JobFormFields({ expandedSections, onToggle }: JobFormFieldsProps
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <FormField label="Kinh nghiệm yêu cầu">
+          <FormField
+            label="Kinh nghiệm yêu cầu"
+            required
+            error={errors.experienceLevel?.message as string | undefined}
+          >
             <select {...register("experienceLevel")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
+              <option value="">---Chọn kinh nghiệm yêu cầu---</option>
               {experienceLevels.map((level) => (
                 <option key={level} value={level}>
                   {translateExperienceLevel(level)}
@@ -168,7 +178,11 @@ export function JobFormFields({ expandedSections, onToggle }: JobFormFieldsProps
               ))}
             </select>
           </FormField>
-          <FormField label="Cấp bậc">
+          <FormField
+            label="Cấp bậc"
+            required
+            error={errors.jobLevel?.message as string | undefined}
+          >
             <select {...register("jobLevel")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
               <option value="">-- Chọn cấp bậc --</option>
               {jobLevels.map((level) => (
@@ -178,7 +192,11 @@ export function JobFormFields({ expandedSections, onToggle }: JobFormFieldsProps
               ))}
             </select>
           </FormField>
-          <FormField label="Học vấn">
+          <FormField
+            label="Học vấn"
+            required
+            error={errors.educationLevel?.message as string | undefined}
+          >
             <select {...register("educationLevel")} className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--input)] px-3 text-sm">
               <option value="">-- Chọn học vấn --</option>
               {educationLevels.map((level) => (

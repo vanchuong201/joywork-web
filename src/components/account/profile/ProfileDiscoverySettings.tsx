@@ -30,7 +30,7 @@ function mapProfileToDefaults(profile: OwnUserProfile): FormValues {
   return {
     status,
     isSearchingJob: profile.profile?.isSearchingJob ?? true,
-    allowCvFlip: profile.profile?.allowCvFlip ?? true,
+    allowCvFlip: profile.profile?.allowCvFlip ?? false,
   };
 }
 
@@ -84,7 +84,7 @@ export default function ProfileDiscoverySettings({ profile }: ProfileDiscoverySe
               persist({
                 status,
                 isSearchingJob: watch("isSearchingJob") ?? true,
-                allowCvFlip: watch("allowCvFlip") ?? true,
+                allowCvFlip: watch("allowCvFlip") ?? false,
               });
             }}
             disabled={saveMutation.isPending}
@@ -116,7 +116,7 @@ export default function ProfileDiscoverySettings({ profile }: ProfileDiscoverySe
               persist({
                 status: watch("status") ?? "OPEN_TO_WORK",
                 isSearchingJob: checked,
-                allowCvFlip: watch("allowCvFlip") ?? true,
+                allowCvFlip: watch("allowCvFlip") ?? false,
               });
             }}
             disabled={saveMutation.isPending}
@@ -136,7 +136,7 @@ export default function ProfileDiscoverySettings({ profile }: ProfileDiscoverySe
         <div className="flex items-center gap-3">
           <Switch
             id="profile-settings-allowCvFlip"
-            checked={watch("allowCvFlip") ?? true}
+            checked={watch("allowCvFlip") ?? false}
             onCheckedChange={(checked) => {
               setValue("allowCvFlip", checked, { shouldDirty: true });
               persist({

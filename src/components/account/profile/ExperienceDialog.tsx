@@ -71,13 +71,13 @@ export default function ExperienceDialog({
   }, [open]);
 
   const handleSave = () => {
-    if (!role.trim() || !company.trim()) {
+    if (!role.trim() || !company.trim() || !period.trim()) {
       return;
     }
     onSave({
       role: role.trim(),
       company: company.trim(),
-      period: period.trim() || null,
+      period: period.trim(),
       desc: desc.trim() || null,
       achievements: achievements.filter((a) => a.trim()),
     });
@@ -130,7 +130,7 @@ export default function ExperienceDialog({
           </div>
 
           <div>
-            <Label htmlFor="period">Thời gian</Label>
+            <Label htmlFor="period">Thời gian *</Label>
             <Input
               id="period"
               value={period}
@@ -180,7 +180,7 @@ export default function ExperienceDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Hủy
           </Button>
-          <Button onClick={handleSave} disabled={!role.trim() || !company.trim() || isLoading}>
+          <Button onClick={handleSave} disabled={!role.trim() || !company.trim() || !period.trim() || isLoading}>
             {isLoading ? "Đang lưu..." : "Lưu"}
           </Button>
         </DialogFooter>

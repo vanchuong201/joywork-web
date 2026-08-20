@@ -42,6 +42,13 @@ export function optionalEnum<T extends readonly [string, ...string[]]>(values: T
   );
 }
 
+export function requiredEnum<T extends readonly [string, ...string[]]>(values: T, message: string) {
+  return z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.enum(values, { message }),
+  );
+}
+
 export const jobFormSchema = z
   .object({
     title: z.string().min(4, "Tiêu đề tối thiểu 4 ký tự").max(200, "Tiêu đề tối đa 200 ký tự"),
@@ -49,16 +56,16 @@ export const jobFormSchema = z
     wardCode: z.string().optional(),
     specificAddress: z.string().max(200, "Địa chỉ cụ thể tối đa 200 ký tự").optional().or(z.literal("")),
     remote: z.boolean().optional().default(false),
-    employmentType: z.enum(employmentTypes).default("FULL_TIME"),
-    experienceLevel: z.enum(experienceLevels).default("NO_EXPERIENCE"),
+    employmentType: requiredEnum(employmentTypes, "Vui lòng chọn hình thức làm việc"),
+    experienceLevel: requiredEnum(experienceLevels, "Vui lòng chọn kinh nghiệm yêu cầu"),
     salaryMin: z.string().refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
     salaryMax: z.string().refine((val) => !val || /^\d+$/.test(val), { message: "Lương phải là số" }),
     currency: z.enum(["VND", "USD"]).default("VND"),
     applicationDeadline: z.string().refine((val) => !val || !Number.isNaN(Date.parse(val)), { message: "Ngày không hợp lệ" }),
     tags: z.array(z.string()).max(10, "Tối đa 10 tags").optional(),
     department: z.string().max(100, "Bộ phận tối đa 100 ký tự").optional().or(z.literal("")),
-    jobLevel: optionalEnum(jobLevels, "Cấp bậc không hợp lệ"),
-    educationLevel: optionalEnum(educationLevels, "Học vấn không hợp lệ"),
+    jobLevel: requiredEnum(jobLevels, "Vui lòng chọn cấp bậc"),
+    educationLevel: requiredEnum(educationLevels, "Vui lòng chọn học vấn"),
     gender: optionalEnum(genders, "Giới tính không hợp lệ"),
     generalInfo: z.string().optional(),
     mission: z.string().refine((val) => getPlainTextLength(val) >= 10, { message: "Sứ mệnh/Vai trò tối thiểu 10 ký tự" }),

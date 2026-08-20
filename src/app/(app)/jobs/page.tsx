@@ -640,11 +640,8 @@ function JobsPageContent() {
               <WardSelect
                 provinceCodes={location ? [location] : []}
                 disabled={!location}
-                values={ward ? [ward] : []}
-                onChangeValues={(vals) => {
-                  const v = vals.length ? vals[vals.length - 1] : undefined;
-                  toggleParam("ward", v, { resetPage: true });
-                }}
+                value={ward ?? null}
+                onChange={(v) => toggleParam("ward", v ?? undefined, { resetPage: true })}
                 placeholder={location ? "Lọc theo phường/xã (tuỳ chọn)" : "Chọn tỉnh/thành trước"}
               />
             </div>
