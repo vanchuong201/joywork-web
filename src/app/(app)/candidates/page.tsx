@@ -11,7 +11,6 @@ import {
 } from "@/lib/api/cv-flip";
 import CompanySelectorModal from "@/components/candidates/CompanySelectorModal";
 import SelectedCompanySummary from "@/components/candidates/SelectedCompanySummary";
-import CvFlipUsageBadge from "@/components/candidates/CvFlipUsageBadge";
 import CandidateRow from "@/components/candidates/CandidateRow";
 import JobSeekingStatusBadge from "@/components/candidates/JobSeekingStatusBadge";
 import TalentPoolExplorer from "@/components/talent-pool/TalentPoolExplorer";
@@ -230,21 +229,31 @@ function CandidatesPageContent() {
         onCreateCompany={() => router.push("/companies/new")}
       />
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
+      <div className="space-y-3">
+        <div className="space-y-1.5">
           <h1 className="text-2xl font-bold">Danh sách ứng viên</h1>
-          <p className="text-sm text-[var(--muted-foreground)]">
-            Chỉ tài khoản đăng nhập mới truy cập được trang này.
-          </p>
+          {selectedCompany ? (
+            <SelectedCompanySummary
+              company={selectedCompany}
+              usage={usageQuery.data}
+              onChangeClick={
+                companies.length > 1 ? () => setReselectModalOpen(true) : undefined
+              }
+            />
+          ) : null}
         </div>
-        {companies.length > 1 && selectedCompany ? (
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <SelectedCompanySummary company={selectedCompany} />
-            <Button type="button" variant="outline" onClick={() => setReselectModalOpen(true)}>
-              Chọn lại
-            </Button>
-          </div>
-        ) : null}
+        <ul className="list-disc space-y-1.5 pl-4 text-sm leading-relaxed text-[var(--muted-foreground)]">
+          <li>Bạn có thể tìm kiếm ứng viên ở thanh tìm kiếm bên dưới.</li>
+          <li>
+            Bạn có thể xem các thông tin về kỹ năng và kinh nghiệm làm việc của ứng
+            viên, tuy nhiên, chỉ có doanh nghiệp trả phí hoặc được cấp lượt mở CV
+            mới có thể xem thông tin liên hệ của ứng viên.
+          </li>
+          <li>
+            Nếu bạn có nhiều hơn 1 trang doanh nghiệp vui lòng chọn trang doanh
+            nghiệp có lượt mở CV để xem thông tin ứng viên.
+          </li>
+        </ul>
       </div>
 
       <div className="flex items-center justify-between border-b border-[var(--border)]">
@@ -274,7 +283,6 @@ function CandidatesPageContent() {
             </Button>
           )}
         </div>
-        {selectedCompany ? <CvFlipUsageBadge usage={usageQuery.data} /> : null}
       </div>
 
       {tab === TAB_ALL ? (
@@ -339,12 +347,12 @@ function CandidatesPageContent() {
             ))}
           </div>
 
-          {!candidatesInfiniteQuery.isPending && loadedCandidates.length > 0 ? (
+          {/* {!candidatesInfiniteQuery.isPending && loadedCandidates.length > 0 ? (
             <p className="text-center text-sm text-[var(--muted-foreground)]">
               Đang hiển thị {loadedCandidates.length}
               {totalCount > 0 ? ` / ${totalCount}` : ""} ứng viên
             </p>
-          ) : null}
+          ) : null} */}
 
           {hasMoreCandidates ? (
             <div className="flex justify-center pt-2">

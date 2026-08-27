@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,11 +31,10 @@ export default function CompanySelectorModal({
   onConfirm,
   onCreateCompany,
 }: Props) {
-  const router = useRouter();
   const hasCompanies = companies.length > 0;
 
   function handleGoBack() {
-    router.back();
+    onOpenChange(false);
   }
 
   return (
