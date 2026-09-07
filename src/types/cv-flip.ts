@@ -135,9 +135,11 @@ export type CvFlipCandidateDetailResponse = {
   access: CvFlipCandidateDetailAccess;
 };
 
+export type CvFlipRequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+
 export type CvFlipRequestItem = {
   id: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+  status: CvFlipRequestStatus;
   expiresAt: string;
   createdAt: string;
   respondedAt: string | null;
@@ -154,5 +156,36 @@ export type CvFlipRequestItem = {
     logoUrl: string | null;
     badges?: CompanyBadgeType[];
     website: string | null;
+  };
+};
+
+export type CvFlipCompanyRequestItem = {
+  id: string;
+  status: CvFlipRequestStatus;
+  expiresAt: string;
+  createdAt: string;
+  respondedAt: string | null;
+  message: string | null;
+  source?: "REQUEST" | "DIRECT_OPEN";
+  job: {
+    id: string;
+    title: string;
+    slug: string | null;
+  } | null;
+  candidate: {
+    id: string;
+    name: string | null;
+    slug: string | null;
+    avatar: string | null;
+  };
+};
+
+export type CvFlipCompanyRequestsResponse = {
+  requests: CvFlipCompanyRequestItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
   };
 };

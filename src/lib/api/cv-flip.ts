@@ -3,7 +3,9 @@ import type {
   CvFlipCandidateDetailResponse,
   CvFlipCandidatesResponse,
   CvFlipCompanyAccess,
+  CvFlipCompanyRequestsResponse,
   CvFlipRequestItem,
+  CvFlipRequestStatus,
   CvFlipUsage,
 } from "@/types/cv-flip";
 
@@ -110,6 +112,23 @@ export async function listMyCvFlipRequests(params: { page?: number; limit?: numb
     requests: CvFlipRequestItem[];
     pagination: { page: number; limit: number; total: number; totalPages: number };
   };
+}
+
+export async function listCompanyCvFlipRequests(params: {
+  companyId: string;
+  page?: number;
+  limit?: number;
+  status?: CvFlipRequestStatus;
+}): Promise<CvFlipCompanyRequestsResponse> {
+  const res = await api.get("/api/cv-flip/company-requests", {
+    params: {
+      companyId: params.companyId,
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+      ...(params.status ? { status: params.status } : {}),
+    },
+  });
+  return res.data.data as CvFlipCompanyRequestsResponse;
 }
 
 export async function respondMyCvFlipRequest(requestId: string, action: "approve" | "reject") {

@@ -9,6 +9,7 @@ import {
   MessageSquareText,
   Sparkles,
   FileQuestion,
+  FileText,
   GraduationCap,
   Users,
   type LucideIcon,
@@ -72,7 +73,8 @@ export function buildHeaderExploreNav(_user: AuthUser | null): NavItem[] {
 /** Sidebar “Không gian của doanh nghiệp” — khảo sát ở cuối danh sách. */
 export function buildBusinessSpaceNav(): NavItem[] {
   return [
-    { icon: Users, label: "Ứng viên", href: "/candidates" },
+    { icon: Users, label: "Ứng viên", href: "/candidates", exact: true },
+    { icon: FileText, label: "Quản lý yêu cầu mở CV", href: "/candidates/cv-requests" },
     { icon: GraduationCap, label: "Khóa học", href: "/courses" },
     ...(SHOW_TALENT_POOL_NAV
       ? [{ icon: Sparkles, label: "Talent Pool", href: "/candidates?tab=talent-pool" }]
