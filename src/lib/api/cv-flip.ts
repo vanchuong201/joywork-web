@@ -104,9 +104,17 @@ export async function flipCandidate(
   return res.data.data;
 }
 
-export async function listMyCvFlipRequests(params: { page?: number; limit?: number }) {
+export async function listMyCvFlipRequests(params: {
+  page?: number;
+  limit?: number;
+  status?: CvFlipRequestStatus;
+}) {
   const res = await api.get("/api/cv-flip/requests", {
-    params: { page: params.page ?? 1, limit: params.limit ?? 20 },
+    params: {
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+      ...(params.status ? { status: params.status } : {}),
+    },
   });
   return res.data.data as {
     requests: CvFlipRequestItem[];

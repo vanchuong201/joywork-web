@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,26 +28,10 @@ import ProfileExperiences from "@/components/account/profile/ProfileExperiences"
 import ProfileEducations from "@/components/account/profile/ProfileEducations";
 import TalentPoolStatus from "@/components/talent-pool/TalentPoolStatus";
 import { buildProfileCompletion } from "@/hooks/useProfileCompletion";
-import {
-  listMyCvFlipRequests,
-  respondMyCvFlipRequest,
-} from "@/lib/api/cv-flip";
 import { getCvImport } from "@/lib/api/cv-imports";
 import { buildCandidateProfileUrl } from "@/lib/candidate-url";
-import { buildJobUrl } from "@/lib/job-url";
 import { toast } from "sonner";
 import CvExportButton from "@/components/cv/CvExportButton";
-
-const CV_FLIP_REQUEST_STATUS_LABEL: Record<string, string> = {
-  PENDING: "Đang chờ",
-  APPROVED: "Đã đồng ý",
-  REJECTED: "Đã từ chối",
-  EXPIRED: "Đã hết hạn",
-};
-
-function cvFlipRequestStatusLabel(status: string): string {
-  return CV_FLIP_REQUEST_STATUS_LABEL[status] ?? status;
-}
 
 type TalentPoolMyStatus = {
   member: {
@@ -75,7 +59,6 @@ const CV_JOB_POLL_MAX_ATTEMPTS = 60;
 export default function ProfileTab() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [cvJobStatus, setCvJobStatus] = useState<CvImportStatus | null>(null);
   const [cvJobError, setCvJobError] = useState<string | null>(null);
@@ -103,44 +86,6 @@ export default function ProfileTab() {
       },
       enabled: SHOW_TALENT_POOL_BANNER,
     });
-  const { data: cvFlipRequests, isLoading: isCvFlipRequestsLoading } = useQuery(
-    {
-      queryKey: ["cv-flip-my-requests"],
-      queryFn: () => listMyCvFlipRequests({ page: 1, limit: 20 }),
-    },
-  );
-
-  const respondRequestMutation = useMutation({
-    mutationFn: async ({
-      requestId,
-      action,
-    }: {
-      requestId: string;
-      action: "approve" | "reject";
-    }) => respondMyCvFlipRequest(requestId, action),
-    onSuccess: (_data, variables) => {
-      toast.success(
-        variables.action === "approve"
-          ? "Bạn đã đồng ý yêu cầu mở CV."
-          : "Bạn đã từ chối yêu cầu mở CV.",
-      );
-      queryClient.invalidateQueries({ queryKey: ["cv-flip-my-requests"] });
-    },
-    onError: (error: unknown) => {
-      const maybeAxiosError = error as {
-        response?: { data?: { error?: { code?: string; message?: string } } };
-      };
-      const code = maybeAxiosError.response?.data?.error?.code;
-      const message = maybeAxiosError.response?.data?.error?.message;
-      const isExpired =
-        code === "CV_FLIP_REQUEST_EXPIRED" || /hết hạn/i.test(message ?? "");
-      toast.error(
-        isExpired ? "Yêu cầu đã hết hạn" : message || "Không thể xử lý yêu cầu lúc này.",
-      );
-      queryClient.invalidateQueries({ queryKey: ["cv-flip-my-requests"] });
-    },
-  });
-
   const clearCvJobQueryParam = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("cvJob");
@@ -479,88 +424,6 @@ export default function ProfileTab() {
           latestRequest={talentPoolStatus?.latestRequest ?? null}
         />
       )}
-
-      <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
-        <h2 className="text-base font-semibold">
-          Yêu cầu mở CV từ doanh nghiệp
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-          Khi bạn tắt quyền cho doanh nghiệp xem trực tiếp thông tin liên hệ,
-          yêu cầu sẽ xuất hiện ở đây.
-        </p>
-        {isCvFlipRequestsLoading ? (
-          <p className="mt-3 text-sm text-[var(--muted-foreground)]">
-            Đang tải danh sách yêu cầu...
-          </p>
-        ) : (cvFlipRequests?.requests?.length ?? 0) === 0 ? (
-          <p className="mt-3 text-sm text-[var(--muted-foreground)]">
-            Hiện chưa có yêu cầu nào.
-          </p>
-        ) : (
-          <div className="mt-4 space-y-3">
-            {cvFlipRequests?.requests.map((request) => (
-              <div
-                key={request.id}
-                className="rounded-lg border border-[var(--border)] p-3"
-              >
-                <p className="text-sm font-medium">{request.company.name}</p>
-                <p className="text-xs text-[var(--muted-foreground)]">
-                  Trạng thái: {cvFlipRequestStatusLabel(request.status)} · Hết hạn:{" "}
-                  {new Date(request.expiresAt).toLocaleString("vi-VN")}
-                </p>
-                {request.job ? (
-                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                    Việc làm phù hợp:{" "}
-                    <Link
-                      href={buildJobUrl(request.job)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-[var(--foreground)] underline underline-offset-2"
-                    >
-                      {request.job.title}
-                    </Link>
-                  </p>
-                ) : null}
-                {request.message ? (
-                  <p className="mt-2 whitespace-pre-line text-sm text-[var(--foreground)]">
-                    <span className="font-medium">Lời nhắn:</span>{" "}
-                    {request.message}
-                  </p>
-                ) : null}
-                {request.status === "PENDING" ? (
-                  <div className="mt-2 flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        respondRequestMutation.mutate({
-                          requestId: request.id,
-                          action: "approve",
-                        })
-                      }
-                      disabled={respondRequestMutation.isPending}
-                    >
-                      Đồng ý
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        respondRequestMutation.mutate({
-                          requestId: request.id,
-                          action: "reject",
-                        })
-                      }
-                      disabled={respondRequestMutation.isPending}
-                    >
-                      Từ chối
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       <ProfileBasicInfo profile={data} />
       <ProfileKSA profile={data} />

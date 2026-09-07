@@ -11,6 +11,7 @@ import {
   FileQuestion,
   FileText,
   GraduationCap,
+  Handshake,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -52,6 +53,7 @@ const leftAdminNavItem: NavItem = {
 
 export const leftPersonalNav: NavItem[] = [
   { icon: UserRound, label: "CV của tôi", href: "/account/profile" },
+  { icon: Handshake, label: "Doanh nghiệp kết nối", href: "/connections" },
   { icon: ClipboardList, label: "Ứng tuyển của tôi", href: "/applications" },
   { icon: Bookmark, label: "Đã lưu", href: "/saved" },
   { icon: Heart, label: "Công ty theo dõi", href: "/following" },
