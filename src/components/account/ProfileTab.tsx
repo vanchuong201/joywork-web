@@ -34,8 +34,20 @@ import {
 } from "@/lib/api/cv-flip";
 import { getCvImport } from "@/lib/api/cv-imports";
 import { buildCandidateProfileUrl } from "@/lib/candidate-url";
+import { buildJobUrl } from "@/lib/job-url";
 import { toast } from "sonner";
 import CvExportButton from "@/components/cv/CvExportButton";
+
+const CV_FLIP_REQUEST_STATUS_LABEL: Record<string, string> = {
+  PENDING: "Đang chờ",
+  APPROVED: "Đã đồng ý",
+  REJECTED: "Đã từ chối",
+  EXPIRED: "Đã hết hạn",
+};
+
+function cvFlipRequestStatusLabel(status: string): string {
+  return CV_FLIP_REQUEST_STATUS_LABEL[status] ?? status;
+}
 
 type TalentPoolMyStatus = {
   member: {
@@ -116,11 +128,14 @@ export default function ProfileTab() {
     },
     onError: (error: unknown) => {
       const maybeAxiosError = error as {
-        response?: { data?: { error?: { message?: string } } };
+        response?: { data?: { error?: { code?: string; message?: string } } };
       };
+      const code = maybeAxiosError.response?.data?.error?.code;
+      const message = maybeAxiosError.response?.data?.error?.message;
+      const isExpired =
+        code === "CV_FLIP_REQUEST_EXPIRED" || /hết hạn/i.test(message ?? "");
       toast.error(
-        maybeAxiosError.response?.data?.error?.message ||
-          "Không thể xử lý yêu cầu lúc này.",
+        isExpired ? "Yêu cầu đã hết hạn" : message || "Không thể xử lý yêu cầu lúc này.",
       );
       queryClient.invalidateQueries({ queryKey: ["cv-flip-my-requests"] });
     },
@@ -490,9 +505,28 @@ export default function ProfileTab() {
               >
                 <p className="text-sm font-medium">{request.company.name}</p>
                 <p className="text-xs text-[var(--muted-foreground)]">
-                  Trạng thái: {request.status} · Hết hạn:{" "}
+                  Trạng thái: {cvFlipRequestStatusLabel(request.status)} · Hết hạn:{" "}
                   {new Date(request.expiresAt).toLocaleString("vi-VN")}
                 </p>
+                {request.job ? (
+                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                    Việc làm phù hợp:{" "}
+                    <Link
+                      href={buildJobUrl(request.job)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-[var(--foreground)] underline underline-offset-2"
+                    >
+                      {request.job.title}
+                    </Link>
+                  </p>
+                ) : null}
+                {request.message ? (
+                  <p className="mt-2 whitespace-pre-line text-sm text-[var(--foreground)]">
+                    <span className="font-medium">Lời nhắn:</span>{" "}
+                    {request.message}
+                  </p>
+                ) : null}
                 {request.status === "PENDING" ? (
                   <div className="mt-2 flex gap-2">
                     <Button

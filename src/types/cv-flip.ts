@@ -12,7 +12,7 @@ export type CvFlipCompanyAccess = {
   isPremium: boolean;
   cvFlipEnabled: boolean;
   monthlyTotalLimit: number;
-  monthlyRequestLimit: number;
+  monthlyRequestLimit?: number;
 };
 
 export type CvFlipUsage = {
@@ -28,6 +28,7 @@ export type CvFlipUsage = {
   };
   month: number;
   year: number;
+  expiresOn?: string;
 };
 
 export type CvFlipCandidateCard = {
@@ -140,6 +141,12 @@ export type CvFlipRequestItem = {
   expiresAt: string;
   createdAt: string;
   respondedAt: string | null;
+  message: string | null;
+  job: {
+    id: string;
+    title: string;
+    slug: string | null;
+  } | null;
   company: {
     id: string;
     name: string;

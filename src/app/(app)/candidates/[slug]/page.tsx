@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import CvFlipUsageBadge from "@/components/candidates/CvFlipUsageBadge";
 import CompanySelectorModal from "@/components/candidates/CompanySelectorModal";
@@ -34,6 +35,11 @@ const SELECTED_COMPANY_KEY = "cvFlip.selectedCompanyId";
 
 type Props = {
   params: Promise<{ slug: string }>;
+};
+
+type CompanyJobOption = {
+  id: string;
+  title: string;
 };
 
 function mergeContactsFromCvFlip(
@@ -129,6 +135,8 @@ export default function CandidateDetailPage({ params }: Props) {
   const [companySelectorOpen, setCompanySelectorOpen] = useState(false);
   const [draftCompanyId, setDraftCompanyId] = useState("");
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [requestJobId, setRequestJobId] = useState("");
+  const [requestMessage, setRequestMessage] = useState("");
 
   const safeSlug = useMemo(() => decodeURIComponent(rawSlug), [rawSlug]);
   const queryCompanyId = searchParams.get("companyId") ?? "";
@@ -179,6 +187,7 @@ export default function CandidateDetailPage({ params }: Props) {
   const needsCvFlipLayer = Boolean(
     profileQuery.data && !isOwnProfile && profileQuery.data.identityMasked,
   );
+  const allowCvFlip = profileQuery.data?.profile?.allowCvFlip === true;
 
   const cvDetailQuery = useQuery({
     queryKey: ["cv-flip-candidate-detail", safeSlug, companyId],
@@ -212,6 +221,34 @@ export default function CandidateDetailPage({ params }: Props) {
   const isPremiumCompany = companyAccess?.isPremium === true;
   const shouldSelectCompany = needsCvFlipLayer && !companyId;
 
+  const companyJobsQuery = useQuery({
+    queryKey: ["cv-flip-company-jobs", companyId],
+    queryFn: async (): Promise<CompanyJobOption[]> => {
+      const res = await api.get("/api/jobs", {
+        params: {
+          companyId,
+          isActive: true,
+          page: 1,
+          limit: 50,
+        },
+      });
+      const jobs = (res.data?.data?.jobs ?? []) as CompanyJobOption[];
+      return jobs.map((job) => ({
+        id: job.id,
+        title: job.title,
+      }));
+    },
+    enabled:
+      initialized &&
+      !loading &&
+      !!user &&
+      !!companyId &&
+      confirmOpen &&
+      !allowCvFlip &&
+      isPremiumCompany,
+    staleTime: 60_000,
+  });
+
   useEffect(() => {
     if (!shouldSelectCompany || !companies.length) return;
     if (companies.length === 1) {
@@ -225,6 +262,20 @@ export default function CandidateDetailPage({ params }: Props) {
     if (!companySelectorOpen) return;
     setDraftCompanyId(companyId || "");
   }, [companySelectorOpen, companyId]);
+
+  useEffect(() => {
+    if (confirmOpen && !allowCvFlip) return;
+    setRequestJobId("");
+    setRequestMessage("");
+  }, [confirmOpen, allowCvFlip]);
+
+  useEffect(() => {
+    if (!requestJobId || !companyJobsQuery.data) return;
+    const found = companyJobsQuery.data.some((job) => job.id === requestJobId);
+    if (!found) {
+      setRequestJobId("");
+    }
+  }, [companyJobsQuery.data, requestJobId]);
 
   const displayProfile = useMemo((): PublicUserProfile | null => {
     const base = profileQuery.data;
@@ -260,10 +311,21 @@ export default function CandidateDetailPage({ params }: Props) {
     mutationFn: async () => {
       const id = cvDetailQuery.data?.candidate?.userId ?? profileQuery.data?.id;
       if (!id || !companyId) return null;
-      return flipCandidate(companyId, id);
+      return flipCandidate(
+        companyId,
+        id,
+        allowCvFlip
+          ? undefined
+          : {
+              jobId: requestJobId || undefined,
+              message: requestMessage.trim() || undefined,
+            },
+      );
     },
     onSuccess: (result) => {
       setConfirmOpen(false);
+      setRequestJobId("");
+      setRequestMessage("");
       if (!result) return;
       if (result.status === "REQUESTED") {
         toast.success("Đã gửi yêu cầu đến ứng viên. Chờ ứng viên đồng ý.");
@@ -330,7 +392,6 @@ export default function CandidateDetailPage({ params }: Props) {
   const showFlipChrome = Boolean(
     needsCvFlipLayer && cvDetailQuery.data?.access,
   );
-  const allowCvFlip = profileQuery.data?.profile?.allowCvFlip === true;
   const showStickyFooter = showFlipChrome && access && !access.isFlipped;
   const showExportButton = !isOwnProfile;
   const exportMasked = Boolean(
@@ -363,7 +424,7 @@ export default function CandidateDetailPage({ params }: Props) {
     isPremiumCompany &&
     !allowCvFlip &&
     usageReady &&
-    (usageQuery.data?.request.remaining ?? 0) > 0;
+    (usageQuery.data?.total.remaining ?? 0) > 0;
 
   return (
     <div className="relative">
@@ -470,7 +531,7 @@ export default function CandidateDetailPage({ params }: Props) {
       ) : null}
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {accessCompaniesQuery.isLoading
@@ -524,20 +585,37 @@ export default function CandidateDetailPage({ params }: Props) {
                       chối.
                     </p>
                     <p>
-                      Lượt gửi yêu cầu còn lại trong tháng:{" "}
+                      Bạn đang gửi yêu cầu với tư cách của doanh nghiệp{" "}
+                      <strong>{companyAccess?.name ?? "—"}</strong>.
+                    </p>
+                    <p className="text-xs">
+                      Nếu muốn đổi doanh nghiệp vui lòng quay lại{" "}
+                      <Link
+                        href="/candidates"
+                        className="font-medium text-[var(--foreground)] underline underline-offset-2"
+                      >
+                        trang tìm kiếm ứng viên
+                      </Link>
+                      .
+                    </p>
+                    <p>
+                      Lượt mở CV còn lại{" "}
                       <strong>
                         {usageQuery.data
-                          ? usageQuery.data.request.remaining
+                          ? usageQuery.data.total.remaining
                           : "—"}
                       </strong>
                       {usageQuery.data ? (
-                        <> / {usageQuery.data.request.limit}</>
+                        <> / {usageQuery.data.total.limit}</>
                       ) : null}
                       .
                     </p>
+                    <p className="text-xs">
+                      Lượt mở này chỉ được tính nếu ứng viên đồng ý.
+                    </p>
                     {!canSubmitRequest && usageQuery.data ? (
                       <p className="text-amber-800">
-                        Bạn đã hết lượt gửi yêu cầu trong tháng.
+                        Bạn đã hết lượt mở CV trong tháng.
                       </p>
                     ) : null}
                   </>
@@ -545,6 +623,62 @@ export default function CandidateDetailPage({ params }: Props) {
               </div>
             </DialogDescription>
           </DialogHeader>
+          {!accessCompaniesQuery.isLoading && isPremiumCompany && !allowCvFlip ? (
+            <div className="space-y-4 pb-1">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="cv-flip-job-select"
+                  className="block text-sm font-medium text-[var(--foreground)]"
+                >
+                  Hãy Chọn Việc làm phù hợp với CV này
+                </label>
+                <select
+                  id="cv-flip-job-select"
+                  value={requestJobId}
+                  onChange={(event) => setRequestJobId(event.target.value)}
+                  className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--foreground)] outline-none transition-colors focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]/20"
+                >
+                  <option value="">Không chọn</option>
+                  {companyJobsQuery.data?.map((job) => (
+                    <option key={job.id} value={job.id}>
+                      {job.title}
+                    </option>
+                  ))}
+                </select>
+                {companyJobsQuery.isLoading ? (
+                  <p className="text-xs text-[var(--muted-foreground)]">
+                    Đang tải danh sách việc làm...
+                  </p>
+                ) : null}
+                {companyJobsQuery.isError ? (
+                  <p className="text-xs text-amber-800">
+                    Không tải được danh sách việc làm. Bạn vẫn có thể gửi yêu
+                    cầu mà không chọn JD.
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="cv-flip-request-message"
+                  className="block text-sm font-medium text-[var(--foreground)]"
+                >
+                  Lời nhắn.
+                </label>
+                <Textarea
+                  id="cv-flip-request-message"
+                  value={requestMessage}
+                  onChange={(event) => setRequestMessage(event.target.value)}
+                  maxLength={500}
+                  rows={4}
+                  placeholder="Bạn có điều gì muốn nhắn gửi ứng viên?"
+                />
+                <p className="text-right text-xs text-[var(--muted-foreground)]">
+                  {requestMessage.length}/500
+                </p>
+              </div>
+            </div>
+          ) : null}
           <DialogFooter className="gap-2 sm:gap-0">
             {accessCompaniesQuery.isLoading || !isPremiumCompany ? (
               <Button type="button" onClick={() => setConfirmOpen(false)}>

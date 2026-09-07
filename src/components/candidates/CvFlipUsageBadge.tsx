@@ -31,10 +31,19 @@ const toneValueStyles: Record<UsageTone, string> = {
   red: "text-red-900",
 };
 
+function formatExpiresOn(expiresOn: string | undefined): string | null {
+  if (!expiresOn) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(expiresOn);
+  if (!match) return null;
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
 export default function CvFlipUsageBadge({ usage, className }: Props) {
   if (!usage) return null;
 
+  const remaining = usage.total.remaining;
   const tone = getUsageTone(usage.total.used, usage.total.limit);
+  const expiresLabel = formatExpiresOn(usage.expiresOn);
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -42,26 +51,21 @@ export default function CvFlipUsageBadge({ usage, className }: Props) {
         <TooltipTrigger asChild>
           <span
             className={cn(
-              "inline-flex shrink-0 cursor-default items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+              "inline-flex max-w-full shrink-0 cursor-default items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
               toneStyles[tone],
               className,
             )}
           >
-            <span>Tổng lượt</span>
-            <span className={cn("font-semibold tabular-nums", toneValueStyles[tone])}>
-              {usage.total.used}/{usage.total.limit}
-            </span>
+            <span>Số lượt mở CV còn lại</span>
+            <span className={cn("font-semibold tabular-nums", toneValueStyles[tone])}>{remaining}</span>
           </span>
         </TooltipTrigger>
-        <TooltipContent side="bottom" align="end" className="text-xs">
-          <p>
-            <span className="font-medium">Tổng lượt:</span>{" "}
-            {usage.total.used}/{usage.total.limit} (còn {usage.total.remaining})
-          </p>
-          <p>
-            <span className="font-medium">Qua yêu cầu:</span>{" "}
-            {usage.request.used}/{usage.request.limit} (còn {usage.request.remaining})
-          </p>
+        <TooltipContent side="bottom" align="end" className="max-w-xs text-xs">
+          {expiresLabel ? (
+            <p>Số lượt này sẽ hết hạn vào ngày {expiresLabel}.</p>
+          ) : (
+            <p>Số lượt này sẽ hết hạn vào cuối chu kỳ hiện tại.</p>
+          )}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

@@ -71,11 +71,34 @@ export async function getCvFlipCandidateDetail(
   return res.data.data as CvFlipCandidateDetailResponse;
 }
 
-export async function flipCandidate(companyId: string, candidateUserId: string) {
-  const res = await api.post("/api/cv-flip/flip", {
+export type CvFlipRequestPayload = {
+  jobId?: string;
+  message?: string;
+};
+
+export async function flipCandidate(
+  companyId: string,
+  candidateUserId: string,
+  payload?: CvFlipRequestPayload,
+) {
+  const requestBody: {
+    companyId: string;
+    candidateUserId: string;
+    jobId?: string;
+    message?: string;
+  } = {
     companyId,
     candidateUserId,
-  });
+  };
+
+  if (payload?.jobId) {
+    requestBody.jobId = payload.jobId;
+  }
+  if (payload?.message?.trim()) {
+    requestBody.message = payload.message.trim();
+  }
+
+  const res = await api.post("/api/cv-flip/flip", requestBody);
   return res.data.data;
 }
 
