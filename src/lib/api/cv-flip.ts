@@ -143,3 +143,12 @@ export async function respondMyCvFlipRequest(requestId: string, action: "approve
   const res = await api.post(`/api/cv-flip/requests/${requestId}/respond`, { action });
   return res.data.data;
 }
+
+export async function consumeCvFlipEmailAction(token: string) {
+  const res = await api.post("/api/cv-flip/email-actions/consume", { token });
+  return res.data.data as {
+    accessToken: string;
+    action: "approve" | "reject" | "list";
+    requestStatus?: "APPROVED" | "REJECTED";
+  };
+}

@@ -14,7 +14,12 @@ type QueueItem = {
 };
 let queue: QueueItem[] = [];
 
-const AUTH_SKIP_REFRESH_PATHS = ["/api/auth/login", "/api/auth/register", "/api/auth/refresh"];
+const AUTH_SKIP_REFRESH_PATHS = [
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/refresh",
+  "/api/cv-flip/email-actions/consume",
+];
 
 function shouldSkipRefresh(url?: string) {
   if (!url) return false;
