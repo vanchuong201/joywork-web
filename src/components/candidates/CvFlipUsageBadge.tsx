@@ -1,6 +1,5 @@
 "use client";
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { CvFlipUsage } from "@/types/cv-flip";
 
@@ -42,32 +41,27 @@ export default function CvFlipUsageBadge({ usage, className }: Props) {
   if (!usage) return null;
 
   const remaining = usage.total.remaining;
-  const tone = getUsageTone(usage.total.used, usage.total.limit);
+  const limit = usage.total.limit;
+  const tone = getUsageTone(usage.total.used, limit);
   const expiresLabel = formatExpiresOn(usage.expiresOn);
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            className={cn(
-              "inline-flex max-w-full shrink-0 cursor-default items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-              toneStyles[tone],
-              className,
-            )}
-          >
-            <span>Số lượt mở CV còn lại</span>
-            <span className={cn("font-semibold tabular-nums", toneValueStyles[tone])}>{remaining}</span>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" align="end" className="max-w-xs text-xs">
-          {expiresLabel ? (
-            <p>Số lượt này sẽ hết hạn vào ngày {expiresLabel}.</p>
-          ) : (
-            <p>Số lượt này sẽ hết hạn vào cuối chu kỳ hiện tại.</p>
-          )}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span
+      className={cn(
+        "inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+        toneStyles[tone],
+        className,
+      )}
+    >
+      <span>
+        Số lượt mở CV còn lại{" "}
+        <span className={cn("font-semibold tabular-nums", toneValueStyles[tone])}>
+          {remaining}/{limit}
+        </span>
+      </span>
+      {expiresLabel ? (
+        <span className="font-normal tabular-nums opacity-80">hết hạn {expiresLabel}</span>
+      ) : null}
+    </span>
   );
 }

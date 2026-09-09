@@ -197,13 +197,6 @@ export default function CandidateDetailPage({ params }: Props) {
     retry: false,
   });
 
-  const usageQuery = useQuery({
-    queryKey: ["cv-flip-usage", companyId],
-    queryFn: () => getCvFlipUsage(companyId),
-    enabled:
-      initialized && !loading && !!user && needsCvFlipLayer && !!companyId,
-  });
-
   const accessCompaniesQuery = useQuery({
     queryKey: ["cv-flip-access"],
     queryFn: getCvFlipAccessCompanies,
@@ -220,6 +213,18 @@ export default function CandidateDetailPage({ params }: Props) {
   );
   const isPremiumCompany = companyAccess?.isPremium === true;
   const shouldSelectCompany = needsCvFlipLayer && !companyId;
+
+  const usageQuery = useQuery({
+    queryKey: ["cv-flip-usage", companyId],
+    queryFn: () => getCvFlipUsage(companyId),
+    enabled:
+      initialized &&
+      !loading &&
+      !!user &&
+      needsCvFlipLayer &&
+      !!companyId &&
+      companyAccess?.cvFlipEnabled === true,
+  });
 
   const companyJobsQuery = useQuery({
     queryKey: ["cv-flip-company-jobs", companyId],
@@ -465,7 +470,7 @@ export default function CandidateDetailPage({ params }: Props) {
             </div>
           ) : null}
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-            {showFlipChrome && usageQuery.data ? (
+            {showFlipChrome && companyAccess?.cvFlipEnabled && usageQuery.data ? (
               <CvFlipUsageBadge usage={usageQuery.data} />
             ) : null}
             {showExportButton ? (

@@ -93,7 +93,7 @@ function CandidatesPageContent() {
   const usageQuery = useQuery({
     queryKey: ["cv-flip-usage", selectedCompanyId],
     queryFn: () => getCvFlipUsage(selectedCompanyId),
-    enabled: Boolean(selectedCompanyId),
+    enabled: Boolean(selectedCompanyId) && selectedCompany?.cvFlipEnabled === true,
   });
 
   const candidatesInfiniteQuery = useInfiniteQuery({
