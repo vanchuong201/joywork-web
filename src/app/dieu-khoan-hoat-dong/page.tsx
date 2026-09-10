@@ -1,8 +1,26 @@
+import type { Metadata } from "next";
 import { promises as fs } from "fs";
 import path from "path";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { marked } from "marked";
+
+const title = "Điều Khoản Hoạt Động | JOYWORK";
+const description =
+  "Điều khoản và chính sách sử dụng nền tảng JOYWORK dành cho doanh nghiệp và ứng viên.";
+
+export const metadata: Metadata = {
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+  },
+  twitter: {
+    title,
+    description,
+  },
+};
 
 export default async function TermsPage() {
   const policyPath = path.join(process.cwd(), "public", "policy.md");

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { buildJobUrl, resolveJobIdFromSlugParam } from "@/lib/job-url";
-import { htmlToOgDescription } from "@/lib/html-to-og-description";
+import { formatSalaryRange } from "@/lib/provinces";
 import { fetchJobForOpenGraph } from "@/lib/server-job-metadata";
 
 const SITE_NAME = "JOYWORK";
@@ -47,11 +47,11 @@ export async function generateMetadata({
     return { title: `Việc làm | ${SITE_NAME}` };
   }
 
-  const title = `${job.title} tại ${job.company.name}`;
-  const fromMission = htmlToOgDescription(job.mission ?? undefined, 200);
-  const description =
-    fromMission ||
-    `Mô tả công việc ${job.title} tại ${job.company.name} — ${SITE_NAME}.`;
+  const companyName = job.company.name;
+  const title = `${job.title} tại ${companyName} | ${SITE_NAME}`;
+  const salaryCurrency = job.currency === "USD" ? "USD" : "VND";
+  const salaryRange = formatSalaryRange(job.salaryMin, job.salaryMax, salaryCurrency);
+  const description = `${companyName} tuyển ${job.title}, lương ${salaryRange || "Thỏa thuận"}. Xem mô tả công việc, yêu cầu và ứng tuyển ngay tại ${SITE_NAME}.`;
 
   const path = buildJobUrl({
     id: job.id,

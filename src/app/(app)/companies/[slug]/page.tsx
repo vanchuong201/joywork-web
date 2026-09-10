@@ -66,13 +66,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   if (!company) return {};
 
+  const name = typeof company.name === "string" ? company.name : "Doanh nghiệp";
+  const industry = typeof company.industry === "string" ? company.industry.trim() : "";
+  const title = `${name} - Văn Hóa Doanh Nghiệp & Tuyển Dụng | JOYWORK`;
+  const description = industry
+    ? `${name} - ${industry} tuyển dụng. Xem văn hóa doanh nghiệp, phúc lợi và vị trí đang tuyển tại JOYWORK.`
+    : `${name} tuyển dụng. Xem văn hóa doanh nghiệp, phúc lợi và vị trí đang tuyển tại JOYWORK.`;
+
   return {
-    title: `${company.name} | JOYWORK`,
-    description: `Khám phá hồ sơ doanh nghiệp ${company.name} trên JOYWORK.`,
+    title,
+    description,
     openGraph: {
-      title: company.name,
-      description: `Khám phá hồ sơ doanh nghiệp ${company.name} trên JOYWORK.`,
+      title,
+      description,
       images: company.coverUrl ? [company.coverUrl] : company.logoUrl ? [company.logoUrl] : [],
+    },
+    twitter: {
+      title,
+      description,
     },
   };
 }

@@ -18,9 +18,9 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Slackbot", allow: ["/"] },
       { userAgent: "Discordbot", allow: ["/"] },
       { userAgent: "TelegramBot", allow: ["/"] },
-      { userAgent: "Googlebot", allow: ["/"] },
+      { userAgent: "Googlebot", allow: ["/"], disallow: ["/courses", "/courses/"] },
       { userAgent: "Applebot", allow: ["/"] },
-      { userAgent: "*", allow: ["/"] },
+      { userAgent: "*", allow: ["/"], disallow: ["/courses", "/courses/"] },
     ],
   };
 }

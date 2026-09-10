@@ -33,13 +33,17 @@ export type AccountDropdownItem = {
 
 /** Tạm ẩn mục Talent Pool khỏi menu — đổi thành `true` để bật lại */
 const SHOW_TALENT_POOL_NAV = false;
+/** Tạm ẩn mục Khóa học khỏi menu — đổi thành `true` để bật lại */
+const SHOW_COURSES_NAV = false;
 
 const exploreNavBase: NavItem[] = [
   { icon: Home, label: "Bảng tin", href: "/" },
   { icon: Briefcase, label: "Việc làm", href: "/jobs" },
   { icon: Building2, label: "Doanh nghiệp", href: "/companies" },
   { icon: Users, label: "Ứng viên", href: "/candidates" },
-  { icon: GraduationCap, label: "Khóa học", href: "/courses" },
+  ...(SHOW_COURSES_NAV
+    ? [{ icon: GraduationCap, label: "Khóa học", href: "/courses" }]
+    : []),
   ...(SHOW_TALENT_POOL_NAV
     ? [{ icon: Sparkles, label: "Talent Pool", href: "/candidates?tab=talent-pool" }]
     : []),
@@ -77,7 +81,9 @@ export function buildBusinessSpaceNav(): NavItem[] {
   return [
     { icon: Users, label: "Ứng viên", href: "/candidates", exact: true },
     { icon: FileText, label: "Quản lý yêu cầu mở CV", href: "/candidates/cv-requests" },
-    { icon: GraduationCap, label: "Khóa học", href: "/courses" },
+    ...(SHOW_COURSES_NAV
+      ? [{ icon: GraduationCap, label: "Khóa học", href: "/courses" }]
+      : []),
     ...(SHOW_TALENT_POOL_NAV
       ? [{ icon: Sparkles, label: "Talent Pool", href: "/candidates?tab=talent-pool" }]
       : []),

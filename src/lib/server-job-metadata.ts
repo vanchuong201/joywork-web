@@ -9,6 +9,9 @@ export type JobForOpenGraph = {
   slug?: string | null;
   mission?: string | null;
   generalInfo?: string | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  currency?: string | null;
   company: JobCompany;
 };
 

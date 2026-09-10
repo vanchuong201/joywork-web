@@ -33,10 +33,14 @@ const jetbrainsMono = JetBrains_Mono({
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_FRONTEND_ORIGIN ?? "https://joywork.vn";
 
+const defaultTitle = "JOYWORK - Nơi Doanh Nghiệp Tốt Tuyển Dụng";
+const defaultDescription =
+  "JOYWORK - nền tảng tuyển dụng của những doanh nghiệp có môi trường làm việc tốt";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "JOYWORK - Nơi doanh nghiệp tốt lên tiếng",
-  description: "JOYWORK là nền tảng giúp các doanh nghiệp có môi trường làm việc tốt lên tiếng để kể câu chuyện thật về văn hóa doanh nghiệp, từ đó thu hút những nhân sự phù hợp về cả văn hóa và kỹ năng.",
+  title: defaultTitle,
+  description: defaultDescription,
   icons: {
     icon: [
       { url: "/JW-32x32.png", sizes: "32x32", type: "image/png" },
@@ -48,21 +52,21 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "JOYWORK",
-    title: "JOYWORK - Nơi doanh nghiệp tốt lên tiếng",
-    description: "JOYWORK là nền tảng giúp các doanh nghiệp có môi trường làm việc tốt lên tiếng để kể câu chuyện thật về văn hóa doanh nghiệp, từ đó thu hút những nhân sự phù hợp về cả văn hóa và kỹ năng.",
+    title: defaultTitle,
+    description: defaultDescription,
     images: [
       {
         url: "/og-share.jpg",
         width: 1200,
         height: 630,
-        alt: "JOYWORK - Nơi doanh nghiệp tốt lên tiếng",
+        alt: defaultTitle,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "JOYWORK - Nơi doanh nghiệp tốt lên tiếng",
-    description: "JOYWORK là nền tảng giúp các doanh nghiệp có môi trường làm việc tốt lên tiếng để kể câu chuyện thật về văn hóa doanh nghiệp, từ đó thu hút những nhân sự phù hợp về cả văn hóa và kỹ năng.",
+    title: defaultTitle,
+    description: defaultDescription,
     images: ["/og-share.jpg"],
   },
 };
