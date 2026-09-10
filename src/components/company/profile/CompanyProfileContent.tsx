@@ -60,7 +60,6 @@ function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => vo
   return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
-      onClick={onClose}
     >
       <button
         onClick={onClose}
@@ -76,7 +75,6 @@ function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => vo
         autoPlay
         playsInline
         className="max-h-[90vh] max-w-[90vw] object-contain"
-        onClick={(e) => e.stopPropagation()}
       />
     </div>,
     document.body
@@ -277,7 +275,6 @@ function YouTubeModal({ embedUrl, onClose }: { embedUrl: string; onClose: () => 
   return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
-      onClick={onClose}
     >
       <button
         onClick={onClose}
@@ -286,10 +283,7 @@ function YouTubeModal({ embedUrl, onClose }: { embedUrl: string; onClose: () => 
       >
         <X className="h-6 w-6" />
       </button>
-      <div
-        className="w-[90vw] max-w-5xl aspect-video"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-[90vw] max-w-5xl aspect-video">
         <iframe
           src={embedUrl}
           className="w-full h-full rounded-lg"

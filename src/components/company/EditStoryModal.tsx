@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import CompanyStoryEditor from "@/components/company/CompanyStoryEditor";
 import type { CompanyStoryBlock } from "@/types/company";
 import { useState } from "react";
+import { useEscapeClose } from "@/hooks/use-escape-close";
 
 type Props = {
   isOpen: boolean;
@@ -26,8 +27,14 @@ export default function EditStoryModal({
 }: Props) {
   const [busy, setBusy] = useState(false);
 
+  const handleClose = () => {
+    if (!busy) onClose();
+  };
+
+  useEscapeClose(isOpen && !busy, handleClose);
+
   return (
-    <Dialog open={isOpen} onClose={() => !busy && onClose()} className="relative z-50">
+    <Dialog open={isOpen} onClose={() => {}} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto w-full max-w-5xl rounded-xl bg-[var(--card)] p-0 shadow-xl">
@@ -36,7 +43,7 @@ export default function EditStoryModal({
               Trình bày câu chuyện doanh nghiệp
             </Dialog.Title>
             <button
-              onClick={() => !busy && onClose()}
+              onClick={handleClose}
               className="rounded-full p-1 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               aria-label="Đóng"
             >
@@ -55,7 +62,7 @@ export default function EditStoryModal({
             />
           </div>
           <div className="flex items-center justify-end gap-2 border-t border-[var(--border)] px-6 py-3">
-            <Button type="button" variant="outline" onClick={() => onClose()}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={busy}>
               Đóng
             </Button>
           </div>

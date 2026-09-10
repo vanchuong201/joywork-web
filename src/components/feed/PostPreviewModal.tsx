@@ -36,7 +36,6 @@ function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => vo
   return createPortal(
     <div 
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
-      onClick={onClose}
     >
       <button
         onClick={onClose}
@@ -52,7 +51,6 @@ function VideoModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => vo
         autoPlay
         playsInline
         className="max-h-[90vh] max-w-[90vw] object-contain"
-        onClick={(e) => e.stopPropagation()}
       />
     </div>,
     document.body

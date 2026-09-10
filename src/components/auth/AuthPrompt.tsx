@@ -28,7 +28,7 @@ export default function AuthPrompt() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/50" onClick={closePrompt} />
+      <div className="absolute inset-0 bg-black/50" aria-hidden="true" />
 
       {/* Modal */}
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-lg">

@@ -5,6 +5,7 @@ import { Dialog } from "@headlessui/react";
 import Cropper, { type Area } from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { getCroppedBlob, blobToFile } from "@/lib/image-crop";
+import { useEscapeClose } from "@/hooks/use-escape-close";
 import { toast } from "sonner";
 import { X, ZoomIn } from "lucide-react";
 
@@ -73,8 +74,11 @@ export function ImageCropDialog({
     onClose();
   };
 
+  // HeadlessUI onClose gộp cả backdrop + Escape — noop để chặn click ngoài, Escape xử lý riêng.
+  useEscapeClose(open && !processing, handleClose);
+
   return (
-    <Dialog open={open} onClose={handleClose} className="relative z-[60]">
+    <Dialog open={open} onClose={() => {}} className="relative z-[60]">
       <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto w-full max-w-lg rounded-xl bg-[var(--card)] p-6 shadow-xl">

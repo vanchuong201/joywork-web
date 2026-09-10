@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Dialog } from "@headlessui/react";
+import { useEscapeClose } from "@/hooks/use-escape-close";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -152,8 +153,10 @@ export default function EditMetricsModal({
     }
   };
 
+  useEscapeClose(isOpen && !isSubmitting, handleClose);
+
   return (
-    <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
+    <Dialog open={isOpen} onClose={() => {}} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto w-full max-w-3xl rounded-xl bg-[var(--card)] p-6 shadow-xl">

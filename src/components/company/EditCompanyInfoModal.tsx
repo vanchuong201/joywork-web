@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import api from "@/lib/api";
 import { X } from "lucide-react";
 import { COMPANY_SIZE_OPTIONS, normalizeCompanySize } from "@/lib/company-size";
+import { useEscapeClose } from "@/hooks/use-escape-close";
 
 const schema = z.object({
   name: z.string().min(1, "Tên doanh nghiệp (Hiển thị trên trang) là bắt buộc").min(2, "Tên công ty cần ít nhất 2 ký tự"),
@@ -135,8 +136,10 @@ export default function EditCompanyInfoModal({
     }
   };
 
+  useEscapeClose(isOpen && !isSubmitting, handleClose);
+
   return (
-    <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
+    <Dialog open={isOpen} onClose={() => {}} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="mx-auto w-full max-w-2xl rounded-xl bg-[var(--card)] p-6 shadow-xl">
