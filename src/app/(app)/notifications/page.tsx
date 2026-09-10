@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { Notification } from "@/types/notification";
+import { getNotificationLink } from "@/lib/notification-link";
 
 export default function NotificationsPage() {
   const [page, setPage] = useState(1);
@@ -32,29 +32,6 @@ export default function NotificationsPage() {
 
   const handleDelete = async (notificationId: string) => {
     await deleteMutation.mutateAsync(notificationId);
-  };
-
-  const getNotificationLink = (notification: Notification) => {
-    if (typeof notification?.metadata?.targetUrl === "string" && notification.metadata.targetUrl.startsWith("/")) {
-      return notification.metadata.targetUrl;
-    }
-
-    if (notification.type === "APPLICATION_STATUS" && notification.metadata?.jobId) {
-      return `/jobs/${notification.metadata.jobId}`;
-    }
-
-    if (notification.type === "CV_FLIP_REQUEST") {
-      return "/account/profile";
-    }
-
-    if (notification.relatedEntityType === "TICKET" && notification.relatedEntityId) {
-      const companySlug = notification.metadata?.companySlug;
-      if (companySlug) {
-        return `/tickets/${notification.relatedEntityId}?company=${companySlug}`;
-      }
-      return `/tickets/${notification.relatedEntityId}`;
-    }
-    return "#";
   };
 
   return (

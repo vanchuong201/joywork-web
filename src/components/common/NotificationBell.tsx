@@ -11,7 +11,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCheck } from "lucide-react";
 import { useAuthStore } from "@/store/useAuth";
-import type { Notification } from "@/types/notification";
+import { getNotificationLink } from "@/lib/notification-link";
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -40,30 +40,6 @@ export default function NotificationBell() {
 
   const handleMarkAllAsRead = async () => {
     await markAllAsReadMutation.mutateAsync();
-  };
-
-  const getNotificationLink = (notification: Notification) => {
-    if (typeof notification?.metadata?.targetUrl === "string" && notification.metadata.targetUrl.startsWith("/")) {
-      return notification.metadata.targetUrl;
-    }
-
-    if (notification.type === "APPLICATION_STATUS" && notification.metadata?.jobId) {
-      return `/jobs/${notification.metadata.jobId}`;
-    }
-
-    if (notification.type === "CV_FLIP_REQUEST") {
-      return "/account/profile";
-    }
-
-    if (notification.relatedEntityType === "TICKET" && notification.relatedEntityId) {
-      const companySlug = notification.metadata?.companySlug;
-      if (companySlug) {
-        return `/tickets/${notification.relatedEntityId}?company=${companySlug}`;
-      }
-      return `/tickets/${notification.relatedEntityId}`;
-    }
-    // Add more entity types as needed
-    return "#";
   };
 
   return (
