@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
-import { fetchSeoUrlSitemapEntries, SEO_URL_REVALIDATE_SECONDS } from "@/lib/server-seo-url";
+import { fetchSeoUrlSitemapEntries } from "@/lib/server-seo-url";
 import { getPublicSiteUrl } from "@/lib/seo-url-metadata";
 
-export const revalidate = SEO_URL_REVALIDATE_SECONDS;
+/** Phải là literal: Next.js không đọc được `revalidate` từ biến import. */
+export const revalidate = 60;
 
 const STATIC_ROUTES: Array<{ path: string; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"]; priority: number }> = [
   { path: "/", changeFrequency: "daily", priority: 1 },
