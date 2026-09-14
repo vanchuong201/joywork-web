@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { jobsListCanonicalUrl } from "@/lib/seo-url-metadata";
 
 const title = "Tìm Việc Làm Mới Nhất Từ Những Doanh Nghiệp Tốt | JOYWORK";
 const description =
@@ -8,9 +9,12 @@ const description =
 export const metadata: Metadata = {
   title,
   description,
+  // Canonical cố định để các biến thể `/jobs?...` không tạo trang trùng lặp
+  alternates: { canonical: jobsListCanonicalUrl() },
   openGraph: {
     title,
     description,
+    url: jobsListCanonicalUrl(),
   },
   twitter: {
     title,

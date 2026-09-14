@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
@@ -130,11 +130,10 @@ function SectionCard({
   );
 }
 
-export default function JobDetailPage() {
-  const params = useParams<{ "slug--id": string }>();
+export default function JobDetailPageClient({ segment }: { segment: string }) {
   const router = useRouter();
   const qc = useQueryClient();
-  const paramValue = params?.["slug--id"] as string;
+  const paramValue = segment;
   const user = useAuthStore((state) => state.user);
   const { openPrompt } = useAuthPrompt();
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getPublicSiteUrl } from "@/lib/seo-url-metadata";
 
 /**
  * robots.txt cho preview link (Facebook, LinkedIn, Zalo, …).
@@ -10,6 +11,7 @@ import type { MetadataRoute } from "next";
  */
 export default function robots(): MetadataRoute.Robots {
   return {
+    sitemap: `${getPublicSiteUrl()}/sitemap.xml`,
     rules: [
       { userAgent: "facebookexternalhit", allow: ["/"] },
       { userAgent: "Facebot", allow: ["/"] },
