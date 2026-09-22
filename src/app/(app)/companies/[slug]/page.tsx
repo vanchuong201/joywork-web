@@ -7,6 +7,7 @@ import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero"
 import CompanyProfileContent from "@/components/company/profile/CompanyProfileContent";
 import CompanyJobsTab from "@/components/company/CompanyJobsTab";
 import CompanyModeSwitchBar from "@/components/company/CompanyModeSwitchBar";
+import { buildCompanyProfileTitle } from "@/lib/seo-title";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -68,7 +69,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const name = typeof company.name === "string" ? company.name : "Doanh nghiệp";
   const industry = typeof company.industry === "string" ? company.industry.trim() : "";
-  const title = `${name} - Văn Hóa Doanh Nghiệp & Tuyển Dụng | JOYWORK`;
+  const title = buildCompanyProfileTitle(name);
   const description = industry
     ? `${name} - ${industry} tuyển dụng. Xem văn hóa doanh nghiệp, phúc lợi và vị trí đang tuyển tại JOYWORK.`
     : `${name} tuyển dụng. Xem văn hóa doanh nghiệp, phúc lợi và vị trí đang tuyển tại JOYWORK.`;

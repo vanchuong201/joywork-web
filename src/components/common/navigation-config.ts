@@ -33,8 +33,8 @@ export type AccountDropdownItem = {
 
 /** Tạm ẩn mục Talent Pool khỏi menu — đổi thành `true` để bật lại */
 const SHOW_TALENT_POOL_NAV = false;
-/** Tạm ẩn mục Khóa học khỏi menu — đổi thành `true` để bật lại */
-const SHOW_COURSES_NAV = false;
+/** Hiện mục Khóa học trên menu. Trang vẫn noindex. */
+const SHOW_COURSES_NAV = true;
 
 const exploreNavBase: NavItem[] = [
   { icon: Home, label: "Bảng tin", href: "/" },

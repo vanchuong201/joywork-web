@@ -12,6 +12,9 @@ export type JobForOpenGraph = {
   salaryMin?: number | null;
   salaryMax?: number | null;
   currency?: string | null;
+  /** Tên tỉnh/thành đã resolve, có khi job có địa điểm. */
+  location?: string | null;
+  locations?: string[];
   company: JobCompany;
 };
 

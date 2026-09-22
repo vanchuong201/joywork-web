@@ -4,8 +4,9 @@ import JobDetailPageClient from "@/components/jobs/JobDetailPageClient";
 import JobsListingPageClient from "@/components/jobs/JobsListingPageClient";
 import { classifyJobRouteSegment } from "@/lib/job-route";
 import { buildJobUrl, resolveJobIdFromSlugParam } from "@/lib/job-url";
-import { formatSalaryRange } from "@/lib/provinces";
+import { formatSalaryRange, getProvinceDisplayLabel } from "@/lib/provinces";
 import { fetchJobForOpenGraph } from "@/lib/server-job-metadata";
+import { buildJobDetailTitle } from "@/lib/seo-title";
 import { getSeoUrlLanding } from "@/lib/server-seo-url";
 import { buildSeoLandingMetadata, getPublicSiteUrl, SITE_NAME } from "@/lib/seo-url-metadata";
 
@@ -43,7 +44,13 @@ async function jobDetailMetadata(segment: string): Promise<Metadata> {
   }
 
   const companyName = job.company.name;
-  const title = `${job.title} tại ${companyName} | ${SITE_NAME}`;
+  const provinceSource = job.location?.trim() || job.locations?.[0]?.trim() || "";
+  const province = provinceSource ? getProvinceDisplayLabel(provinceSource).trim() : "";
+  const title = buildJobDetailTitle({
+    jobTitle: job.title,
+    companyName,
+    province: province || null,
+  });
   const salaryCurrency = job.currency === "USD" ? "USD" : "VND";
   const salaryRange = formatSalaryRange(job.salaryMin, job.salaryMax, salaryCurrency);
   const description = `${companyName} tuyển ${job.title}, lương ${salaryRange || "Thỏa thuận"}. Xem mô tả công việc, yêu cầu và ứng tuyển ngay tại ${SITE_NAME}.`;
