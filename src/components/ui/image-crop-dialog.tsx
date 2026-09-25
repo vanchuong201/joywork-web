@@ -14,7 +14,7 @@ type Props = {
   onClose: () => void;
   /** Object URL của file người dùng vừa chọn. */
   imageSrc: string;
-  /** Tỷ lệ khung crop: 1 cho avatar/logo, ~3.75 cho cover. */
+  /** Tỷ lệ khung crop: 1 cho avatar/logo, 16/6 cho ảnh bìa DN. */
   aspect: number;
   /** Hình dạng khung crop hiển thị. */
   cropShape?: "round" | "rect";

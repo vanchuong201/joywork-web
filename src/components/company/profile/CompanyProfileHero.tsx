@@ -24,6 +24,9 @@ import { resolveProvinceCode } from "@/lib/provinces";
 import { buildHeadquartersAddressLabel, fetchWardsByProvinceCodes, hasHeadquartersAddressData, type WardOption } from "@/lib/location-wards";
 import { COMPANY_SIZE_OPTIONS, normalizeCompanySize } from "@/lib/company-size";
 
+/** Khớp class `aspect-[16/6]` của khung ảnh bìa — crop xong hiển thị đúng vùng đã cắt. */
+const COMPANY_COVER_ASPECT = 16 / 6;
+
 type CompanyUpdatePayload = {
     name?: string;
     legalName?: string;
@@ -579,7 +582,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
 
     return (
         <section className="relative mx-auto mb-14 max-w-7xl px-2 pt-6 sm:mb-20 sm:px-6 sm:pt-8 group/hero">
-             <div className={`relative aspect-[16/8] sm:aspect-[16/7] md:aspect-[16/6] overflow-hidden rounded-[2rem] bg-slate-900 shadow-2xl md:rounded-[2.5rem] group ${company.coverUrl ? "cursor-zoom-in" : ""}`}>
+             <div className={`relative aspect-[16/6] overflow-hidden rounded-[2rem] bg-slate-900 shadow-2xl md:rounded-[2.5rem] group ${company.coverUrl ? "cursor-zoom-in" : ""}`}>
                  {/* Background decoration or Cover Image */}
                  <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                      {company.coverUrl ? (
@@ -640,7 +643,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                             Chỉnh sửa ảnh bìa
                         </Button>
                         <div className="bg-black/70 text-white text-xs px-2 py-1 rounded text-right backdrop-blur-sm">
-                            Tỷ lệ đề xuất: 21:9 hoặc 16:9
+                            Tỷ lệ 16:6, đúng khung ảnh bìa
                         </div>
                     </div>
                 )}
@@ -1268,7 +1271,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                     open={!!cropSrc}
                     onClose={closeCropDialog}
                     imageSrc={cropSrc}
-                    aspect={cropTarget === "cover" ? 1920 / 512 : 1}
+                    aspect={cropTarget === "cover" ? COMPANY_COVER_ASPECT : 1}
                     cropShape="rect"
                     outputWidth={cropTarget === "cover" ? 1920 : 512}
                     title={cropTarget === "cover" ? "Cắt ảnh bìa" : "Cắt logo"}
