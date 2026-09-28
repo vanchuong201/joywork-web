@@ -4,12 +4,14 @@ import { useState } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { downloadCandidateCvPdf, downloadMyCvPdf } from "@/lib/api/cv-exports";
+import { downloadApplicationCvPdf, downloadCandidateCvPdf, downloadMyCvPdf } from "@/lib/api/cv-exports";
 
 type CvExportButtonProps = {
-  mode: "own" | "candidate";
+  mode: "own" | "candidate" | "application";
   /** mode="own": CV cần xuất (mặc định CV mặc định). */
   cvId?: string;
+  /** mode="application": đơn ứng tuyển cần xuất (theo snapshot). */
+  applicationId?: string;
   slug?: string;
   companyId?: string;
   masked?: boolean;
@@ -20,6 +22,7 @@ type CvExportButtonProps = {
 export default function CvExportButton({
   mode,
   cvId,
+  applicationId,
   slug,
   companyId,
   masked = false,
@@ -35,7 +38,7 @@ export default function CvExportButton({
   const resolveLabel = () => {
     if (label) return label;
     if (isExporting) return "Đang xuất PDF...";
-    if (mode === "own") return "Xuất CV PDF";
+    if (mode === "own" || mode === "application") return "Xuất CV PDF";
     if (masked) return "Xuất PDF (ẩn liên hệ)";
     return "Xuất PDF";
   };
@@ -54,10 +57,17 @@ export default function CvExportButton({
       }
     }
 
+    if (mode === "application" && !applicationId) {
+      toast.error("Không xác định được đơn ứng tuyển cần xuất.");
+      return;
+    }
+
     setIsExporting(true);
     try {
       if (mode === "own") {
         await downloadMyCvPdf(cvId);
+      } else if (mode === "application") {
+        await downloadApplicationCvPdf(applicationId ?? "");
       } else {
         const candidateSlug = slug ?? "";
         const selectedCompanyId = companyId ?? "";

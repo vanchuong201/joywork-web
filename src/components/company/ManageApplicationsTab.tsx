@@ -1,30 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import api from "@/lib/api";
 import { buildJobUrl } from "@/lib/job-url";
-import { buildCompanyCandidateUrl } from "@/lib/candidate-url";
+import { buildApplicationUrl } from "@/lib/candidate-url";
 import ApplicationCoverLetter from "@/components/company/ApplicationCoverLetter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Users, User, FileText, ChevronLeft, ChevronRight, X, MoreVertical, Edit, List, Grid } from "lucide-react";
+import ApplicationStatusDialog, {
+  type ApplicationStatusTarget,
+} from "@/components/company/applications/ApplicationStatusDialog";
+import {
+  APPLICATION_STATUS_COLORS as STATUS_COLORS,
+  APPLICATION_STATUS_LABEL as STATUS_LABEL,
+} from "@/components/company/applications/application-status";
 import { formatDate } from "@/lib/utils";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Company } from "@/types/company";
 
@@ -35,40 +33,19 @@ type Props = {
 type ViewMode = "list" | "grid";
 type StatusFilter = "all" | "RECEIVED" | "SUITABLE" | "INTERVIEW_SCHEDULED" | "OFFER_SENT" | "HIRED" | "NOT_SUITABLE";
 
-const STATUS_LABEL: Record<string, string> = {
-  RECEIVED: "Tiếp nhận",
-  SUITABLE: "Phù hợp",
-  INTERVIEW_SCHEDULED: "Hẹn phỏng vấn",
-  OFFER_SENT: "Gửi đề nghị",
-  HIRED: "Nhận việc",
-  NOT_SUITABLE: "Chưa phù hợp",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  RECEIVED: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  SUITABLE: "bg-blue-100 text-blue-700 border-blue-200",
-  INTERVIEW_SCHEDULED: "bg-indigo-100 text-indigo-700 border-indigo-200",
-  OFFER_SENT: "bg-green-100 text-green-700 border-green-200",
-  HIRED: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  NOT_SUITABLE: "bg-red-100 text-red-700 border-red-200",
-};
-
 const ITEMS_PER_PAGE = 10;
 
 export default function ManageApplicationsTab({ company }: Props) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const qc = useQueryClient();
   
   const jobId = searchParams.get("jobId") || undefined;
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [statusTarget, setStatusTarget] = useState<ApplicationStatusTarget | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [newStatus, setNewStatus] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
 
   // Fetch Jobs for filter dropdown
   const jobsQuery = useQuery({
@@ -97,28 +74,14 @@ export default function ManageApplicationsTab({ company }: Props) {
     enabled: true,
   });
 
-  // Update status mutation
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ applicationId, status, notes }: { applicationId: string; status: string; notes?: string }) => {
-      await api.patch(`/api/jobs/applications/${applicationId}/status`, { status, notes });
-    },
-    onSuccess: () => {
-      toast.success("Đã cập nhật trạng thái");
-      applicationsQuery.refetch();
-      setStatusDialogOpen(false);
-      setSelectedApplication(null);
-      setNewStatus("");
-      setNotes("");
-    },
-    onError: (e: any) => {
-      toast.error(e?.response?.data?.error?.message ?? "Không thể cập nhật trạng thái");
-    },
-  });
-
   const handleStatusChange = (application: any) => {
-    setSelectedApplication(application);
-    setNewStatus(application.status);
-    setNotes(application.notes || "");
+    setStatusTarget({
+      id: application.id,
+      status: application.status,
+      notes: application.notes,
+      candidateName: application.user?.name || application.user?.email || "Ứng viên",
+      jobTitle: application.job?.title,
+    });
     // Defer so DropdownMenu can release body pointer-events before Dialog locks them.
     // Opening Dialog synchronously from DropdownMenu.Item leaves a stuck overlay.
     window.setTimeout(() => setStatusDialogOpen(true), 0);
@@ -127,19 +90,8 @@ export default function ManageApplicationsTab({ company }: Props) {
   const handleStatusDialogOpenChange = (open: boolean) => {
     setStatusDialogOpen(open);
     if (!open) {
-      setSelectedApplication(null);
-      setNewStatus("");
-      setNotes("");
+      setStatusTarget(null);
     }
-  };
-
-  const handleUpdateStatus = () => {
-    if (!selectedApplication || !newStatus) return;
-    updateStatusMutation.mutate({
-      applicationId: selectedApplication.id,
-      status: newStatus,
-      notes: notes || undefined,
-    });
   };
 
   const handleJobFilterChange = (value: string) => {
@@ -172,7 +124,7 @@ export default function ManageApplicationsTab({ company }: Props) {
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             {pagination ? (
               <>
-                Tổng cộng {pagination.total} ứng viên
+                Tổng cộng {pagination.total} hồ sơ ứng tuyển
                 {totalPages > 1 && ` • Trang ${currentPage}/${totalPages}`}
               </>
             ) : (
@@ -330,10 +282,8 @@ export default function ManageApplicationsTab({ company }: Props) {
                 const avatar = profile?.avatar || user?.avatar;
                 const userName = user?.name || user?.email || "Ứng viên";
                 const headline = profile?.headline;
-                const candidateSlug = user?.slug || user?.id;
-                const candidateHref = candidateSlug
-                  ? buildCompanyCandidateUrl(candidateSlug, company.id)
-                  : "#";
+                const candidateHref = buildApplicationUrl(company.slug, application.id);
+                const reapplyIndex: number = application.reapplyIndex ?? 1;
 
                 return (
                   <Card key={application.id} className="border-[var(--border)] bg-[var(--card)] transition-all hover:shadow-md">
@@ -363,8 +313,6 @@ export default function ManageApplicationsTab({ company }: Props) {
                               <div className="flex items-center gap-3 mb-1">
                                 <Link
                                   href={candidateHref}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
                                   className="text-base font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--brand)]"
                                 >
                                   {userName}
@@ -374,6 +322,11 @@ export default function ManageApplicationsTab({ company }: Props) {
                                 >
                                   {STATUS_LABEL[application.status] || application.status}
                                 </Badge>
+                                {reapplyIndex > 1 ? (
+                                  <Badge variant="outline" className="px-2 py-0.5 text-xs">
+                                    Lần {reapplyIndex}
+                                  </Badge>
+                                ) : null}
                               </div>
                               {headline && (
                                 <p className="line-clamp-1 text-sm text-[var(--muted-foreground)]">{headline}</p>
@@ -407,8 +360,6 @@ export default function ManageApplicationsTab({ company }: Props) {
                                   <DropdownMenu.Item asChild>
                                     <Link
                                       href={candidateHref}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
                                       className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                     >
                                       <FileText className="w-4 h-4" />
@@ -461,10 +412,8 @@ export default function ManageApplicationsTab({ company }: Props) {
                 const avatar = profile?.avatar || user?.avatar;
                 const userName = user?.name || user?.email || "Ứng viên";
                 const headline = profile?.headline;
-                const candidateSlug = user?.slug || user?.id;
-                const candidateHref = candidateSlug
-                  ? buildCompanyCandidateUrl(candidateSlug, company.id)
-                  : "#";
+                const candidateHref = buildApplicationUrl(company.slug, application.id);
+                const reapplyIndex: number = application.reapplyIndex ?? 1;
 
                 return (
                   <Card key={application.id} className="flex flex-col border-[var(--border)] bg-[var(--card)] transition-all hover:shadow-lg">
@@ -512,8 +461,6 @@ export default function ManageApplicationsTab({ company }: Props) {
                               <DropdownMenu.Item asChild>
                                 <Link
                                   href={candidateHref}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
                                   className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors outline-none hover:bg-[var(--muted)]"
                                 >
                                   <FileText className="w-4 h-4" />
@@ -529,8 +476,6 @@ export default function ManageApplicationsTab({ company }: Props) {
                       <div className="mb-3">
                         <Link
                           href={candidateHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
                           className="mb-2 block text-base font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--brand)]"
                         >
                           {userName}
@@ -543,6 +488,11 @@ export default function ManageApplicationsTab({ company }: Props) {
                         >
                           {STATUS_LABEL[application.status] || application.status}
                         </Badge>
+                        {reapplyIndex > 1 ? (
+                          <Badge variant="outline" className="ml-2 px-2 py-0.5 text-xs">
+                            Lần {reapplyIndex}
+                          </Badge>
+                        ) : null}
                       </div>
 
                       {/* Application Details */}
@@ -582,7 +532,7 @@ export default function ManageApplicationsTab({ company }: Props) {
               <div className="text-sm text-[var(--muted-foreground)]">
                 Hiển thị {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-
                 {Math.min(currentPage * ITEMS_PER_PAGE, pagination?.total || 0)} trong tổng số{" "}
-                {pagination?.total || 0} ứng viên
+                {pagination?.total || 0} hồ sơ
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -634,68 +584,12 @@ export default function ManageApplicationsTab({ company }: Props) {
         </>
       )}
 
-      {/* Status Update Dialog */}
-      <Dialog open={statusDialogOpen} onOpenChange={handleStatusDialogOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cập nhật trạng thái ứng tuyển</DialogTitle>
-            <DialogDescription>
-              {selectedApplication ? (
-                <>
-                  Ứng viên: <strong>{selectedApplication.user?.name || selectedApplication.user?.email}</strong>
-                  <br />
-                  Vị trí: <strong>{selectedApplication.job?.title}</strong>
-                  <br />
-                  <span className="mt-2 block text-xs">
-                    Khi bạn cập nhật, ứng viên sẽ nhận thông báo trên JOYWORK và email (nếu tài khoản có email đã xác minh).
-                  </span>
-                </>
-              ) : null}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="status">Trạng thái</Label>
-              <select
-                id="status"
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-                className="h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20"
-              >
-                <option value="RECEIVED">Tiếp nhận</option>
-                <option value="SUITABLE">Phù hợp</option>
-                <option value="INTERVIEW_SCHEDULED">Hẹn phỏng vấn</option>
-                <option value="OFFER_SENT">Gửi đề nghị</option>
-                <option value="HIRED">Nhận việc</option>
-                <option value="NOT_SUITABLE">Chưa phù hợp</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="notes">Phản hồi của doanh nghiệp (tùy chọn)</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Thêm phản hồi cho ứng viên này..."
-                rows={4}
-                maxLength={1000}
-              />
-              <p className="mt-1 text-xs text-[var(--muted-foreground)]">{notes.length}/1000 ký tự</p>
-            </div>
-          </div>
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => handleStatusDialogOpenChange(false)}>
-              Hủy
-            </Button>
-            <Button
-              onClick={handleUpdateStatus}
-              disabled={!newStatus || updateStatusMutation.isPending}
-            >
-              {updateStatusMutation.isPending ? "Đang cập nhật..." : "Cập nhật"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ApplicationStatusDialog
+        open={statusDialogOpen}
+        onOpenChange={handleStatusDialogOpenChange}
+        target={statusTarget}
+        onUpdated={() => applicationsQuery.refetch()}
+      />
     </div>
   );
 }

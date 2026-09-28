@@ -48,7 +48,7 @@ import {
   Globe2,
 } from "lucide-react";
 import DOMPurify from "dompurify";
-import { cn, formatDateUTC } from "@/lib/utils";
+import { cn, formatDate, formatDateUTC } from "@/lib/utils";
 import { getProvinceNameByCode } from "@/lib/provinces";
 import { fetchWardsByProvinceCodes } from "@/lib/location-wards";
 import {
@@ -58,10 +58,18 @@ import {
   SATURDAY_POLICY_DISPLAY_LABELS,
   type SaturdayWorkPolicy,
 } from "@/lib/working-time";
-import { buildCvApplyReadiness } from "@/hooks/useProfileCompletion";
-import type { OwnUserProfile } from "@/types/user";
+import { useCandidateCvList } from "@/hooks/useCandidateCvs";
+import { getApiErrorCode, getApiErrorMessage } from "@/lib/api-error";
+import ApplyCvPicker, { isApplyCvSelectable, type ApplyCvOption } from "@/components/jobs/ApplyCvPicker";
 
 type JobDetail = any;
+
+type OpenApplication = {
+  id: string;
+  sourceCvId: string | null;
+  status: string;
+  appliedAt: string;
+};
 
 function sanitizeHtml(html: string | undefined | null) {
   if (!html) return "";
@@ -139,6 +147,8 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [cvMissingDialogOpen, setCvMissingDialogOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
+  const [selectedCvId, setSelectedCvId] = useState<string | null>(null);
+  const [missingCvId, setMissingCvId] = useState<string | null>(null);
 
   const jobId = useMemo(() => resolveJobIdFromSlugParam(paramValue) ?? paramValue, [paramValue]);
 
@@ -198,26 +208,39 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
   });
 
   const {
-    data: ownProfile,
-    isLoading: isOwnProfileLoading,
-    isError: isOwnProfileError,
-  } = useQuery<OwnUserProfile>({
-    queryKey: ["own-profile"],
-    queryFn: async () => {
-      const res = await api.get("/api/users/me/profile");
-      return res.data.data.profile as OwnUserProfile;
-    },
-    enabled: Boolean(user),
-    staleTime: 5 * 60 * 1000,
-  });
+    data: cvList,
+    isLoading: isCvListLoading,
+    isError: isCvListError,
+  } = useCandidateCvList({ enabled: Boolean(user), staleTime: 60 * 1000 });
 
-  const cvApplyReadiness = useMemo(() => buildCvApplyReadiness(ownProfile ?? null), [ownProfile]);
+  const openApplications: OpenApplication[] = useMemo(
+    () => (Array.isArray(draftJob?.openApplications) ? draftJob.openApplications : []),
+    [draftJob?.openApplications],
+  );
+
+  const applyCvOptions: ApplyCvOption[] = useMemo(() => {
+    const openCvIds = new Set(openApplications.map((app) => app.sourceCvId).filter(Boolean));
+    const cvs = [...(cvList?.cvs ?? [])].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+    return cvs.map((cv) => ({ cv, hasOpenApplication: openCvIds.has(cv.id) }));
+  }, [cvList?.cvs, openApplications]);
+
+  const latestOpenApplication = openApplications.length > 0 ? openApplications[openApplications.length - 1] : null;
+  const latestOpenCvName = latestOpenApplication
+    ? cvList?.cvs.find((cv) => cv.id === latestOpenApplication.sourceCvId)?.name ?? null
+    : null;
+  const allCvsHaveOpenApplication =
+    applyCvOptions.length > 0 && applyCvOptions.every((option) => option.hasOpenApplication);
+  const missingCv = cvList?.cvs.find((cv) => cv.id === missingCvId) ?? null;
 
   const applyMutation = useMutation({
     mutationFn: async () => {
+      if (!selectedCvId) {
+        throw new Error("CV_NOT_SELECTED");
+      }
       const trimmedCoverLetter = coverLetter.trim();
       await api.post("/api/jobs/apply", {
         jobId,
+        cvId: selectedCvId,
         coverLetter: trimmedCoverLetter || undefined,
       });
     },
@@ -226,6 +249,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
       setConfirmDialogOpen(false);
       setCoverLetter("");
       qc.invalidateQueries({ queryKey: ["job", jobId] });
+      qc.invalidateQueries({ queryKey: ["my-applications"] });
 
       const appliedJob = data?.job;
       if (appliedJob) {
@@ -240,7 +264,27 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
         });
       }
     },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? "Ứng tuyển thất bại"),
+    onError: (error: unknown) => {
+      const code = getApiErrorCode(error);
+      if (code === "ALREADY_APPLIED_SAME_CV") {
+        toast.error("Bạn đang có đơn mở với CV này. Hãy chọn CV khác để ứng tuyển lại.");
+        qc.invalidateQueries({ queryKey: ["job", jobId] });
+        return;
+      }
+      if (code === "CV_PROFILE_INCOMPLETE") {
+        setConfirmDialogOpen(false);
+        setMissingCvId(selectedCvId);
+        setCvMissingDialogOpen(true);
+        qc.invalidateQueries({ queryKey: ["candidate-cvs"] });
+        return;
+      }
+      if (code === "CV_NOT_FOUND") {
+        toast.error("CV đã chọn không còn tồn tại. Vui lòng chọn CV khác.");
+        qc.invalidateQueries({ queryKey: ["candidate-cvs"] });
+        return;
+      }
+      toast.error(getApiErrorMessage(error, "Ứng tuyển thất bại"));
+    },
   });
 
   const handleApply = () => {
@@ -249,20 +293,31 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
       return;
     }
 
-    if (isOwnProfileLoading) {
+    if (isCvListLoading) {
       return;
     }
 
-    if (isOwnProfileError) {
-      toast.error("Không thể kiểm tra hồ sơ CV. Vui lòng thử lại.");
+    if (isCvListError || !cvList) {
+      toast.error("Không thể kiểm tra CV. Vui lòng thử lại.");
       return;
     }
 
-    if (!cvApplyReadiness.isReady) {
+    const selectable = applyCvOptions.filter(isApplyCvSelectable);
+    if (selectable.length === 0) {
+      const target =
+        applyCvOptions.find((option) => !option.hasOpenApplication && option.cv.isDefault) ??
+        applyCvOptions.find((option) => !option.hasOpenApplication);
+      if (!target) {
+        toast.error("Bạn đang có đơn mở với tất cả CV cho vị trí này.");
+        return;
+      }
+      setMissingCvId(target.cv.id);
       setCvMissingDialogOpen(true);
       return;
     }
 
+    const preferred = selectable.find((option) => option.cv.isDefault) ?? selectable[0];
+    setSelectedCvId(preferred.cv.id);
     setConfirmDialogOpen(true);
   };
 
@@ -608,6 +663,12 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
             )}
           </div>
           <div className="flex items-center gap-2 self-end md:self-auto">
+            {latestOpenApplication ? (
+              <span className="hidden text-xs text-[var(--muted-foreground)] sm:inline">
+                Bạn đã ứng tuyển bằng {latestOpenCvName ? <strong>{latestOpenCvName}</strong> : "một CV"} ngày{" "}
+                {formatDate(latestOpenApplication.appliedAt)}
+              </span>
+            ) : null}
             <JobSaveButton jobId={job.id} />
             {job.isActive === false ? (
               <Button disabled className="h-10 px-5 text-sm">
@@ -620,10 +681,17 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
             ) : (
               <Button
                 onClick={handleApply}
-                disabled={applyMutation.isPending || (Boolean(user) && isOwnProfileLoading)}
+                disabled={applyMutation.isPending || (Boolean(user) && (isCvListLoading || allCvsHaveOpenApplication))}
+                title={allCvsHaveOpenApplication ? "Bạn đang có đơn mở với tất cả CV cho vị trí này" : undefined}
                 className="h-10 px-5 text-sm sm:text-base"
               >
-                {applyMutation.isPending ? "Đang gửi..." : Boolean(user) && isOwnProfileLoading ? "Đang kiểm tra CV..." : "Ứng tuyển ngay"}
+                {applyMutation.isPending
+                  ? "Đang gửi..."
+                  : Boolean(user) && isCvListLoading
+                    ? "Đang kiểm tra CV..."
+                    : job.hasApplied
+                      ? "Ứng tuyển lại"
+                      : "Ứng tuyển ngay"}
                 <Send className="ml-2 h-4 w-4" />
               </Button>
             )}
@@ -636,7 +704,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
           <DialogHeader>
             <DialogTitle>Cập nhật CV trước khi ứng tuyển</DialogTitle>
             <DialogDescription>
-            Bạn cần hoàn thiện những mục tối thiểu của CV bao gồm: <strong>Thông tin cơ bản</strong>, <strong>Năng lực (KSA)</strong>, <strong>Kinh nghiệm làm việc</strong>.
+            Bạn cần hoàn thiện những mục tối thiểu của CV{missingCv ? <> <strong>{missingCv.name}</strong></> : null} bao gồm: <strong>Thông tin cơ bản</strong>, <strong>Năng lực (KSA)</strong>, <strong>Kinh nghiệm làm việc</strong>.
             </DialogDescription>
           </DialogHeader>
 
@@ -647,7 +715,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
                 Mục còn thiếu
               </p>
               <ul className="list-disc space-y-1 pl-5 leading-6">
-                {cvApplyReadiness.missingItems.map((item) => (
+                {(missingCv?.readiness?.missingSections ?? []).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
@@ -663,7 +731,10 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
               Để sau
             </Button>
             <Button asChild>
-              <Link href="/account/profile" onClick={() => setCvMissingDialogOpen(false)}>
+              <Link
+                href={missingCv ? `/account/profile/cv/${missingCv.id}` : "/account/profile"}
+                onClick={() => setCvMissingDialogOpen(false)}
+              >
                 Cập nhật CV ngay
               </Link>
             </Button>
@@ -688,6 +759,22 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            <div>
+              <Label>Chọn CV ứng tuyển</Label>
+              <div className="mt-2">
+                <ApplyCvPicker
+                  options={applyCvOptions}
+                  selectedCvId={selectedCvId}
+                  onSelect={setSelectedCvId}
+                  disabled={applyMutation.isPending}
+                />
+              </div>
+              <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">
+                Khi bạn ứng tuyển, hệ thống sẽ tạo ra bản lưu CV tại thời điểm ứng tuyển. Nhà tuyển dụng sẽ xem được bản lưu
+                này, các thay đổi sau này với CV không ảnh hưởng tới phiên bản mà Nhà tuyển dụng nhận được.
+              </p>
+            </div>
+
             <div>
               <Label htmlFor="cover-letter">Thư giới thiệu (Không bắt buộc)</Label>
               <p className="mt-1 mb-3 text-xs text-[var(--muted-foreground)]">
@@ -723,7 +810,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)} disabled={applyMutation.isPending}>
               Hủy
             </Button>
-            <Button onClick={handleConfirmApply} disabled={applyMutation.isPending}>
+            <Button onClick={handleConfirmApply} disabled={applyMutation.isPending || !selectedCvId}>
               {applyMutation.isPending ? "Đang gửi..." : "Xác nhận"}
             </Button>
           </div>

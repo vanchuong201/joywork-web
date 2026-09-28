@@ -11,6 +11,7 @@ type Conversation = {
   applicationId: string;
   lastMessage?: { content: string; createdAt: string };
   job: { id: string; title: string; company: { name: string } };
+  application?: { reapplyIndex?: number };
   unreadCount: number;
 };
 
@@ -39,7 +40,14 @@ export default function InboxPage() {
               <Card>
                 <CardHeader className="pb-2">
                   <div className="text-sm text-[var(--muted-foreground)]">{c.job.company.name}</div>
-                  <div className="font-semibold">{c.job.title}</div>
+                  <div className="flex items-center gap-2 font-semibold">
+                    {c.job.title}
+                    {c.application?.reapplyIndex && c.application.reapplyIndex > 1 ? (
+                      <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs font-normal text-[var(--muted-foreground)]">
+                        Lần {c.application.reapplyIndex}
+                      </span>
+                    ) : null}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-sm text-[var(--muted-foreground)]">

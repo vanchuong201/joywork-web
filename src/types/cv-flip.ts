@@ -117,7 +117,6 @@ export type CvFlipCandidateDetailAccess = {
   flippedAt: string | null;
   isOwnerView?: boolean;
   companyContext?: boolean;
-  hasAppliedToCompany?: boolean;
 };
 
 export type CvFlipCandidateDetailResponse = {

@@ -122,7 +122,6 @@ type CvFlipAccessState = {
   hasPendingRequest: boolean;
   connectionId: string | null;
   flippedAt: string | null;
-  hasAppliedToCompany?: boolean;
 };
 
 export default function CandidateDetailPage({ params }: Props) {
@@ -300,7 +299,6 @@ export default function CandidateDetailPage({ params }: Props) {
       hasPendingRequest: false,
       connectionId: null,
       flippedAt: null,
-      hasAppliedToCompany: revealed,
     };
   }, [needsCvFlipLayer, cvDetailQuery.data, profileQuery.data]);
 
@@ -375,7 +373,7 @@ export default function CandidateDetailPage({ params }: Props) {
     return (
       <div className="mx-auto max-w-4xl space-y-4 p-4">
         <p className="text-sm text-red-600">
-          Không tìm thấy hồ sơ hoặc hồ sơ đang ở chế độ riêng tư.
+          CV không tồn tại hoặc không còn công khai.
         </p>
         <Link
           href="/candidates"
@@ -487,9 +485,7 @@ export default function CandidateDetailPage({ params }: Props) {
         </div>
         {showFlipChrome && access?.isFlipped ? (
           <p className="mx-auto mt-2 max-w-5xl text-xs text-emerald-700">
-            {access.hasAppliedToCompany && !access.connectionId
-              ? "Ứng viên đã ứng tuyển vào công ty — xem đầy đủ thông tin liên hệ."
-              : "Đã mở thông tin liên hệ cho doanh nghiệp này trong tháng."}
+            Đã mở thông tin liên hệ cho doanh nghiệp này trong tháng.
           </p>
         ) : null}
       </div>

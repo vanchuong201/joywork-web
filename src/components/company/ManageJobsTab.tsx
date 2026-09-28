@@ -320,7 +320,7 @@ export default function ManageJobsTab({ company }: Props) {
                         <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--muted-foreground)]">
                           <span>Cập nhật ngày: {formatDate(job.updatedAt || job.createdAt)}</span>
                           <span className="flex items-center gap-1">
-                            <Users className="w-3 h-3" /> {job._count?.applications ?? 0} ứng viên
+                            <Users className="w-3 h-3" /> {job._count?.applications ?? 0} hồ sơ
                           </span>
                         </div>
                       </div>
@@ -420,7 +420,7 @@ export default function ManageJobsTab({ company }: Props) {
                 <div className="space-y-2 text-sm text-[var(--muted-foreground)]">
                   <div className="flex items-center gap-1">
                     <Users className="w-3 h-3" />
-                    <span>{job._count?.applications ?? 0} ứng viên</span>
+                    <span>{job._count?.applications ?? 0} hồ sơ</span>
                   </div>
                   <div>Cập nhật ngày: {formatDate(job.updatedAt || job.createdAt)}</div>
                 </div>
@@ -450,7 +450,7 @@ export default function ManageJobsTab({ company }: Props) {
                     className="w-full"
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    Xem ứng viên ({job._count?.applications ?? 0})
+                    Xem hồ sơ ({job._count?.applications ?? 0})
                   </Button>
                   {/* Actions Dropdown */}
                   <div className="relative">

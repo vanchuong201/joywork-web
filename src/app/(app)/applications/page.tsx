@@ -28,6 +28,9 @@ type ApplicationItem = {
   notes?: string | null;
   appliedAt: string;
   updatedAt: string;
+  sourceCvId?: string | null;
+  sourceCvName?: string | null;
+  reapplyIndex?: number;
   job: {
     id: string;
     title: string;
@@ -118,15 +121,26 @@ export default function ApplicationsPage() {
                 {application.job.company.name}
               </p>
             </div>
-            <Badge className="bg-[var(--brand)]/10 text-[var(--brand)]">
-              {STATUS_LABEL[application.status] ?? application.status}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              {application.reapplyIndex && application.reapplyIndex > 1 ? (
+                <Badge variant="outline">Lần {application.reapplyIndex}</Badge>
+              ) : null}
+              <Badge className="bg-[var(--brand)]/10 text-[var(--brand)]">
+                {STATUS_LABEL[application.status] ?? application.status}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-[var(--foreground)]">
             <p>
               <span className="text-[var(--muted-foreground)]">Ứng tuyển ngày: </span>
               {new Date(application.appliedAt).toLocaleDateString()}
             </p>
+            {application.sourceCvName ? (
+              <p>
+                <span className="text-[var(--muted-foreground)]">CV đã dùng: </span>
+                {application.sourceCvName}
+              </p>
+            ) : null}
             {application.resumeUrl ? (
               <p>
                 <span className="text-[var(--muted-foreground)]">CV: </span>
