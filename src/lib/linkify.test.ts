@@ -272,6 +272,7 @@ describe("linkify utility", () => {
     it("handles null/undefined gracefully", () => {
       // @ts-expect-error - intentionally testing null/undefined runtime behavior
       expect(linkify(null)).toEqual([]);
+      // @ts-expect-error - intentionally testing null/undefined runtime behavior
       expect(linkify(undefined)).toEqual([]);
     });
 
@@ -526,6 +527,7 @@ describe("linkify utility", () => {
     it("returns false for null/undefined", () => {
       // @ts-expect-error - intentionally testing null/undefined runtime behavior
       expect(containsUrl(null)).toBe(false);
+      // @ts-expect-error - intentionally testing null/undefined runtime behavior
       expect(containsUrl(undefined)).toBe(false);
     });
   });
