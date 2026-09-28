@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { updateCandidateCv } from "@/lib/api/candidate-cvs";
+import { invalidateCandidateCv } from "@/hooks/useCandidateCvs";
 import { OwnUserProfile } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,14 +14,15 @@ import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
 
 interface ProfileExpectationsProps {
+  cvId: string;
   profile: OwnUserProfile;
 }
 
-const MAX_EXPECTED_CULTURE_LENGTH = 400;
+const MAX_EXPECTED_CULTURE_LENGTH = 500;
 
 type Currency = "VND" | "USD";
 
-export default function ProfileExpectations({ profile }: ProfileExpectationsProps) {
+export default function ProfileExpectations({ cvId, profile }: ProfileExpectationsProps) {
   const queryClient = useQueryClient();
   const [salaryMin, setSalaryMin] = useState<string>(
     profile.profile?.expectedSalaryMin != null ? String(profile.profile.expectedSalaryMin) : ""
@@ -55,11 +57,11 @@ export default function ProfileExpectations({ profile }: ProfileExpectationsProp
       expectedCulture?: string | null;
       careerGoals?: string[];
     }) => {
-      await api.patch("/api/users/me/profile", data);
+      await updateCandidateCv(cvId, data);
     },
     onSuccess: () => {
       toast.success("Cập nhật mong muốn thành công");
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient, cvId);
     },
     onError: () => {
       toast.error("Cập nhật thất bại");

@@ -7,8 +7,9 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
-import api from "@/lib/api";
 import type { OwnUserProfile } from "@/types/user";
+import { getCandidateCv, getOwnAccount, listCandidateCvs, updateCandidateCv } from "@/lib/api/candidate-cvs";
+import { toOwnUserProfile } from "@/hooks/useCandidateCvs";
 import { useAuthStore } from "@/store/useAuth";
 import {
   onboardingApi,
@@ -84,6 +85,7 @@ function OnboardingPageContent() {
   const [cvGenerateOpen, setCvGenerateOpen] = useState(false);
   const [cvPollAttempts, setCvPollAttempts] = useState(0);
   const [ownProfile, setOwnProfile] = useState<OwnUserProfile | null>(null);
+  const [defaultCvId, setDefaultCvId] = useState<string | null>(null);
   const [onboardingMe, setOnboardingMe] = useState<OnboardingMeResponse | null>(null);
   const [currentCvUrl, setCurrentCvUrl] = useState<string | null>(null);
 
@@ -107,16 +109,18 @@ function OnboardingPageContent() {
   const loadLandingData = useCallback(async () => {
     setIsLoadingLanding(true);
     try {
-      const [meData, ownProfileRes] = await Promise.all([
+      const [meData, cvList, account] = await Promise.all([
         onboardingApi.getMe(),
-        api.get("/api/users/me/profile"),
+        listCandidateCvs(),
+        getOwnAccount(),
       ]);
       setOnboardingMe(meData);
       resolveLandingDefaults(meData);
 
-      const profile = ownProfileRes?.data?.data?.profile as OwnUserProfile;
-      setOwnProfile(profile);
-      setCurrentCvUrl(profile?.profile?.cvUrl || null);
+      const defaultCv = cvList.defaultCvId ? await getCandidateCv(cvList.defaultCvId) : null;
+      setDefaultCvId(defaultCv?.id ?? null);
+      setOwnProfile(defaultCv ? toOwnUserProfile(defaultCv, account) : null);
+      setCurrentCvUrl(defaultCv?.cvUrl || null);
     } catch (error) {
       toast.error(extractApiErrorMessage(error, "Không thể tải dữ liệu onboarding"));
     } finally {
@@ -232,12 +236,15 @@ function OnboardingPageContent() {
   };
 
   const handleSaveBasicInfo = async () => {
+    if (!defaultCvId) {
+      toast.error("Không tìm thấy CV mặc định");
+      return;
+    }
     setIsSavingProfile(true);
     try {
-      await api.patch("/api/users/me/profile", {
+      await updateCandidateCv(defaultCvId, {
         fullName: fullName || null,
         title: title || null,
-        phone: phone || null,
         contactPhone: phone || null,
       });
       await loadLandingData();
@@ -518,11 +525,12 @@ function OnboardingPageContent() {
           </div>
         </div>
 
-        {ownProfile ? (
+        {ownProfile && defaultCvId ? (
           <CvGenerateDialog
             open={cvGenerateOpen}
             onOpenChange={setCvGenerateOpen}
-            profile={ownProfile}
+            cvId={defaultCvId}
+            canCreateNewCv={false}
             currentCvUrl={currentCvUrl}
             onCvUrlChange={(url) => setCurrentCvUrl(url)}
             initialJobId={cvStatus === "CV_AUTO_READY" ? cvImportJobId : null}

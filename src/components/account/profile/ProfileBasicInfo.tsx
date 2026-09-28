@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z, ZodError } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { updateCandidateCv } from "@/lib/api/candidate-cvs";
+import { invalidateCandidateCv } from "@/hooks/useCandidateCvs";
 import { OwnUserProfile } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -51,7 +52,6 @@ const schema = z.object({
   linkedin: optionalUrl,
   github: optionalUrl,
   cvUrl: optionalUrl,
-  isPublic: z.boolean().optional(),
   gender: z.union([
     z.enum(["MALE", "FEMALE", "OTHER"]),
     z.literal("")
@@ -81,13 +81,15 @@ const schema = z.object({
 type FormValues = z.input<typeof schema>;
 
 interface ProfileBasicInfoProps {
+  cvId: string;
   profile: OwnUserProfile;
+  canCreateNewCv: boolean;
+  onCreatedCv?: (cvId: string) => void;
 }
 
-export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
+export default function ProfileBasicInfo({ cvId, profile, canCreateNewCv, onCreatedCv }: ProfileBasicInfoProps) {
   const queryClient = useQueryClient();
-  // Fallback: profile.avatar || user.avatar || null
-  const defaultAvatar = profile.profile?.avatar || profile.avatar || null;
+  const defaultAvatar = profile.profile?.avatar || null;
   const [avatar, setAvatar] = useState<string | null>(defaultAvatar);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -124,7 +126,6 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
       cvUrl: profile.profile?.cvUrl || "",
-      isPublic: profile.profile?.isPublic ?? true,
       gender: profile.profile?.gender ?? undefined,
       dayOfBirth: profile.profile?.dayOfBirth ?? undefined,
       monthOfBirth: profile.profile?.monthOfBirth ?? undefined,
@@ -192,15 +193,13 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       linkedin: profile.profile?.linkedin || "",
       github: profile.profile?.github || "",
       cvUrl: profile.profile?.cvUrl || "",
-      isPublic: profile.profile?.isPublic ?? true,
       gender: profile.profile?.gender ?? undefined,
       dayOfBirth: profile.profile?.dayOfBirth ?? undefined,
       monthOfBirth: profile.profile?.monthOfBirth ?? undefined,
       yearOfBirth: profile.profile?.yearOfBirth ?? undefined,
       educationLevel: profile.profile?.educationLevel ?? undefined,
     });
-    // Fallback: profile.avatar || user.avatar || null
-    setAvatar(profile.profile?.avatar || profile.avatar || null);
+    setAvatar(profile.profile?.avatar || null);
     setCvUrl(profile.profile?.cvUrl || null);
   }, [profile, reset]);
 
@@ -233,12 +232,12 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
         avatar,
         cvUrl: cvUrl || cleanedData.cvUrl || null,
       };
-      await api.patch("/api/users/me/profile", payload);
+      await updateCandidateCv(cvId, payload);
     },
     onSuccess: () => {
       toast.success("Cập nhật thông tin cơ bản thành công");
       // Invalidate query to trigger refetch - useEffect will handle form reset
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient, cvId);
     },
     onError: (error: any) => {
       const err = error?.response?.data?.error;
@@ -327,13 +326,12 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
         fileType: file.type,
         fileData: base64.split(",")[1],
         previousKey: avatar ? extractS3Key(avatar) : undefined,
-        target: 'profile', // Upload to UserProfile.avatar
+        target: "profile",
+        cvId,
       });
 
       setAvatar(response.assetUrl);
-      // Invalidate queries to refresh data from server
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
-      queryClient.invalidateQueries({ queryKey: ["account"] });
+      invalidateCandidateCv(queryClient, cvId);
       toast.success("Cập nhật ảnh đại diện thành công");
     } catch (error: any) {
       toast.error(error?.message || "Upload ảnh thất bại");
@@ -460,7 +458,9 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
       <CvGenerateDialog
         open={cvGenerateOpen}
         onOpenChange={setCvGenerateOpen}
-        profile={profile}
+        cvId={cvId}
+        canCreateNewCv={canCreateNewCv}
+        onCreatedCv={onCreatedCv}
         currentCvUrl={cvUrl}
         onCvUrlChange={(nextUrl) => {
           setCvUrl(nextUrl);
@@ -732,14 +732,6 @@ export default function ProfileBasicInfo({ profile }: ProfileBasicInfoProps) {
               <p className="mt-1 text-xs text-amber-600">Vui lòng nhập năm sinh.</p>
             )}
           </div>
-
-          {/* Tìm việc, hiển thị danh sách, mở CV — dùng chung ProfileDiscoverySettings (có thể mở nhanh từ nút Cài đặt ở tab Hồ sơ) */}
-          {/* <ProfileDiscoverySettings profile={profile} /> */}
-
-          {/* TODO: Uncomment khi cần sử dụng tính năng "Công khai hồ sơ" — import Switch */}
-          {/* <div className="mt-4">
-              ...
-            </div> */}
 
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => reset()}>

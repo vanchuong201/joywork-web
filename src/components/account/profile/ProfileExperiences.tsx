@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { createCvExperience, deleteCvExperience, updateCvExperience } from "@/lib/api/candidate-cvs";
+import { invalidateCandidateCv } from "@/hooks/useCandidateCvs";
 import { UserExperience } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import ExperienceDialog from "./ExperienceDialog";
 
 interface ProfileExperiencesProps {
+  cvId: string;
   experiences: UserExperience[];
 }
 
@@ -53,7 +55,7 @@ function SanitizedHtml({ content, className }: { content: string; className?: st
   );
 }
 
-export default function ProfileExperiences({ experiences: initialExperiences }: ProfileExperiencesProps) {
+export default function ProfileExperiences({ cvId, experiences: initialExperiences }: ProfileExperiencesProps) {
   const queryClient = useQueryClient();
   const [experiences, setExperiences] = useState<UserExperience[]>(initialExperiences);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -65,12 +67,11 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
 
   const createExperience = useMutation({
     mutationFn: async (data: Omit<UserExperience, "id" | "order">) => {
-      const res = await api.post("/api/users/me/experiences", data);
-      return res.data.data.experience as UserExperience;
+      return createCvExperience(cvId, data);
     },
     onSuccess: (newExp) => {
       toast.success("Thêm kinh nghiệm thành công");
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient, cvId);
       
       // Update local state immediately for better UX, but handle potential missing ID
       if (newExp && newExp.id) {
@@ -85,12 +86,11 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
 
   const updateExperience = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<UserExperience> }) => {
-      const res = await api.patch(`/api/users/me/experiences/${id}`, data);
-      return res.data.data.experience as UserExperience;
+      return updateCvExperience(cvId, id, data);
     },
     onSuccess: (updatedExp) => {
       toast.success("Cập nhật kinh nghiệm thành công");
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient, cvId);
       setExperiences((prev) => prev.map((exp) => (exp.id === updatedExp.id ? updatedExp : exp)));
       setEditingId(null);
       setIsDialogOpen(false);
@@ -102,11 +102,11 @@ export default function ProfileExperiences({ experiences: initialExperiences }: 
 
   const deleteExperience = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/api/users/me/experiences/${id}`);
+      await deleteCvExperience(cvId, id);
     },
     onSuccess: (_, id) => {
       toast.success("Xóa kinh nghiệm thành công");
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient, cvId);
       setExperiences((prev) => prev.filter((exp) => exp.id !== id));
     },
     onError: () => {

@@ -8,6 +8,8 @@ import { downloadCandidateCvPdf, downloadMyCvPdf } from "@/lib/api/cv-exports";
 
 type CvExportButtonProps = {
   mode: "own" | "candidate";
+  /** mode="own": CV cần xuất (mặc định CV mặc định). */
+  cvId?: string;
   slug?: string;
   companyId?: string;
   masked?: boolean;
@@ -17,6 +19,7 @@ type CvExportButtonProps = {
 
 export default function CvExportButton({
   mode,
+  cvId,
   slug,
   companyId,
   masked = false,
@@ -54,7 +57,7 @@ export default function CvExportButton({
     setIsExporting(true);
     try {
       if (mode === "own") {
-        await downloadMyCvPdf();
+        await downloadMyCvPdf(cvId);
       } else {
         const candidateSlug = slug ?? "";
         const selectedCompanyId = companyId ?? "";

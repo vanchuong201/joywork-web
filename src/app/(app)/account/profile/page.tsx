@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import AccountLayout from "@/components/account/AccountLayout";
-import ProfileTab from "@/components/account/ProfileTab";
+import MyCvsScreen from "@/components/account/cv/MyCvsScreen";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
@@ -19,7 +19,7 @@ export default function AccountProfilePage() {
           }
         >
           <AccountLayout>
-            <ProfileTab />
+            <MyCvsScreen />
           </AccountLayout>
         </Suspense>
       </div>

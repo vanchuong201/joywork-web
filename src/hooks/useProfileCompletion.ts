@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { useDefaultCvProfile } from "@/hooks/useCandidateCvs";
 import { OwnUserProfile } from "@/types/user";
 
 const isFilledText = (value?: string | null) => Boolean(value?.trim());
@@ -146,23 +145,19 @@ type UseProfileCompletionOptions = {
 
 export function useProfileCompletion(options?: UseProfileCompletionOptions) {
   const { enabled = true, profile } = options ?? {};
+  const shouldFetch = enabled && !profile;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["own-profile"],
-    queryFn: async () => {
-      const res = await api.get("/api/users/me/profile");
-      return res.data.data.profile as OwnUserProfile;
-    },
-    enabled: enabled && !profile,
+  const { profile: defaultCvProfile, isLoading } = useDefaultCvProfile({
+    enabled: shouldFetch,
     staleTime: 5 * 60 * 1000,
   });
 
-  const sourceProfile = profile ?? data;
+  const sourceProfile = profile ?? (shouldFetch ? defaultCvProfile : undefined);
   const completion = useMemo(() => buildProfileCompletion(sourceProfile), [sourceProfile]);
 
   return {
     ...completion,
-    isLoading: enabled && !profile ? isLoading : false,
+    isLoading: shouldFetch ? isLoading : false,
     hasProfile: Boolean(sourceProfile),
   };
 }

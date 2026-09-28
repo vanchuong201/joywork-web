@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
+import { invalidateCandidateCv } from "@/hooks/useCandidateCvs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -109,19 +110,16 @@ export default function AccountTab() {
 
   const updateAccount = useMutation({
     mutationFn: async (values: FormValues) => {
-      const payload: any = {
+      const payload = {
         name: values.name,
         slug: values.slug || null, // Always include slug (even if empty) to allow updating it
       };
-      if (avatar) {
-        payload.avatar = avatar;
-      }
       const res = await api.patch("/api/users/me/profile", payload);
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["account"] });
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient);
       toast.success("Cập nhật tài khoản thành công");
     },
     onError: (error: any) => {
@@ -171,7 +169,7 @@ export default function AccountTab() {
         setAvatar(result.assetUrl);
         // Invalidate queries to refresh data from server
         queryClient.invalidateQueries({ queryKey: ["account"] });
-        queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+        invalidateCandidateCv(queryClient);
         toast.success("Tải ảnh đại diện thành công");
       } catch (error: any) {
         toast.error(error?.response?.data?.error?.message || "Tải ảnh thất bại");

@@ -83,9 +83,17 @@ async function downloadCvPdf(
   }
 }
 
-export async function downloadMyCvPdf() {
+export async function downloadMyCvPdf(cvId?: string) {
   return downloadCvPdf({
     url: "/api/cv-exports/me/pdf",
+    ...(cvId ? { params: { cvId } } : {}),
+    fallbackFileName: "joywork-cv.pdf",
+  });
+}
+
+export async function downloadApplicationCvPdf(applicationId: string) {
+  return downloadCvPdf({
+    url: `/api/cv-exports/applications/${encodeURIComponent(applicationId)}/pdf`,
     fallbackFileName: "joywork-cv.pdf",
   });
 }

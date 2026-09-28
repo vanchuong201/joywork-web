@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { updateCandidateCv } from "@/lib/api/candidate-cvs";
+import { invalidateCandidateCv } from "@/hooks/useCandidateCvs";
 import type { OwnUserProfile } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,10 +14,11 @@ import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface ProfileKSAProps {
+  cvId: string;
   profile: OwnUserProfile;
 }
 
-export default function ProfileKSA({ profile }: ProfileKSAProps) {
+export default function ProfileKSA({ cvId, profile }: ProfileKSAProps) {
   const queryClient = useQueryClient();
   const [knowledge, setKnowledge] = useState<string[]>(profile.profile?.knowledge || []);
   const [skills, setSkills] = useState<string[]>(profile.profile?.skills || []);
@@ -30,11 +32,11 @@ export default function ProfileKSA({ profile }: ProfileKSAProps) {
 
   const updateProfile = useMutation({
     mutationFn: async (data: { knowledge: string[]; skills: string[]; attitude: string[] }) => {
-      await api.patch("/api/users/me/profile", data);
+      await updateCandidateCv(cvId, data);
     },
     onSuccess: () => {
       toast.success("Cập nhật năng lực thành công");
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient, cvId);
     },
     onError: () => {
       toast.error("Cập nhật thất bại");

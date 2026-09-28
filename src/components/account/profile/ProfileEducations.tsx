@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { createCvEducation, deleteCvEducation, updateCvEducation } from "@/lib/api/candidate-cvs";
+import { invalidateCandidateCv } from "@/hooks/useCandidateCvs";
 import { UserEducation } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,11 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import EducationDialog from "./EducationDialog";
 
 interface ProfileEducationsProps {
+  cvId: string;
   educations: UserEducation[];
 }
 
-export default function ProfileEducations({ educations: initialEducations }: ProfileEducationsProps) {
+export default function ProfileEducations({ cvId, educations: initialEducations }: ProfileEducationsProps) {
   const queryClient = useQueryClient();
   const [educations, setEducations] = useState<UserEducation[]>(initialEducations);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -26,12 +28,11 @@ export default function ProfileEducations({ educations: initialEducations }: Pro
 
   const createEducation = useMutation({
     mutationFn: async (data: Omit<UserEducation, "id" | "order">) => {
-      const res = await api.post("/api/users/me/educations", data);
-      return res.data.data.education as UserEducation;
+      return createCvEducation(cvId, data);
     },
     onSuccess: (newEdu) => {
       toast.success("Thêm học vấn thành công");
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient, cvId);
       
       // Update local state immediately for better UX, but handle potential missing ID
       if (newEdu && newEdu.id) {
@@ -46,12 +47,11 @@ export default function ProfileEducations({ educations: initialEducations }: Pro
 
   const updateEducation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<UserEducation> }) => {
-      const res = await api.patch(`/api/users/me/educations/${id}`, data);
-      return res.data.data.education as UserEducation;
+      return updateCvEducation(cvId, id, data);
     },
     onSuccess: (updatedEdu) => {
       toast.success("Cập nhật học vấn thành công");
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient, cvId);
       setEducations((prev) => prev.map((edu) => (edu.id === updatedEdu.id ? updatedEdu : edu)));
       setEditingId(null);
       setIsDialogOpen(false);
@@ -63,11 +63,11 @@ export default function ProfileEducations({ educations: initialEducations }: Pro
 
   const deleteEducation = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/api/users/me/educations/${id}`);
+      await deleteCvEducation(cvId, id);
     },
     onSuccess: (_, id) => {
       toast.success("Xóa học vấn thành công");
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      invalidateCandidateCv(queryClient, cvId);
       setEducations((prev) => prev.filter((edu) => edu.id !== id));
     },
     onError: () => {

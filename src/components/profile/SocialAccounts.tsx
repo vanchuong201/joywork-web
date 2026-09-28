@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { invalidateCandidateCv } from "@/hooks/useCandidateCvs";
 import { toast } from "sonner";
 import { Loader2, Check, Plus } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
@@ -65,7 +66,7 @@ export default function SocialAccounts() {
             });
           // Invalidate React Query cache to refresh account data
           queryClient.invalidateQueries({ queryKey: ["account"] });
-          queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+          invalidateCandidateCv(queryClient);
         } else {
           toast.error(data.message || "Liên kết thất bại");
         }
@@ -98,7 +99,7 @@ export default function SocialAccounts() {
                   });
                 // Invalidate React Query cache to refresh account data
                 queryClient.invalidateQueries({ queryKey: ["account"] });
-                queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+                invalidateCandidateCv(queryClient);
             } else {
                 toast.error(data.message || "Liên kết thất bại");
             }

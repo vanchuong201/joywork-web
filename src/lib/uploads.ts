@@ -12,6 +12,7 @@ export async function uploadProfileAvatar(payload: {
   fileData: string;
   previousKey?: string;
   target?: 'account' | 'profile';
+  cvId?: string;
 }): Promise<{ key: string; assetUrl: string }> {
   const { data } = await api.post("/api/uploads/profile/avatar", payload);
   return data.data as { key: string; assetUrl: string };
@@ -55,6 +56,9 @@ export async function uploadProfileCV(payload: {
   fileType: string;
   fileData: string;
   previousKey?: string;
+  cvId?: string;
+  /** false: chỉ lưu file để import sang CV mới, không gắn vào CV nào. */
+  attach?: boolean;
 }): Promise<{ key: string; assetUrl: string }> {
   const { data } = await api.post("/api/uploads/profile/cv", payload);
   return data.data as { key: string; assetUrl: string };

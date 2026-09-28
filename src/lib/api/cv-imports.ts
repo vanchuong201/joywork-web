@@ -23,8 +23,13 @@ export async function getCvImport(jobId: string): Promise<CvImportJob> {
 
 export async function applyCvImport(
   jobId: string,
-  input: { mode: CvImportApplyMode; sections: CvImportSection[] }
-): Promise<CvImportJob> {
+  input: {
+    mode: CvImportApplyMode;
+    sections: CvImportSection[];
+    targetCvId?: string;
+    createNewCv?: boolean;
+  }
+): Promise<CvImportJob & { targetCvId?: string }> {
   const res = await api.post(`/api/cv-imports/${encodeURIComponent(jobId)}/apply`, input);
-  return res.data.data.job as CvImportJob;
+  return res.data.data.job as CvImportJob & { targetCvId?: string };
 }

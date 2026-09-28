@@ -1,15 +1,14 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, FileUp, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
-import api from "@/lib/api";
 import { uploadProfileCV } from "@/lib/uploads";
 import { applyCvImport, createCvImport, getCvImport } from "@/lib/api/cv-imports";
 import { CV_IMPORT_SECTIONS } from "@/types/cv-import";
-import type { OwnUserProfile } from "@/types/user";
+import { invalidateCandidateCv } from "@/hooks/useCandidateCvs";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,10 +21,17 @@ import { cn } from "@/lib/utils";
 
 type Stage = "idle" | "uploading" | "parsing" | "applying" | "done" | "error";
 
+type ImportTarget = "new" | "current";
+
 interface CvGenerateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  profile: OwnUserProfile;
+  /** CV đang sửa — đích khi chọn "Ghi đè CV này". */
+  cvId: string;
+  /** Còn slot để tạo CV mới từ file. */
+  canCreateNewCv: boolean;
+  /** Gọi sau khi import tạo CV mới thành công. */
+  onCreatedCv?: (cvId: string) => void;
   currentCvUrl: string | null;
   onCvUrlChange: (url: string | null) => void;
   /** Job CV đã parse sẵn (auto từ onboarding) — bỏ qua bước upload */
@@ -51,11 +57,17 @@ const ACCEPTED_MIME_TYPES = [
 export default function CvGenerateDialog({
   open,
   onOpenChange,
+  cvId,
+  canCreateNewCv,
+  onCreatedCv,
   currentCvUrl,
   onCvUrlChange,
   initialJobId = null,
 }: CvGenerateDialogProps) {
   const queryClient = useQueryClient();
+  const [importTarget, setImportTarget] = useState<ImportTarget>(canCreateNewCv ? "new" : "current");
+  const [confirmOverwrite, setConfirmOverwrite] = useState(false);
+  const [createdCvId, setCreatedCvId] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [jobWarnings, setJobWarnings] = useState<string[]>([]);
@@ -63,6 +75,24 @@ export default function CvGenerateDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isProcessing = stage === "uploading" || stage === "parsing" || stage === "applying";
+  const isTargetConfirmed = importTarget === "new" || confirmOverwrite;
+
+  useEffect(() => {
+    if (!open) return;
+    setImportTarget(canCreateNewCv ? "new" : "current");
+    setConfirmOverwrite(false);
+    setCreatedCvId(null);
+  }, [open, canCreateNewCv]);
+
+  const applyTarget = () =>
+    importTarget === "new" ? { createNewCv: true } : { targetCvId: cvId };
+
+  const finishApplied = (appliedCvId?: string) => {
+    invalidateCandidateCv(queryClient);
+    if (importTarget === "new" && appliedCvId) {
+      setCreatedCvId(appliedCvId);
+    }
+  };
 
   const progressValue = useMemo(() => {
     if (stage === "idle") return 0;
@@ -83,6 +113,7 @@ export default function CvGenerateDialog({
     if (isProcessing) return;
     onOpenChange(false);
     resetState();
+    if (createdCvId) onCreatedCv?.(createdCvId);
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -107,12 +138,6 @@ export default function CvGenerateDialog({
     return undefined;
   };
 
-  const persistCvUrl = async (nextUrl: string) => {
-    await api.patch("/api/users/me/profile", { cvUrl: nextUrl });
-    onCvUrlChange(nextUrl);
-    queryClient.invalidateQueries({ queryKey: ["own-profile"] });
-  };
-
   const applyExistingJob = async (jobId: string) => {
     setStage("applying");
     setErrorMessage(null);
@@ -127,17 +152,20 @@ export default function CvGenerateDialog({
 
       setJobWarnings(job.warnings || []);
 
+      let appliedCvId: string | undefined;
       if (job.status === "READY") {
         const applied = await applyCvImport(jobId, {
           mode: "overwrite",
           sections: [...CV_IMPORT_SECTIONS],
+          ...applyTarget(),
         });
         if (applied.status === "FAILED") {
           throw new Error(applied.errorMessage || "Không thể áp dụng dữ liệu từ CV.");
         }
+        appliedCvId = applied.targetCvId;
       }
 
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      finishApplied(appliedCvId);
       setStage("done");
       toast.success("Đã áp dụng CV nháp vào hồ sơ của bạn.");
     } catch (error: unknown) {
@@ -150,6 +178,10 @@ export default function CvGenerateDialog({
 
   const handleFileUploadAndGenerate = async (file: File) => {
     setIsDraggingFile(false);
+    if (!isTargetConfirmed) {
+      toast.error("Vui lòng xác nhận ghi đè CV này trước khi tải file lên");
+      return;
+    }
 
     if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
       toast.error("Chỉ chấp nhận file PDF, DOC hoặc DOCX");
@@ -177,10 +209,18 @@ export default function CvGenerateDialog({
         fileName: file.name,
         fileType: file.type,
         fileData: base64.split(",")[1],
-        previousKey: currentCvUrl ? extractS3Key(currentCvUrl) : undefined,
+        ...(importTarget === "new"
+          ? { attach: false }
+          : {
+              cvId,
+              previousKey: currentCvUrl ? extractS3Key(currentCvUrl) : undefined,
+            }),
       });
 
-      await persistCvUrl(uploadResult.assetUrl);
+      if (importTarget === "current") {
+        onCvUrlChange(uploadResult.assetUrl);
+        invalidateCandidateCv(queryClient, cvId);
+      }
 
       setStage("parsing");
       const importJob = await createCvImport({ cvUrl: uploadResult.assetUrl });
@@ -194,15 +234,20 @@ export default function CvGenerateDialog({
       const applied = await applyCvImport(importJob.id, {
         mode: "overwrite",
         sections: [...CV_IMPORT_SECTIONS],
+        ...applyTarget(),
       });
 
       if (applied.status === "FAILED") {
         throw new Error(applied.errorMessage || "Không thể áp dụng dữ liệu từ CV.");
       }
 
-      queryClient.invalidateQueries({ queryKey: ["own-profile"] });
+      finishApplied(applied.targetCvId);
       setStage("done");
-      toast.success("Đã tạo hồ sơ từ file CV và ghi đè dữ liệu cũ bằng thông tin trích xuất.");
+      toast.success(
+        importTarget === "new"
+          ? "Đã tạo CV mới từ file CV của bạn."
+          : "Đã cập nhật CV này bằng thông tin trích xuất từ file."
+      );
     } catch (error: unknown) {
       const message = getApiErrorMessage(error, "Không thể xử lý CV.");
       setErrorMessage(message);
@@ -234,7 +279,7 @@ export default function CvGenerateDialog({
           <DialogTitle>
             {initialJobId
               ? "Xem & hoàn thiện CV nháp từ link import"
-              : "Tải lên file CV để tự động điền hồ sơ của bạn"}
+              : "Tải lên file CV để tự động điền CV"}
           </DialogTitle>
         </DialogHeader>
 
@@ -259,21 +304,74 @@ export default function CvGenerateDialog({
           {showDropzone && (
             <div className="space-y-3">
               <p className="text-sm text-[var(--muted-foreground)]">
-                Chấp nhận PDF, DOC, DOCX (tối đa 10MB). Sau khi phân tích, hệ thống sẽ tự động cập nhật hồ sơ bằng dữ liệu từ CV.
+                Chấp nhận PDF, DOC, DOCX (tối đa 10MB). Sau khi phân tích, hệ thống sẽ tự động điền dữ liệu từ file CV.
               </p>
 
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <div className="space-y-1">
-                    <p className="font-medium">Dữ liệu hiện tại có thể bị ghi đè</p>
-                    <p className="text-xs">
-                      Khi upload thành công, JOYWORK sẽ dùng thông tin trích xuất từ CV để ghi đè các mục tương ứng
-                      trong hồ sơ của bạn, bao gồm thông tin cơ bản, liên hệ, kỹ năng, kinh nghiệm và học vấn.
-                    </p>
-                  </div>
+              <fieldset className="space-y-2" disabled={isProcessing}>
+                <legend className="text-sm font-medium text-[var(--foreground)]">Dữ liệu từ file sẽ được đưa vào</legend>
+                <label
+                  className={cn(
+                    "flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-sm",
+                    importTarget === "new" ? "border-[var(--brand)]" : "border-[var(--border)]",
+                    !canCreateNewCv && "cursor-not-allowed opacity-60"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="cv-import-target"
+                    className="mt-1"
+                    checked={importTarget === "new"}
+                    disabled={!canCreateNewCv}
+                    onChange={() => setImportTarget("new")}
+                  />
+                  <span>
+                    <span className="block font-medium">Tạo CV mới từ file</span>
+                    <span className="block text-xs text-[var(--muted-foreground)]">
+                      {canCreateNewCv
+                        ? "CV hiện tại giữ nguyên, hệ thống tạo thêm một CV mới."
+                        : "Bạn đã đạt giới hạn 5 CV. Xóa bớt CV để tạo mới."}
+                    </span>
+                  </span>
+                </label>
+                <label
+                  className={cn(
+                    "flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-sm",
+                    importTarget === "current" ? "border-[var(--brand)]" : "border-[var(--border)]"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="cv-import-target"
+                    className="mt-1"
+                    checked={importTarget === "current"}
+                    onChange={() => setImportTarget("current")}
+                  />
+                  <span>
+                    <span className="block font-medium">Ghi đè CV này</span>
+                    <span className="block text-xs text-[var(--muted-foreground)]">
+                      Thông tin cơ bản, liên hệ, kỹ năng, kinh nghiệm và học vấn của CV đang sửa sẽ bị thay thế.
+                    </span>
+                  </span>
+                </label>
+              </fieldset>
+
+              {importTarget === "current" && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                  <label className="flex cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={confirmOverwrite}
+                      disabled={isProcessing}
+                      onChange={(e) => setConfirmOverwrite(e.target.checked)}
+                    />
+                    <span className="flex items-start gap-2">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>Tôi hiểu nội dung hiện tại của CV này sẽ bị ghi đè và không thể hoàn tác.</span>
+                    </span>
+                  </label>
                 </div>
-              </div>
+              )}
 
               <input
                 ref={fileInputRef}
@@ -290,13 +388,14 @@ export default function CvGenerateDialog({
 
               <div
                 role="button"
-                tabIndex={isProcessing ? -1 : 0}
+                tabIndex={isProcessing || !isTargetConfirmed ? -1 : 0}
+                aria-disabled={isProcessing || !isTargetConfirmed}
                 onClick={() => {
-                  if (isProcessing) return;
+                  if (isProcessing || !isTargetConfirmed) return;
                   fileInputRef.current?.click();
                 }}
                 onKeyDown={(e) => {
-                  if (isProcessing) return;
+                  if (isProcessing || !isTargetConfirmed) return;
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     fileInputRef.current?.click();
@@ -304,7 +403,7 @@ export default function CvGenerateDialog({
                 }}
                 onDragOver={(e) => {
                   e.preventDefault();
-                  if (isProcessing) return;
+                  if (isProcessing || !isTargetConfirmed) return;
                   setIsDraggingFile(true);
                 }}
                 onDragLeave={(e) => {
@@ -315,13 +414,13 @@ export default function CvGenerateDialog({
                 }}
                 onDrop={(e) => {
                   e.preventDefault();
-                  if (isProcessing) return;
+                  if (isProcessing || !isTargetConfirmed) return;
                   const file = e.dataTransfer.files?.[0];
                   if (file) void handleFileUploadAndGenerate(file);
                 }}
                 className={cn(
                   "rounded-xl border border-dashed p-6 transition-all outline-none",
-                  isProcessing
+                  isProcessing || !isTargetConfirmed
                     ? "cursor-not-allowed border-[var(--border)] bg-[var(--muted)]/20 opacity-80"
                     : isDraggingFile
                       ? "border-[var(--brand)] bg-[var(--brand-light,_#eef4ff)] shadow-sm"
@@ -350,7 +449,7 @@ export default function CvGenerateDialog({
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={isProcessing}
+                    disabled={isProcessing || !isTargetConfirmed}
                     onClick={(e) => {
                       e.stopPropagation();
                       fileInputRef.current?.click();
@@ -394,8 +493,14 @@ export default function CvGenerateDialog({
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
-                  <p className="font-medium">Đã cập nhật hồ sơ từ CV thành công.</p>
-                  <p className="text-xs">JOYWORK đã ghi đè dữ liệu cũ bằng thông tin trích xuất từ CV.</p>
+                  <p className="font-medium">
+                    {importTarget === "new" ? "Đã tạo CV mới từ file thành công." : "Đã cập nhật CV từ file thành công."}
+                  </p>
+                  <p className="text-xs">
+                    {importTarget === "new"
+                      ? "Bấm \"Hoàn tất\" để mở CV mới và kiểm tra lại thông tin."
+                      : "JOYWORK đã ghi đè dữ liệu cũ của CV này bằng thông tin trích xuất từ file."}
+                  </p>
                   {jobWarnings.length > 0 && (
                     <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs">
                       {jobWarnings.map((warning, index) => (
