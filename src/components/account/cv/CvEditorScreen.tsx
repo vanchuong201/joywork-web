@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
 import CvExportButton from "@/components/cv/CvExportButton";
 import CvNameDialog from "@/components/account/cv/CvNameDialog";
-import CvVisibilitySettings from "@/components/account/cv/CvVisibilitySettings";
 import ProfileBasicInfo from "@/components/account/profile/ProfileBasicInfo";
 import ProfileKSA from "@/components/account/profile/ProfileKSA";
 import ProfileExpectations from "@/components/account/profile/ProfileExpectations";
@@ -175,7 +174,6 @@ export default function CvEditorScreen({ cvId }: { cvId: string }) {
       <ProfileExpectations cvId={cv.id} profile={profile} />
       <ProfileExperiences cvId={cv.id} experiences={cv.experiences || []} />
       <ProfileEducations cvId={cv.id} educations={cv.educations || []} />
-      <CvVisibilitySettings cvId={cv.id} visibility={cv.visibility} />
 
       <CvNameDialog
         open={isRenameOpen}
