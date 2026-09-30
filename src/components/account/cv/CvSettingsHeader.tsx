@@ -49,7 +49,7 @@ export default function CvSettingsHeader({ cvs, defaultCvId, settings }: CvSetti
     <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
       <h2 className="text-base font-semibold">Thiết lập CV mặc định</h2>
       <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-        CV mặc định là CV doanh nghiệp nhìn thấy khi tìm kiếm ứng viên và được chọn sẵn khi bạn ứng tuyển.
+        CV mặc định là CV doanh nghiệp nhìn thấy khi tìm kiếm ứng viên trong kho ứng viên của JOYWORK.
       </p>
 
       <div className="mt-4 grid gap-5 md:grid-cols-3">
@@ -87,8 +87,8 @@ export default function CvSettingsHeader({ cvs, defaultCvId, settings }: CvSetti
           </div>
           <p className="text-xs text-[var(--muted-foreground)]">
             {settings.isSearchingJob
-              ? "CV mặc định hiển thị khi doanh nghiệp tìm kiếm ứng viên và có nhãn \u201cĐang tìm việc\u201d."
-              : "CV của bạn bị ẩn khỏi tìm kiếm và doanh nghiệp không xem được CV. Bạn vẫn có thể ứng tuyển."}
+              ? "CV mặc định của bạn sẽ được hiển thị trong kho ứng viên khi doanh nghiệp tìm kiếm."
+              : "CV của bạn bị ẩn khỏi tìm kiếm, tuy nhiên bạn vẫn có thể chủ động ứng tuyển."}
           </p>
         </div>
 

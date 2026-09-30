@@ -754,7 +754,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
           <DialogHeader>
             <DialogTitle>Xác nhận ứng tuyển</DialogTitle>
             <DialogDescription>
-              Hoàn tất thông tin trước khi gửi hồ sơ ứng tuyển của bạn.
+              Chỉ CV đã hoàn thiện 3 mục: Thông tin cơ bản, Năng lực (KSA), Kinh nghiệm làm việc mới có thể ứng tuyển.
             </DialogDescription>
           </DialogHeader>
 

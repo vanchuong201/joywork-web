@@ -78,7 +78,11 @@ export default function ApplyCvPicker({ options, selectedCvId, onSelect, disable
                   <Link
                     href={`/account/profile/cv/${cv.id}`}
                     className="font-medium underline"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     Sửa CV
                   </Link>
