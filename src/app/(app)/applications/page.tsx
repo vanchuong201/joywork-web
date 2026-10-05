@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -7,17 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import EmptyState from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { APPLICATION_STATUS_LABEL as STATUS_LABEL } from "@/components/company/applications/application-status";
 import useInView from "@/hooks/useInView";
-import { useEffect, useMemo } from "react";
-
-const STATUS_LABEL: Record<string, string> = {
-  RECEIVED: "Tiếp nhận",
-  SUITABLE: "Phù hợp",
-  INTERVIEW_SCHEDULED: "Hẹn phỏng vấn",
-  OFFER_SENT: "Gửi đề nghị",
-  HIRED: "Nhận việc",
-  NOT_SUITABLE: "Chưa phù hợp",
-};
 
 type ApplicationItem = {
   id: string;

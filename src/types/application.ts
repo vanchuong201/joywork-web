@@ -4,7 +4,8 @@ export type ApplicationStatus =
   | "INTERVIEW_SCHEDULED"
   | "OFFER_SENT"
   | "HIRED"
-  | "NOT_SUITABLE";
+  | "NOT_SUITABLE"
+  | "NOT_SUITABLE_SAVED";
 
 export interface CvSnapshotExperience {
   id: string;

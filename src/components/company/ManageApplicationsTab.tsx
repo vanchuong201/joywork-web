@@ -18,10 +18,13 @@ import { Users, User, FileText, ChevronLeft, ChevronRight, X, MoreVertical, Edit
 import ApplicationStatusDialog, {
   type ApplicationStatusTarget,
 } from "@/components/company/applications/ApplicationStatusDialog";
+import ResponseDueBadge from "@/components/company/applications/ResponseDueBadge";
 import {
   APPLICATION_STATUS_COLORS as STATUS_COLORS,
   APPLICATION_STATUS_LABEL as STATUS_LABEL,
+  APPLICATION_STATUS_OPTIONS,
 } from "@/components/company/applications/application-status";
+import type { ApplicationStatus } from "@/types/application";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Company } from "@/types/company";
@@ -31,7 +34,7 @@ type Props = {
 };
 
 type ViewMode = "list" | "grid";
-type StatusFilter = "all" | "RECEIVED" | "SUITABLE" | "INTERVIEW_SCHEDULED" | "OFFER_SENT" | "HIRED" | "NOT_SUITABLE";
+type StatusFilter = "all" | ApplicationStatus;
 
 const ITEMS_PER_PAGE = 10;
 
@@ -41,6 +44,7 @@ export default function ManageApplicationsTab({ company }: Props) {
   const pathname = usePathname();
   
   const jobId = searchParams.get("jobId") || undefined;
+  const responseDue = searchParams.get("responseDue") === "1";
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,7 +62,7 @@ export default function ManageApplicationsTab({ company }: Props) {
 
   // Fetch Applications
   const applicationsQuery = useQuery({
-    queryKey: ["company-applications", company.id, jobId, statusFilter, currentPage],
+    queryKey: ["company-applications", company.id, jobId, statusFilter, responseDue, currentPage],
     queryFn: async () => {
       const params: any = {
         companyId: company.id,
@@ -67,6 +71,7 @@ export default function ManageApplicationsTab({ company }: Props) {
       };
       if (jobId) params.jobId = jobId;
       if (statusFilter !== "all") params.status = statusFilter;
+      if (responseDue) params.responseDue = true;
       
       const res = await api.get("/api/jobs/applications", { params });
       return res.data.data;
@@ -105,9 +110,17 @@ export default function ManageApplicationsTab({ company }: Props) {
     setCurrentPage(1);
   };
 
+  const handleResponseDueChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "due") params.set("responseDue", "1");
+    else params.delete("responseDue");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    setCurrentPage(1);
+  };
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, jobId]);
+  }, [statusFilter, jobId, responseDue]);
 
   const applications = applicationsQuery.data?.applications || [];
   const pagination = applicationsQuery.data?.pagination;
@@ -187,26 +200,41 @@ export default function ManageApplicationsTab({ company }: Props) {
               id="status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              className="h-9 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-sm text-[var(--foreground)] transition-colors focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 sm:w-[180px]"
+              className="h-9 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-sm text-[var(--foreground)] transition-colors focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 sm:w-80"
             >
               <option value="all">Tất cả</option>
-              <option value="RECEIVED">Tiếp nhận</option>
-              <option value="SUITABLE">Phù hợp</option>
-              <option value="INTERVIEW_SCHEDULED">Hẹn phỏng vấn</option>
-              <option value="OFFER_SENT">Gửi đề nghị</option>
-              <option value="HIRED">Nhận việc</option>
-              <option value="NOT_SUITABLE">Chưa phù hợp</option>
+              {APPLICATION_STATUS_OPTIONS.map((value) => (
+                <option key={value} value={value}>
+                  {STATUS_LABEL[value]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-initial">
+            <Label htmlFor="response-due-filter" className="shrink-0 whitespace-nowrap text-sm font-medium text-[var(--foreground)]">
+              Hạn phản hồi:
+            </Label>
+            <select
+              id="response-due-filter"
+              value={responseDue ? "due" : "all"}
+              onChange={(e) => handleResponseDueChange(e.target.value)}
+              className="h-9 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-sm text-[var(--foreground)] transition-colors focus:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 sm:w-52"
+            >
+              <option value="all">Tất cả</option>
+              <option value="due">Đến hạn phản hồi</option>
             </select>
           </div>
 
           {/* Clear filters */}
-          {(jobId || statusFilter !== "all") && (
+          {(jobId || statusFilter !== "all" || responseDue) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 const params = new URLSearchParams(searchParams.toString());
                 params.delete("jobId");
+                params.delete("responseDue");
                 router.push(`${pathname}?${params.toString()}`, { scroll: false });
                 setStatusFilter("all");
               }}
@@ -261,12 +289,12 @@ export default function ManageApplicationsTab({ company }: Props) {
               <Users className="h-8 w-8 text-[var(--muted-foreground)]" />
             </div>
             <p className="mb-4 text-lg font-medium text-[var(--foreground)]">
-              {jobId || statusFilter !== "all"
+              {jobId || statusFilter !== "all" || responseDue
                 ? "Không tìm thấy ứng viên phù hợp"
                 : "Chưa có ứng viên nào"}
             </p>
             <p className="text-sm">
-              {jobId || statusFilter !== "all"
+              {jobId || statusFilter !== "all" || responseDue
                 ? "Thử điều chỉnh bộ lọc để xem thêm kết quả"
                 : "Ứng viên sẽ xuất hiện ở đây khi họ ứng tuyển vào các vị trí của công ty"}
             </p>
@@ -310,7 +338,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-4 mb-3">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-1">
+                              <div className="mb-1 flex flex-wrap items-center gap-2">
                                 <Link
                                   href={candidateHref}
                                   className="text-base font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--brand)]"
@@ -322,6 +350,7 @@ export default function ManageApplicationsTab({ company }: Props) {
                                 >
                                   {STATUS_LABEL[application.status] || application.status}
                                 </Badge>
+                                {application.responseDue ? <ResponseDueBadge /> : null}
                                 {reapplyIndex > 1 ? (
                                   <Badge variant="outline" className="px-2 py-0.5 text-xs">
                                     Lần {reapplyIndex}
@@ -483,16 +512,19 @@ export default function ManageApplicationsTab({ company }: Props) {
                         {headline && (
                           <p className="mb-2 line-clamp-2 text-xs text-[var(--muted-foreground)]">{headline}</p>
                         )}
-                        <Badge 
-                          className={cn("border px-2.5 py-0.5 text-xs font-medium", STATUS_COLORS[application.status] || "border-[var(--border)] bg-[var(--muted)] text-[var(--muted-foreground)]")}
-                        >
-                          {STATUS_LABEL[application.status] || application.status}
-                        </Badge>
-                        {reapplyIndex > 1 ? (
-                          <Badge variant="outline" className="ml-2 px-2 py-0.5 text-xs">
-                            Lần {reapplyIndex}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge 
+                            className={cn("border px-2.5 py-0.5 text-xs font-medium", STATUS_COLORS[application.status] || "border-[var(--border)] bg-[var(--muted)] text-[var(--muted-foreground)]")}
+                          >
+                            {STATUS_LABEL[application.status] || application.status}
                           </Badge>
-                        ) : null}
+                          {application.responseDue ? <ResponseDueBadge /> : null}
+                          {reapplyIndex > 1 ? (
+                            <Badge variant="outline" className="px-2 py-0.5 text-xs">
+                              Lần {reapplyIndex}
+                            </Badge>
+                          ) : null}
+                        </div>
                       </div>
 
                       {/* Application Details */}
