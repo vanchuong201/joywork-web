@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Edit, History, MessageSquare, RefreshCw } from "lucide-react";
+import { ArrowLeft, Edit, History, RefreshCw } from "lucide-react";
 
 import ApplicationCoverLetter from "@/components/company/ApplicationCoverLetter";
 import CvExportButton from "@/components/cv/CvExportButton";
@@ -129,12 +129,6 @@ export default function ApplicationSnapshotScreen({ companySlug, applicationId }
               <Button variant="outline" size="sm" onClick={() => setStatusDialogOpen(true)}>
                 <Edit className="mr-1.5 h-4 w-4" />
                 Cập nhật trạng thái
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/inbox/${encodeURIComponent(application.id)}`}>
-                  <MessageSquare className="mr-1.5 h-4 w-4" />
-                  Nhắn tin
-                </Link>
               </Button>
               {snapshot ? <CvExportButton mode="application" applicationId={application.id} size="sm" /> : null}
             </div>

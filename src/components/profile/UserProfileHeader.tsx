@@ -45,12 +45,13 @@ export default function UserProfileHeader({ profile, cvFlip, employerCandidateVi
 
   const showCvMask = Boolean(cvFlip?.enabled && !cvFlip.revealed);
 
-  const maskedInitials = profile.maskedInitials || nameToMaskedInitials(profile.name);
+  const revealedName = profile.profile?.fullName?.trim() || profile.name || "Ứng viên";
+  const maskedInitials = profile.maskedInitials || nameToMaskedInitials(revealedName);
   const maskedFields = profile.maskedFields;
   const hasMaskedField = (field: keyof NonNullable<PublicUserProfile['maskedFields']>) =>
     maskedFields ? maskedFields[field] : true;
   const [avatarError, setAvatarError] = useState(false);
-  const avatarFallbackName = showCvMask ? maskedInitials : profile.name || "Ứng viên";
+  const avatarFallbackName = showCvMask ? maskedInitials : revealedName;
   const avatarUrl =
     !avatarError && profile.profile?.avatar
       ? profile.profile.avatar
@@ -59,7 +60,7 @@ export default function UserProfileHeader({ profile, cvFlip, employerCandidateVi
         )}&background=random&size=200`;
   const jobSeekingStatus = profile.profile?.status;
 
-  const displayTitle = showCvMask ? maskedInitials : profile.name || "Ứng viên";
+  const displayTitle = showCvMask ? maskedInitials : revealedName;
 
   // Fetch ward details for display
   const [wards, setWards] = useState<WardOption[]>([]);
@@ -160,7 +161,7 @@ export default function UserProfileHeader({ profile, cvFlip, employerCandidateVi
             <>
               <Image
                 src={avatarUrl}
-                alt={profile.name || 'Avatar'}
+                alt={revealedName}
                 width={128}
                 height={128}
                 className="w-full h-full rounded-full object-cover"

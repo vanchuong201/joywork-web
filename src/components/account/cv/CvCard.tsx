@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, Copy, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, Copy, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import CvExportButton from "@/components/cv/CvExportButton";
@@ -9,6 +9,7 @@ import type { CandidateCvSummary } from "@/types/candidate-cv";
 
 type CvCardProps = {
   cv: CandidateCvSummary;
+  publicHref: string | null;
   isOnlyCv: boolean;
   isLimitReached: boolean;
   isBusy: boolean;
@@ -21,7 +22,15 @@ const dateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
   timeStyle: "short",
 });
 
-export default function CvCard({ cv, isOnlyCv, isLimitReached, isBusy, onDuplicate, onDelete }: CvCardProps) {
+export default function CvCard({
+  cv,
+  publicHref,
+  isOnlyCv,
+  isLimitReached,
+  isBusy,
+  onDuplicate,
+  onDelete,
+}: CvCardProps) {
   const deleteBlockedReason = cv.isDefault
     ? "Không thể xóa CV mặc định. Hãy chọn CV mặc định khác trước."
     : isOnlyCv
@@ -58,6 +67,14 @@ export default function CvCard({ cv, isOnlyCv, isLimitReached, isBusy, onDuplica
       </div>
 
       <div className="flex flex-wrap gap-2 sm:justify-end">
+        {publicHref ? (
+          <Button variant="outline" size="sm" asChild>
+            <Link href={publicHref} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="mr-1.5 h-4 w-4" />
+              Xem CV công khai
+            </Link>
+          </Button>
+        ) : null}
         <Button variant="outline" size="sm" asChild>
           <Link href={`/account/profile/cv/${encodeURIComponent(cv.id)}`}>
             <Pencil className="mr-1.5 h-4 w-4" />

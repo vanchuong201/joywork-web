@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
@@ -19,7 +18,7 @@ import {
   duplicateCandidateCv,
 } from "@/lib/api/candidate-cvs";
 import { getApiErrorCode, getApiErrorMessage } from "@/lib/api-error";
-import { buildCandidateProfileUrl } from "@/lib/candidate-url";
+import { buildOwnedCvPublicHref } from "@/lib/candidate-url";
 import {
   candidateCvKeys,
   invalidateCandidateCv,
@@ -109,25 +108,14 @@ export default function MyCvsScreen() {
   const isLimitReached = cvs.length >= limit;
   const isBusy = duplicateCv.isPending || deleteCv.isPending;
   const account = accountQuery.data;
-  const candidateProfileHref = account ? buildCandidateProfileUrl(account.slug || account.id) : null;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div>
-          <h1 className="text-xl font-bold sm:text-2xl">CV của tôi</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            Tạo tối đa {limit} CV cho các vị trí khác nhau và chọn CV phù hợp khi ứng tuyển.
-          </p>
-        </div>
-        {settings.isSearchingJob && candidateProfileHref ? (
-          <Button variant="outline" asChild className="w-full sm:w-auto">
-            <Link href={candidateProfileHref} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Xem hồ sơ trên danh sách ứng viên
-            </Link>
-          </Button>
-        ) : null}
+      <div>
+        <h1 className="text-xl font-bold sm:text-2xl">CV của tôi</h1>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+          Tạo tối đa {limit} CV cho các vị trí khác nhau và chọn CV phù hợp khi ứng tuyển.
+        </p>
       </div>
 
       <CvImportJobBanner onApplied={refreshList} />
@@ -158,6 +146,7 @@ export default function MyCvsScreen() {
           <CvCard
             key={cv.id}
             cv={cv}
+            publicHref={buildOwnedCvPublicHref(cv, account)}
             isOnlyCv={cvs.length <= 1}
             isLimitReached={isLimitReached}
             isBusy={isBusy}

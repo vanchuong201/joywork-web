@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, Circle, Pencil } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, ExternalLink, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import ProfileExpectations from "@/components/account/profile/ProfileExpectation
 import ProfileExperiences from "@/components/account/profile/ProfileExperiences";
 import ProfileEducations from "@/components/account/profile/ProfileEducations";
 import { updateCandidateCv } from "@/lib/api/candidate-cvs";
+import { buildOwnedCvPublicHref } from "@/lib/candidate-url";
 import { getApiErrorCode, getApiErrorMessage } from "@/lib/api-error";
 import { buildProfileCompletion } from "@/hooks/useProfileCompletion";
 import {
@@ -85,6 +86,7 @@ export default function CvEditorScreen({ cvId }: { cvId: string }) {
   const list = listQuery.data;
   const canCreateNewCv = list ? list.cvs.length < list.limit : false;
   const { completionItems, completionPercent } = buildProfileCompletion(profile);
+  const publicHref = buildOwnedCvPublicHref(cv, accountQuery.data);
 
   return (
     <div className="space-y-6">
@@ -118,7 +120,17 @@ export default function CvEditorScreen({ cvId }: { cvId: string }) {
             Chỉnh sửa nội dung CV này. Thay đổi không ảnh hưởng tới các đơn đã ứng tuyển trước đó.
           </p>
         </div>
-        <CvExportButton mode="own" cvId={cv.id} className="w-full sm:w-auto" label="Tải về" />
+        <div className="flex w-full flex-col gap-2 sm:w-auto">
+          {publicHref ? (
+            <Button variant="outline" asChild className="w-full sm:w-auto">
+              <Link href={publicHref} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Xem CV công khai
+              </Link>
+            </Button>
+          ) : null}
+          <CvExportButton mode="own" cvId={cv.id} className="w-full sm:w-auto" label="Tải về" />
+        </div>
       </div>
 
       <div className="rounded-2xl border border-[var(--border)] bg-white p-5">

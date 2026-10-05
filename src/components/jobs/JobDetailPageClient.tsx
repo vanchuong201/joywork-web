@@ -219,17 +219,14 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
   );
 
   const applyCvOptions: ApplyCvOption[] = useMemo(() => {
-    const openCvIds = new Set(openApplications.map((app) => app.sourceCvId).filter(Boolean));
     const cvs = [...(cvList?.cvs ?? [])].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
-    return cvs.map((cv) => ({ cv, hasOpenApplication: openCvIds.has(cv.id) }));
-  }, [cvList?.cvs, openApplications]);
+    return cvs.map((cv) => ({ cv }));
+  }, [cvList?.cvs]);
 
   const latestOpenApplication = openApplications.length > 0 ? openApplications[openApplications.length - 1] : null;
   const latestOpenCvName = latestOpenApplication
     ? cvList?.cvs.find((cv) => cv.id === latestOpenApplication.sourceCvId)?.name ?? null
     : null;
-  const allCvsHaveOpenApplication =
-    applyCvOptions.length > 0 && applyCvOptions.every((option) => option.hasOpenApplication);
   const missingCv = cvList?.cvs.find((cv) => cv.id === missingCvId) ?? null;
 
   const applyMutation = useMutation({
@@ -304,11 +301,9 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
 
     const selectable = applyCvOptions.filter(isApplyCvSelectable);
     if (selectable.length === 0) {
-      const target =
-        applyCvOptions.find((option) => !option.hasOpenApplication && option.cv.isDefault) ??
-        applyCvOptions.find((option) => !option.hasOpenApplication);
+      const target = applyCvOptions.find((option) => option.cv.isDefault) ?? applyCvOptions[0];
       if (!target) {
-        toast.error("Bạn đang có đơn mở với tất cả CV cho vị trí này.");
+        toast.error("Bạn chưa có CV để ứng tuyển.");
         return;
       }
       setMissingCvId(target.cv.id);
@@ -681,8 +676,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
             ) : (
               <Button
                 onClick={handleApply}
-                disabled={applyMutation.isPending || (Boolean(user) && (isCvListLoading || allCvsHaveOpenApplication))}
-                title={allCvsHaveOpenApplication ? "Bạn đang có đơn mở với tất cả CV cho vị trí này" : undefined}
+                disabled={applyMutation.isPending || (Boolean(user) && isCvListLoading)}
                 className="h-10 px-5 text-sm sm:text-base"
               >
                 {applyMutation.isPending
@@ -733,6 +727,8 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
             <Button asChild>
               <Link
                 href={missingCv ? `/account/profile/cv/${missingCv.id}` : "/account/profile"}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => setCvMissingDialogOpen(false)}
               >
                 Cập nhật CV ngay

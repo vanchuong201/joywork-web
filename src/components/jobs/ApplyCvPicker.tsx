@@ -7,11 +7,10 @@ import type { CandidateCvSummary } from "@/types/candidate-cv";
 
 export type ApplyCvOption = {
   cv: CandidateCvSummary;
-  hasOpenApplication: boolean;
 };
 
 export function isApplyCvSelectable(option: ApplyCvOption): boolean {
-  return option.cv.readiness?.isReady === true && !option.hasOpenApplication;
+  return option.cv.readiness?.isReady === true;
 }
 
 type ApplyCvPickerProps = {
@@ -25,7 +24,7 @@ export default function ApplyCvPicker({ options, selectedCvId, onSelect, disable
   return (
     <div className="space-y-2" role="radiogroup" aria-label="Chọn CV ứng tuyển">
       {options.map((option) => {
-        const { cv, hasOpenApplication } = option;
+        const { cv } = option;
         const selectable = isApplyCvSelectable(option);
         const selected = selectedCvId === cv.id;
         const missingSections = cv.readiness?.missingSections ?? [];
@@ -70,9 +69,7 @@ export default function ApplyCvPicker({ options, selectedCvId, onSelect, disable
                 ) : null}
               </div>
               {cv.title ? <p className="truncate text-xs text-[var(--muted-foreground)]">{cv.title}</p> : null}
-              {hasOpenApplication ? (
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">Đang có đơn mở với CV này</p>
-              ) : missingSections.length > 0 ? (
+              {missingSections.length > 0 ? (
                 <p className="mt-1 text-xs text-amber-700">
                   Thiếu: {missingSections.join(", ")} ·{" "}
                   <Link
