@@ -1,4 +1,5 @@
 import {
+  Award,
   Home,
   Briefcase,
   Building2,
@@ -24,6 +25,8 @@ export type NavItem = {
   exact?: boolean;
   badge?: string;
   external?: boolean;
+  /** Nổi hơn mục khác: nền và chữ brand, dùng cho CTA trong sidebar. */
+  emphasis?: boolean;
 };
 
 export type AccountDropdownItem = {
@@ -79,7 +82,14 @@ export function buildHeaderExploreNav(_user: AuthUser | null): NavItem[] {
 /** Sidebar “Không gian của doanh nghiệp” — khảo sát ở cuối danh sách. */
 export function buildBusinessSpaceNav(): NavItem[] {
   return [
-    { icon: Users, label: "Ứng viên", href: "/candidates", exact: true },
+    {
+      icon: Award,
+      label: "Đăng ký huy hiệu",
+      href: "https://camket.joywork.vn/dangky",
+      external: true,
+      emphasis: true,
+    },
+    { icon: Users, label: "Tìm ứng viên", href: "/candidates", exact: true },
     { icon: FileText, label: "Quản lý yêu cầu mở CV", href: "/candidates/cv-requests" },
     ...(SHOW_COURSES_NAV
       ? [{ icon: GraduationCap, label: "Khóa học", href: "/courses" }]

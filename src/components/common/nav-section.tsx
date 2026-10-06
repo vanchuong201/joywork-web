@@ -33,9 +33,11 @@ export default function NavSection({
           const isActive = isNavItemActive(pathname, item);
           const className = cn(
             "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
-            isActive
-              ? "bg-[var(--muted)] text-[var(--foreground)]"
-              : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+            item.emphasis
+              ? "bg-[var(--brand-light)] text-[var(--brand)] hover:bg-[var(--brand-light)] hover:text-[var(--brand-hover)]"
+              : isActive
+                ? "bg-[var(--muted)] text-[var(--foreground)]"
+                : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
           );
           const label = (
             <>
