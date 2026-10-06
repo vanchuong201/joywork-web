@@ -373,7 +373,7 @@ export default function CandidateDetailPage({ params }: Props) {
     return (
       <div className="mx-auto max-w-4xl space-y-4 p-4">
         <p className="text-sm text-red-600">
-          CV không tồn tại hoặc không còn công khai.
+          CV không tồn tại hoặc không còn công khai do ứng viên đã tắt chế độ tìm tìm việc.
         </p>
         <Link
           href="/candidates"
