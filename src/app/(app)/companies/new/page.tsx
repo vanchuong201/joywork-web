@@ -52,7 +52,8 @@ const schema = z.object({
   slug: z
     .string()
     .regex(/^[a-z0-9-]+$/, "Slug chỉ được chứa chữ thường (không dấu), số và dấu gạch ngang")
-    .min(2, "Slug cần ít nhất 2 ký tự"),
+    .min(2, "Slug cần ít nhất 2 ký tự")
+    .refine((value) => !value.startsWith("http"), "Slug không được bắt đầu bằng http hoặc https. Website nhập ở trường bên dưới."),
   tagline: z.string().optional(),
   industry: z.preprocess(
     (v) => (v === null || v === undefined || v === "" ? undefined : v),
@@ -84,6 +85,7 @@ export default function CreateCompanyPage() {
   const router = useRouter();
   const { fetchMe } = useAuthStore();
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [slugEditable, setSlugEditable] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [verificationFile, setVerificationFile] = useState<File | null>(null);
   const [uploadingVerification, setUploadingVerification] = useState(false);
@@ -168,6 +170,8 @@ export default function CreateCompanyPage() {
       value: /^[a-z0-9-]+$/,
       message: "Slug chỉ được chứa chữ thường (không dấu), số và dấu gạch ngang",
     },
+    validate: (value) =>
+      !value.startsWith("http") || "Slug không được bắt đầu bằng http hoặc https. Website nhập ở trường bên dưới.",
   });
   const showFieldError = (field: keyof FormValues) => Boolean(errors[field]) && (Boolean(touchedFields[field]) || submitCount > 0);
 
@@ -181,6 +185,9 @@ export default function CreateCompanyPage() {
   const industryValue = watch("industry");
   const slugValue = watch("slug");
   const sanitizedSlugValue = useMemo(() => slugify(slugValue || ""), [slugValue, slugify]);
+  const slugUrlError = sanitizedSlugValue.startsWith("http")
+    ? "Slug không được bắt đầu bằng http hoặc https. Website nhập ở trường bên dưới."
+    : null;
   const isFormValid = useMemo(() => {
     const nameValid = (nameValue || "").trim().length >= 2;
     const legalNameValid = (legalNameValue || "").trim().length >= 2;
@@ -190,7 +197,10 @@ export default function CreateCompanyPage() {
     const wardCodeValid = (wardCodeValue || "").trim().length > 0;
     const specificAddressValid = (specificAddressValue || "").trim().length > 0;
     const industryValid = (industryValue || "").trim().length > 0;
-    const slugValid = sanitizedSlugValue.length >= 2 && /^[a-z0-9-]+$/.test(sanitizedSlugValue);
+    const slugValid =
+      sanitizedSlugValue.length >= 2 &&
+      /^[a-z0-9-]+$/.test(sanitizedSlugValue) &&
+      !sanitizedSlugValue.startsWith("http");
     const hasErrors =
       Boolean(errors.name) ||
       Boolean(errors.legalName) ||
@@ -387,37 +397,67 @@ export default function CreateCompanyPage() {
           </div>
 
           <div className="min-w-0 md:col-span-2">
-            <label className="text-sm font-medium text-[var(--foreground)]">Slug (đường dẫn) *</label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-medium text-[var(--foreground)]" htmlFor="create-company-slug">
+                Slug (đường dẫn) *
+              </label>
+              <button
+                type="button"
+                className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                onClick={() => {
+                  if (slugEditable) {
+                    setSlugEditable(false);
+                    setSlugManuallyEdited(false);
+                    setValue("slug", slugify(nameValue || ""), { shouldDirty: true, shouldValidate: true });
+                    return;
+                  }
+                  setSlugEditable(true);
+                  setSlugManuallyEdited(true);
+                }}
+              >
+                {slugEditable ? "Tự động cập nhật" : "Chỉnh sửa"}
+              </button>
+            </div>
             <Input
-              className={showFieldError("slug") ? "mt-1 border-red-500 focus-visible:ring-red-500" : "mt-1"}
+              id="create-company-slug"
+              className={
+                showFieldError("slug")
+                  ? "mt-1 border-red-500 focus-visible:ring-red-500"
+                  : slugEditable
+                    ? "mt-1"
+                    : "mt-1 cursor-default bg-[var(--muted)]"
+              }
               placeholder="ví dụ: joywork-studio"
               {...slugField}
               value={slugValue}
-              onChange={(event) => {
-                setSlugManuallyEdited(true);
-                const sanitized = slugify(event.target.value, { trimEdge: false });
-                setValue("slug", sanitized, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-              }}
+              readOnly={!slugEditable}
+              onChange={
+                slugEditable
+                  ? (event) => {
+                      setSlugManuallyEdited(true);
+                      const sanitized = slugify(event.target.value, { trimEdge: false });
+                      setValue("slug", sanitized, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                    }
+                  : undefined
+              }
               onBlur={() => {
                 const trimmed = slugify(slugValue || "");
-                setValue("slug", trimmed, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                setValue("slug", trimmed, { shouldDirty: true, shouldTouch: true, shouldValidate: slugEditable });
               }}
             />
             <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-              Đây là đường dẫn công khai tới trang công ty của bạn:&nbsp;
-              <span className="font-medium text-[var(--foreground)]">
-                https://joywork.vn/companies/{slugValue || "ten-doanh-nghiep"}
-              </span>
+              Đây là đường dẫn công khai tới trang công ty của bạn trên JOYWORK: https://joywork.vn/companies/
+              <span className="font-medium text-[var(--foreground)]">{slugValue || "ten-doanh-nghiep"}</span>
             </p>
-            {showFieldError("slug") ? (
+            {showFieldError("slug") || slugUrlError ? (
               <p className="mt-1 text-sm text-red-500">
-                {errors.slug?.message} (ví dụ: <code className="font-mono">joywork-studio</code>)
+                {slugUrlError ?? errors.slug?.message} (ví dụ: <code className="font-mono">joywork-studio</code>)
               </p>
-            ) : (
+            ) : slugEditable ? (
               <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                 Hãy dùng chữ thường, không dấu, thay khoảng trắng bằng dấu gạch ngang.
               </p>
-            )}
+            ) : null}
           </div>
 
           <div className="min-w-0">

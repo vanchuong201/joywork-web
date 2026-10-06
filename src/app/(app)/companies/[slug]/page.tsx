@@ -8,6 +8,7 @@ import CompanyProfileContent from "@/components/company/profile/CompanyProfileCo
 import CompanyJobsTab from "@/components/company/CompanyJobsTab";
 import CompanyModeSwitchBar from "@/components/company/CompanyModeSwitchBar";
 import { buildCompanyProfileTitle } from "@/lib/seo-title";
+import { fetchCompanyBySlug, redirectIfCompanySlugChanged } from "@/lib/server-company";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -15,53 +16,12 @@ type Props = {
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
-const API_BASE_CANDIDATES = Array.from(
-  new Set(
-    [
-      process.env.INTERNAL_API_BASE_URL,
-      API_BASE_URL,
-      "http://localhost:4000",
-      "http://127.0.0.1:4000",
-    ].filter(Boolean)
-  )
-) as string[];
-
-async function getCompany(slug: string) {
-  let sawNotFound = false;
-  let lastError: unknown = null;
-
-  for (const baseUrl of API_BASE_CANDIDATES) {
-    try {
-      const res = await fetch(`${baseUrl}/api/companies/${slug}`, {
-        cache: "no-store",
-        next: { tags: [`company-${slug}`] },
-      });
-
-      if (res.ok) {
-        const payload = await res.json();
-        return payload?.data?.company ?? null;
-      }
-
-      if (res.status === 404) {
-        sawNotFound = true;
-        continue;
-      }
-
-      lastError = new Error(`Failed to fetch company: ${res.status}`);
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  if (sawNotFound) return null;
-  throw lastError instanceof Error ? lastError : new Error("Failed to fetch company");
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   let company: any = null;
   try {
-    company = await getCompany(slug);
+    company = await fetchCompanyBySlug(slug);
   } catch {
     return {};
   }
@@ -93,7 +53,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   const { slug } = await params;
   let company: any = null;
   try {
-    company = await getCompany(slug);
+    company = await fetchCompanyBySlug(slug);
   } catch {
     return (
       <div className="mx-auto max-w-3xl px-4 py-12">
@@ -108,7 +68,9 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   }
   if (!company) notFound();
 
-  const { tab: searchTab } = await searchParams;
+  const resolvedSearchParams = await searchParams;
+  redirectIfCompanySlugChanged(slug, company.slug, "", resolvedSearchParams);
+  const searchTab = resolvedSearchParams.tab;
   const tab = searchTab || "overview";
   const isOverview = tab === "overview";
   const isActivity = tab === "activity";

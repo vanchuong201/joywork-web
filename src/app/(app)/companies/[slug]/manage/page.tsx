@@ -2,60 +2,18 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ManageCompanyPageClient from "./ManageCompanyPageClient";
 import { headers } from "next/headers";
+import { fetchCompanyBySlug, redirectIfCompanySlugChanged } from "@/lib/server-company";
 
 type Props = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ tab?: string }>;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
-const API_BASE_CANDIDATES = Array.from(
-  new Set(
-    [
-      process.env.INTERNAL_API_BASE_URL,
-      API_BASE_URL,
-      "http://localhost:4000",
-      "http://127.0.0.1:4000",
-    ].filter(Boolean)
-  )
-) as string[];
-
-async function getCompany(slug: string, cookie?: string) {
-  let sawNotFound = false;
-  let lastError: unknown = null;
-
-  for (const baseUrl of API_BASE_CANDIDATES) {
-    try {
-      const res = await fetch(`${baseUrl}/api/companies/${slug}`, {
-        cache: "no-store",
-        headers: cookie ? { Cookie: cookie } : undefined,
-      });
-
-      if (res.ok) {
-        const payload = await res.json();
-        return payload?.data?.company ?? null;
-      }
-
-      if (res.status === 404) {
-        sawNotFound = true;
-        continue;
-      }
-
-      lastError = new Error(`Failed to fetch company: ${res.status}`);
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  if (sawNotFound) return null;
-  throw lastError instanceof Error ? lastError : new Error("Failed to fetch company");
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   let company: any = null;
   try {
-    company = await getCompany(slug);
+    company = await fetchCompanyBySlug(slug);
   } catch {
     return {};
   }
@@ -72,7 +30,7 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
   const { slug } = await params;
   let company: any = null;
   try {
-    company = await getCompany(slug, cookie);
+    company = await fetchCompanyBySlug(slug, cookie);
   } catch {
     return (
       <div className="mx-auto max-w-3xl px-4 py-12">
@@ -88,13 +46,10 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
   
   if (!company) notFound();
 
-  // Basic permission check (should be handled by middleware/backend ideally, but good for UX)
-  // Assuming the user can access this page if the API call succeeded (API usually checks permission)
-  // However, we need to know current user role. 
-  // For now, if getCompany succeeds with auth cookie, we assume access.
+  const resolvedSearchParams = await searchParams;
+  redirectIfCompanySlugChanged(slug, company.slug, "/manage", resolvedSearchParams);
 
-  const { tab: searchTab } = await searchParams;
-  const tab = searchTab || "overview";
+  const tab = resolvedSearchParams.tab || "overview";
 
   return <ManageCompanyPageClient company={company} tab={tab} />;
 }

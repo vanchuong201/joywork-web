@@ -117,6 +117,10 @@ export default function ManageCompanyTabs({ company, initialTab }: Props) {
       toast.error("Link profile phải có ít nhất 2 ký tự và chỉ chứa chữ thường, số và dấu gạch ngang");
       return;
     }
+    if (normalizedSlug.startsWith("http")) {
+      toast.error("Link profile không được bắt đầu bằng http hoặc https. Hãy nhập website ở mục website của hồ sơ.");
+      return;
+    }
     if (normalizedSlug === company.slug) {
       setEditSlugOpen(false);
       return;
