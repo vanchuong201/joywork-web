@@ -14,6 +14,14 @@ type Props = {
   children: React.ReactNode;
 };
 
+type CompanyRole = "OWNER" | "ADMIN" | "MEMBER" | string;
+
+function canOpenManagePage(role: CompanyRole, pathname: string, tab: string | null): boolean {
+  if (role === "OWNER" || role === "ADMIN") return true;
+  if (role !== "MEMBER") return false;
+  return pathname.includes("/manage/applications") || tab === "applications";
+}
+
 export default function CompanyManageGuard({ children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -43,11 +51,10 @@ export default function CompanyManageGuard({ children }: Props) {
       return;
     }
 
-    const membership = memberships.find(
-      (m) => m.company.slug === slug && (m.role === "OWNER" || m.role === "ADMIN")
-    );
+    const tab = searchParams.get("tab");
+    const membership = memberships.find((m) => m.company.slug === slug);
 
-    if (membership) {
+    if (membership && canOpenManagePage(membership.role, pathname, tab)) {
       setHasPermission(true);
       setChecking(false);
       return;
@@ -58,20 +65,22 @@ export default function CompanyManageGuard({ children }: Props) {
       fetchMe()
         .then(() => {
           const updatedMemberships = useAuthStore.getState().memberships;
-          const updatedMembership = updatedMemberships.find(
-            (m) => m.company.slug === slug && (m.role === "OWNER" || m.role === "ADMIN")
-          );
-          if (updatedMembership) {
+          const updatedMembership = updatedMemberships.find((m) => m.company.slug === slug);
+          if (updatedMembership && canOpenManagePage(updatedMembership.role, pathname, tab)) {
             setHasPermission(true);
+          } else {
+            setHasPermission(false);
           }
           setChecking(false);
         })
         .catch(() => {
+          setHasPermission(false);
           setChecking(false);
         });
       return;
     }
 
+    setHasPermission(false);
     setChecking(false);
   }, [user, memberships, slug, initialized, loading, router, fetchMe, pathname, searchParams]);
 
