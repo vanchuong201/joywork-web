@@ -758,63 +758,65 @@ export default function JobDetailPageClient({
           }
         }}
       >
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Xác nhận ứng tuyển</DialogTitle>
-            <DialogDescription>
-              Chỉ CV đã hoàn thiện 3 mục: Thông tin cơ bản, Năng lực (KSA), Kinh nghiệm làm việc mới có thể ứng tuyển.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4 pl-6 pr-12 pt-6">
+            <DialogHeader className="pr-8">
+              <DialogTitle>Xác nhận ứng tuyển</DialogTitle>
+              <DialogDescription>
+                Chỉ CV đã hoàn thiện 3 mục: Thông tin cơ bản, Năng lực (KSA), Kinh nghiệm làm việc mới có thể ứng tuyển.
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div>
-              <Label>Chọn CV ứng tuyển</Label>
-              <div className="mt-2">
-                <ApplyCvPicker
-                  options={applyCvOptions}
-                  selectedCvId={selectedCvId}
-                  onSelect={setSelectedCvId}
-                  disabled={applyMutation.isPending}
-                />
+            <div className="space-y-4 py-2">
+              <div>
+                <Label>Chọn CV ứng tuyển</Label>
+                <div className="mt-2">
+                  <ApplyCvPicker
+                    options={applyCvOptions}
+                    selectedCvId={selectedCvId}
+                    onSelect={setSelectedCvId}
+                    disabled={applyMutation.isPending}
+                  />
+                </div>
+                <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">
+                  Khi bạn ứng tuyển, hệ thống sẽ tạo ra bản lưu CV tại thời điểm ứng tuyển. Nhà tuyển dụng sẽ xem được bản lưu
+                  này, các thay đổi sau này với CV không ảnh hưởng tới phiên bản mà Nhà tuyển dụng nhận được.
+                </p>
               </div>
-              <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">
-                Khi bạn ứng tuyển, hệ thống sẽ tạo ra bản lưu CV tại thời điểm ứng tuyển. Nhà tuyển dụng sẽ xem được bản lưu
-                này, các thay đổi sau này với CV không ảnh hưởng tới phiên bản mà Nhà tuyển dụng nhận được.
-              </p>
-            </div>
 
-            <div>
-              <Label htmlFor="cover-letter">Thư giới thiệu (Không bắt buộc)</Label>
-              <p className="mt-1 mb-3 text-xs text-[var(--muted-foreground)]">
-                Một thư giới thiệu ngắn gọn, chỉn chu sẽ giúp bạn trở nên chuyên nghiệp và gây ấn tượng hơn với nhà tuyển dụng.
-              </p>
-              <Textarea
-                id="cover-letter"
-                value={coverLetter}
-                onChange={(e) => setCoverLetter(e.target.value)}
-                placeholder="Viết giới thiệu ngắn gọn về bản thân (điểm mạnh, điểm yếu) và nêu rõ mong muốn, lý do bạn muốn ứng tuyển cho vị trí này."
-                rows={5}
-                maxLength={2000}
-                className="mt-2"
-              />
-              <p className="mt-1 text-right text-xs text-[var(--muted-foreground)]">{coverLetter.length}/2000 ký tự</p>
-            </div>
+              <div>
+                <Label htmlFor="cover-letter">Thư giới thiệu (Không bắt buộc)</Label>
+                <p className="mt-1 mb-3 text-xs text-[var(--muted-foreground)]">
+                  Một thư giới thiệu ngắn gọn, chỉn chu sẽ giúp bạn trở nên chuyên nghiệp và gây ấn tượng hơn với nhà tuyển dụng.
+                </p>
+                <Textarea
+                  id="cover-letter"
+                  value={coverLetter}
+                  onChange={(e) => setCoverLetter(e.target.value)}
+                  placeholder="Viết giới thiệu ngắn gọn về bản thân (điểm mạnh, điểm yếu) và nêu rõ mong muốn, lý do bạn muốn ứng tuyển cho vị trí này."
+                  rows={4}
+                  maxLength={2000}
+                  className="mt-2"
+                />
+                <p className="mt-1 text-right text-xs text-[var(--muted-foreground)]">{coverLetter.length}/2000 ký tự</p>
+              </div>
 
-            <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
-              <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                <AlertTriangle className="h-4 w-4" />
-                Lưu ý trước khi xác nhận
-              </p>
-              <p className="leading-6">
-                Bạn đang chuẩn bị nộp hồ sơ ứng tuyển vào vị trí <strong>{job.title}</strong> tại{" "}
-                <strong>{job.company.name}</strong>.
-              </p>
-              <p className="mt-1 leading-6">Sau khi xác nhận, hồ sơ của bạn sẽ được gửi đến nhà tuyển dụng.</p>
-              <p className="mt-1 font-medium leading-6">Bạn có muốn tiếp tục không?</p>
+              <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
+                <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                  <AlertTriangle className="h-4 w-4" />
+                  Lưu ý trước khi xác nhận
+                </p>
+                <p className="leading-6">
+                  Bạn đang chuẩn bị nộp hồ sơ ứng tuyển vào vị trí <strong>{job.title}</strong> tại{" "}
+                  <strong>{job.company.name}</strong>.
+                </p>
+                <p className="mt-1 leading-6">Sau khi xác nhận, hồ sơ của bạn sẽ được gửi đến nhà tuyển dụng.</p>
+                <p className="mt-1 font-medium leading-6">Bạn có muốn tiếp tục không?</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-[var(--border)] bg-white px-6 py-4 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)} disabled={applyMutation.isPending}>
               Hủy
             </Button>
