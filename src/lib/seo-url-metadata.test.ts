@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSeoLandingMetadata, jobsListCanonicalUrl } from "./seo-url-metadata";
+import { buildSeoLandingMetadata, companyProfileCanonical, jobsListCanonicalUrl } from "./seo-url-metadata";
 
 const SITE = "https://joywork.vn";
 
@@ -51,5 +51,11 @@ describe("buildSeoLandingMetadata", () => {
 describe("jobsListCanonicalUrl", () => {
   it("trả canonical cố định cho trang danh sách", () => {
     expect(jobsListCanonicalUrl(SITE)).toBe(`${SITE}/jobs`);
+  });
+});
+
+describe("companyProfileCanonical", () => {
+  it("dùng slug đã resolve, không dùng slug cũ trên URL", () => {
+    expect(companyProfileCanonical("so-bie", SITE)).toBe(`${SITE}/companies/so-bie`);
   });
 });

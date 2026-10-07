@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { JsonLd } from "@/components/seo/JsonLd";
 import JobDetailPageClient from "@/components/jobs/JobDetailPageClient";
 import JobsListingPageClient from "@/components/jobs/JobsListingPageClient";
 import { classifyJobRouteSegment } from "@/lib/job-route";
+import { buildJobPostingLd, isJobClosed } from "@/lib/job-posting-ld";
 import { buildJobUrl, resolveJobIdFromSlugParam } from "@/lib/job-url";
 import { formatSalaryRange, getProvinceDisplayLabel } from "@/lib/provinces";
 import { fetchJobForOpenGraph } from "@/lib/server-job-metadata";
@@ -85,6 +88,7 @@ async function jobDetailMetadata(segment: string): Promise<Metadata> {
       images: [DEFAULT_OG_IMAGE],
     },
     other: publisher ? { "article:publisher": publisher } : undefined,
+    robots: isJobClosed(job) ? { index: false, follow: true } : { index: true, follow: true },
   };
 }
 
@@ -120,7 +124,31 @@ export default async function JobSegmentPage({ params }: { params: JobSegmentPar
   const { segment } = await params;
 
   if (classifyJobRouteSegment(segment) === "job-detail") {
-    return <JobDetailPageClient segment={segment} />;
+    const jobId = resolveJobIdFromSlugParam(segment);
+    const fetched = jobId ? await fetchJobForOpenGraph(jobId) : { job: null, definitiveNotFound: false };
+    const job = fetched.job;
+    const posting = job ? buildJobPostingLd(job) : null;
+    return (
+      <>
+        <Breadcrumbs
+          items={
+            job
+              ? [
+                  { name: "Trang chủ", href: "/" },
+                  { name: "Việc làm", href: "/jobs" },
+                  { name: job.company.name, href: `/companies/${job.company.slug}` },
+                  { name: job.title },
+                ]
+              : [
+                  { name: "Trang chủ", href: "/" },
+                  { name: "Việc làm", href: "/jobs" },
+                ]
+          }
+        />
+        {posting ? <JsonLd data={posting} /> : null}
+        <JobDetailPageClient segment={segment} initialJob={job} />
+      </>
+    );
   }
 
   const landing = await getSeoUrlLanding(segment);
@@ -131,13 +159,22 @@ export default async function JobSegmentPage({ params }: { params: JobSegmentPar
   const search = new URLSearchParams(landing.destinationParams).toString();
 
   return (
-    <JobsListingPageClient
-      seoMode={{
-        search,
-        heading: landing.heading,
-        initialJobs: landing.jobs,
-        initialPagination: landing.pagination,
-      }}
-    />
+    <>
+      <Breadcrumbs
+        items={[
+          { name: "Trang chủ", href: "/" },
+          { name: "Việc làm", href: "/jobs" },
+          { name: landing.heading },
+        ]}
+      />
+      <JobsListingPageClient
+        seoMode={{
+          search,
+          heading: landing.heading,
+          initialJobs: landing.jobs,
+          initialPagination: landing.pagination,
+        }}
+      />
+    </>
   );
 }

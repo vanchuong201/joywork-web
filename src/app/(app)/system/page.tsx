@@ -54,7 +54,7 @@ export default function SystemPage() {
         legalName: string | null;
         slug: string;
         verificationStatus: string;
-        verificationFileUrl: string | null;
+        hasVerificationFile: boolean;
         verificationSubmittedAt: string | null;
         verificationReviewedAt: string | null;
         verificationRejectReason: string | null;
@@ -171,7 +171,7 @@ export default function SystemPage() {
                     Trạng thái: {company.verificationStatus}
                     {company.verificationRejectReason ? ` • Lý do: ${company.verificationRejectReason}` : ""}
                   </div>
-                  {company.verificationFileUrl && (
+                  {company.hasVerificationFile ? (
                     <button
                       type="button"
                       onClick={() => openDownloadUrl(company.id)}
@@ -179,7 +179,7 @@ export default function SystemPage() {
                     >
                       Tải DKKD
                     </button>
-                  )}
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button

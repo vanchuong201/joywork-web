@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { jobsListCanonicalUrl } from "@/lib/seo-url-metadata";
 
 const title = "Tìm Việc Làm Mới Nhất Từ Những Doanh Nghiệp Tốt | JOYWORK";
@@ -23,5 +24,10 @@ export const metadata: Metadata = {
 };
 
 export default function JobsListLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <>
+      <Breadcrumbs items={[{ name: "Trang chủ", href: "/" }, { name: "Việc làm" }]} />
+      {children}
+    </>
+  );
 }

@@ -138,12 +138,19 @@ function SectionCard({
   );
 }
 
-export default function JobDetailPageClient({ segment }: { segment: string }) {
+export default function JobDetailPageClient({
+  segment,
+  initialJob = null,
+}: {
+  segment: string;
+  initialJob?: JobDetail | null;
+}) {
   const router = useRouter();
   const qc = useQueryClient();
   const paramValue = segment;
   const user = useAuthStore((state) => state.user);
   const { openPrompt } = useAuthPrompt();
+  const [richTextReady, setRichTextReady] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [cvMissingDialogOpen, setCvMissingDialogOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
@@ -153,6 +160,10 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
   const jobId = useMemo(() => resolveJobIdFromSlugParam(paramValue) ?? paramValue, [paramValue]);
 
   // Backward compat: redirect old /jobs/:id and slug-mismatch to canonical URL
+  useEffect(() => {
+    setRichTextReady(true);
+  }, []);
+
   useEffect(() => {
     if (!jobId) return;
     api.get(`/api/jobs/${jobId}`).then((res) => {
@@ -172,6 +183,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
       return res.data.data;
     },
     enabled: Boolean(jobId),
+    initialData: initialJob ? { job: initialJob } : undefined,
   });
 
   const draftJob = data?.job;
@@ -435,7 +447,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
                 richTextClass,
                 "rounded-xl border-l-4 border-[var(--brand)] bg-[var(--muted)]/40 p-4 italic text-[var(--foreground)]"
               )}
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.mission) }}
+              dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.mission) : "" }}
             />
           </SectionCard>
         ) : null}
@@ -443,14 +455,14 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
         {/* 2. Nhiệm vụ chuyên môn */}
         {job.tasks ? (
           <SectionCard title="2. Nhiệm vụ chuyên môn">
-            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.tasks) }} />
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.tasks) : "" }} />
           </SectionCard>
         ) : null}
 
         {/* 3. Kết quả chuyên môn cần đạt */}
         {job.kpis ? (
           <SectionCard title="3. Kết quả chuyên môn cần đạt">
-            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.kpis) }} />
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.kpis) : "" }} />
           </SectionCard>
         ) : null}
 
@@ -501,7 +513,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
                   <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">
                     <BookOpen className="h-4 w-4" /> Kiến thức chuyên môn
                   </h4>
-                  <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.knowledge) }} />
+                  <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.knowledge) : "" }} />
                 </div>
               ) : null}
               {job.skills ? (
@@ -509,7 +521,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
                   <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">
                     <Zap className="h-4 w-4" /> Kỹ năng cần thiết
                   </h4>
-                  <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.skills) }} />
+                  <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.skills) : "" }} />
                 </div>
               ) : null}
               {job.attitude ? (
@@ -517,7 +529,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
                   <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">
                     <Heart className="h-4 w-4" /> Thái độ và phẩm chất
                   </h4>
-                  <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.attitude) }} />
+                  <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.attitude) : "" }} />
                 </div>
               ) : null}
             </div>
@@ -528,14 +540,14 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
         {job.authority ? (
           <SectionCard title="5. Quyền hạn và phạm vi ra quyết định">
             <h4 className="mb-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">Có thể tự quyết</h4>
-            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.authority) }} />
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.authority) : "" }} />
           </SectionCard>
         ) : null}
 
         {/* 6. Quan hệ công việc */}
         {job.relationships ? (
           <SectionCard title="6. Quan hệ công việc">
-            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.relationships) }} />
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.relationships) : "" }} />
           </SectionCard>
         ) : null}
 
@@ -545,7 +557,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
             <p className="mb-3 text-sm text-[var(--muted-foreground)]">
               Tùy thuộc vào năng lực và nguyện vọng cá nhân, có thể phát triển theo hướng:
             </p>
-            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.careerPath) }} />
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.careerPath) : "" }} />
           </SectionCard>
         ) : null}
 
@@ -561,7 +573,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
             {job.benefitsPerks ? (
               <div>
                 <h4 className="mb-2 text-sm font-semibold text-[var(--foreground)] sm:text-base">Chế độ, phúc lợi</h4>
-                <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.benefitsPerks) }} />
+                <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.benefitsPerks) : "" }} />
               </div>
             ) : null}
           </SectionCard>
@@ -621,7 +633,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
         {/* Thông tin bổ sung */}
         {job.generalInfo ? (
           <SectionCard title="Thông tin bổ sung">
-            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.generalInfo) }} />
+            <div className={richTextClass} dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.generalInfo) : "" }} />
           </SectionCard>
         ) : null}
 
@@ -652,7 +664,7 @@ export default function JobDetailPageClient({ segment }: { segment: string }) {
         <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:px-2 md:flex-row md:items-center md:justify-between">
           <div className="hidden text-sm text-[var(--muted-foreground)] md:block">
             {job.contact ? (
-              <div className="line-clamp-2 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: sanitizeHtml(job.contact) }} />
+              <div className="line-clamp-2 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: richTextReady ? sanitizeHtml(job.contact) : "" }} />
             ) : (
               <span>Ứng tuyển để nhận thêm thông tin liên hệ từ nhà tuyển dụng.</span>
             )}

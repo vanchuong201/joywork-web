@@ -106,8 +106,8 @@ export interface Company {
   highlights?: CompanyHighlight[];
   isVerified: boolean;
   verificationStatus?: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
-  verificationFileKey?: string | null;
-  verificationFileUrl?: string | null;
+  hasVerificationFile?: boolean;
+  activeJobCount?: number;
   verificationSubmittedAt?: string | null;
   verificationReviewedAt?: string | null;
   verificationReviewedById?: string | null;

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildOrganizationGraph } from "@/lib/job-posting-ld";
 import HomeFeedPage from "./home-feed-page";
 import { getPublicSiteUrl } from "@/lib/seo-url-metadata";
 
@@ -24,5 +26,10 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <HomeFeedPage />;
+  return (
+    <>
+      <JsonLd data={buildOrganizationGraph()} />
+      <HomeFeedPage />
+    </>
+  );
 }

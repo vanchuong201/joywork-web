@@ -14,6 +14,14 @@ export function jobsListCanonicalUrl(siteUrl = getPublicSiteUrl()): string {
   return `${siteUrl}/jobs`;
 }
 
+export function companyProfileCanonical(slug: string, siteUrl = getPublicSiteUrl()): string {
+  return `${siteUrl}/companies/${slug}`;
+}
+
+export function companiesListCanonical(siteUrl = getPublicSiteUrl()): string {
+  return `${siteUrl}/companies`;
+}
+
 export type SeoLandingMetaInput = {
   slug: string;
   title: string;

@@ -7,7 +7,9 @@ import CompanyProfileHero from "@/components/company/profile/CompanyProfileHero"
 import CompanyProfileContent from "@/components/company/profile/CompanyProfileContent";
 import CompanyJobsTab from "@/components/company/CompanyJobsTab";
 import CompanyModeSwitchBar from "@/components/company/CompanyModeSwitchBar";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { buildCompanyProfileTitle } from "@/lib/seo-title";
+import { companyProfileCanonical } from "@/lib/seo-url-metadata";
 import { fetchCompanyBySlug, redirectIfCompanySlugChanged } from "@/lib/server-company";
 
 type Props = {
@@ -33,13 +35,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = industry
     ? `${name} - ${industry} tuyển dụng. Xem văn hóa doanh nghiệp, phúc lợi và vị trí đang tuyển tại JOYWORK.`
     : `${name} tuyển dụng. Xem văn hóa doanh nghiệp, phúc lợi và vị trí đang tuyển tại JOYWORK.`;
+  const canonicalSlug = typeof company.slug === "string" && company.slug ? company.slug : slug;
+  const canonical = companyProfileCanonical(canonicalSlug);
+  const activeJobCount = typeof company.activeJobCount === "number" ? company.activeJobCount : null;
 
   return {
     title,
     description,
+    alternates: { canonical },
+    robots: activeJobCount === 0 ? { index: false, follow: true } : { index: true, follow: true },
     openGraph: {
       title,
       description,
+      url: canonical,
       images: company.coverUrl ? [company.coverUrl] : company.logoUrl ? [company.logoUrl] : [],
     },
     twitter: {
@@ -115,7 +123,16 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   return (
     <div className="min-h-screen bg-[var(--background)] font-sans selection:bg-[var(--brand-light)] selection:text-[var(--brand-dark)] pb-20">
       <CompanyModeSwitchBar slug={company.slug} mode="public" />
-      
+      <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+        <Breadcrumbs
+          items={[
+            { name: "Trang chủ", href: "/" },
+            { name: "Doanh nghiệp", href: "/companies" },
+            { name: typeof company.name === "string" ? company.name : "Doanh nghiệp" },
+          ]}
+        />
+      </div>
+
       {/* Hero Section */}
       <CompanyProfileHero company={company} />
 

@@ -416,7 +416,6 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                 fileName: verificationFile.name,
                 fileType: verificationFile.type,
                 fileData,
-                previousKey: company.verificationFileKey ?? undefined,
             });
             toast.success("Đã gửi hồ sơ xác thực, vui lòng chờ duyệt");
             setVerificationFile(null);
@@ -1222,7 +1221,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                         </div>
 
                         {/* Previously uploaded file */}
-                        {company.verificationFileUrl && (
+                        {company.hasVerificationFile ? (
                             <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--muted)]">
                                 <span className="text-sm">Hồ sơ đã tải:</span>
                                 <button
@@ -1233,7 +1232,7 @@ export default function CompanyProfileHero({ company, isEditable = false }: { co
                                     Xem/Tải xuống
                                 </button>
                             </div>
-                        )}
+                        ) : null}
 
                         {/* Email notification info */}
                         <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-sm">

@@ -1,6 +1,9 @@
 type JobCompany = {
   name: string;
   slug: string;
+  legalName?: string | null;
+  website?: string | null;
+  logoUrl?: string | null;
 };
 
 export type JobForOpenGraph = {
@@ -15,6 +18,11 @@ export type JobForOpenGraph = {
   /** Tên tỉnh/thành đã resolve, có khi job có địa điểm. */
   location?: string | null;
   locations?: string[];
+  remote?: boolean | null;
+  employmentType?: string | null;
+  isActive?: boolean | null;
+  applicationDeadline?: string | null;
+  createdAt?: string | null;
   company: JobCompany;
 };
 
