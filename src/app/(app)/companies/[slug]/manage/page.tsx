@@ -2,7 +2,8 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ManageCompanyPageClient from "./ManageCompanyPageClient";
 import { headers } from "next/headers";
-import { fetchCompanyBySlug, redirectIfCompanySlugChanged } from "@/lib/server-company";
+import { CompanyHiddenError, fetchCompanyBySlug, redirectIfCompanySlugChanged } from "@/lib/server-company";
+import CompanyHiddenNotice from "@/components/company/CompanyHiddenNotice";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -31,7 +32,10 @@ export default async function ManageCompanyPage({ params, searchParams }: Props)
   let company: any = null;
   try {
     company = await fetchCompanyBySlug(slug, cookie);
-  } catch {
+  } catch (error) {
+    if (error instanceof CompanyHiddenError) {
+      return <CompanyHiddenNotice />;
+    }
     return (
       <div className="mx-auto max-w-3xl px-4 py-12">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center">

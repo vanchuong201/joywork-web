@@ -12,6 +12,13 @@ const API_BASE_CANDIDATES = Array.from(
   ),
 ) as string[];
 
+export class CompanyHiddenError extends Error {
+  constructor() {
+    super("COMPANY_HIDDEN");
+    this.name = "CompanyHiddenError";
+  }
+}
+
 export async function fetchCompanyBySlug(slug: string, cookie?: string) {
   let sawNotFound = false;
   let lastError: unknown = null;
@@ -34,8 +41,16 @@ export async function fetchCompanyBySlug(slug: string, cookie?: string) {
         continue;
       }
 
+      if (res.status === 403) {
+        const body = await res.json().catch(() => null);
+        if (body?.error?.code === "COMPANY_HIDDEN") {
+          throw new CompanyHiddenError();
+        }
+      }
+
       lastError = new Error(`Failed to fetch company: ${res.status}`);
     } catch (error) {
+      if (error instanceof CompanyHiddenError) throw error;
       lastError = error;
     }
   }

@@ -1,5 +1,7 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { fetchCompanyBySlug, redirectIfCompanySlugChanged } from "@/lib/server-company";
+import { CompanyHiddenError, fetchCompanyBySlug, redirectIfCompanySlugChanged } from "@/lib/server-company";
+import CompanyHiddenNotice from "@/components/company/CompanyHiddenNotice";
 import CompanyApplicationDetailClient from "./CompanyApplicationDetailClient";
 
 type Props = {
@@ -11,8 +13,11 @@ export default async function CompanyApplicationDetailPage({ params }: Props) {
   let company: { slug?: string } | null = null;
 
   try {
-    company = await fetchCompanyBySlug(slug);
-  } catch {
+    company = await fetchCompanyBySlug(slug, (await headers()).get("cookie") || "");
+  } catch (error) {
+    if (error instanceof CompanyHiddenError) {
+      return <CompanyHiddenNotice />;
+    }
     return (
       <div className="mx-auto max-w-3xl px-4 py-12">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center">

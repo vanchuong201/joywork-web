@@ -10,7 +10,7 @@ import CompanyModeSwitchBar from "@/components/company/CompanyModeSwitchBar";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { buildCompanyProfileTitle } from "@/lib/seo-title";
 import { companyProfileCanonical } from "@/lib/seo-url-metadata";
-import { fetchCompanyBySlug, redirectIfCompanySlugChanged } from "@/lib/server-company";
+import { CompanyHiddenError, fetchCompanyBySlug, redirectIfCompanySlugChanged } from "@/lib/server-company";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -62,7 +62,8 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   let company: any = null;
   try {
     company = await fetchCompanyBySlug(slug);
-  } catch {
+  } catch (error) {
+    if (error instanceof CompanyHiddenError) notFound();
     return (
       <div className="mx-auto max-w-3xl px-4 py-12">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center">

@@ -16,6 +16,7 @@ export default function CompanyModeSwitchBar({ slug, mode }: CompanyModeSwitchBa
   const canManage = memberships.some(
     (membership) =>
       membership.company.slug === slug &&
+      membership.company.visibilityStatus !== "HIDDEN" &&
       (membership.role === "OWNER" || membership.role === "ADMIN"),
   );
 

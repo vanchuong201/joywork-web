@@ -15,7 +15,10 @@ export default function CompanyManageButton({ slug, className }: CompanyManageBu
   const memberships = useAuthStore((s) => s.memberships);
 
   const canManage = memberships.some(
-    (membership) => membership.company.slug === slug && (membership.role === "OWNER" || membership.role === "ADMIN")
+    (membership) =>
+      membership.company.slug === slug &&
+      membership.company.visibilityStatus !== "HIDDEN" &&
+      (membership.role === "OWNER" || membership.role === "ADMIN"),
   );
 
   if (!canManage) {

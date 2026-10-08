@@ -26,6 +26,7 @@ export type CompanyMembership = {
     badges?: string[];
     coverUrl?: string | null;
     tagline?: string | null;
+    visibilityStatus?: "ACTIVE" | "HIDDEN";
   };
 };
 
@@ -135,6 +136,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                 badges: item.company.badges,
                 coverUrl: item.company.coverUrl,
                 tagline: item.company.tagline,
+                visibilityStatus: item.company.visibilityStatus,
               },
             })) ?? []
           : [];
