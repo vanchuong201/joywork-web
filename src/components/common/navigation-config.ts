@@ -115,7 +115,10 @@ export function buildLeftAdminNav(user: AuthUser | null): NavItem[] {
 
 export function buildCompanyManageNav(memberships: CompanyMembership[]): NavItem[] {
   return memberships
-    .filter((membership) => isValidCompanySlug(membership.company.slug))
+    .filter(
+      (membership) =>
+        membership.company.visibilityStatus !== "HIDDEN" && isValidCompanySlug(membership.company.slug),
+    )
     .map((membership) => ({
       icon: Building2,
       label: membership.company.name,

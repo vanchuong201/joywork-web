@@ -34,6 +34,7 @@ type Membership = {
     tagline?: string | null;
     logoUrl?: string | null;
     badges?: string[];
+    visibilityStatus?: "ACTIVE" | "HIDDEN";
   };
 };
 
@@ -136,7 +137,9 @@ export default function CompaniesPage() {
     [companiesQuery.data],
   );
 
-  const memberships = membershipsQuery.data?.memberships ?? [];
+  const memberships = (membershipsQuery.data?.memberships ?? []).filter(
+    (membership) => membership.company.visibilityStatus !== "HIDDEN",
+  );
   const createCompanyHref = user ? "/companies/new" : `/login?redirect=${encodeURIComponent("/companies/new")}`;
   const clearAdvancedFilters = () => {
     setIndustry("");

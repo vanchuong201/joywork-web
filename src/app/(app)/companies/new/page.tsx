@@ -75,6 +75,7 @@ type ApiErrorResponse = {
   response?: {
     data?: {
       error?: {
+        code?: string;
         message?: string;
       };
     };
@@ -302,7 +303,16 @@ export default function CreateCompanyPage() {
       toast.success("Đã tạo doanh nghiệp");
       router.push(`/companies/${company.slug}/manage`);
     } catch (e: unknown) {
-      const message = (e as ApiErrorResponse)?.response?.data?.error?.message ?? "Không thể tạo doanh nghiệp";
+      const apiError = (e as ApiErrorResponse)?.response?.data?.error;
+      if (apiError?.code === "SLUG_EXISTS") {
+        const message = "Đường dẫn này đã tồn tại";
+        setSlugEditable(true);
+        setSlugManuallyEdited(true);
+        setError("slug", { type: "manual", message }, { shouldFocus: true });
+        toast.error(message);
+        return;
+      }
+      const message = apiError?.message ?? "Không thể tạo doanh nghiệp";
       setSubmitError(message);
       toast.error(message);
     }
@@ -451,7 +461,13 @@ export default function CreateCompanyPage() {
             </p>
             {showFieldError("slug") || slugUrlError ? (
               <p className="mt-1 text-sm text-red-500">
-                {slugUrlError ?? errors.slug?.message} (ví dụ: <code className="font-mono">joywork-studio</code>)
+                {slugUrlError ?? errors.slug?.message}
+                {errors.slug?.type === "manual" && !slugUrlError ? null : (
+                  <>
+                    {" "}
+                    (ví dụ: <code className="font-mono">joywork-studio</code>)
+                  </>
+                )}
               </p>
             ) : slugEditable ? (
               <p className="mt-1 text-xs text-[var(--muted-foreground)]">

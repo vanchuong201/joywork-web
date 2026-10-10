@@ -26,6 +26,7 @@ export default function HomepageHero() {
   const managedCompanies = memberships.filter(
     (membership) =>
       (membership.role === "OWNER" || membership.role === "ADMIN") &&
+      membership.company?.visibilityStatus !== "HIDDEN" &&
       Boolean(membership.company?.slug)
   );
 
